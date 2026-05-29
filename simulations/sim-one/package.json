@@ -1,13 +1,14 @@
 {
-  "name": "starter",
+  "name": "sim-one",
   "version": "0.0.1",
   "private": true,
-  "description": "Re-usable starter simulation template. Copy via `yarn new-sim <name>` to scaffold a new sim.",
+  "description": "Placeholder simulation #1 — verifies that multi-sim deploys work end-to-end.",
   "license": "MIT",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
+    "postbuild": "tsx ../../scripts/generate-index-top.ts",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
     "lint": "biome check src",

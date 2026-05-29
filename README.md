@@ -8,10 +8,8 @@ Phase 0 (repo bootstrap). The scaffold exists; the first hello-world deploy is t
 
 ## Planning documents
 
-- **Infrastructure Plan** (`new-simulations-project-plan.md`) — tooling, file structure, dependencies, build, CI/CD, deployment, transferability. Source of truth for infrastructure decisions.
-- **UI Design Plan** (`new-simulations-ui-design-plan.md`) — layout, dimensions, regions, responsive behavior, palette. Iterates on a different cadence than infrastructure.
-
-Both currently live outside this repo. They'll be copied into `docs/` once they stabilize.
+- **Infrastructure Plan** (`docs/infrastructure-plan.md`) — tooling, file structure, dependencies, build, CI/CD, deployment, transferability. Source of truth for infrastructure decisions.
+- **UI Design Plan** (`docs/ui-design-plan.md`) — layout, dimensions, regions, responsive behavior, palette. Iterates on a different cadence than infrastructure.
 
 ## Tech stack
 
