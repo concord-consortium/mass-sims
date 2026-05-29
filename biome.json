@@ -6,7 +6,15 @@
     "useIgnoreFile": true
   },
   "files": {
-    "includes": ["**", "!**/dist", "!**/build", "!**/node_modules", "!**/coverage", "!**/.vite"]
+    "includes": [
+      "**",
+      "!**/dist",
+      "!**/build",
+      "!**/node_modules",
+      "!**/coverage",
+      "!**/.vite",
+      "!**/top-test"
+    ]
   },
   "formatter": {
     "enabled": true,

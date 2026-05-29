@@ -13,6 +13,16 @@ import { defineConfig } from "vite";
 export default defineConfig({
   base: "./",
   plugins: [react()],
+  // Vite equivalent of Webpack's `publicPath: "auto"` — see sim-one/vite.config.ts and
+  // docs/infrastructure-plan.md §8 for the full explanation of the index-top.html pattern.
+  experimental: {
+    renderBuiltUrl(filename, { hostType }) {
+      if (hostType === "js") {
+        return { runtime: `globalThis.__assetUrl(${JSON.stringify(filename)})` };
+      }
+      return { relative: true };
+    },
+  },
   build: {
     outDir: "dist",
     emptyOutDir: true,

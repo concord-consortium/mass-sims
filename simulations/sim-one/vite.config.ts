@@ -8,6 +8,21 @@ import { defineConfig } from "vite";
 export default defineConfig({
   base: "./",
   plugins: [react()],
+  // Vite equivalent of Webpack's `publicPath: "auto"` — see docs/infrastructure-plan.md §8.
+  // When a URL is being emitted from JS (an asset/chunk reference inside the bundle), emit a
+  // runtime expression that resolves relative to the bundle's own URL rather than the HTML's.
+  // This is what makes the index-top.html promotion pattern work: HTML at /mass-sims/sim-one/
+  // can load JS from /mass-sims/version/v1.2.3/sim-one/, and JS asset references still resolve
+  // to /mass-sims/version/v1.2.3/sim-one/... not to /mass-sims/sim-one/....
+  // For HTML/CSS emission, keep the relative behavior (HTML knows its own location).
+  experimental: {
+    renderBuiltUrl(filename, { hostType }) {
+      if (hostType === "js") {
+        return { runtime: `globalThis.__assetUrl(${JSON.stringify(filename)})` };
+      }
+      return { relative: true };
+    },
+  },
   build: {
     outDir: "dist",
     emptyOutDir: true,
