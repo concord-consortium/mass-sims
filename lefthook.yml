@@ -1,0 +1,14 @@
+# Lefthook config — git hooks installed automatically by `yarn install` (postinstall script).
+# Docs: https://lefthook.dev/
+
+pre-commit:
+  parallel: true
+  commands:
+    biome-check:
+      glob: "*.{js,jsx,ts,tsx,json,css,scss}"
+      run: yarn biome check --no-errors-on-unmatched {staged_files}
+    typecheck:
+      glob: "*.{ts,tsx}"
+      # Typechecks the entire workspace (TS project graph) rather than just staged files,
+      # because type errors can be triggered by changes elsewhere.
+      run: yarn typecheck

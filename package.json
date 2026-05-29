@@ -1,0 +1,37 @@
+{
+  "name": "mass-sims",
+  "version": "0.0.1",
+  "private": true,
+  "description": "Mass Sims — educational science simulations monorepo (concord-consortium/mass-sims).",
+  "license": "MIT",
+  "author": "Concord Consortium",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/concord-consortium/mass-sims.git"
+  },
+  "engines": {
+    "node": ">=24",
+    "yarn": "^1.22.0"
+  },
+  "workspaces": [
+    "packages/*",
+    "simulations/*"
+  ],
+  "scripts": {
+    "build": "lerna run build",
+    "test": "lerna run test",
+    "lint": "biome check .",
+    "lint:fix": "biome check --write .",
+    "format": "biome format --write .",
+    "typecheck": "lerna run typecheck",
+    "clean": "lerna run clean && rimraf node_modules",
+    "postinstall": "lefthook install"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^2.4.0",
+    "lefthook": "^1.7.0",
+    "lerna": "^4.0.0",
+    "rimraf": "^5.0.0",
+    "typescript": "^6.0.0"
+  }
+}

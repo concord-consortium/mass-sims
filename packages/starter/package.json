@@ -1,0 +1,29 @@
+{
+  "name": "starter",
+  "version": "0.0.1",
+  "private": true,
+  "description": "Re-usable starter simulation template. Copy via `yarn new-sim <name>` to scaffold a new sim.",
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit",
+    "lint": "biome check src",
+    "test": "echo \"starter: no tests yet (Phase 1 will add Vitest)\"",
+    "clean": "rimraf dist .tsbuildinfo"
+  },
+  "dependencies": {
+    "@concord-consortium/mass-sims-shared": "0.0.1",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0"
+  },
+  "devDependencies": {
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "@vitejs/plugin-react": "^4.3.0",
+    "typescript": "^6.0.0",
+    "vite": "^6.0.0"
+  }
+}
