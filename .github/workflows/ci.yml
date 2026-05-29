@@ -40,16 +40,14 @@ jobs:
       - name: Typecheck
         run: yarn typecheck
 
+      - name: Verify root index.html is up to date with workspaces
+        run: yarn gen-index --check
+
       - name: Build
         run: yarn build
 
       # ---------- Deploy ----------
       # Only deploy on push (not on PR). Branch pushes go to branch/<name>/; tag pushes go to version/<tag>/.
-      #
-      # NOTE: `${{ vars.AWS_DEPLOY_ROLE_ARN }}` is populated by `create-deploy-role.sh` from starter-projects.
-      # The script either writes the literal ARN here (find-and-replace) or sets it as a GitHub Actions
-      # repository variable named AWS_DEPLOY_ROLE_ARN. Adjust the line below if the script uses a different
-      # pattern when you run it.
 
       - name: Configure AWS credentials (OIDC)
         if: github.event_name == 'push'
@@ -68,21 +66,56 @@ jobs:
             echo "path=branch/${GITHUB_REF_NAME}" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: Deploy starter to S3
+      - name: Deploy each sim to S3
         if: github.event_name == 'push'
+        env:
+          DEPLOY_PATH: ${{ steps.deploy_path.outputs.path }}
         run: |
-          aws s3 sync packages/starter/dist \
-            "s3://${S3_BUCKET}/${PROJECT_PREFIX}/${{ steps.deploy_path.outputs.path }}/starter/" \
-            --delete \
-            --cache-control "public,max-age=31536000,immutable" \
-            --exclude "index.html"
+          set -e
+          # Deploy a single workspace's dist/ to the correct versioned S3 path.
+          deploy_dir() {
+            local pkg_dir="$1"
+            local sim_name
+            sim_name="$(basename "$pkg_dir")"
+            if [ ! -d "$pkg_dir/dist" ]; then
+              echo "::warning::No dist/ in $pkg_dir, skipping."
+              return
+            fi
+            echo "Deploying $sim_name from $pkg_dir/dist"
+            aws s3 sync "$pkg_dir/dist" \
+              "s3://${S3_BUCKET}/${PROJECT_PREFIX}/${DEPLOY_PATH}/${sim_name}/" \
+              --delete \
+              --cache-control "public,max-age=31536000,immutable" \
+              --exclude "index.html"
+            aws s3 cp "$pkg_dir/dist/index.html" \
+              "s3://${S3_BUCKET}/${PROJECT_PREFIX}/${DEPLOY_PATH}/${sim_name}/index.html" \
+              --cache-control "public,max-age=60,must-revalidate"
+          }
 
-          # index.html with a short cache so updates propagate quickly
-          aws s3 cp packages/starter/dist/index.html \
-            "s3://${S3_BUCKET}/${PROJECT_PREFIX}/${{ steps.deploy_path.outputs.path }}/starter/index.html" \
+          # packages/starter is a template, not a deployable sim — copied by `yarn new-sim`
+          # to scaffold new sims. Only simulations/* are deployed.
+          shopt -s nullglob
+          for sim_dir in simulations/*/; do
+            deploy_dir "${sim_dir%/}"
+          done
+
+      - name: Deploy root index.html
+        if: github.event_name == 'push'
+        env:
+          DEPLOY_PATH: ${{ steps.deploy_path.outputs.path }}
+        run: |
+          aws s3 cp index.html \
+            "s3://${S3_BUCKET}/${PROJECT_PREFIX}/${DEPLOY_PATH}/index.html" \
             --cache-control "public,max-age=60,must-revalidate"
 
-      - name: Print deploy URL
+      - name: Print deploy URLs
         if: github.event_name == 'push'
+        env:
+          DEPLOY_PATH: ${{ steps.deploy_path.outputs.path }}
         run: |
-          echo "Deployed to: https://${S3_BUCKET}.concord.org/${PROJECT_PREFIX}/${{ steps.deploy_path.outputs.path }}/starter/"
+          BASE="https://${S3_BUCKET}.concord.org/${PROJECT_PREFIX}/${DEPLOY_PATH}"
+          echo "Root index: ${BASE}/index.html"
+          for sim_dir in simulations/*/; do
+            sim_name="$(basename "${sim_dir%/}")"
+            echo "${sim_name}:    ${BASE}/${sim_name}/index.html"
+          done

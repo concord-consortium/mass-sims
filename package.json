@@ -24,6 +24,7 @@
     "lint:fix": "biome check --write .",
     "format": "biome format --write .",
     "typecheck": "lerna run typecheck",
+    "gen-index": "tsx scripts/gen-index.ts",
     "clean": "lerna run clean && rimraf node_modules",
     "postinstall": "lefthook install"
   },
@@ -32,6 +33,7 @@
     "lefthook": "^1.7.0",
     "lerna": "^4.0.0",
     "rimraf": "^5.0.0",
+    "tsx": "^4.0.0",
     "typescript": "^6.0.0"
   }
 }
