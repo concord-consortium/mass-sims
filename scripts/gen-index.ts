@@ -115,7 +115,8 @@ ${items}
 
 const checkMode = process.argv.includes("--check");
 const indexPath = join(REPO_ROOT, "index.html");
-const expected = renderHtml(discoverSims());
+const sims = discoverSims();
+const expected = renderHtml(sims);
 
 if (checkMode) {
   const actual = existsSync(indexPath) ? readFileSync(indexPath, "utf8") : "";
@@ -127,6 +128,5 @@ if (checkMode) {
   console.log("gen-index: index.html is up to date.");
 } else {
   writeFileSync(indexPath, expected);
-  const simCount = discoverSims().length;
-  console.log(`gen-index: wrote index.html with ${simCount} simulation(s).`);
+  console.log(`gen-index: wrote index.html with ${sims.length} simulation(s).`);
 }
