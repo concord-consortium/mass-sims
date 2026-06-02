@@ -1,0 +1,153 @@
+// =============================================================================
+// Mass Sims — design tokens
+//
+// Single source of truth for color, typography, spacing, dimensions, and a11y
+// constraints. Nothing outside this file should hard-code these values.
+//
+// See docs/ui-design-plan.md §13 for the design-token convention and §6-8 for
+// the layout dimensions referenced here.
+//
+// Starting palette inherited from FOSS (blue / orange / green / purple) so the
+// initial sims have something to render against; the designer will tune values
+// as design specs arrive. Prefer the SEMANTIC ALIASES (`$color-*`) over raw
+// palette names in component styles so a palette swap stays a one-file change.
+// =============================================================================
+
+
+// =============================================================================
+// COLOR PALETTE (raw — prefer semantic aliases below in component code)
+// =============================================================================
+
+// Blues
+$blue-primary:           #005f99;
+$blue-primary-50:        #7fb0cc;
+$blue-accent:            #01ace4;
+$light-blue-accent:      #70cfef;
+$light-blue-tint-10:     #f0fafd;
+$light-blue-tint-18:     #e5f6fc;
+$light-blue-tint-25:     #dbf3fb;
+$light-blue-tint-50:     #7fafcc;
+
+// Purples
+$purple-accent:          #4e2c82;
+$purple-accent-50:       rgba($purple-accent, 0.5);
+$purple-accent-25:       rgba($purple-accent, 0.25);
+$purple-tint:            #e0d3e8;
+$purple-tint-10:         #f8f6fa;
+$purple-tint-25:         #f0e9f4;
+$purple-tint-50:         #e0d3e8;
+
+// Oranges
+$orange-accent:          #eb6d00;
+$orange-tint-50:         #f5b67f;
+
+// Greens
+$green-accent:           #00a39e;
+$green-tint-50:          #7fd1ce;
+$dark-green-accent:      #004d4b;
+$dark-green-tint-50:     #7fa6a5;
+
+// Neutrals
+$gray-5:                 #f2f2f2;
+$gray-text-muted:        #555;
+$black:                  #000;
+$white:                  #fff;
+
+
+// =============================================================================
+// SEMANTIC COLOR ALIASES (prefer these in component code)
+// =============================================================================
+
+$color-primary:          $blue-primary;
+$color-accent:           $blue-accent;
+$color-surface:          $white;
+$color-surface-muted:    $gray-5;
+$color-text:             $black;
+$color-text-muted:       $gray-text-muted;
+$color-border:           $gray-5;
+$color-focus-outline:    $light-blue-accent;
+
+
+// =============================================================================
+// TYPOGRAPHY
+// =============================================================================
+
+$font-family-base:       "Roboto", system-ui, -apple-system, sans-serif;
+$font-family-condensed:  "Roboto Condensed", system-ui, -apple-system, sans-serif;
+
+$font-size-xs:           12px;
+$font-size-sm:           14px;
+$font-size-base:         16px;
+$font-size-lg:           18px;
+$font-size-xl:           22px;
+
+
+// =============================================================================
+// SPACING SCALE (4 / 8 / 12 / 16 / 24 / 32 / 48 / 64)
+// =============================================================================
+
+$space-1:                4px;
+$space-2:                8px;
+$space-3:                12px;
+$space-4:                16px;
+$space-5:                24px;
+$space-6:                32px;
+$space-7:                48px;
+$space-8:                64px;
+
+
+// =============================================================================
+// LAYOUT DIMENSIONS (see docs/ui-design-plan.md §6-8)
+// =============================================================================
+
+// The four target widths and the single fixed height.
+$frame-height:               562px;
+$frame-width-ap-full:        1044px;
+$frame-width-standalone:     1024px;
+$frame-width-ap-2col-hidden: 989px;
+$frame-width-ap-2col-shown:  676px;
+
+// Wide / narrow mode switch breakpoint.
+$frame-narrow-breakpoint:    900px;
+
+// Three-column proportions (current draft; designer will tune).
+$column-trials-min-width:    160px;
+$column-trials-max-width:    200px;
+$column-data-min-width:      260px;
+$column-data-max-width:      320px;
+
+
+// =============================================================================
+// CORNER RADII
+// =============================================================================
+
+$radius-sm:              4px;
+$radius-md:              8px;
+$radius-lg:              12px;
+$radius-section:         15px;   // Section component rounded corner
+
+
+// =============================================================================
+// FOCUS / ACCESSIBILITY
+// =============================================================================
+
+$focus-outline:          4px solid $color-focus-outline;
+$touch-target-min:       44px;   // WCAG / iOS / Material minimum
+
+
+// =============================================================================
+// CSS CUSTOM PROPERTIES
+// Mirror selected tokens at runtime so they're available to inline styles and
+// JS-driven theming hooks (e.g., the `--touch-target-min` token referenced by
+// shared controls per docs/ui-design-plan.md §11).
+// =============================================================================
+
+:root {
+  --color-primary:       #{$color-primary};
+  --color-accent:        #{$color-accent};
+  --color-surface:       #{$color-surface};
+  --color-text:          #{$color-text};
+  --color-focus-outline: #{$color-focus-outline};
+  --touch-target-min:    #{$touch-target-min};
+  --frame-height:        #{$frame-height};
+}
