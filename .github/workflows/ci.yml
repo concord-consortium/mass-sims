@@ -52,13 +52,10 @@ jobs:
         run: |
           if [[ "${GITHUB_REF}" == refs/tags/* ]]; then
             echo "path=version/${GITHUB_REF_NAME}" >> "$GITHUB_OUTPUT"
-            echo "promote=true" >> "$GITHUB_OUTPUT"
           elif [[ "${GITHUB_REF}" == refs/heads/* ]]; then
             echo "path=branch/${GITHUB_REF_NAME}" >> "$GITHUB_OUTPUT"
-            echo "promote=false" >> "$GITHUB_OUTPUT"
           else
             echo "path=version/release" >> "$GITHUB_OUTPUT"
-            echo "promote=false" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Build
@@ -68,8 +65,10 @@ jobs:
 
       # ---------- Deploy ----------
       # Only deploy on push (not on PR). Branch pushes go to branch/<name>/; tag pushes go
-      # to version/<tag>/ AND additionally get "promoted" to the top-level <sim>/ paths via
-      # the index-top.html mechanic. See docs/infrastructure-plan.md §8.
+      # to version/<tag>/. Tag deploys do NOT auto-promote to top-level URLs — promotion is
+      # a separate, deliberate step via the Release workflow (.github/workflows/release.yml),
+      # which copies the already-deployed `index-top.html` files from the versioned S3 path
+      # to the top-level URLs. See docs/infrastructure-plan.md §8.
 
       - name: Configure AWS credentials (OIDC)
         if: github.event_name == 'push'
@@ -103,6 +102,14 @@ jobs:
             aws s3 cp "$pkg_dir/dist/index.html" \
               "s3://${S3_BUCKET}/${PROJECT_PREFIX}/${DEPLOY_PATH}/${sim_name}/index.html" \
               --cache-control "public,max-age=60,must-revalidate"
+            # Also upload index-top.html alongside index.html under the versioned path.
+            # The Release workflow promotes it to <sim>/index.html at the top-level via an
+            # S3-to-S3 copy — no rebuild needed.
+            if [ -f "$pkg_dir/dist/index-top.html" ]; then
+              aws s3 cp "$pkg_dir/dist/index-top.html" \
+                "s3://${S3_BUCKET}/${PROJECT_PREFIX}/${DEPLOY_PATH}/${sim_name}/index-top.html" \
+                --cache-control "public,max-age=60,must-revalidate"
+            fi
           }
 
           # packages/starter is a template, not a deployable sim — copied by `yarn new-sim`
@@ -121,36 +128,10 @@ jobs:
             "s3://${S3_BUCKET}/${PROJECT_PREFIX}/${DEPLOY_PATH}/index.html" \
             --cache-control "public,max-age=60,must-revalidate"
 
-      # Promotion: on tag push, copy each sim's `dist/index-top.html` to the top-level
-      # <sim>/index.html on S3 — so visiting /mass-sims/sim-one/ loads HTML at that URL
-      # which then loads JS from /mass-sims/version/<tag>/sim-one/. Also copy the root
-      # index.html to /mass-sims/index.html so the top-level landing page works.
-      - name: Promote to top-level URL (tag pushes only)
-        if: github.event_name == 'push' && steps.deploy_path.outputs.promote == 'true'
-        run: |
-          set -e
-          shopt -s nullglob
-          for sim_dir in simulations/*/; do
-            sim_name="$(basename "${sim_dir%/}")"
-            if [ ! -f "${sim_dir}dist/index-top.html" ]; then
-              echo "::warning::No index-top.html for ${sim_name}, skipping promotion."
-              continue
-            fi
-            echo "Promoting ${sim_name}: dist/index-top.html → s3://.../${sim_name}/index.html"
-            aws s3 cp "${sim_dir}dist/index-top.html" \
-              "s3://${S3_BUCKET}/${PROJECT_PREFIX}/${sim_name}/index.html" \
-              --cache-control "public,max-age=60,must-revalidate"
-          done
-          echo "Promoting root: index.html → s3://.../index.html"
-          aws s3 cp index.html \
-            "s3://${S3_BUCKET}/${PROJECT_PREFIX}/index.html" \
-            --cache-control "public,max-age=60,must-revalidate"
-
       - name: Print deploy URLs
         if: github.event_name == 'push'
         env:
           DEPLOY_PATH: ${{ steps.deploy_path.outputs.path }}
-          PROMOTE: ${{ steps.deploy_path.outputs.promote }}
         run: |
           BASE="https://${S3_BUCKET}.concord.org/${PROJECT_PREFIX}"
           echo "=== Versioned URLs ==="
@@ -159,12 +140,9 @@ jobs:
             sim_name="$(basename "${sim_dir%/}")"
             echo "${sim_name}:    ${BASE}/${DEPLOY_PATH}/${sim_name}/index.html"
           done
-          if [ "$PROMOTE" = "true" ]; then
+          if [[ "${GITHUB_REF}" == refs/tags/* ]]; then
             echo ""
-            echo "=== Promoted (top-level released) URLs ==="
-            echo "Root index: ${BASE}/index.html"
-            for sim_dir in simulations/*/; do
-              sim_name="$(basename "${sim_dir%/}")"
-              echo "${sim_name}:    ${BASE}/${sim_name}/index.html"
-            done
+            echo "Tag deployed to versioned path. To promote ${GITHUB_REF_NAME} to top-level URLs,"
+            echo "manually trigger the Release workflow:"
+            echo "  GitHub → Actions → Release → Run workflow → version=${GITHUB_REF_NAME}"
           fi

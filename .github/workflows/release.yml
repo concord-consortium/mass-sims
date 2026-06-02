@@ -1,0 +1,106 @@
+name: Release
+
+# Promotes a previously-deployed tag to the top-level URLs (e.g.
+# https://models-resources.concord.org/mass-sims/sim-one/index.html). Triggered manually
+# from the Actions tab — promotion is a deliberate action, not an automatic side effect
+# of pushing a tag.
+#
+# How it works: the CI workflow uploads each sim's `index-top.html` alongside its versioned
+# `index.html` at s3://.../mass-sims/version/<tag>/<sim>/. This workflow copies those
+# `index-top.html` files to the top-level <sim>/index.html paths via S3-to-S3 copy. No
+# rebuild happens here — we promote exactly the bytes that were tested under the versioned
+# URL. See docs/infrastructure-plan.md §8 for the full pattern.
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Tag/version to promote (e.g. v1.2.3) — must already be deployed at /mass-sims/version/<version>/"
+        required: true
+        type: string
+
+# OIDC: we need id-token write to assume the AWS deploy role.
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  AWS_REGION: us-east-1
+  S3_BUCKET: models-resources
+  PROJECT_PREFIX: mass-sims
+
+jobs:
+  promote:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v6.1.3
+        with:
+          role-to-assume: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Verify versioned deploy exists
+        env:
+          VERSION: ${{ inputs.version }}
+        run: |
+          BASE_PATH="${PROJECT_PREFIX}/version/${VERSION}"
+          if ! aws s3 ls "s3://${S3_BUCKET}/${BASE_PATH}/" >/dev/null 2>&1; then
+            echo "::error::No deploy found at s3://${S3_BUCKET}/${BASE_PATH}/."
+            echo "::error::Push the tag first so CI deploys it, then re-run this workflow."
+            exit 1
+          fi
+
+      - name: Promote each sim's index-top.html to top-level <sim>/index.html
+        env:
+          VERSION: ${{ inputs.version }}
+        run: |
+          set -e
+          BASE="s3://${S3_BUCKET}/${PROJECT_PREFIX}"
+          # List sim subfolders under the versioned path. `aws s3 ls` prints "PRE <name>/"
+          # lines for subfolders; we strip the trailing slash.
+          sim_dirs="$(aws s3 ls "${BASE}/version/${VERSION}/" \
+            | awk '/ PRE /{print $2}' | sed 's:/$::')"
+          if [ -z "$sim_dirs" ]; then
+            echo "::error::No sim subfolders found under version/${VERSION}/."
+            exit 1
+          fi
+          for sim_name in $sim_dirs; do
+            src="${BASE}/version/${VERSION}/${sim_name}/index-top.html"
+            dst="${BASE}/${sim_name}/index.html"
+            if ! aws s3 ls "$src" >/dev/null 2>&1; then
+              echo "::warning::No index-top.html for ${sim_name} at ${src}, skipping."
+              continue
+            fi
+            echo "Promoting ${sim_name}: ${src} -> ${dst}"
+            aws s3 cp "$src" "$dst" \
+              --cache-control "public,max-age=60,must-revalidate"
+          done
+
+      - name: Promote root index.html
+        env:
+          VERSION: ${{ inputs.version }}
+        run: |
+          BASE="s3://${S3_BUCKET}/${PROJECT_PREFIX}"
+          src="${BASE}/version/${VERSION}/index.html"
+          dst="${BASE}/index.html"
+          if ! aws s3 ls "$src" >/dev/null 2>&1; then
+            echo "::error::No root index.html at ${src} — was the tag deployed by CI?"
+            exit 1
+          fi
+          echo "Promoting root: ${src} -> ${dst}"
+          aws s3 cp "$src" "$dst" \
+            --cache-control "public,max-age=60,must-revalidate"
+
+      - name: Print promoted URLs
+        env:
+          VERSION: ${{ inputs.version }}
+        run: |
+          BASE_URL="https://${S3_BUCKET}.concord.org/${PROJECT_PREFIX}"
+          BASE_S3="s3://${S3_BUCKET}/${PROJECT_PREFIX}"
+          echo "=== Promoted (top-level) URLs — now serving ${VERSION} ==="
+          echo "Root index: ${BASE_URL}/index.html"
+          sim_dirs="$(aws s3 ls "${BASE_S3}/version/${VERSION}/" \
+            | awk '/ PRE /{print $2}' | sed 's:/$::')"
+          for sim_name in $sim_dirs; do
+            echo "${sim_name}:    ${BASE_URL}/${sim_name}/index.html"
+          done
