@@ -2,14 +2,12 @@ name: Release
 
 # Promotes a previously-deployed tag to the top-level URLs (e.g.
 # https://models-resources.concord.org/mass-sims/sim-one/index.html). Triggered manually
-# from the Actions tab — promotion is a deliberate action, not an automatic side effect
-# of pushing a tag.
+# from the Actions tab.
 #
-# How it works: the CI workflow uploads each sim's `index-top.html` alongside its versioned
-# `index.html` at s3://.../mass-sims/version/<tag>/<sim>/. This workflow copies those
-# `index-top.html` files to the top-level <sim>/index.html paths via S3-to-S3 copy. No
-# rebuild happens here — we promote exactly the bytes that were tested under the versioned
-# URL. See docs/infrastructure-plan.md §8 for the full pattern.
+# The CI workflow uploads each sim's `index-top.html` alongside its versioned `index.html`
+# at s3://.../mass-sims/version/<tag>/<sim>/. This workflow copies those files to the
+# top-level <sim>/index.html paths via S3-to-S3 copy. See docs/infrastructure-plan.md §8
+# for the full pattern.
 
 on:
   workflow_dispatch:

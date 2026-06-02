@@ -1,10 +1,8 @@
 import react from "@vitejs/plugin-react";
 import { defineConfig } from "vitest/config";
 
-// Vitest config for @concord-consortium/mass-sims-shared.
-// - React plugin for JSX/TSX in tests (renderHook uses a React tree internally).
-// - jsdom for DOM APIs that React Testing Library needs.
-// - globals: false → always import test functions from "vitest" (see Addendum A.2 of the plan).
+// `globals: false` matches the project-wide convention — tests always import from
+// "vitest" rather than relying on injected globals (see Addendum A.2 of the plan).
 
 export default defineConfig({
   plugins: [react()],

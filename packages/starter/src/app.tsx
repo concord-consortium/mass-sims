@@ -1,9 +1,6 @@
-// Phase 0 hello-world. Intentionally bare:
-//   - Confirms React 19 renders.
-//   - Confirms the Vite build emits relative-path assets (see vite.config.ts `base: "./"`).
-//   - Confirms the CI deploy lands the bundle at the expected S3 path and loads correctly.
-//
-// Phase 1 replaces this with a real <SimulationFrame> demo from the shared library.
+// Starter scaffold — `packages/starter` is the template `yarn new-sim` (Phase 1) will
+// copy to bootstrap a new sim. Not deployed by CI; not part of any user-facing build.
+// Replace this file's contents when scaffolding a real sim from the template.
 
 export function App() {
   return (

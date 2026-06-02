@@ -1,11 +1,6 @@
-// Phase 1 verification — placeholder sim #1.
-// The `import testImage from "./assets/test-image.png"` and the <img> below exist to verify
-// that the dynamic publicPath / index-top.html pattern resolves asset URLs correctly. The
-// imported value is a runtime expression (Vite's `experimental.renderBuiltUrl` emits
-// `new URL("../" + "assets/test-image-<hash>.png", import.meta.url).href`), so when this
-// bundle is loaded from /mass-sims/version/v1.2.3/sim-one/assets/main-<hash>.js — whether
-// via the per-version HTML or via the promoted top-level HTML at /mass-sims/sim-one/ — the
-// image URL still resolves to /mass-sims/version/v1.2.3/sim-one/assets/test-image-<hash>.png.
+// Phase 1 verification — placeholder sim #1. The test image import below is a canary for
+// the dynamic publicPath pattern (see docs/infrastructure-plan.md §8). Removed when
+// Phase 1 lands real assets.
 
 import testImage from "./assets/test-image.png";
 

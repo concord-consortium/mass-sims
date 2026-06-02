@@ -65,10 +65,8 @@ jobs:
 
       # ---------- Deploy ----------
       # Only deploy on push (not on PR). Branch pushes go to branch/<name>/; tag pushes go
-      # to version/<tag>/. Tag deploys do NOT auto-promote to top-level URLs — promotion is
-      # a separate, deliberate step via the Release workflow (.github/workflows/release.yml),
-      # which copies the already-deployed `index-top.html` files from the versioned S3 path
-      # to the top-level URLs. See docs/infrastructure-plan.md §8.
+      # to version/<tag>/. Promotion to the top-level URLs is a separate step run from the
+      # Release workflow (.github/workflows/release.yml). See docs/infrastructure-plan.md §8.
 
       - name: Configure AWS credentials (OIDC)
         if: github.event_name == 'push'
@@ -102,9 +100,8 @@ jobs:
             aws s3 cp "$pkg_dir/dist/index.html" \
               "s3://${S3_BUCKET}/${PROJECT_PREFIX}/${DEPLOY_PATH}/${sim_name}/index.html" \
               --cache-control "public,max-age=60,must-revalidate"
-            # Also upload index-top.html alongside index.html under the versioned path.
-            # The Release workflow promotes it to <sim>/index.html at the top-level via an
-            # S3-to-S3 copy — no rebuild needed.
+            # Upload index-top.html so the Release workflow can promote it to the
+            # top-level <sim>/index.html via S3-to-S3 copy.
             if [ -f "$pkg_dir/dist/index-top.html" ]; then
               aws s3 cp "$pkg_dir/dist/index-top.html" \
                 "s3://${S3_BUCKET}/${PROJECT_PREFIX}/${DEPLOY_PATH}/${sim_name}/index-top.html" \

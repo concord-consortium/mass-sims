@@ -4,9 +4,10 @@
 //
 // Reads `dist/index.html` for the current sim, rewrites the `src="./..."` and
 // `href="./..."` attributes to reference the bundle's eventual versioned location, and
-// writes the result to `dist/index-top.html`. On a tagged release, CI copies this file
-// (renamed to index.html) to the top-level `<sim>/index.html` on S3, so a single bundle
-// can be served from both the versioned URL and the top-level "released" URL.
+// writes the result to `dist/index-top.html`. CI uploads this file alongside the
+// versioned `index.html`; the Release workflow later copies it to the top-level
+// `<sim>/index.html` on S3, so a single bundle can be served from both the versioned
+// URL and the top-level "released" URL.
 //
 // See docs/infrastructure-plan.md §8 for the full pattern and the Webpack-equivalent.
 //
