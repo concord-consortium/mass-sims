@@ -1,12 +1,7 @@
 // @concord-consortium/mass-sims-shared
 //
-// Public barrel for the shared library. Phase 1 will populate this with:
-//   - <SimulationFrame>, <Section>
-//   - useModelState, useSimulationRunner, useFrameLoop
-//   - useIframePhone, useLogEvent, useReloadWarning
-//   - seeded-random, math-utils, platform-utils
-//   - design tokens (vars.scss)
-//
-// See ../../../new-simulations-project-plan.md §3 for the contract this exports.
+// Public barrel for the shared library. Phase 1 populates this incrementally as components
+// and hooks land. See ../../../docs/infrastructure-plan.md §3 for the full intended contract.
 
+// (intentionally empty — first runtime exports land later in Phase 1)
 export {};

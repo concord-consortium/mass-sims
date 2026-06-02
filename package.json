@@ -24,7 +24,10 @@
     "lint:fix": "biome check --write .",
     "format": "biome format --write .",
     "typecheck": "lerna run typecheck",
-    "clean": "lerna run clean && rimraf node_modules",
+    "gen-index": "tsx scripts/gen-index.ts",
+    "build:top-test": "tsx scripts/build-top-test.ts",
+    "serve:top-test": "serve -p 8000 top-test",
+    "clean": "lerna run clean && rimraf node_modules top-test",
     "postinstall": "lefthook install"
   },
   "devDependencies": {
@@ -32,6 +35,8 @@
     "lefthook": "^1.7.0",
     "lerna": "^4.0.0",
     "rimraf": "^5.0.0",
+    "serve": "^14.0.0",
+    "tsx": "^4.0.0",
     "typescript": "^6.0.0"
   }
 }
