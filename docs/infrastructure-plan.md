@@ -81,7 +81,8 @@ mass-sims/                              ← repo root (concord-consortium/mass-s
 │   │   │   │   ├── math-utils.ts
 │   │   │   │   └── platform-utils.ts
 │   │   │   ├── styles/
-│   │   │   │   └── vars.scss               ← design tokens (FOSS palette as base)
+│   │   │   │   ├── tokens.scss             ← design tokens (FOSS palette as base, no CSS output)
+│   │   │   │   └── global.scss             ← :root custom properties; imported once per sim entry
 │   │   │   └── index.ts
 │   │   ├── package.json                ← name: @concord-consortium/mass-sims-shared
 │   │   └── tsconfig.json
@@ -200,7 +201,7 @@ Exported from `packages/shared/src/utils/`:
 
 ### Design tokens
 
-`packages/shared/src/styles/vars.scss` is the single source of truth for color, spacing, typography, corner radii, section-chip dimensions, and the `--touch-target-min` token. The UI Design Plan owns the actual values; this plan owns the convention that nothing outside `vars.scss` should hard-code these.
+`packages/shared/src/styles/tokens.scss` is the single source of truth for color, spacing, typography, corner radii, section-chip dimensions, and the `--touch-target-min` token. The UI Design Plan owns the actual values; this plan owns the convention that nothing outside `tokens.scss` should hard-code these. Component `.scss` files `@use` the tokens module for variable access; a sibling `global.scss` (imported once per sim from its entry point) is the single place that emits the runtime `:root { --foo: ... }` mirror — splitting tokens from globals prevents the `:root` block from being duplicated across separately-compiled SCSS modules in the final bundle.
 
 ### What's deliberately *not* in this section
 
@@ -216,7 +217,7 @@ Direct lifts (with light updates for modern dependencies):
 - **Shared component anatomy.** Most components in `foss/common/src/components/controls/` (Button, PlayButton, NewRunButton, Slider, Switch, RadioButtons, Select, Checkbox, etc.) port over largely as-is. Strip out i18n calls — see §6.
 - **`useModelState` + `useSimulationRunner` hook pattern.** The IModelInputState / IModelOutputState / snapshot array architecture is exactly the right abstraction for the kinds of sims described.
 - **Build/deploy GitHub Actions pattern.** `ci.yml` and `release.yml` translate cleanly with the new toolchain.
-- **`vars.scss` design tokens.** Inherit FOSS's blue/orange/green/purple palette as the starting point. Variables are structured so the palette can be swapped centrally once design specs arrive (avoid hard-coding hex values outside `vars.scss`).
+- **Design tokens.** Inherit FOSS's blue/orange/green/purple palette as the starting point. Variables are structured so the palette can be swapped centrally once design specs arrive (avoid hard-coding hex values outside `tokens.scss`).
 - **`Dialog` with `focus-trap`** and **drag-and-drop** wrappers around `@dnd-kit`.
 - **`react-table` / Tanstack Table-based `Table` component.** (Upgrade from `react-table` v7 to `@tanstack/react-table` v8 — same author, modern API.)
 - **`BarGraph` component** as a starting point; consider Recharts or Visx as the underlying library — see UI Design Plan §15 Q19.
@@ -548,7 +549,7 @@ I'd suggest sequencing the work in five phases. Rough estimates assume one to tw
 Create the `concord-consortium/mass-sims` repo. Set up the empty Yarn + Lerna monorepo (mirroring FOSS's `package.json` `workspaces` field and `lerna.json`), root configs (tsconfig.base.json, biome.json, lefthook.yml, gitignore), MIT `LICENSE` file. Run `create-deploy-role.sh` from a `starter-projects` clone — see §8 "S3 bucket prefix and OIDC setup" for the two operational workflows and which one fits your scaffolding choice. CI skeleton runs `biome check` + `tsc --noEmit` on a hello-world and deploys to `s3://models-resources/mass-sims/branch/main/`. **Vite/S3 publicPath spike — validated:** `base: "./"` produces relocatable bundles; the dynamic-publicPath complexity from FOSS's Webpack config is not needed for our case. See §8.
 
 **Phase 1 — Shared library v0 (≈ 1-2 weeks)**
-Port the smaller utility hooks and design tokens from FOSS/DESE. Build the three-region `SimulationFrame` component fresh — slot API and `<Section>` wrapper per §3, visual specifics per the [UI Design Plan](./ui-design-plan.md). Implement `useReloadWarning`. Port the FOSS palette into `vars.scss` with token-only access. Set up Vitest + a couple of smoke tests. Confirm rendering at the four target widths × 562 px from the UI plan.
+Port the smaller utility hooks and design tokens from FOSS/DESE. Build the three-region `SimulationFrame` component fresh — slot API and `<Section>` wrapper per §3, visual specifics per the [UI Design Plan](./ui-design-plan.md). Implement `useReloadWarning`. Port the FOSS palette into `tokens.scss` with token-only access (plus the global stylesheet that mirrors selected tokens as CSS custom properties). Set up Vitest + a couple of smoke tests. Confirm rendering at the four target widths × 562 px from the UI plan.
 
 **Phase 2 — Starter simulation + iframe embedding + logging + scaffolding (≈ 2-3 weeks)**
 Build `packages/starter` as a minimal but real simulation that exercises trials list + stage + data panel. Wire `useModelState`, `useSimulationRunner`, `useFrameLoop`. Implement `useIframePhone` and prove a round-trip with a local Activity Player smoke test (or a minimal harness page). Implement `useLogEvent` with the dual-transport design (lara-interactive-api + GA4 via inline `gtag.js`) — wire the shared controls (`Button`, `Slider`, `Switch`, `Select`, `Checkbox`) to emit log events automatically. Continuous controls emit on commit only (`pointerup`/`change`), not during drag. Inject `VITE_GA_PROPERTY_ID` into each sim's `index.html` template; verify GA is fully disabled when the env var is empty. End-to-end verification: logs reach portal-report *and* events appear in GA4 DebugView for the configured property. Confirm `yarn workspace starter dev` boots, hot-reloads, builds. Ship to a "branch" S3 path and verify it loads inside Activity Player as an iframe interactive. Build `scripts/new-sim.ts`, `scripts/gen-index.ts`, and `scripts/gen-workflows.ts` along with their CI verify-mode checks — these unlock easy growth toward 20+ sims and should exist before the first real sim, not after the fifth.
@@ -568,7 +569,7 @@ Playwright suite covering critical paths in every sim. Lighthouse / axe audits. 
 
 - **The three-region slot API may not fit every future sim.** Mitigation: design the slot API to allow a sim to opt out of a region (e.g., `<SimulationFrame.Data />` empty hides the column). Also expose a `layout` prop on the frame for escape hatches. (Visual-layout-specific risks live in the UI Design Plan.)
 - **iframe-phone state contracts can drift between Activity Player versions.** Mitigation: pin the `iframe-phone` version, write a small `useIframePhone` adapter that wraps the library's API, and add a Playwright test that loads a sim into a fixture Activity Player page to detect regressions.
-- **Touch-target enforcement at the infrastructure level.** Mitigation: expose `--touch-target-min` as a design token in `vars.scss`; consider a lint rule on shared controls that flags hit areas below the token. (Specific touch-target values and per-control sizing are UI Design Plan concerns.)
+- **Touch-target enforcement at the infrastructure level.** Mitigation: expose `--touch-target-min` as a design token in `tokens.scss` (mirrored to a CSS custom property by `global.scss`); consider a lint rule on shared controls that flags hit areas below the token. (Specific touch-target values and per-control sizing are UI Design Plan concerns.)
 - **MUI v9 is brand new (May 2026); migration churn is possible.** Mitigation: the UI library choice is open (UI Design Plan §15 Q9). If the answer ends up being "drop MUI," that simplifies the dependency tree.
 - **React Compiler interactions.** If we enable React 19's compiler, some manual `useMemo`/`useCallback` patterns inherited from DESE become noise. Mitigation: hold off on enabling the compiler until after Phase 2 stabilizes, then sweep to remove redundant memos.
 - **TestNav-shaped state-sync expectations may haunt some hooks ported from DESE.** Mitigation: when porting `useModelState`, strip the external-listener API in one go and don't add it back unless a concrete reuse case appears.
@@ -615,7 +616,7 @@ A decision log. Items numbered here so the gaps reflect what's been delegated to
 
 ### UI and product
 
-12-18, 14a. *UI / visual design decisions (stage region layout, data panel position, trials list behavior, section title chips, run-history persistence, default color palette, light/dark mode, devices and viewport) → moved to [UI Design Plan §14](./ui-design-plan.md). The contract-level requirements they imply on the shared library (`<SimulationFrame>` slots, `<Section>` component, `useReloadWarning` hook, `vars.scss` token system) are captured in §3 of this plan.*
+12-18, 14a. *UI / visual design decisions (stage region layout, data panel position, trials list behavior, section title chips, run-history persistence, default color palette, light/dark mode, devices and viewport) → moved to [UI Design Plan §14](./ui-design-plan.md). The contract-level requirements they imply on the shared library (`<SimulationFrame>` slots, `<Section>` component, `useReloadWarning` hook, `tokens.scss` / `global.scss` token system) are captured in §3 of this plan.*
 
 19-21. *Shared-library scope decisions (graphing library, simulation rendering layer, `<RunsTable>`/`<BarGraph>` location) → tracked in [UI Design Plan §15](./ui-design-plan.md).*
 
