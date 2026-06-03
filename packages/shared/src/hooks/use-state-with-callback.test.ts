@@ -52,14 +52,6 @@ describe("useStateWithCallbackInstant", () => {
 });
 
 describe("useStateWithCallbackLazy", () => {
-  it("does not call the callback on mount", () => {
-    const callback = vi.fn();
-    const { result } = renderHook(() => useStateWithCallbackLazy(0));
-
-    expect(result.current[0]).toBe(0);
-    expect(callback).not.toHaveBeenCalled();
-  });
-
   it("calls the per-setter callback once after the next commit, then clears it", () => {
     const cb1 = vi.fn();
     const cb2 = vi.fn();

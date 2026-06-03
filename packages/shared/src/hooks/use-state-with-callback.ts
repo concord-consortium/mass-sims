@@ -1,4 +1,5 @@
 import {
+  type Dispatch,
   type SetStateAction,
   useCallback,
   useEffect,
@@ -20,7 +21,7 @@ import {
 export function useStateWithCallback<T>(
   initialState: T | (() => T),
   callback: (state: T) => void,
-): readonly [T, React.Dispatch<SetStateAction<T>>] {
+): readonly [T, Dispatch<SetStateAction<T>>] {
   const [state, setState] = useState(initialState);
 
   useEffect(() => {
@@ -38,7 +39,7 @@ export function useStateWithCallback<T>(
 export function useStateWithCallbackInstant<T>(
   initialState: T | (() => T),
   callback: (state: T) => void,
-): readonly [T, React.Dispatch<SetStateAction<T>>] {
+): readonly [T, Dispatch<SetStateAction<T>>] {
   const [state, setState] = useState(initialState);
 
   useLayoutEffect(() => {

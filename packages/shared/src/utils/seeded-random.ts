@@ -7,7 +7,7 @@ import seedrandom from "seedrandom";
 export type SeededRandomState = seedrandom.State.Arc4;
 export type SeededRandom = seedrandom.StatefulPRNG<SeededRandomState>;
 
-let seededRandomMap: Record<string, SeededRandom> = {};
+let seededRandomMap: Record<string, SeededRandom> = Object.create(null);
 
 /**
  * Returns a deterministic PRNG identified by `key`. Calling with the same key returns the same
@@ -29,7 +29,7 @@ export function seededRandom(key: string): SeededRandom {
 
 /** Clear every cached PRNG. Mostly useful in tests; consider scoping more narrowly otherwise. */
 export function resetAll(): void {
-  seededRandomMap = {};
+  seededRandomMap = Object.create(null);
 }
 
 /** Clear one cached PRNG so the next `seededRandom(key)` call recreates it from the seed. */

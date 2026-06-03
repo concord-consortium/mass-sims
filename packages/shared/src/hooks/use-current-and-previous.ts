@@ -8,12 +8,12 @@ import { useEffect, useRef } from "react";
  *
  * Typical use is change-detection in an effect:
  *
- *   const [count, prevCount] = useCurrentAndPrevious(count);
+ *   const [currCount, prevCount] = useCurrentAndPrevious(count);
  *   useEffect(() => {
- *     if (prevCount !== undefined && count > prevCount) {
+ *     if (prevCount !== undefined && currCount > prevCount) {
  *       // count just increased
  *     }
- *   }, [count, prevCount]);
+ *   }, [currCount, prevCount]);
  *
  * Combines DESE's separate `use-current` and `use-previous` hooks into one place.
  */

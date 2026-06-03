@@ -30,12 +30,8 @@
     "clean": "lerna run clean && rimraf node_modules top-test",
     "postinstall": "lefthook install"
   },
-  "dependencies": {
-    "seedrandom": "^3.0.5"
-  },
   "devDependencies": {
     "@biomejs/biome": "^2.4.0",
-    "@types/seedrandom": "^3.0.8",
     "lefthook": "^1.7.0",
     "lerna": "^4.0.0",
     "rimraf": "^5.0.0",
