@@ -1,0 +1,33 @@
+// =============================================================================
+// Mass Sims — global stylesheet
+//
+// Imported exactly ONCE per sim, from its entry point:
+//
+//   // sim's main.tsx
+//   import "@concord-consortium/mass-sims-shared/styles/global.scss";
+//
+// Everything that produces global CSS output lives here. Per-component .scss
+// files should `@use` `tokens.scss` for variable access — they should NOT
+// `@use` this file, or the `:root` block would be duplicated across separately-
+// compiled SCSS modules in the final bundle.
+// =============================================================================
+
+@use "tokens";
+
+
+// =============================================================================
+// CSS CUSTOM PROPERTIES
+// Mirror selected tokens at runtime so they're available to inline styles and
+// JS-driven theming hooks (e.g., the `--touch-target-min` token referenced by
+// shared controls per docs/ui-design-plan.md §11).
+// =============================================================================
+
+:root {
+  --color-primary:       #{tokens.$color-primary};
+  --color-accent:        #{tokens.$color-accent};
+  --color-surface:       #{tokens.$color-surface};
+  --color-text:          #{tokens.$color-text};
+  --color-focus-outline: #{tokens.$color-focus-outline};
+  --touch-target-min:    #{tokens.$touch-target-min};
+  --frame-height:        #{tokens.$frame-height};
+}

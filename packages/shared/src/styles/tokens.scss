@@ -4,6 +4,16 @@
 // Single source of truth for color, typography, spacing, dimensions, and a11y
 // constraints. Nothing outside this file should hard-code these values.
 //
+// This module emits NO CSS — it only declares Sass variables. Consumers `@use`
+// it from any .scss file and reference values via the module namespace, e.g.:
+//
+//   @use "@concord-consortium/mass-sims-shared/styles/tokens" as tokens;
+//   .my-component { color: tokens.$color-primary; }
+//
+// The runtime CSS custom properties (the `:root { --foo: ... }` block) live in
+// `global.scss`, which is imported exactly once per sim from the entry point
+// so the `:root` block isn't duplicated across separately-compiled SCSS modules.
+//
 // See docs/ui-design-plan.md §13 for the design-token convention and §6-8 for
 // the layout dimensions referenced here.
 //
@@ -133,21 +143,3 @@ $radius-section:         15px;   // Section component rounded corner
 
 $focus-outline:          4px solid $color-focus-outline;
 $touch-target-min:       44px;   // WCAG / iOS / Material minimum
-
-
-// =============================================================================
-// CSS CUSTOM PROPERTIES
-// Mirror selected tokens at runtime so they're available to inline styles and
-// JS-driven theming hooks (e.g., the `--touch-target-min` token referenced by
-// shared controls per docs/ui-design-plan.md §11).
-// =============================================================================
-
-:root {
-  --color-primary:       #{$color-primary};
-  --color-accent:        #{$color-accent};
-  --color-surface:       #{$color-surface};
-  --color-text:          #{$color-text};
-  --color-focus-outline: #{$color-focus-outline};
-  --touch-target-min:    #{$touch-target-min};
-  --frame-height:        #{$frame-height};
-}

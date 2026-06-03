@@ -227,7 +227,7 @@ Touch is a first-class concern (Chromebooks, iPads):
 - We rely on Pointer Events rather than mouse-only events.
 - `@dnd-kit` already handles touch/pointer parity.
 - We avoid any hover-required UI patterns (tooltips that surface only on hover, etc.).
-- A `--touch-target-min` design token in `vars.scss` makes this enforceable centrally.
+- A `--touch-target-min` design token in `tokens.scss` (mirrored as a CSS custom property by `global.scss`) makes this enforceable centrally.
 
 ---
 
@@ -241,12 +241,12 @@ Because runs do not persist across page reloads, the shell registers a `beforeun
 
 Current state:
 
-- Color palette: inherit FOSS's blue/orange/green/purple as the starting point. Variables in `packages/shared/src/styles/vars.scss` so the palette can be swapped centrally when design specs arrive.
+- Color palette: inherit FOSS's blue/orange/green/purple as the starting point. Variables in `packages/shared/src/styles/tokens.scss` so the palette can be swapped centrally when design specs arrive. Component `.scss` files `@use` the tokens module; a separate `global.scss` (imported once per sim) emits the runtime `:root { --foo: ... }` mirror so the custom-property block isn't duplicated across separately-compiled SCSS modules.
 - No light/dark mode.
 - No custom accessibility/color-blind themes (covered as an exclusion in the infrastructure plan).
 - A single info modal per sim covers general sim info + licensing/author credit. Minimal credits branding otherwise.
 
-Design tokens to expose in `vars.scss`:
+Design tokens to expose in `tokens.scss`:
 - Color ramp (primary, secondary, accents, neutrals)
 - Spacing scale (4/8/12/16/24/32/48/64)
 - Typography scale
