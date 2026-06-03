@@ -11,7 +11,9 @@
     ".": "./src/index.ts",
     "./vite-config": "./src/vite-config.ts",
     "./styles/tokens": "./src/styles/tokens.scss",
-    "./styles/global": "./src/styles/global.scss"
+    "./styles/tokens.scss": "./src/styles/tokens.scss",
+    "./styles/global": "./src/styles/global.scss",
+    "./styles/global.scss": "./src/styles/global.scss"
   },
   "files": [
     "src"
@@ -25,6 +27,7 @@
     "clean": "rimraf dist .tsbuildinfo"
   },
   "dependencies": {
+    "clsx": "^2.1.1",
     "seedrandom": "^3.0.5"
   },
   "peerDependencies": {
@@ -33,6 +36,7 @@
   },
   "devDependencies": {
     "@testing-library/dom": "^10.0.0",
+    "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.0.0",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",

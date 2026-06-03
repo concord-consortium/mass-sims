@@ -1,0 +1,45 @@
+@use "../../styles/tokens" as tokens;
+
+// Plain (global) SCSS scoped under a single `.section` root class — the house convention
+// (see dese-models). Children are nested so their selectors stay `.section .chip`, etc.,
+// rather than leaking generic names like `.content`/`.title` into the global scope.
+//
+// VISUAL TREATMENT IS A PLACEHOLDER (see docs/simulation-frame-plan.md). Final chip
+// styling, background, shadow, and padding scale arrive via tokens.scss when designs land.
+.section {
+  background: tokens.$color-surface;
+  border: 1px solid tokens.$color-border; // PLACEHOLDER — designer will replace
+  border-radius: tokens.$radius-section;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  min-height: 0; // allow the content to scroll inside a grid track
+
+  .chip {
+    align-items: baseline;
+    display: flex;
+    gap: tokens.$space-2;
+    padding: tokens.$space-2 tokens.$space-3;
+  }
+
+  .title {
+    color: tokens.$color-text;
+    font-family: tokens.$font-family-condensed;
+    font-size: tokens.$font-size-sm;
+    font-weight: 700;
+    margin: 0;
+  }
+
+  .instruction {
+    color: tokens.$color-text-muted;
+    font-size: tokens.$font-size-xs;
+    font-weight: 400;
+  }
+
+  .content {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow: auto;
+    padding: tokens.$space-4;
+  }
+}

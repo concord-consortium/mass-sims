@@ -126,6 +126,11 @@ $column-trials-max-width:    200px;
 $column-data-min-width:      260px;
 $column-data-max-width:      320px;
 
+// Frame header chrome heights (draft; ui-design-plan.md §9 — designer will tune).
+// Suppression of these rows when embedded in Activity Player is deferred (Q31).
+$frame-projectbar-height:    40px;
+$frame-subheader-height:     48px;
+
 
 // =============================================================================
 // CORNER RADII

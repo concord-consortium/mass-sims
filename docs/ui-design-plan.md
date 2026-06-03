@@ -16,7 +16,7 @@ The two documents are connected by one fixed contract: the `<SimulationFrame>` c
 The central UI organizing principle is a three-region split:
 
 - **Trials** — a vertically scrollable list of recorded simulation runs/trials.
-- **Stage** — the simulation visualization plus its own controls.
+- **Simulation** — the simulation visualization plus its own controls.
 - **Data** — the numeric / graphical record of what's happened, organized into one or more labeled sub-sections.
 
 This is the biggest visual departure from both reference repos (FOSS and DESE). Neither has a clean three-column layout; we build it explicitly in `packages/shared/src/components/simulation-frame/`.
@@ -57,12 +57,12 @@ Three columns side-by-side, each capped with a labeled title chip. The simulatio
   grid-template-areas:
     "projectbar projectbar projectbar"
     "subheader  subheader  subheader"
-    "trials     stage      data";
+    "trials     simulation data";
   height: 562px; /* fixed; see "Device targets" below */
 }
 ```
 
-Column maxes are tightened from earlier drafts so the layout still has a comfortable stage column at the tightest "wide" mode (989 px). Final per-pixel tuning is the designer's call.
+Column maxes are tightened from earlier drafts so the layout still has a comfortable simulation column at the tightest "wide" mode (989 px). Final per-pixel tuning is the designer's call.
 
 ---
 
@@ -89,7 +89,7 @@ Each region is a named slot:
   projectName="Mass Sims"
   simTitle="Bananas"
   tagline="Some tag with enough text to describe the sim"
-  info={<BananasInfo />}
+  infoModalContent={<BananasInfo />}
 >
   <SimulationFrame.Trials>
     {trials.map(t => (
@@ -97,10 +97,10 @@ Each region is a named slot:
     ))}
   </SimulationFrame.Trials>
 
-  <SimulationFrame.Stage instruction="Select two parents to begin">
+  <SimulationFrame.Simulation instruction="Select two parents to begin">
     <SimulationView />
     <SimulationControls />
-  </SimulationFrame.Stage>
+  </SimulationFrame.Simulation>
 
   <SimulationFrame.Data>
     <Section title="Offspring Phenotypes: All Generations">
@@ -120,7 +120,7 @@ The compound-component pattern (named slots) is simple and type-safe. Sims that 
 ## 5. Region responsibilities
 
 - **Trials list (left column, vertical):** A vertically stacked, scrollable list of recorded trials/runs. No fixed maximum — the column scrolls when the list overflows. Clicking a trial restores the simulation to that trial's state (same UX as FOSS and DESE). Each trial row has a delete affordance (matches DESE). No drag-to-reorder, no side-by-side comparison view — intentionally minimal.
-- **Stage region (center column, single column):** The simulation visualization (canvas, SVG, Three.js scene, plain DOM, whatever the sim needs) plus that sim's controls (play/pause, sliders, switches, selects) — both stacked vertically. Stage is "the world plus the verbs." Controls live with the viz, not as a separate fourth region. The Section title chip can carry secondary instruction text ("Select two parents to begin") rendered next to the chip itself.
+- **Simulation region (center column, single column):** The simulation visualization (canvas, SVG, Three.js scene, plain DOM, whatever the sim needs) plus that sim's controls (play/pause, sliders, switches, selects) — both stacked vertically. The Simulation region is "the world plus the verbs." Controls live with the viz, not as a separate fourth region. The Section title chip can carry secondary instruction text ("Select two parents to begin") rendered next to the chip itself.
 - **Data panel (right column):** The numeric/graphical record. May contain multiple labeled sub-sections (e.g., a phenotype table on top and a resistance-over-time chart below), each wrapped in its own `<Section>`. Pinned to the right at desktop widths.
 
 ---
@@ -160,35 +160,35 @@ The Chromebook's 609 px available height is the tightest of the supported device
 
 All three columns side by side, as drawn in the layout diagram. The grid template above produces:
 
-| Width | Trials col | Stage col | Data col |
+| Width | Trials col | Simulation col | Data col |
 | ---: | ---: | ---: | ---: |
 | 1044 px | 200 | 524 | 320 |
 | 1024 px | 200 | 504 | 320 |
 | 989 px (tightest wide) | 200 | 469 | 320 |
 
-469 px of stage at the tightest wide mode is workable for most sim visualizations; final designer tuning may push the trials max down to 180 to give stage more room, but that's a per-pixel adjustment, not an architectural change.
+469 px of simulation column at the tightest wide mode is workable for most sim visualizations; final designer tuning may push the trials max down to 180 to give the simulation column more room, but that's a per-pixel adjustment, not an architectural change.
 
 ---
 
 ## 8. Narrow mode — width 676 px
 
-The three-column side-by-side layout breaks below ~900 px (stage would be < 260 px wide, unusable). At 676 px we need an alternate layout.
+The three-column side-by-side layout breaks below ~900 px (the simulation column would be < 260 px wide, unusable). At 676 px we need an alternate layout.
 
-### Working hypothesis: collapsible Trials and/or Data, overlaying the stage
+### Working hypothesis: collapsible Trials and/or Data, overlaying the Simulation
 
 Current thinking — subject to designer iteration:
 
 - One or both side columns (Trials, Data) become **collapsible** at narrow widths.
-- When the user opens a collapsed column, it **overlays the stage** rather than reflowing the layout.
-- The stage column **does not shrink and grow** as overlays open and close; it keeps its size. The overlay sits on top of the stage and can be dismissed.
+- When the user opens a collapsed column, it **overlays the Simulation** rather than reflowing the layout.
+- The simulation column **does not shrink and grow** as overlays open and close; it keeps its size. The overlay sits on top of the simulation column and can be dismissed.
 - This means the simulation viewport stays stable for the student, which avoids re-layout artifacts mid-interaction (especially mid-drag-and-drop or mid-animation).
 
-This is not yet locked in — there's still some uncertainty about whether the stage really won't need to resize when the overlays close, or whether some sims might prefer a push-instead-of-overlay behavior. See §11 open questions.
+This is not yet locked in — there's still some uncertainty about whether the simulation column really won't need to resize when the overlays close, or whether some sims might prefer a push-instead-of-overlay behavior. See §11 open questions.
 
 ### Other shapes considered (not currently preferred)
 
-- Trials as a thin horizontal strip above or below stage + data — loses the vertical-list affordance.
-- Data panel tabbed/togglable with stage — splits the student's attention awkwardly.
+- Trials as a thin horizontal strip above or below simulation + data — loses the vertical-list affordance.
+- Data panel tabbed/togglable with the simulation column — splits the student's attention awkwardly.
 - Drop to a two-column layout with trials moved into a sticky strip — middle-ground; loses the consistent visual signature with wide mode.
 
 ### Architectural seam
@@ -215,7 +215,7 @@ With ~474 px of column height (or up to 562 px embedded), individual region cont
 
 - **Trials list** scrolls vertically.
 - **Data panel** scrolls vertically inside the panel — important when there are multiple sub-sections (table + chart + summary).
-- **Stage** does not scroll — sim viz and its controls must fit. If a sim outgrows the stage height, the sim is responsible for compacting (smaller controls, tighter viz scale), not the frame.
+- **Simulation** does not scroll — sim viz and its controls must fit. If a sim outgrows the simulation column height, the sim is responsible for compacting (smaller controls, tighter viz scale), not the frame.
 
 ---
 
@@ -262,14 +262,14 @@ The designer will iterate on the specific values; the structure is what's locked
 
 Kept here as a decision log.
 
-12. **Stage region layout** → Single column (sim viz + controls together).
+12. **Simulation region layout** → Single column (sim viz + controls together).
 13. **Data panel position** → Right column. May contain multiple labeled sub-sections.
 14. **Trials list** → Left column, vertical and scrollable (no fixed count). Each row click restores that trial's state (per FOSS/DESE); each row is deletable (per DESE). No drag, no side-by-side compare.
-14a. **Per-region section titles** → Each of the three regions is wrapped in a `<Section>` with a small labeled title chip notched into the top edge. The Stage section's chip can carry an adjacent instruction string.
+14a. **Per-region section titles** → Each of the three regions is wrapped in a `<Section>` with a small labeled title chip notched into the top edge. The Simulation section's chip can carry an adjacent instruction string. The canonical slot label can be overridden per-sim via a `title` prop — slot identity (component name, grid-area, Section id) stays canonical; only the visible label diverges.
 15. **Run history persistence** → Not persisted across reloads, but the shell shows the browser's native unload confirmation when at least one run exists.
 16. **Default color palette** → Inherit FOSS's blue/orange/green/purple, structured so the palette can be swapped centrally when design specs arrive.
 17. **Light/dark mode** → No.
-18. **Devices and viewport** → Four exact widths (1044, 1024, 989, 676) at a fixed 562 px height. Widths are driven by Activity Player's embedding modes; height is driven by working backwards from the tightest available viewport across supported devices (Chromebook is the binding constraint at 609 px available height). Supported devices: Teacher Desktop, Chromebook, iPad 10th gen (landscape), Android tablet (landscape). iPad ≤ 9th gen has a known 20 px width-overflow on the right edge of the data column, accepted as a known edge case. Wide mode (≥ 989 px) renders three columns side by side; narrow mode (676 px) uses an alternate layout (working hypothesis: collapsible/overlay — see §8). Touch-friendly hit targets (≥ 44 × 44 px) throughout. Trials list and data panel scroll vertically inside their columns; stage does not scroll.
+18. **Devices and viewport** → Four exact widths (1044, 1024, 989, 676) at a fixed 562 px height. Widths are driven by Activity Player's embedding modes; height is driven by working backwards from the tightest available viewport across supported devices (Chromebook is the binding constraint at 609 px available height). Supported devices: Teacher Desktop, Chromebook, iPad 10th gen (landscape), Android tablet (landscape). iPad ≤ 9th gen has a known 20 px width-overflow on the right edge of the data column, accepted as a known edge case. Wide mode (≥ 989 px) renders three columns side by side; narrow mode (676 px) uses an alternate layout (working hypothesis: collapsible/overlay — see §8). Touch-friendly hit targets (≥ 44 × 44 px) throughout. Trials list and data panel scroll vertically inside their columns; the simulation column does not scroll.
 
 ---
 
@@ -287,11 +287,11 @@ These remain unanswered. Each is a decision the designer + team need to make.
 
 **Q21. `<RunsTable>` and `<BarGraph>` in shared, or sim-specific?** Hinges on how uniform the data shapes are across the planned four sims.
 
-**Q30. Narrow-mode (676 px) collapsible behavior.** Current working hypothesis is collapsible Trials/Data overlaying the stage, without the stage resizing as overlays open and close. To confirm:
-- Does the stage really not need to resize when overlays close, in all cases?
+**Q30. Narrow-mode (676 px) collapsible behavior.** Current working hypothesis is collapsible Trials/Data overlaying the simulation column, without it resizing as overlays open and close. To confirm:
+- Does the simulation column really not need to resize when overlays close, in all cases?
 - Which side(s) get collapsible behavior — Trials only? Data only? Both?
 - What triggers the collapse — a button, a swipe, automatic at narrow widths?
-- When collapsed, is there still a thin "tab" affordance visible on the stage edge, or is the collapsed region fully hidden behind a hamburger-style menu?
+- When collapsed, is there still a thin "tab" affordance visible on the simulation column edge, or is the collapsed region fully hidden behind a hamburger-style menu?
 
 **Q31. Chrome suppression when embedded in Activity Player.** Suppressing the sim's own project bar and sim sub-header when embedded reclaims ~88 px of vertical space — meaningful given the 562 px height ceiling. Suppress fully, keep a compact-chrome variant, or always show both?
 
@@ -303,7 +303,7 @@ A running list of things the designer is iterating on. Items here may move into 
 
 - Exact column widths (current draft: trials 160-200, data 260-320; designer may tune).
 - Section title chip styling (color, border radius, padding, typography).
-- Whether the Stage instruction text sits inside the title chip or beside it.
+- Whether the Simulation instruction text sits inside the title chip or beside it.
 - Whether Trials rows show a thumbnail / parameter preview, or just a label.
 - Run-state restoration UI — what visual feedback when a user clicks a past trial?
 - Delete affordance — inline icon? swipe-to-delete? hover-revealed?

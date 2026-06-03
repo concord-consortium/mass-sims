@@ -1,0 +1,95 @@
+@use "../../styles/tokens" as tokens;
+
+.simulation-frame {
+  background: tokens.$color-surface-muted; // PLACEHOLDER backdrop
+  box-sizing: border-box;
+  color: tokens.$color-text;
+  display: grid;
+  font-family: tokens.$font-family-base;
+  gap: tokens.$space-2;
+  grid-template-areas:
+    "projectbar projectbar projectbar"
+    "subheader  subheader  subheader"
+    "trials     simulation data";
+  grid-template-columns:
+    minmax(tokens.$column-trials-min-width, tokens.$column-trials-max-width)
+    minmax(0, 1fr)
+    minmax(tokens.$column-data-min-width, tokens.$column-data-max-width);
+  grid-template-rows: tokens.$frame-projectbar-height tokens.$frame-subheader-height 1fr;
+  height: tokens.$frame-height;
+  padding: tokens.$space-2;
+  width: 100%;
+
+  .project-bar {
+    align-items: center;
+    display: flex;
+    font-weight: 700;
+    grid-area: projectbar;
+  }
+
+  .sub-header {
+    align-items: center;
+    display: flex;
+    gap: tokens.$space-3;
+    grid-area: subheader;
+  }
+
+  .sim-title {
+    font-size: tokens.$font-size-xl;
+    margin: 0;
+  }
+
+  .tagline {
+    color: tokens.$color-text-muted;
+    font-size: tokens.$font-size-sm;
+  }
+
+  .info-button {
+    align-items: center;
+    background: tokens.$color-surface;
+    border: 1px solid tokens.$color-border;
+    border-radius: tokens.$radius-sm;
+    cursor: pointer;
+    display: inline-flex;
+    justify-content: center;
+    margin-left: auto;
+    min-height: tokens.$touch-target-min;
+    min-width: tokens.$touch-target-min;
+  }
+
+  // Grid-area assignments applied to each slot's Section root (a direct child) via className.
+  .trials-area {
+    grid-area: trials;
+  }
+  .simulation-area {
+    grid-area: simulation;
+  }
+  .data-area {
+    grid-area: data;
+  }
+}
+
+.simulation-frame-info-overlay {
+  align-items: center;
+  background: rgba(tokens.$black, 0.4); // PLACEHOLDER scrim
+  display: flex;
+  inset: 0;
+  justify-content: center;
+  position: fixed;
+  z-index: 1000;
+
+  .modal {
+    background: tokens.$color-surface;
+    border-radius: tokens.$radius-section;
+    box-sizing: border-box;
+    max-height: 80%; // PLACEHOLDER (no token yet)
+    max-width: 480px; // PLACEHOLDER (no token yet)
+    overflow: auto;
+    padding: tokens.$space-5;
+  }
+
+  .modal-close {
+    min-height: tokens.$touch-target-min;
+    min-width: tokens.$touch-target-min;
+  }
+}
