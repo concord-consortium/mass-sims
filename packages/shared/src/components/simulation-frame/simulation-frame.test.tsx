@@ -41,6 +41,28 @@ describe("SimulationFrame", () => {
     expect(getByText("Select two parents to begin")).toBeInTheDocument();
   });
 
+  it("gives region headings unique ids across multiple frames in one document", () => {
+    const oneFrame = (key: string) => (
+      <SimulationFrame key={key} projectName="P" simTitle={key} tagline="t">
+        <SimulationFrame.Trials>a</SimulationFrame.Trials>
+        <SimulationFrame.Simulation>b</SimulationFrame.Simulation>
+        <SimulationFrame.Data>c</SimulationFrame.Data>
+      </SimulationFrame>
+    );
+    const { container } = render(
+      <>
+        {oneFrame("A")}
+        {oneFrame("B")}
+      </>,
+    );
+    const headingIds = Array.from(container.querySelectorAll("h2")).map((h) => h.id);
+    // Six region headings (3 per frame), every one non-empty and unique — so the
+    // aria-labelledby targets never collide when frames share a document.
+    expect(headingIds).toHaveLength(6);
+    expect(headingIds.every((id) => id.length > 0)).toBe(true);
+    expect(new Set(headingIds).size).toBe(headingIds.length);
+  });
+
   it("uses canonical slot titles by default", () => {
     const { getByRole } = renderFrame();
     expect(getByRole("region", { name: "Trials" })).toBeInTheDocument();

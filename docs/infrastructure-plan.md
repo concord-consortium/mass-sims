@@ -163,19 +163,19 @@ Built in `packages/shared/src/components/simulation-frame/`. Compound API with t
 </SimulationFrame>
 ```
 
-The three regions are **Trials** (left), **Simulation** (center), and **Data** (right). Each is wrapped internally in a `<Section>` component (also exported) that renders a labeled title chip. The canonical slot label can be overridden per-sim via `<SimulationFrame.Simulation title="Lab">` etc. — slot *identity* (component name, grid-area, Section id) stays canonical; only the visible label diverges.
+The three regions are **Trials** (left), **Simulation** (center), and **Data** (right). Each is wrapped internally in a `<Section>` component (also exported) that renders a labeled title chip. The canonical slot label can be overridden per-sim via `<SimulationFrame.Simulation title="Lab">` etc. — slot *identity* (component name, grid-area) stays canonical; only the visible label diverges.
 
 ### `<Section>` component
 
 Exported from the shared library; used by all three frame regions and by sims that want to add sub-sections inside the Data slot.
 
 ```tsx
-<Section title="Offspring Phenotypes" id="offspring">
+<Section title="Offspring Phenotypes">
   ...content...
 </Section>
 ```
 
-The chip is a real DOM element, not decoration, so `aria-labelledby` and screen readers behave correctly.
+The chip is a real DOM element, not decoration, so `aria-labelledby` and screen readers behave correctly. Section generates a per-instance heading id via `useId()`, so multiple sections (even multiple frames) on one page stay uniquely labeled with no caller-supplied id.
 
 ### Hooks contract
 

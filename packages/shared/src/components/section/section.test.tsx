@@ -19,16 +19,7 @@ describe("Section", () => {
     expect(getByRole("region", { name: "Simulation" })).toBeInTheDocument();
   });
 
-  it("uses the provided id to derive a stable title id", () => {
-    const { getByRole } = render(
-      <Section title="Offspring" id="offspring">
-        body
-      </Section>,
-    );
-    expect(getByRole("heading", { name: "Offspring" })).toHaveAttribute("id", "offspring-title");
-  });
-
-  it("falls back to a generated id wiring the heading to the region", () => {
+  it("wires the heading to the region with a generated id", () => {
     const { getByRole } = render(<Section title="Viz">body</Section>);
     const region = getByRole("region", { name: "Viz" });
     const heading = getByRole("heading", { name: "Viz" });

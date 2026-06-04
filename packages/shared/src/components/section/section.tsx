@@ -5,7 +5,6 @@ import "./section.scss";
 export interface SectionProps {
   children?: ReactNode;
   className?: string;
-  id?: string;
   instruction?: ReactNode;
   title: string;
 }
@@ -18,9 +17,8 @@ export interface SectionProps {
  * VISUAL TREATMENT IS A PLACEHOLDER (see docs/simulation-frame-plan.md). Final chip
  * styling, background, shadow, and padding scale arrive via tokens.scss when designs land.
  */
-export function Section({ title, id, instruction, className, children }: SectionProps) {
-  const generatedId = useId();
-  const titleId = id ? `${id}-title` : generatedId;
+export function Section({ title, instruction, className, children }: SectionProps) {
+  const titleId = useId();
   return (
     <section className={clsx("section", className)} aria-labelledby={titleId}>
       <div className="chip">

@@ -27,7 +27,7 @@ interface SimulationSlotProps extends SlotProps {
 // composes it with its own root class as clsx("section", className).
 function Trials({ children, title = "Trials" }: SlotProps) {
   return (
-    <Section title={title} id="trials" className="trials-area">
+    <Section title={title} className="trials-area">
       {children}
     </Section>
   );
@@ -35,7 +35,7 @@ function Trials({ children, title = "Trials" }: SlotProps) {
 
 function Simulation({ children, instruction, title = "Simulation" }: SimulationSlotProps) {
   return (
-    <Section title={title} id="simulation" instruction={instruction} className="simulation-area">
+    <Section title={title} instruction={instruction} className="simulation-area">
       {children}
     </Section>
   );
@@ -43,7 +43,7 @@ function Simulation({ children, instruction, title = "Simulation" }: SimulationS
 
 function Data({ children, title = "Data" }: SlotProps) {
   return (
-    <Section title={title} id="data" className="data-area">
+    <Section title={title} className="data-area">
       {children}
     </Section>
   );
