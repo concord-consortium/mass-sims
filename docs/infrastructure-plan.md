@@ -81,7 +81,7 @@ mass-sims/                              ← repo root (concord-consortium/mass-s
 │   │   │   │   ├── math-utils.ts
 │   │   │   │   └── platform-utils.ts
 │   │   │   ├── styles/
-│   │   │   │   ├── tokens.scss             ← design tokens (FOSS palette as base, no CSS output)
+│   │   │   │   ├── tokens.scss             ← design tokens (demo-derived palette, no CSS output)
 │   │   │   │   └── global.scss             ← :root custom properties; imported once per sim entry
 │   │   │   └── index.ts
 │   │   ├── package.json                ← name: @concord-consortium/mass-sims-shared
@@ -136,18 +136,19 @@ Notes on the layout:
 
 ### `<SimulationFrame>` compound component
 
-Built in `packages/shared/src/components/simulation-frame/`. Compound API with three named slots:
+Built in `packages/shared/src/components/simulation-frame/`. Compound API with three named slots, one header row, and an info ("About") modal:
 
 ```tsx
 <SimulationFrame
-  projectName="Mass Sims"
   simTitle="Bananas"
-  tagline="Short description of the sim"
+  tagline="An interactive genetics simulation"
   infoModalContent={<BananasInfo />}
 >
   <SimulationFrame.Trials>
-    {trials.map(t => (
-      <TrialRow key={t.id} trial={t} onSelect={...} onDelete={...} />
+    {trials.map((t, i) => (
+      <TrialCard key={t.id} index={i} selected={t.selected} onSelect={...} onReset={...}>
+        ...sim-specific per-trial content (parent labels, offspring counts, etc.)...
+      </TrialCard>
     ))}
   </SimulationFrame.Trials>
 
@@ -157,25 +158,54 @@ Built in `packages/shared/src/components/simulation-frame/`. Compound API with t
   </SimulationFrame.Simulation>
 
   <SimulationFrame.Data>
-    <Section title="Offspring Phenotypes">{...}</Section>
-    <Section title="Fungus Resistance">{...}</Section>
+    <DataSubsection title="Offspring Phenotypes: All Generations">...</DataSubsection>
+    <DataSubsection title="Fungus Resistance over Generations">...</DataSubsection>
   </SimulationFrame.Data>
 </SimulationFrame>
 ```
 
-The three regions are **Trials** (left), **Simulation** (center), and **Data** (right). Each is wrapped internally in a `<Section>` component (also exported) that renders a labeled title chip. The canonical slot label can be overridden per-sim via `<SimulationFrame.Simulation title="Lab">` etc. — slot *identity* (component name, grid-area) stays canonical; only the visible label diverges.
+The three regions are **Trials** (left), **Simulation** (center), and **Data** (right). Each renders inside a `<Section>` wrapper that the frame supplies. The canonical slot label can be overridden per-sim via `<SimulationFrame.Simulation title="Lab">` etc. — slot *identity* (component name, grid-area) stays canonical; only the visible label diverges.
+
+**Notes on the header.** `<SimulationFrame>` renders a single 50 px **title bar** at the top of the sim that contains, left to right: `simTitle` (Lato 24 / 28 px bold), `tagline` (Lato 16 / 20 px), the project-wide partner-branding cluster (DESE + Concord Consortium logos), and the **About** button. The partner-branding cluster is identical across every Mass Sims sim — it ships as SVGs inside `packages/shared` and is rendered internally by `<SimulationFrame>` rather than passed in as a prop. The teal **"[Sim Name] Simulation"** bar above is rendered by Activity Player's wrapper chrome, not by us, so `<SimulationFrame>` has no `projectName` prop and does NOT render that row even in standalone deploys.
+
+**Notes on the About modal.** Triggered from the About button. Renders as a **draggable side panel** anchored top-right (`width: 400 px`, `max-height: 70 %`), not a centered backdrop overlay — the user can drag it around to keep the sim content visible. Drag position is **not persisted**; it always opens at the default top-right. This is the only modal in the sim that uses the side-panel pattern; the future shared `<Dialog>` (Phase 3) used for the reload-warning confirmation and any other dialogs uses a conventional centered overlay.
 
 ### `<Section>` component
 
-Exported from the shared library; used by all three frame regions and by sims that want to add sub-sections inside the Data slot.
+Exported from the shared library; the title-chip primitive used by each frame region (rendered by `<SimulationFrame>` internally). Not normally rendered directly by sims — the Data slot's sub-sections use `<DataSubsection>` (see below), and the Trials slot's per-trial items use `<TrialCard>`. Section is exported anyway because it's a useful primitive if a sim needs a labeled region inside the Simulation slot (rare).
 
 ```tsx
-<Section title="Offspring Phenotypes">
-  ...content...
-</Section>
+<Section title="Offspring Phenotypes">...content...</Section>
 ```
 
-The chip is a real DOM element, not decoration, so `aria-labelledby` and screen readers behave correctly. Section generates a per-instance heading id via `useId()`, so multiple sections (even multiple frames) on one page stay uniquely labeled with no caller-supplied id.
+The chip is a real DOM element (not pure decoration), notched onto the top edge of the panel: ~36 px tall, 8 px border-radius, 2 px border, centered horizontally with the chip half-overlapping the panel border. The bullet separator (`•`) between the title and the optional `instruction` is rendered by Section's own CSS via `::before` on the instruction element — consumers don't think about it. Section generates a per-instance heading id via `useId()`, so multiple sections (even multiple frames) on one page stay uniquely labeled with no caller-supplied id, and `aria-labelledby` exposes the section as a named landmark.
+
+### `<TrialCard>` component
+
+Exported from the shared library; rendered by each sim inside `<SimulationFrame.Trials>` for every recorded trial.
+
+```tsx
+<TrialCard index={i} selected={t.selected} onSelect={...} onReset={...}>
+  ...sim-specific per-trial content...
+</TrialCard>
+```
+
+The frame provides the common chrome: a 120 × 136 px card with a **letter badge** in the upper-left (auto-derived from `index`: 0→A, 1→B, …, 9→J), a 2 px border, selected/hover/active states, and — when `selected` — a 44 × 44 px **reset** affordance in the upper-right that calls `onReset` and is auto-disabled when there's nothing to reset (the parent can also pass `resetDisabled` to override). Sim-specific per-trial content (parent labels, offspring counts, healthy/infected percentages) renders as `children` inside the card. Sims own the trial state; the card owns the affordance shape.
+
+The plan currently expects trials A through J (up to 10), matching the demo. If a sim eventually needs more, `letter` becomes a direct prop and `index` is recomputed by the sim.
+
+### `<DataSubsection>` component
+
+Exported from the shared library; rendered by each sim inside `<SimulationFrame.Data>` to denote a labeled sub-section of the Data panel (e.g. the pie-chart half and the line-graph half in Bananas).
+
+```tsx
+<DataSubsection title="Offspring Phenotypes: All Generations">
+  <PieChart .../>
+  <Legend .../>
+</DataSubsection>
+```
+
+Unlike `<Section>`, `<DataSubsection>` does NOT render a chip. The title is a real heading element (`<h3>` — semantically a sub-heading under the Data region's `<h2>`), centered above the content, with a 1 px horizontal-rule divider rendered automatically between consecutive `<DataSubsection>` siblings. Sims may render any number of `<DataSubsection>` siblings (one, two, three, more). **`<DataSubsection>` is not a `<Section>` variant** — the markup, ARIA structure, and visual treatment differ on purpose; consumers should not try to reconcile the two by configuring `<Section>` for the Data slot.
 
 ### Hooks contract
 
@@ -217,7 +247,7 @@ Direct lifts (with light updates for modern dependencies):
 - **Shared component anatomy.** Most components in `foss/common/src/components/controls/` (Button, PlayButton, NewRunButton, Slider, Switch, RadioButtons, Select, Checkbox, etc.) port over largely as-is. Strip out i18n calls — see §6.
 - **`useModelState` + `useSimulationRunner` hook pattern.** The IModelInputState / IModelOutputState / snapshot array architecture is exactly the right abstraction for the kinds of sims described.
 - **Build/deploy GitHub Actions pattern.** `ci.yml` and `release.yml` translate cleanly with the new toolchain.
-- **Design tokens.** Inherit FOSS's blue/orange/green/purple palette as the starting point. Variables are structured so the palette can be swapped centrally once design specs arrive (avoid hard-coding hex values outside `tokens.scss`).
+- **Design tokens.** Initially seeded from FOSS's blue/orange/green/purple palette as a placeholder; superseded by the demo-derived palette (mostly grayscale + `#005FCC` focus + `#e8e8e8` panel surface; Lato + Roboto Condensed). See UI Design Plan §13 for the concrete values. The structuring convention (semantic aliases over raw values; nothing hard-coded outside `tokens.scss`) is unchanged.
 - **`Dialog` with `focus-trap`** and **drag-and-drop** wrappers around `@dnd-kit`.
 - **`react-table` / Tanstack Table-based `Table` component.** (Upgrade from `react-table` v7 to `@tanstack/react-table` v8 — same author, modern API.)
 - **`BarGraph` component** as a starting point; consider Recharts or Visx as the underlying library — see UI Design Plan §15 Q19.
