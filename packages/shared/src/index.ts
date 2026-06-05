@@ -26,6 +26,11 @@ export {
 } from "./hooks/use-model-state";
 export { useReloadWarning } from "./hooks/use-reload-warning";
 export {
+  type UseSimulationRunnerOptions,
+  type UseSimulationRunnerReturn,
+  useSimulationRunner,
+} from "./hooks/use-simulation-runner";
+export {
   useStateWithCallback,
   useStateWithCallbackInstant,
   useStateWithCallbackLazy,
