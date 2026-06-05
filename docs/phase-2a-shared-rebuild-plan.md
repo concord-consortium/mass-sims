@@ -1,6 +1,6 @@
 # Phase 2a — Shared Library Rebuild Against the Demo Design
 
-> **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
+> Implementation plan executed on this branch; kept as a task-by-task record.
 
 **Goal:** Rebuild the shared library to match the demo design (see [demo](https://models-resources.concord.org/demos/branch/masssims/) and source at `~/Documents/webdev/demos`). Concrete deliverables: rewrite `tokens.scss` and `global.scss` to the demo's palette / typography / dimensions; ship partner-branding SVGs in the shared package; restructure `<SimulationFrame>`'s title bar (drop `projectName`, drop the project-bar row, add the partner-branding cluster + restyled About button); add new `<TrialCard>` and `<DataSubsection>` components per the demo; update `packages/sim-frame-preview` to render the new shapes. Replace the About modal with the demo's draggable top-right side panel (Task 7), then sweep verification (Task 8).
 

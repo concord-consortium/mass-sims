@@ -313,9 +313,9 @@ Inherited from earlier drafts and confirmed compatible with the demo's gap / pad
 | `$frame-width-ap-2col-hidden` | 989 px | AP 2-Column, resources hidden |
 | `$frame-width-ap-2col-shown` | 676 px | AP 2-Column, resources shown (narrow mode) |
 | `$frame-titlebar-height` | 50 px | The single sim title bar |
-| `$column-trials-width-ap-full` | 155 px | Trials column at 1044 px |
-| `$column-simulation-width-ap-full` | 564 px | Simulation column at 1044 px |
-| `$column-data-width-ap-full` | 285 px | Data column at 1044 px |
+| `$column-trials-width` | 155 px | Trials column — fixed across all layouts |
+| `$column-simulation-width-ap-full` | 564 px | Simulation column at 1044 px (flexes at other widths) |
+| `$column-data-width` | 285 px | Data column — fixed across all layouts |
 | `$column-gap` | 10 px | Gap between the three columns |
 | `$body-padding` | 10 px | Padding around the body region |
 | `$section-chip-height` | 36 px | The notched title chip |
@@ -331,7 +331,6 @@ Inherited from earlier drafts and confirmed compatible with the demo's gap / pad
 | `$radius-sm` | 4 px | Inner badges (trial-card letter) |
 | `$radius-md` | 6 px | Buttons (About, sim-buttons, trial cards) |
 | `$radius-lg` | 8 px | Section panel, Section chip, info modal |
-| `$radius-modal-info` | 8 px | Info modal corner (alias of lg) |
 | `$border-strong` | 2 px solid `$color-border` | Section / button / card / chip border |
 | `$focus-outline` | 2 px solid `$color-focus-outline` | Default focus ring (2 px offset) |
 
@@ -341,7 +340,7 @@ The earlier `$radius-section: 15 px` is **removed** — the demo's Section radiu
 
 The About modal is structurally distinct from any other dialog the sim might surface. Its dimensions and behavior are pinned at the design layer:
 
-- `$modal-info-width` 400 px, `$modal-info-max-height` 70 %.
+- `$modal-info-width` 400 px, `$modal-info-max-height-pct` 70 %.
 - `$modal-info-offset-top` 50 px (matches the title bar height), `$modal-info-offset-right` 10 px.
 - Draggable via the modal header (`cursor: grab` / `:active { cursor: grabbing }`).
 - Drag position does not persist; always opens at the default top-right.

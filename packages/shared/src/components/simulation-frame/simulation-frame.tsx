@@ -115,6 +115,10 @@ export function SimulationFrame({
   // pointer leaves the header. A pointerdown on the close button does not start a drag.
   const beginDrag = (e: ReactPointerEvent<HTMLElement>) => {
     if ((e.target as HTMLElement).closest(".modal-close")) return;
+    // Tear down any still-active gesture before starting a new one, so a second pointerdown
+    // (e.g. a second touch, or a prior drag that ended in pointercancel rather than pointerup)
+    // can't stack a second set of window listeners that fight over the offset.
+    dragCleanupRef.current?.();
     e.preventDefault();
     const startX = e.clientX;
     const startY = e.clientY;
@@ -123,15 +127,18 @@ export function SimulationFrame({
     const onMove = (move: PointerEvent) => {
       setDragOffset({ x: originX + (move.clientX - startX), y: originY + (move.clientY - startY) });
     };
-    // `stop` is both the pointerup handler and the stored unmount-cleanup, so the
-    // remove-listener logic lives in exactly one place.
+    // `stop` ends the gesture on pointerup OR pointercancel (the latter fires instead of
+    // pointerup when the browser/OS aborts the pointer), and is also the stored unmount-cleanup
+    // — so the remove-listener logic lives in exactly one place.
     const stop = () => {
       window.removeEventListener("pointermove", onMove);
       window.removeEventListener("pointerup", stop);
+      window.removeEventListener("pointercancel", stop);
       dragCleanupRef.current = null;
     };
     window.addEventListener("pointermove", onMove);
     window.addEventListener("pointerup", stop);
+    window.addEventListener("pointercancel", stop);
     dragCleanupRef.current = stop;
   };
 

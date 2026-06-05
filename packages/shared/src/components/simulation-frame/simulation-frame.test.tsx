@@ -286,6 +286,50 @@ describe("SimulationFrame", () => {
     removeSpy.mockRestore();
   });
 
+  it("tears down a prior drag's listeners when a new drag starts before the first ends", () => {
+    const removeSpy = vi.spyOn(window, "removeEventListener");
+    const { container, getByRole } = render(
+      <SimulationFrame simTitle="S" tagline="t" infoModalContent={<p>about</p>}>
+        <SimulationFrame.Trials>a</SimulationFrame.Trials>
+        <SimulationFrame.Simulation>b</SimulationFrame.Simulation>
+        <SimulationFrame.Data>c</SimulationFrame.Data>
+      </SimulationFrame>,
+    );
+    fireEvent.click(getByRole("button", { name: /about/i }));
+    const handle = container.querySelector(".modal-drag-handle");
+    if (!handle) throw new Error("expected a drag handle");
+    fireEvent.pointerDown(handle, { clientX: 0, clientY: 0 });
+    removeSpy.mockClear();
+    // A second pointerdown (e.g. a second touch) must detach the first gesture's listeners
+    // rather than stacking another set that fights over the offset.
+    fireEvent.pointerDown(handle, { clientX: 5, clientY: 5 });
+    expect(removeSpy).toHaveBeenCalledWith("pointermove", expect.any(Function));
+    expect(removeSpy).toHaveBeenCalledWith("pointerup", expect.any(Function));
+    removeSpy.mockRestore();
+  });
+
+  it("ends the drag on pointercancel, not just pointerup", () => {
+    const removeSpy = vi.spyOn(window, "removeEventListener");
+    const { container, getByRole } = render(
+      <SimulationFrame simTitle="S" tagline="t" infoModalContent={<p>about</p>}>
+        <SimulationFrame.Trials>a</SimulationFrame.Trials>
+        <SimulationFrame.Simulation>b</SimulationFrame.Simulation>
+        <SimulationFrame.Data>c</SimulationFrame.Data>
+      </SimulationFrame>,
+    );
+    fireEvent.click(getByRole("button", { name: /about/i }));
+    const handle = container.querySelector(".modal-drag-handle");
+    if (!handle) throw new Error("expected a drag handle");
+    fireEvent.pointerDown(handle, { clientX: 0, clientY: 0 });
+    removeSpy.mockClear();
+    // A pointercancel (browser/OS aborts the pointer) must end the gesture and detach listeners,
+    // since pointerup won't fire in that case.
+    window.dispatchEvent(new Event("pointercancel"));
+    expect(removeSpy).toHaveBeenCalledWith("pointermove", expect.any(Function));
+    expect(removeSpy).toHaveBeenCalledWith("pointercancel", expect.any(Function));
+    removeSpy.mockRestore();
+  });
+
   it("does not move focus to the About button on initial render", () => {
     const { getByRole } = render(
       <SimulationFrame simTitle="S" tagline="t" infoModalContent={<p>about</p>}>
