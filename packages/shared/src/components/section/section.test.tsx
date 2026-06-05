@@ -39,15 +39,6 @@ describe("Section", () => {
     expect(getByText("Select two parents to begin")).toBeInTheDocument();
   });
 
-  it("renders adjacent instruction text when provided", () => {
-    const { getByText } = render(
-      <Section title="Simulation" instruction="Select two parents to begin">
-        viz
-      </Section>,
-    );
-    expect(getByText("Select two parents to begin")).toBeInTheDocument();
-  });
-
   it("merges an external className onto the root region", () => {
     const { getByRole } = render(
       <Section title="Trials" className="external-area">

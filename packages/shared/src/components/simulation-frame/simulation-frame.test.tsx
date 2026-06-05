@@ -1,5 +1,5 @@
 import { fireEvent, render } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { SimulationFrame } from "./simulation-frame";
 
 function renderFrame(extra?: Partial<{ instruction: string }>) {
@@ -259,6 +259,31 @@ describe("SimulationFrame", () => {
     expect(dialog).toHaveStyle({ transform: "translate(10px, 0px)" });
     fireEvent.keyDown(dialog, { key: "ArrowDown", altKey: true, shiftKey: true });
     expect(dialog).toHaveStyle({ transform: "translate(10px, 40px)" });
+  });
+
+  it("removes drag listeners from window if the frame unmounts mid-drag", () => {
+    const addSpy = vi.spyOn(window, "addEventListener");
+    const removeSpy = vi.spyOn(window, "removeEventListener");
+    const { container, getByRole, unmount } = render(
+      <SimulationFrame simTitle="S" tagline="t" infoModalContent={<p>about</p>}>
+        <SimulationFrame.Trials>a</SimulationFrame.Trials>
+        <SimulationFrame.Simulation>b</SimulationFrame.Simulation>
+        <SimulationFrame.Data>c</SimulationFrame.Data>
+      </SimulationFrame>,
+    );
+    fireEvent.click(getByRole("button", { name: /about/i }));
+    const handle = container.querySelector(".modal-drag-handle");
+    if (!handle) throw new Error("expected a drag handle");
+    // Begin a drag (pointer down on the header) but unmount before any pointerup fires.
+    fireEvent.pointerDown(handle, { clientX: 10, clientY: 10 });
+    expect(addSpy).toHaveBeenCalledWith("pointermove", expect.any(Function));
+    expect(addSpy).toHaveBeenCalledWith("pointerup", expect.any(Function));
+    unmount();
+    // Unmount cleanup detaches the gesture's window listeners so they don't leak.
+    expect(removeSpy).toHaveBeenCalledWith("pointermove", expect.any(Function));
+    expect(removeSpy).toHaveBeenCalledWith("pointerup", expect.any(Function));
+    addSpy.mockRestore();
+    removeSpy.mockRestore();
   });
 
   it("does not move focus to the About button on initial render", () => {

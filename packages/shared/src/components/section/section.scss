@@ -4,11 +4,13 @@
 // (see dese-models). Children are nested so their selectors stay `.section .chip`, etc.,
 // rather than leaking generic names like `.content`/`.title` into the global scope.
 //
-// VISUAL TREATMENT IS A PLACEHOLDER (see docs/simulation-frame-plan.md). Final chip
-// styling, background, shadow, and padding scale arrive via tokens.scss when designs land.
+// Token VALUES (color, radius, border, type) are now derived from the realized demo design
+// (see the tokens.scss header and docs/ui-design-plan.md §13). The Section's CHIP TREATMENT,
+// however, is still simplified: the demo's notched chip that overlaps the panel's top edge
+// (cf. the not-yet-wired `$section-chip-*` tokens) and its type scale land in a later task.
 .section {
   background: tokens.$color-surface-muted;
-  border: 1px solid tokens.$color-border; // PLACEHOLDER — designer will replace
+  border: tokens.$border-strong;
   border-radius: tokens.$radius-lg;
   box-sizing: border-box;
   display: flex;

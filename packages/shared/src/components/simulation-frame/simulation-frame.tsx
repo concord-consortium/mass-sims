@@ -104,6 +104,12 @@ export function SimulationFrame({
     setInfoOpen((open) => !open);
   };
 
+  // Tears down an in-progress drag's window listeners. Held in a ref so it can be invoked both
+  // on pointerup (normal end) and on unmount (if the frame is removed mid-drag, before any
+  // pointerup fires — otherwise those window listeners would outlive the component).
+  const dragCleanupRef = useRef<(() => void) | null>(null);
+  useEffect(() => () => dragCleanupRef.current?.(), []);
+
   // Pointer-driven drag from the header. We attach the move/up listeners to the window for the
   // duration of the gesture (rather than pointer capture) so it keeps tracking even if the
   // pointer leaves the header. A pointerdown on the close button does not start a drag.
@@ -117,12 +123,16 @@ export function SimulationFrame({
     const onMove = (move: PointerEvent) => {
       setDragOffset({ x: originX + (move.clientX - startX), y: originY + (move.clientY - startY) });
     };
-    const onUp = () => {
+    // `stop` is both the pointerup handler and the stored unmount-cleanup, so the
+    // remove-listener logic lives in exactly one place.
+    const stop = () => {
       window.removeEventListener("pointermove", onMove);
-      window.removeEventListener("pointerup", onUp);
+      window.removeEventListener("pointerup", stop);
+      dragCleanupRef.current = null;
     };
     window.addEventListener("pointermove", onMove);
-    window.addEventListener("pointerup", onUp);
+    window.addEventListener("pointerup", stop);
+    dragCleanupRef.current = stop;
   };
 
   return (

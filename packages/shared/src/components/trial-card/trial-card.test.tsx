@@ -27,6 +27,17 @@ describe("TrialCard", () => {
     }
   });
 
+  it("renders '?' as the badge for an out-of-bounds index", () => {
+    const { getByText, getByRole } = render(
+      <TrialCard index={10} selected={false} onSelect={() => {}} onReset={() => {}}>
+        content
+      </TrialCard>,
+    );
+    expect(getByText("?")).toBeInTheDocument();
+    // The accessible name falls back too, so the card stays labeled rather than blank.
+    expect(getByRole("button", { name: "Trial ?" })).toBeInTheDocument();
+  });
+
   it("renders children as the card's body content", () => {
     const { getByText } = render(
       <TrialCard index={0} selected={false} onSelect={() => {}} onReset={() => {}}>
