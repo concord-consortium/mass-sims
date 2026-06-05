@@ -9,6 +9,7 @@ export {
   SimulationFrame,
   type SimulationFrameProps,
 } from "./components/simulation-frame/simulation-frame";
+export { TrialCard, type TrialCardProps } from "./components/trial-card/trial-card";
 
 // Hooks
 export { useCurrentAndPrevious } from "./hooks/use-current-and-previous";
