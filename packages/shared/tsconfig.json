@@ -6,9 +6,9 @@
     "declaration": true,
     "declarationMap": true,
     "noEmit": true,
-    // Restricts ambient types to vite/client (for typed *.module.scss / asset imports in
-    // components). Note: an explicit list opts OUT of auto-including other @types/* — add
-    // them here if needed (e.g. "node").
+    // Restricts ambient types to vite/client, which declares the side-effect `*.scss` (and
+    // asset) module imports components use (e.g. `import "./section.scss"`). Note: an explicit
+    // list opts OUT of auto-including other @types/* — add them here if needed (e.g. "node").
     "types": ["vite/client"]
   },
   "include": ["src/**/*"],

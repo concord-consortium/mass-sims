@@ -54,8 +54,9 @@ describe("Section", () => {
         body
       </Section>,
     );
-    // The SCSS-module class is absent under `css: false`, but the plain-string
-    // external class is present — exactly what a slot uses to assign a grid-area.
+    // Under `css: false` no styles are applied, but the plain class-name strings are still
+    // on the element (both `section` and the external `external-area`), so `toHaveClass`
+    // works — and the external class is exactly what a slot uses to assign a grid-area.
     expect(getByRole("region", { name: "Trials" })).toHaveClass("external-area");
   });
 });

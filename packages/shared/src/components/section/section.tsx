@@ -22,6 +22,10 @@ export function Section({ title, instruction, className, children }: SectionProp
   return (
     <section className={clsx("section", className)} aria-labelledby={titleId}>
       <div className="chip">
+        {/* Heading is fixed at <h2>. Sub-sections nested inside the Data slot currently also
+            render <h2> under the Data region's own <h2> (flat heading outline). A configurable
+            heading level (<h3> for sub-sections) is deferred to the Data sub-section variant —
+            an a11y/heading-hierarchy concern, see docs/simulation-frame-plan.md deferred list. */}
         <h2 id={titleId} className="title">
           {title}
         </h2>

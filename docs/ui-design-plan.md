@@ -71,7 +71,7 @@ Column maxes are tightened from earlier drafts so the layout still has a comfort
 Each region renders inside a `<Section>` wrapper — a rounded container with the labeled title chip notched into its top edge. The chip is a real DOM element (not pure decoration) so that screen readers announce the region's title and `aria-labelledby` can point to it.
 
 ```tsx
-<Section title="Trials" id="trials">
+<Section title="Trials">
   ...vertical list of trial rows...
 </Section>
 ```
