@@ -1,0 +1,11 @@
+@use "@concord-consortium/mass-sims-shared/styles/tokens" as tokens;
+
+.placeholder {
+  align-items: center;
+  color: tokens.$color-text-muted;
+  display: flex;
+  font-family: tokens.$font-family-base;
+  font-size: tokens.$font-size-base;
+  height: 100%;
+  justify-content: center;
+}
