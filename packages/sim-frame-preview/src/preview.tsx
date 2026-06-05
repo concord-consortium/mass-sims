@@ -1,4 +1,5 @@
-import { Section, SimulationFrame } from "@concord-consortium/mass-sims-shared";
+import { DataSubsection, SimulationFrame, TrialCard } from "@concord-consortium/mass-sims-shared";
+import { useState } from "react";
 
 // The four exact widths from ui-design-plan.md §6. Height is fixed at 562 px by the frame.
 const WIDTHS: Array<{ px: number; label: string; note?: string }> = [
@@ -12,21 +13,12 @@ const WIDTHS: Array<{ px: number; label: string; note?: string }> = [
   },
 ];
 
-const PLACEHOLDER_TRIALS = [1, 2, 3, 4, 5, 6, 7, 8];
-
-function PlaceholderTrials() {
-  return (
-    <>
-      {PLACEHOLDER_TRIALS.map((n) => (
-        <div key={n} style={{ padding: 8, borderBottom: "1px solid #ddd" }}>
-          Trial {n}
-        </div>
-      ))}
-    </>
-  );
-}
+// Eight placeholder trials (A–H), within the TrialCard A–J cap. Letters double as stable keys.
+const PLACEHOLDER_TRIAL_LETTERS = ["A", "B", "C", "D", "E", "F", "G", "H"];
 
 function FrameAtWidth({ px, label, note }: { px: number; label: string; note?: string }) {
+  const [selectedIndex, setSelectedIndex] = useState(0);
+
   return (
     <figure style={{ margin: "0 0 32px" }}>
       <figcaption style={{ fontFamily: "system-ui", fontSize: 13, marginBottom: 6 }}>
@@ -37,11 +29,27 @@ function FrameAtWidth({ px, label, note }: { px: number; label: string; note?: s
       <div style={{ width: px, maxWidth: "100%", overflow: "auto", border: "1px solid #999" }}>
         <SimulationFrame
           simTitle="Preview Sim"
-          tagline="Placeholder tagline"
+          tagline="An interactive placeholder simulation"
           infoModalContent={<p>Placeholder info modal content.</p>}
         >
           <SimulationFrame.Trials>
-            <PlaceholderTrials />
+            {PLACEHOLDER_TRIAL_LETTERS.map((letter, i) => (
+              <TrialCard
+                key={letter}
+                index={i}
+                selected={i === selectedIndex}
+                onSelect={() => setSelectedIndex(i)}
+                onReset={() => {
+                  /* placeholder — no real state */
+                }}
+                // Static preview: no model to run a trial, so the reset stays disabled —
+                // mirrors the demo's initial state. Enable-after-run logic arrives in Phase 2b.
+                resetDisabled={true}
+              >
+                <span>Placeholder</span>
+                <span>data</span>
+              </TrialCard>
+            ))}
           </SimulationFrame.Trials>
           <SimulationFrame.Simulation instruction="Placeholder instruction">
             <div
@@ -56,8 +64,8 @@ function FrameAtWidth({ px, label, note }: { px: number; label: string; note?: s
             </div>
           </SimulationFrame.Simulation>
           <SimulationFrame.Data>
-            <Section title="Sub-section A">data placeholder A</Section>
-            <Section title="Sub-section B">data placeholder B</Section>
+            <DataSubsection title="Sub-section A">data placeholder A</DataSubsection>
+            <DataSubsection title="Sub-section B">data placeholder B</DataSubsection>
           </SimulationFrame.Data>
         </SimulationFrame>
       </div>

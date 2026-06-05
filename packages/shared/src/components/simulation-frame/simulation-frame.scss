@@ -109,6 +109,13 @@
   // Grid-area assignments applied to each slot's Section root (a direct child) via className.
   .trials-area {
     grid-area: trials;
+
+    .trials-list {
+      align-items: flex-start;
+      display: flex;
+      flex-direction: column;
+      gap: tokens.$column-gap;
+    }
   }
   .simulation-area {
     grid-area: simulation;

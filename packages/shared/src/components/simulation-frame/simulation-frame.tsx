@@ -31,7 +31,7 @@ interface SimulationSlotProps extends SlotProps {
 function Trials({ children, title = "Trials" }: SlotProps) {
   return (
     <Section title={title} className="trials-area">
-      {children}
+      <div className="trials-list">{children}</div>
     </Section>
   );
 }
