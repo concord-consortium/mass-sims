@@ -1,7 +1,7 @@
 import clsx from "clsx";
 import type { ReactNode } from "react";
 
-import resetIcon from "./reset-icon.svg";
+import resetIcon from "../../assets/reset-icon.svg";
 import "./trial-card.scss";
 
 const LETTERS = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J"] as const;

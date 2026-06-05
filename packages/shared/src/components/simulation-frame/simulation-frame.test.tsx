@@ -152,7 +152,7 @@ describe("SimulationFrame", () => {
       </SimulationFrame>,
     );
     fireEvent.click(getByRole("button", { name: /about/i }));
-    expect(getByRole("dialog")).toHaveAttribute("aria-modal", "true");
+    expect(getByRole("dialog")).toBeInTheDocument();
     expect(getByText("about this sim")).toBeInTheDocument();
   });
 
@@ -183,7 +183,7 @@ describe("SimulationFrame", () => {
     expect(queryByRole("dialog")).not.toBeInTheDocument();
   });
 
-  it("portals the modal outside the .simulation-frame element (to document.body)", () => {
+  it("renders the About panel inside the frame, anchored top-right with no backdrop scrim", () => {
     const { container, getByRole } = render(
       <SimulationFrame simTitle="S" tagline="t" infoModalContent={<p>about</p>}>
         <SimulationFrame.Trials>a</SimulationFrame.Trials>
@@ -192,12 +192,73 @@ describe("SimulationFrame", () => {
       </SimulationFrame>,
     );
     fireEvent.click(getByRole("button", { name: /about/i }));
-    const frame = container.querySelector(".simulation-frame");
     const dialog = getByRole("dialog");
-    // The dialog must NOT be a descendant of the frame (otherwise a `position: fixed`
-    // ancestor with a transform/filter/contain could trap it), but must be in the document.
-    expect(frame?.contains(dialog)).toBe(false);
-    expect(document.body.contains(dialog)).toBe(true);
+    // No full-screen scrim wraps the dialog — the sim content behind it stays interactive.
+    expect(container.querySelector(".simulation-frame-info-overlay")).toBeNull();
+    // The panel lives INSIDE the frame so its `position: absolute` anchors to the frame
+    // (which is `position: relative`), not the page — keeping it placed per-frame.
+    const frame = container.querySelector(".simulation-frame");
+    expect(frame?.contains(dialog)).toBe(true);
+  });
+
+  it("renders a draggable header handle on the About panel", () => {
+    const { container, getByRole } = render(
+      <SimulationFrame simTitle="S" tagline="t" infoModalContent={<p>about</p>}>
+        <SimulationFrame.Trials>a</SimulationFrame.Trials>
+        <SimulationFrame.Simulation>b</SimulationFrame.Simulation>
+        <SimulationFrame.Data>c</SimulationFrame.Data>
+      </SimulationFrame>,
+    );
+    fireEvent.click(getByRole("button", { name: /about/i }));
+    // The drag handle is the panel's header, identified by class.
+    expect(container.querySelector(".modal-drag-handle")).not.toBeNull();
+  });
+
+  it("opens the About panel at its default position (no drag offset applied)", () => {
+    const { getByRole } = render(
+      <SimulationFrame simTitle="S" tagline="t" infoModalContent={<p>about</p>}>
+        <SimulationFrame.Trials>a</SimulationFrame.Trials>
+        <SimulationFrame.Simulation>b</SimulationFrame.Simulation>
+        <SimulationFrame.Data>c</SimulationFrame.Data>
+      </SimulationFrame>,
+    );
+    fireEvent.click(getByRole("button", { name: /about/i }));
+    // Drag position is a transform offset reset to 0,0 on each open, so the panel always
+    // reappears at its CSS-anchored default rather than wherever it was last dragged.
+    expect(getByRole("dialog")).toHaveStyle({ transform: "translate(0px, 0px)" });
+  });
+
+  it("toggles the About panel closed when the About button is clicked again", () => {
+    const { getByRole, queryByRole } = render(
+      <SimulationFrame simTitle="S" tagline="t" infoModalContent={<p>about</p>}>
+        <SimulationFrame.Trials>a</SimulationFrame.Trials>
+        <SimulationFrame.Simulation>b</SimulationFrame.Simulation>
+        <SimulationFrame.Data>c</SimulationFrame.Data>
+      </SimulationFrame>,
+    );
+    const aboutButton = getByRole("button", { name: /about/i });
+    fireEvent.click(aboutButton);
+    expect(getByRole("dialog")).toBeInTheDocument();
+    // Clicking About again closes the open panel (matches the demo's toggle behavior).
+    fireEvent.click(aboutButton);
+    expect(queryByRole("dialog")).not.toBeInTheDocument();
+  });
+
+  it("nudges the About panel with Alt+Arrow keyboard dragging", () => {
+    const { getByRole } = render(
+      <SimulationFrame simTitle="S" tagline="t" infoModalContent={<p>about</p>}>
+        <SimulationFrame.Trials>a</SimulationFrame.Trials>
+        <SimulationFrame.Simulation>b</SimulationFrame.Simulation>
+        <SimulationFrame.Data>c</SimulationFrame.Data>
+      </SimulationFrame>,
+    );
+    fireEvent.click(getByRole("button", { name: /about/i }));
+    const dialog = getByRole("dialog");
+    // Alt+ArrowRight moves +10px on x; Alt+Shift+ArrowDown then adds +40px on y.
+    fireEvent.keyDown(dialog, { key: "ArrowRight", altKey: true });
+    expect(dialog).toHaveStyle({ transform: "translate(10px, 0px)" });
+    fireEvent.keyDown(dialog, { key: "ArrowDown", altKey: true, shiftKey: true });
+    expect(dialog).toHaveStyle({ transform: "translate(10px, 40px)" });
   });
 
   it("does not move focus to the About button on initial render", () => {
