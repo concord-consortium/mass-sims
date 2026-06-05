@@ -12,10 +12,10 @@
     "subheader  subheader  subheader"
     "trials     simulation data";
   grid-template-columns:
-    minmax(tokens.$column-trials-min-width, tokens.$column-trials-max-width)
+    tokens.$column-trials-width
     minmax(0, 1fr)
-    minmax(tokens.$column-data-min-width, tokens.$column-data-max-width);
-  grid-template-rows: tokens.$frame-projectbar-height tokens.$frame-subheader-height 1fr;
+    tokens.$column-data-width;
+  grid-template-rows: tokens.$frame-titlebar-height 1fr;
   height: tokens.$frame-height;
   padding: tokens.$space-2;
   width: 100%;
@@ -84,7 +84,7 @@
 
   .modal {
     background: tokens.$color-surface;
-    border-radius: tokens.$radius-section;
+    border-radius: tokens.$radius-lg;
     box-sizing: border-box;
     max-height: 80%; // PLACEHOLDER (no token yet)
     max-width: 480px; // PLACEHOLDER (no token yet)

@@ -8,19 +8,17 @@
 // it from any .scss file and reference values via the module namespace, e.g.:
 //
 //   @use "@concord-consortium/mass-sims-shared/styles/tokens" as tokens;
-//   .my-component { color: tokens.$color-primary; }
+//   .my-component { color: tokens.$color-text; }
 //
 // The runtime CSS custom properties (the `:root { --foo: ... }` block) live in
 // `global.scss`, which is imported exactly once per sim from the entry point
 // so the `:root` block isn't duplicated across separately-compiled SCSS modules.
 //
-// See docs/ui-design-plan.md §13 for the design-token convention and §6-8 for
-// the layout dimensions referenced here.
-//
-// Starting palette inherited from FOSS (blue / orange / green / purple) so the
-// initial sims have something to render against; the designer will tune values
-// as design specs arrive. Prefer the SEMANTIC ALIASES (`$color-*`) over raw
-// palette names in component styles so a palette swap stays a one-file change.
+// Values below are derived from the first realized design (Bananas, AP Full
+// Width — see https://models-resources.concord.org/demos/branch/masssims/ and
+// docs/ui-design-plan.md §13). They supersede the earlier FOSS-palette
+// placeholder. Sim-specific accent colors (e.g. Bananas' healthy/infected
+// swatches) live in the sim, not here.
 // =============================================================================
 
 
@@ -28,68 +26,51 @@
 // COLOR PALETTE (raw — prefer semantic aliases below in component code)
 // =============================================================================
 
-// Blues
-$blue-primary:           #005f99;
-$blue-primary-50:        #7fb0cc;
-$blue-accent:            #01ace4;
-$light-blue-accent:      #70cfef;
-$light-blue-tint-10:     #f0fafd;
-$light-blue-tint-18:     #e5f6fc;
-$light-blue-tint-25:     #dbf3fb;
-$light-blue-tint-50:     #7fafcc;
-
-// Purples
-$purple-accent:          #4e2c82;
-$purple-accent-50:       rgba($purple-accent, 0.5);
-$purple-accent-25:       rgba($purple-accent, 0.25);
-$purple-tint:            #e0d3e8;
-$purple-tint-10:         #f8f6fa;
-$purple-tint-25:         #f0e9f4;
-$purple-tint-50:         #e0d3e8;
-
-// Oranges
-$orange-accent:          #eb6d00;
-$orange-tint-50:         #f5b67f;
-
-// Greens
-$green-accent:           #00a39e;
-$green-tint-50:          #7fd1ce;
-$dark-green-accent:      #004d4b;
-$dark-green-tint-50:     #7fa6a5;
-
-// Neutrals
-$gray-5:                 #f2f2f2;
+$gray-text:              #333;
 $gray-text-muted:        #555;
+$gray-border-subtle:     #ccc;
+$gray-surface-active:    #d0d0d0;
+$gray-trial-badge:       #e0e0e0;
+$gray-panel-bg:          #e8e8e8;
+$gray-surface-hover:     #f0f0f0;
 $black:                  #000;
 $white:                  #fff;
+$focus-blue:             #005FCC;
 
 
 // =============================================================================
 // SEMANTIC COLOR ALIASES (prefer these in component code)
 // =============================================================================
 
-$color-primary:          $blue-primary;
-$color-accent:           $blue-accent;
-$color-surface:          $white;
-$color-surface-muted:    $gray-5;
-$color-text:             $black;
-$color-text-muted:       $gray-text-muted;
-$color-border:           $gray-5;
-$color-focus-outline:    $light-blue-accent;
+$color-text:                       $gray-text;
+$color-text-muted:                 $gray-text-muted;
+$color-surface:                    $white;
+$color-surface-muted:              $gray-panel-bg;
+$color-surface-hover:              $gray-surface-hover;
+$color-surface-active:             $gray-surface-active;
+$color-border:                     $gray-text-muted;          // 2 px strong border
+$color-border-subtle:              $gray-border-subtle;       // 1 px modal header rule
+$color-divider:                    $gray-text-muted;          // 1 px DataSubsection rule
+$color-focus-outline:              $focus-blue;
+$color-trial-badge-bg:             $gray-trial-badge;
+$color-trial-badge-bg-selected:    $black;
 
 
 // =============================================================================
 // TYPOGRAPHY
 // =============================================================================
 
-$font-family-base:       "Roboto", system-ui, -apple-system, sans-serif;
+$font-family-base:       "Lato", system-ui, -apple-system, sans-serif;
 $font-family-condensed:  "Roboto Condensed", system-ui, -apple-system, sans-serif;
 
 $font-size-xs:           12px;
 $font-size-sm:           14px;
 $font-size-base:         16px;
 $font-size-lg:           18px;
-$font-size-xl:           22px;
+$font-size-xl:           24px;
+
+$line-height-sm:         20px;   // pairs with 16 px
+$line-height-lg:         28px;   // pairs with 24 px
 
 
 // =============================================================================
@@ -107,44 +88,69 @@ $space-8:                64px;
 
 
 // =============================================================================
-// LAYOUT DIMENSIONS (see docs/ui-design-plan.md §6-8)
+// LAYOUT DIMENSIONS (see docs/ui-design-plan.md §6-8, §9, §13)
 // =============================================================================
 
 // The four target widths and the single fixed height.
-$frame-height:               562px;
-$frame-width-ap-full:        1044px;
-$frame-width-standalone:     1024px;
-$frame-width-ap-2col-hidden: 989px;
-$frame-width-ap-2col-shown:  676px;
+$frame-height:                       562px;
+$frame-width-ap-full:                1044px;
+$frame-width-standalone:             1024px;
+$frame-width-ap-2col-hidden:         989px;
+$frame-width-ap-2col-shown:          676px;
 
-// Wide / narrow mode switch breakpoint.
-$frame-narrow-breakpoint:    900px;
+// Wide / narrow mode switch breakpoint (narrow-mode behavior still being designed).
+$frame-narrow-breakpoint:            900px;
 
-// Three-column proportions (current draft; designer will tune).
-$column-trials-min-width:    160px;
-$column-trials-max-width:    200px;
-$column-data-min-width:      260px;
-$column-data-max-width:      320px;
+// Single header row — there is no project bar in the sim (AP renders that).
+$frame-titlebar-height:              50px;
 
-// Frame header chrome heights (draft; ui-design-plan.md §9 — designer will tune).
-// Suppression of these rows when embedded in Activity Player is deferred (Q31).
-$frame-projectbar-height:    40px;
-$frame-subheader-height:     48px;
+// Concrete column widths at 1044 (AP Full Width). Other widths reuse the same
+// trials/data fixed widths and let the simulation column flex.
+$column-trials-width:                155px;
+$column-simulation-width-ap-full:    564px;
+$column-data-width:                  285px;
+
+// Body region around the three-column grid.
+$column-gap:                         10px;
+$body-padding:                       10px;
+
+// Section title chip (notched overlay on the panel's top edge).
+$section-chip-height:                36px;
+$section-chip-overlap:               17px;
 
 
 // =============================================================================
 // CORNER RADII
 // =============================================================================
 
-$radius-sm:              4px;
-$radius-md:              8px;
-$radius-lg:              12px;
-$radius-section:         15px;   // Section component rounded corner
+$radius-sm:              4px;    // small inner badges (trial-card letter)
+$radius-md:              6px;    // buttons (About, trial cards, sim buttons)
+$radius-lg:              8px;    // section panel, section chip, info modal
+
+
+// =============================================================================
+// BORDERS
+// =============================================================================
+
+$border-strong:          2px solid $color-border;          // Section, button, card, chip
+$border-subtle:          1px solid $color-border-subtle;   // modal header rule
+$border-divider:         1px solid $color-divider;         // DataSubsection separator
 
 
 // =============================================================================
 // FOCUS / ACCESSIBILITY
 // =============================================================================
 
-$focus-outline:          4px solid $color-focus-outline;
+$focus-outline:          2px solid $color-focus-outline;
+$focus-outline-offset:   2px;
 $touch-target-min:       44px;   // WCAG / iOS / Material minimum
+
+
+// =============================================================================
+// INFO MODAL (About) — current dimensions; draggable-panel behavior implemented in Task 7
+// =============================================================================
+
+$modal-info-width:                   400px;
+$modal-info-max-height-pct:          70%;
+$modal-info-offset-top:              50px;
+$modal-info-offset-right:            10px;

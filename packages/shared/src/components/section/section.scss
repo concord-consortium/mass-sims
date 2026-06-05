@@ -7,9 +7,9 @@
 // VISUAL TREATMENT IS A PLACEHOLDER (see docs/simulation-frame-plan.md). Final chip
 // styling, background, shadow, and padding scale arrive via tokens.scss when designs land.
 .section {
-  background: tokens.$color-surface;
+  background: tokens.$color-surface-muted;
   border: 1px solid tokens.$color-border; // PLACEHOLDER — designer will replace
-  border-radius: tokens.$radius-section;
+  border-radius: tokens.$radius-lg;
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
