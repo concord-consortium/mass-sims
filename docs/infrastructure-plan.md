@@ -1,6 +1,6 @@
 # Mass Sims — Infrastructure Plan
 
-**Status:** Phase 0 complete; Phase 1 in progress (shared library v0 — first utility hooks ported, Vitest set up). Plan kept in sync as Phase 0 lessons are absorbed.
+**Status:** Phase 0 complete; Phase 1 in progress (shared library v0 — utility hooks + design tokens ported, Vitest set up; `SimulationFrame`/`Section` skeleton + info modal built to the §3 API, with a non-deployed four-width × 562 preview. Structure complete; final visual treatment and narrow mode deferred). Plan kept in sync as Phase 0/1 lessons are absorbed.
 **Date:** May 26, 2026
 **Author:** Plan assembled by Claude based on analysis of `foss` and `dese-models`
 **Scope:** Tooling, file structure, dependencies, build, CI/CD, hooks API, deployment, transferability. **Visual design lives in a separate document — [UI Design Plan](./ui-design-plan.md)** — and iterates on a different cadence.
@@ -14,7 +14,7 @@
 
 The new project is a monorepo that hosts a growing set of educational science simulations. **At least four are planned for the initial release, but the collection is expected to grow significantly over time — potentially to 20+ simulations.** That growth expectation shapes several design decisions throughout this plan (scaffolding, CI structure, shared-library API stability, root index page generation), even though it does not change the starting tooling. Each simulation is a standalone, statically deployed web app that shares a common component library and a "starter simulation" template. The project follows the FOSS repo's overall structural model (it is already free of the features we want to exclude), pulls selected performance and code-quality improvements from DESE, and upgrades the tooling baseline to modern (2026) defaults.
 
-The shared library exposes a `<SimulationFrame>` compound component with three named slots — **Trials**, **Stage**, **Data** — that every simulation drops its content into. Visual specifics (layout, dimensions, regions, responsive behavior) live in the [UI Design Plan](./ui-design-plan.md); the API contract that's stable enough to build against is in §3 of this plan.
+The shared library exposes a `<SimulationFrame>` compound component with three named slots — **Trials**, **Simulation**, **Data** — that every simulation drops its content into. Visual specifics (layout, dimensions, regions, responsive behavior) live in the [UI Design Plan](./ui-design-plan.md); the API contract that's stable enough to build against is in §3 of this plan.
 
 ### High-level recommendation
 
@@ -28,7 +28,7 @@ The shared library exposes a `<SimulationFrame>` compound component with three n
 | Package manager | **Yarn 1.x workspaces** (unchanged from FOSS) | Avoid adding a third package manager (pnpm) to the CC toolkit; existing repos use Yarn. |
 | Monorepo orchestrator | **Lerna 4** (unchanged from FOSS) | Works for our scale (~6 packages). Turborepo is easy to layer in later if package count grows past ~10. |
 | UI component library | **MUI v9** with the new non-Emotion engine (or skip MUI entirely — see Open Questions) | v9 decouples styling so we are not forced into Emotion |
-| Styling | SCSS Modules (continuation of existing approach) | Both FOSS and DESE already use this; no reason to churn |
+| Styling | Plain (global) SCSS, side-effect imported, scoped under a per-component root class (continuation of existing approach) | Matches the house convention (DESE uses ~450 plain `.scss` files, zero CSS Modules); no reason to churn. *(Earlier drafts said "SCSS Modules" — corrected once DESE's actual convention was verified during Phase 1.)* |
 | Unit testing | **Vitest** (replacing Jest) | Comes essentially free with Vite — same transform pipeline. Running Jest with Vite is more work than just using Vitest. |
 | E2E testing | **Playwright** (replacing Cypress) | Already the cross-org migration target; not counted toward the change budget. |
 | Lint + format | **Biome** (replacing ESLint; adds formatting we didn't have) | Already in production at CC; Engineer 2 confirms "crazy fast." One tool instead of two configs per package. |
@@ -60,7 +60,7 @@ mass-sims/                              ← repo root (concord-consortium/mass-s
 │   │   │   ├── components/
 │   │   │   │   ├── simulation-frame/   ← 3-column layout shell
 │   │   │   │   ├── section/            ← labeled-section wrapper (title chip + rounded body)
-│   │   │   │   ├── stage/              ← stage region primitives
+│   │   │   │   ├── simulation/         ← simulation region primitives
 │   │   │   │   ├── trials-list/        ← vertical scrollable trials list + trial row
 │   │   │   │   ├── data-panel/         ← data region (table, charts, sub-sections)
 │   │   │   │   ├── controls/           ← buttons, sliders, toggles, selects
@@ -90,9 +90,9 @@ mass-sims/                              ← repo root (concord-consortium/mass-s
 │   └── starter/                        ← THE re-usable starter simulation
 │       ├── src/
 │       │   ├── components/
-│       │   │   ├── app.tsx             ← composes SimulationFrame + trials/stage/data
-│       │   │   ├── simulation-view.tsx ← stage content (canvas/SVG/Three)
-│       │   │   ├── controls.tsx        ← stage controls (below the viz)
+│       │   │   ├── app.tsx             ← composes SimulationFrame + trials/simulation/data
+│       │   │   ├── simulation-view.tsx ← simulation region content (canvas/SVG/Three)
+│       │   │   ├── controls.tsx        ← simulation region controls (below the viz)
 │       │   │   ├── trial-row.tsx       ← single trial item in the vertical list
 │       │   │   └── data-view.tsx       ← data panel content (one or more sub-sections)
 │       │   ├── model.ts                ← physics/logic
@@ -143,7 +143,7 @@ Built in `packages/shared/src/components/simulation-frame/`. Compound API with t
   projectName="Mass Sims"
   simTitle="Bananas"
   tagline="Short description of the sim"
-  info={<BananasInfo />}
+  infoModalContent={<BananasInfo />}
 >
   <SimulationFrame.Trials>
     {trials.map(t => (
@@ -151,10 +151,10 @@ Built in `packages/shared/src/components/simulation-frame/`. Compound API with t
     ))}
   </SimulationFrame.Trials>
 
-  <SimulationFrame.Stage instruction="Select two parents to begin">
+  <SimulationFrame.Simulation instruction="Select two parents to begin">
     <SimulationView />
     <SimulationControls />
-  </SimulationFrame.Stage>
+  </SimulationFrame.Simulation>
 
   <SimulationFrame.Data>
     <Section title="Offspring Phenotypes">{...}</Section>
@@ -163,19 +163,19 @@ Built in `packages/shared/src/components/simulation-frame/`. Compound API with t
 </SimulationFrame>
 ```
 
-The three regions are **Trials** (left), **Stage** (center), and **Data** (right). Each is wrapped internally in a `<Section>` component (also exported) that renders a labeled title chip.
+The three regions are **Trials** (left), **Simulation** (center), and **Data** (right). Each is wrapped internally in a `<Section>` component (also exported) that renders a labeled title chip. The canonical slot label can be overridden per-sim via `<SimulationFrame.Simulation title="Lab">` etc. — slot *identity* (component name, grid-area) stays canonical; only the visible label diverges.
 
 ### `<Section>` component
 
 Exported from the shared library; used by all three frame regions and by sims that want to add sub-sections inside the Data slot.
 
 ```tsx
-<Section title="Offspring Phenotypes" id="offspring">
+<Section title="Offspring Phenotypes">
   ...content...
 </Section>
 ```
 
-The chip is a real DOM element, not decoration, so `aria-labelledby` and screen readers behave correctly.
+The chip is a real DOM element, not decoration, so `aria-labelledby` and screen readers behave correctly. Section generates a per-instance heading id via `useId()`, so multiple sections (even multiple frames) on one page stay uniquely labeled with no caller-supplied id.
 
 ### Hooks contract
 
@@ -201,7 +201,7 @@ Exported from `packages/shared/src/utils/`:
 
 ### Design tokens
 
-`packages/shared/src/styles/tokens.scss` is the single source of truth for color, spacing, typography, corner radii, section-chip dimensions, and the `--touch-target-min` token. The UI Design Plan owns the actual values; this plan owns the convention that nothing outside `tokens.scss` should hard-code these. Component `.scss` files `@use` the tokens module for variable access; a sibling `global.scss` (imported once per sim from its entry point) is the single place that emits the runtime `:root { --foo: ... }` mirror — splitting tokens from globals prevents the `:root` block from being duplicated across separately-compiled SCSS modules in the final bundle.
+`packages/shared/src/styles/tokens.scss` is the single source of truth for color, spacing, typography, corner radii, section-chip dimensions, and the `--touch-target-min` token. The UI Design Plan owns the actual values; this plan owns the convention that nothing outside `tokens.scss` should hard-code these. Component `.scss` files `@use` the tokens module for variable access; a sibling `global.scss` (imported once per sim from its entry point) is the single place that emits the runtime `:root { --foo: ... }` mirror — splitting tokens from globals prevents the `:root` block from being duplicated across separately-compiled component stylesheets in the final bundle.
 
 ### What's deliberately *not* in this section
 
@@ -323,7 +323,7 @@ Target versions, current as of May 2026. Pin minor where stability matters, allo
 | `gtag.js` (inline, no npm dep) | from Google CDN | GA4 transport. Loaded via `<script>` in each sim's `index.html` template; property ID injected at build time from `VITE_GA_PROPERTY_ID`. |
 | `focus-trap-react` | latest | Dialog focus trap |
 | `clsx` | latest | Tiny class joiner |
-| `sass`, `postcss`, `autoprefixer` | latest | SCSS Modules + browser prefix |
+| `sass`, `postcss`, `autoprefixer` | latest | SCSS compilation + browser prefix |
 | `@axe-core/react` | latest | Dev-only |
 
 Removed compared to FOSS/DESE: `webpack` and all loaders, `jest` and `ts-jest`, `cypress`, `eslint` and all eslint plugins (replaced by Biome), `react-howler`, the entire translation tooling, `@material-ui/core@^4` (DESE), `@svgr/webpack` (replaced by `vite-plugin-svgr`).
@@ -551,8 +551,10 @@ Create the `concord-consortium/mass-sims` repo. Set up the empty Yarn + Lerna mo
 **Phase 1 — Shared library v0 (≈ 1-2 weeks)**
 Port the smaller utility hooks and design tokens from FOSS/DESE. Build the three-region `SimulationFrame` component fresh — slot API and `<Section>` wrapper per §3, visual specifics per the [UI Design Plan](./ui-design-plan.md). Implement `useReloadWarning`. Port the FOSS palette into `tokens.scss` with token-only access (plus the global stylesheet that mirrors selected tokens as CSS custom properties). Set up Vitest + a couple of smoke tests. Confirm rendering at the four target widths × 562 px from the UI plan.
 
+> **Status (Phase 1 build):** `Section` and the `SimulationFrame` compound component (header + Trials/Simulation/Data slots + wide-mode grid + accessible info modal) are built to the §3 API and exported from the shared barrel; the four-width × 562 render check is satisfied by the non-deployed `packages/sim-frame-preview` workspace. Utility hooks, tokens, and `global.scss` are in place. **Deferred:** narrow-mode (676 px) collapse behavior, final Section/chip/region visual treatment, and designer-tuned slot proportions. Styling is plain (global) SCSS scoped under a per-component root class (the verified house convention — see the corrected Styling note in §1); the info-modal prop is `infoModalContent`. See [docs/simulation-frame-plan.md](./simulation-frame-plan.md).
+
 **Phase 2 — Starter simulation + iframe embedding + logging + scaffolding (≈ 2-3 weeks)**
-Build `packages/starter` as a minimal but real simulation that exercises trials list + stage + data panel. Wire `useModelState`, `useSimulationRunner`, `useFrameLoop`. Implement `useIframePhone` and prove a round-trip with a local Activity Player smoke test (or a minimal harness page). Implement `useLogEvent` with the dual-transport design (lara-interactive-api + GA4 via inline `gtag.js`) — wire the shared controls (`Button`, `Slider`, `Switch`, `Select`, `Checkbox`) to emit log events automatically. Continuous controls emit on commit only (`pointerup`/`change`), not during drag. Inject `VITE_GA_PROPERTY_ID` into each sim's `index.html` template; verify GA is fully disabled when the env var is empty. End-to-end verification: logs reach portal-report *and* events appear in GA4 DebugView for the configured property. Confirm `yarn workspace starter dev` boots, hot-reloads, builds. Ship to a "branch" S3 path and verify it loads inside Activity Player as an iframe interactive. Build `scripts/new-sim.ts`, `scripts/gen-index.ts`, and `scripts/gen-workflows.ts` along with their CI verify-mode checks — these unlock easy growth toward 20+ sims and should exist before the first real sim, not after the fifth.
+Build `packages/starter` as a minimal but real simulation that exercises trials list + simulation region + data panel. Wire `useModelState`, `useSimulationRunner`, `useFrameLoop`. Implement `useIframePhone` and prove a round-trip with a local Activity Player smoke test (or a minimal harness page). Implement `useLogEvent` with the dual-transport design (lara-interactive-api + GA4 via inline `gtag.js`) — wire the shared controls (`Button`, `Slider`, `Switch`, `Select`, `Checkbox`) to emit log events automatically. Continuous controls emit on commit only (`pointerup`/`change`), not during drag. Inject `VITE_GA_PROPERTY_ID` into each sim's `index.html` template; verify GA is fully disabled when the env var is empty. End-to-end verification: logs reach portal-report *and* events appear in GA4 DebugView for the configured property. Confirm `yarn workspace starter dev` boots, hot-reloads, builds. Ship to a "branch" S3 path and verify it loads inside Activity Player as an iframe interactive. Build `scripts/new-sim.ts`, `scripts/gen-index.ts`, and `scripts/gen-workflows.ts` along with their CI verify-mode checks — these unlock easy growth toward 20+ sims and should exist before the first real sim, not after the fifth.
 
 **Phase 3 — Port the controls and viz components (≈ 2-3 weeks)**
 Port FOSS/DESE's V2 controls (sliders, buttons, switches, selects, checkboxes), the table component (on Tanstack Table v8), and a graphing primitive. Add unit tests for each. Add `@axe-core/react` and resolve any flagged issues.
@@ -616,7 +618,7 @@ A decision log. Items numbered here so the gaps reflect what's been delegated to
 
 ### UI and product
 
-12-18, 14a. *UI / visual design decisions (stage region layout, data panel position, trials list behavior, section title chips, run-history persistence, default color palette, light/dark mode, devices and viewport) → moved to [UI Design Plan §14](./ui-design-plan.md). The contract-level requirements they imply on the shared library (`<SimulationFrame>` slots, `<Section>` component, `useReloadWarning` hook, `tokens.scss` / `global.scss` token system) are captured in §3 of this plan.*
+12-18, 14a. *UI / visual design decisions (simulation region layout, data panel position, trials list behavior, section title chips, run-history persistence, default color palette, light/dark mode, devices and viewport) → moved to [UI Design Plan §14](./ui-design-plan.md). The contract-level requirements they imply on the shared library (`<SimulationFrame>` slots, `<Section>` component, `useReloadWarning` hook, `tokens.scss` / `global.scss` token system) are captured in §3 of this plan.*
 
 19-21. *Shared-library scope decisions (graphing library, simulation rendering layer, `<RunsTable>`/`<BarGraph>` location) → tracked in [UI Design Plan §15](./ui-design-plan.md).*
 

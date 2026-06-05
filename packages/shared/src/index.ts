@@ -3,6 +3,13 @@
 // Public barrel for the shared library. Phase 1 populates this incrementally as components
 // and hooks land. See ../../../docs/infrastructure-plan.md §3 for the full intended contract.
 
+// Components
+export { Section, type SectionProps } from "./components/section/section";
+export {
+  SimulationFrame,
+  type SimulationFrameProps,
+} from "./components/simulation-frame/simulation-frame";
+
 // Hooks
 export { useCurrentAndPrevious } from "./hooks/use-current-and-previous";
 export { useFrameLoop } from "./hooks/use-frame-loop";

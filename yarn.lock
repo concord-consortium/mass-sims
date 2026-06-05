@@ -2,6 +2,11 @@
 # yarn lockfile v1
 
 
+"@adobe/css-tools@^4.4.0":
+  version "4.5.0"
+  resolved "https://registry.yarnpkg.com/@adobe/css-tools/-/css-tools-4.5.0.tgz#b5b71a25a4d16afa2482592ddfa62fccc60bc7d1"
+  integrity sha512-6OzddxPio9UiWTCemp4N8cYLV2ZN1ncRnV1cVGtve7dhPOtRkleRyx32GQCYSwDYgaHU3USMm84tNsvKzRCa1Q==
+
 "@asamuzakjp/css-color@^3.2.0":
   version "3.2.0"
   resolved "https://registry.yarnpkg.com/@asamuzakjp/css-color/-/css-color-3.2.0.tgz#cc42f5b85c593f79f1fa4f25d2b9b321e61d1794"
@@ -1365,6 +1370,18 @@
     picocolors "1.1.1"
     pretty-format "^27.0.2"
 
+"@testing-library/jest-dom@^6.9.1":
+  version "6.9.1"
+  resolved "https://registry.yarnpkg.com/@testing-library/jest-dom/-/jest-dom-6.9.1.tgz#7613a04e146dd2976d24ddf019730d57a89d56c2"
+  integrity sha512-zIcONa+hVtVSSep9UT3jZ5rizo2BsxgyDYU7WFD5eICBE7no3881HGeb/QkGfsJs6JTkY1aQhT7rIPC7e+0nnA==
+  dependencies:
+    "@adobe/css-tools" "^4.4.0"
+    aria-query "^5.0.0"
+    css.escape "^1.5.1"
+    dom-accessibility-api "^0.6.3"
+    picocolors "^1.1.1"
+    redent "^3.0.0"
+
 "@testing-library/react@^16.0.0":
   version "16.3.2"
   resolved "https://registry.yarnpkg.com/@testing-library/react/-/react-16.3.2.tgz#672883b7acb8e775fc0492d9e9d25e06e89786d0"
@@ -1661,6 +1678,11 @@ aria-query@5.3.0:
   integrity sha512-b0P0sZPKtyu8HkeRAfCq0IfURZK+SuwMjY1UXGBU27wpAiTwQAIlq56IbIO+ytk/JjS1fMR14ee5WBBfKi5J6A==
   dependencies:
     dequal "^2.0.3"
+
+aria-query@^5.0.0:
+  version "5.3.2"
+  resolved "https://registry.yarnpkg.com/aria-query/-/aria-query-5.3.2.tgz#93f81a43480e33a338f19163a3d10a50c01dcd59"
+  integrity sha512-COROpnaoap1E2F000S62r6A60uHZnmlvomhfyT2DlTcrY1OrBKn2UhH7qn5wTC9zMvD0AY7csdPSNwKP+7WiQw==
 
 array-buffer-byte-length@^1.0.1, array-buffer-byte-length@^1.0.2:
   version "1.0.2"
@@ -2049,6 +2071,11 @@ clone@^1.0.2:
   resolved "https://registry.yarnpkg.com/clone/-/clone-1.0.4.tgz#da309cc263df15994c688ca902179ca3c7cd7c7e"
   integrity sha512-JQHZ2QMW6l3aH/j6xCqQThY/9OH4D/9ls34cgkUBiEeocRTU04tHfKPBsUK1PqZCUQM7GiA0IIXJSuXHI64Kbg==
 
+clsx@^2.1.1:
+  version "2.1.1"
+  resolved "https://registry.yarnpkg.com/clsx/-/clsx-2.1.1.tgz#eed397c9fd8bd882bfb18deab7102049a2f32999"
+  integrity sha512-eYm0QWBtUrBWZWG0d386OGAw16Z995PiOVo2B7bjWSbHedGl5e0ZWaq65kOGgUSNesEIDkB9ISbTg/JK9dhCZA==
+
 cmd-shim@^4.1.0:
   version "4.1.0"
   resolved "https://registry.yarnpkg.com/cmd-shim/-/cmd-shim-4.1.0.tgz#b3a904a6743e9fede4148c6f3800bf2a08135bdd"
@@ -2266,6 +2293,11 @@ cross-spawn@^7.0.3, cross-spawn@^7.0.6:
     shebang-command "^2.0.0"
     which "^2.0.1"
 
+css.escape@^1.5.1:
+  version "1.5.1"
+  resolved "https://registry.yarnpkg.com/css.escape/-/css.escape-1.5.1.tgz#42e27d4fa04ae32f931a4b4d4191fa9cddee97cb"
+  integrity sha512-YUifsXXuknHlUsmlgyY0PKzgPOr7/FjCePfHNt0jxm83wHZi44VDMQ7/fGNkjY3/jV1MC+1CmZbaHzugyeRtpg==
+
 cssstyle@^4.1.0:
   version "4.6.0"
   resolved "https://registry.yarnpkg.com/cssstyle/-/cssstyle-4.6.0.tgz#ea18007024e3167f4f105315f3ec2d982bf48ed9"
@@ -2462,6 +2494,11 @@ dom-accessibility-api@^0.5.9:
   version "0.5.16"
   resolved "https://registry.yarnpkg.com/dom-accessibility-api/-/dom-accessibility-api-0.5.16.tgz#5a7429e6066eb3664d911e33fb0e45de8eb08453"
   integrity sha512-X7BJ2yElsnOJ30pZF4uIIDfBEVgF4XEBxL9Bxhy6dnrm5hkzqmsWHGTiHqRiITNhMyFLyAiWndIJP7Z1NTteDg==
+
+dom-accessibility-api@^0.6.3:
+  version "0.6.3"
+  resolved "https://registry.yarnpkg.com/dom-accessibility-api/-/dom-accessibility-api-0.6.3.tgz#993e925cc1d73f2c662e7d75dd5a5445259a8fd8"
+  integrity sha512-7ZgogeTnjuHbo+ct10G9Ffp0mif17idi0IyWNVA/wcwcm7NPOD/WEHVP3n7n3MhXqxoIYm8d6MuZohYWIZ4T3w==
 
 dot-prop@^5.1.0:
   version "5.3.0"
