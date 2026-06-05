@@ -1,12 +1,15 @@
 import { type ReactNode, useEffect, useId, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { Section } from "../section/section";
+
+import ccLogo from "./branding/cc-logo.svg";
+import deseLogo from "./branding/dese-logo.svg";
+import infoIcon from "./branding/info-icon.svg";
 import "./simulation-frame.scss";
 
 export interface SimulationFrameProps {
   children?: ReactNode;
   infoModalContent?: ReactNode;
-  projectName: string;
   simTitle: string;
   tagline: string;
 }
@@ -55,7 +58,6 @@ function Data({ children, title = "Data" }: SlotProps) {
  * collapse behavior is deferred (ui-design-plan.md §8/Q30).
  */
 export function SimulationFrame({
-  projectName,
   simTitle,
   tagline,
   infoModalContent,
@@ -85,21 +87,27 @@ export function SimulationFrame({
 
   return (
     <div className="simulation-frame">
-      <div className="project-bar">{projectName}</div>
-      <header className="sub-header">
-        <h1 className="sim-title">{simTitle}</h1>
-        <span className="tagline">{tagline}</span>
-        {infoModalContent ? (
-          <button
-            aria-haspopup="dialog"
-            className="info-button"
-            ref={triggerRef}
-            type="button"
-            onClick={() => setInfoOpen(true)}
-          >
-            About
-          </button>
-        ) : null}
+      <header className="title-bar">
+        <div className="title-bar-left">
+          <h1 className="sim-title">{simTitle}</h1>
+          <span className="tagline">{tagline}</span>
+        </div>
+        <div className="title-bar-right">
+          <img className="partner-logo" src={deseLogo} alt="DESE" />
+          <img className="partner-logo" src={ccLogo} alt="Concord Consortium" />
+          {infoModalContent ? (
+            <button
+              aria-haspopup="dialog"
+              className="info-button"
+              ref={triggerRef}
+              type="button"
+              onClick={() => setInfoOpen(true)}
+            >
+              <img src={infoIcon} alt="" aria-hidden="true" className="info-button-icon" />
+              About
+            </button>
+          ) : null}
+        </div>
       </header>
 
       {children}

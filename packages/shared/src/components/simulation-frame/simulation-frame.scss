@@ -1,60 +1,109 @@
 @use "../../styles/tokens" as tokens;
 
 .simulation-frame {
-  background: tokens.$color-surface-muted; // PLACEHOLDER backdrop
+  background: tokens.$color-surface;
   box-sizing: border-box;
   color: tokens.$color-text;
   display: grid;
   font-family: tokens.$font-family-base;
-  gap: tokens.$space-2;
+  gap: tokens.$column-gap;
   grid-template-areas:
-    "projectbar projectbar projectbar"
-    "subheader  subheader  subheader"
-    "trials     simulation data";
+    "titlebar  titlebar    titlebar"
+    "trials    simulation  data";
   grid-template-columns:
     tokens.$column-trials-width
     minmax(0, 1fr)
     tokens.$column-data-width;
   grid-template-rows: tokens.$frame-titlebar-height 1fr;
   height: tokens.$frame-height;
-  padding: tokens.$space-2;
+  padding: tokens.$body-padding;
   width: 100%;
 
-  .project-bar {
+  .title-bar {
     align-items: center;
+    background: tokens.$color-surface;
     display: flex;
-    font-weight: 700;
-    grid-area: projectbar;
+    grid-area: titlebar;
+    justify-content: space-between;
+    padding: 0 tokens.$space-2 0 tokens.$space-4;
   }
 
-  .sub-header {
+  .title-bar-left {
+    align-items: baseline;
+    display: flex;
+    gap: tokens.$space-2;
+  }
+
+  .title-bar-right {
     align-items: center;
     display: flex;
     gap: tokens.$space-3;
-    grid-area: subheader;
   }
 
   .sim-title {
+    color: tokens.$color-text;
     font-size: tokens.$font-size-xl;
+    font-weight: 700;
+    line-height: tokens.$line-height-lg;
     margin: 0;
   }
 
   .tagline {
-    color: tokens.$color-text-muted;
-    font-size: tokens.$font-size-sm;
+    color: tokens.$color-text;
+    font-size: tokens.$font-size-base;
+    line-height: tokens.$line-height-sm;
+  }
+
+  .partner-logo {
+    display: block;
   }
 
   .info-button {
     align-items: center;
     background: tokens.$color-surface;
-    border: 1px solid tokens.$color-border;
-    border-radius: tokens.$radius-sm;
+    border: tokens.$border-strong;
+    border-radius: tokens.$radius-md;
+    color: tokens.$color-text;
     cursor: pointer;
-    display: inline-flex;
-    justify-content: center;
-    margin-left: auto;
-    min-height: tokens.$touch-target-min;
-    min-width: tokens.$touch-target-min;
+    display: flex;
+    font-family: tokens.$font-family-base;
+    font-size: tokens.$font-size-base;
+    font-weight: 700;
+    gap: tokens.$space-1 + 2;   // 6 px — between icon and "About"
+    height: 34px;               // visible height; expanded touch area via ::after
+    line-height: tokens.$line-height-sm;
+    padding: 3px tokens.$space-3 3px tokens.$space-2;
+    position: relative;
+  }
+
+  // Expanded touch target — extends 7 px above and below to reach 48 px effective.
+  .info-button::after {
+    bottom: -7px;
+    content: "";
+    left: 0;
+    position: absolute;
+    right: 0;
+    top: -7px;
+  }
+
+  .info-button:hover,
+  .info-button:focus-visible {
+    background: tokens.$color-surface-hover;
+  }
+
+  .info-button:active {
+    background: tokens.$color-surface-active;
+  }
+
+  .info-button:focus-visible {
+    outline: tokens.$focus-outline;
+    outline-offset: tokens.$focus-outline-offset;
+  }
+
+  .info-button-icon {
+    height: 24px;
+    pointer-events: none;
+    width: 24px;
   }
 
   // Grid-area assignments applied to each slot's Section root (a direct child) via className.

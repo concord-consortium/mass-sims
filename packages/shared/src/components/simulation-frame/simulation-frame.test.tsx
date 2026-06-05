@@ -4,7 +4,7 @@ import { SimulationFrame } from "./simulation-frame";
 
 function renderFrame(extra?: Partial<{ instruction: string }>) {
   return render(
-    <SimulationFrame projectName="Mass Sims" simTitle="Bananas" tagline="A short description">
+    <SimulationFrame simTitle="Bananas" tagline="A short description">
       <SimulationFrame.Trials>
         <div>trial-row</div>
       </SimulationFrame.Trials>
@@ -19,11 +19,28 @@ function renderFrame(extra?: Partial<{ instruction: string }>) {
 }
 
 describe("SimulationFrame", () => {
-  it("renders the four header props", () => {
+  it("renders the three header props", () => {
     const { getByText } = renderFrame();
-    expect(getByText("Mass Sims")).toBeInTheDocument();
     expect(getByText("Bananas")).toBeInTheDocument();
     expect(getByText("A short description")).toBeInTheDocument();
+  });
+
+  it("renders the DESE and Concord Consortium partner logos in the title bar", () => {
+    const { getByAltText } = renderFrame();
+    expect(getByAltText(/DESE/i)).toBeInTheDocument();
+    expect(getByAltText(/Concord Consortium/i)).toBeInTheDocument();
+  });
+
+  it("renders the About button with an icon and the 'About' label", () => {
+    const { getByRole } = render(
+      <SimulationFrame simTitle="S" tagline="t" infoModalContent={<p>x</p>}>
+        <SimulationFrame.Trials>a</SimulationFrame.Trials>
+        <SimulationFrame.Simulation>b</SimulationFrame.Simulation>
+        <SimulationFrame.Data>c</SimulationFrame.Data>
+      </SimulationFrame>,
+    );
+    // The button's accessible name is the text 'About' (icon is decorative aria-hidden).
+    expect(getByRole("button", { name: "About" })).toBeInTheDocument();
   });
 
   it("renders each slot's children inside a titled region", () => {
@@ -43,7 +60,7 @@ describe("SimulationFrame", () => {
 
   it("gives region headings unique ids across multiple frames in one document", () => {
     const oneFrame = (key: string) => (
-      <SimulationFrame key={key} projectName="P" simTitle={key} tagline="t">
+      <SimulationFrame key={key} simTitle={key} tagline="t">
         <SimulationFrame.Trials>a</SimulationFrame.Trials>
         <SimulationFrame.Simulation>b</SimulationFrame.Simulation>
         <SimulationFrame.Data>c</SimulationFrame.Data>
@@ -72,7 +89,7 @@ describe("SimulationFrame", () => {
 
   it("lets a sim override each slot's visible title", () => {
     const { getByRole, queryByRole } = render(
-      <SimulationFrame projectName="P" simTitle="Bananas" tagline="t">
+      <SimulationFrame simTitle="Bananas" tagline="t">
         <SimulationFrame.Trials title="Crosses">
           <div>tr</div>
         </SimulationFrame.Trials>
@@ -96,7 +113,7 @@ describe("SimulationFrame", () => {
 
   it("places slots in Trials/Simulation/Data order regardless of source order", () => {
     const { getByRole } = render(
-      <SimulationFrame projectName="P" simTitle="S" tagline="t">
+      <SimulationFrame simTitle="S" tagline="t">
         <SimulationFrame.Data>
           <div>d</div>
         </SimulationFrame.Data>
@@ -116,12 +133,7 @@ describe("SimulationFrame", () => {
 
   it("shows an About button but no modal initially", () => {
     const { getByRole, queryByRole } = render(
-      <SimulationFrame
-        projectName="P"
-        simTitle="S"
-        tagline="t"
-        infoModalContent={<p>about this sim</p>}
-      >
+      <SimulationFrame simTitle="S" tagline="t" infoModalContent={<p>about this sim</p>}>
         <SimulationFrame.Trials>a</SimulationFrame.Trials>
         <SimulationFrame.Simulation>b</SimulationFrame.Simulation>
         <SimulationFrame.Data>c</SimulationFrame.Data>
@@ -133,12 +145,7 @@ describe("SimulationFrame", () => {
 
   it("opens the modal with the info content when the About button is clicked", () => {
     const { getByRole, getByText } = render(
-      <SimulationFrame
-        projectName="P"
-        simTitle="S"
-        tagline="t"
-        infoModalContent={<p>about this sim</p>}
-      >
+      <SimulationFrame simTitle="S" tagline="t" infoModalContent={<p>about this sim</p>}>
         <SimulationFrame.Trials>a</SimulationFrame.Trials>
         <SimulationFrame.Simulation>b</SimulationFrame.Simulation>
         <SimulationFrame.Data>c</SimulationFrame.Data>
@@ -151,7 +158,7 @@ describe("SimulationFrame", () => {
 
   it("titles the modal contextually from simTitle", () => {
     const { getByRole } = render(
-      <SimulationFrame projectName="P" simTitle="Bananas" tagline="t" infoModalContent={<p>x</p>}>
+      <SimulationFrame simTitle="Bananas" tagline="t" infoModalContent={<p>x</p>}>
         <SimulationFrame.Trials>a</SimulationFrame.Trials>
         <SimulationFrame.Simulation>b</SimulationFrame.Simulation>
         <SimulationFrame.Data>c</SimulationFrame.Data>
@@ -165,7 +172,7 @@ describe("SimulationFrame", () => {
 
   it("closes the modal via the close button", () => {
     const { getByRole, queryByRole } = render(
-      <SimulationFrame projectName="P" simTitle="S" tagline="t" infoModalContent={<p>about</p>}>
+      <SimulationFrame simTitle="S" tagline="t" infoModalContent={<p>about</p>}>
         <SimulationFrame.Trials>a</SimulationFrame.Trials>
         <SimulationFrame.Simulation>b</SimulationFrame.Simulation>
         <SimulationFrame.Data>c</SimulationFrame.Data>
@@ -178,7 +185,7 @@ describe("SimulationFrame", () => {
 
   it("portals the modal outside the .simulation-frame element (to document.body)", () => {
     const { container, getByRole } = render(
-      <SimulationFrame projectName="P" simTitle="S" tagline="t" infoModalContent={<p>about</p>}>
+      <SimulationFrame simTitle="S" tagline="t" infoModalContent={<p>about</p>}>
         <SimulationFrame.Trials>a</SimulationFrame.Trials>
         <SimulationFrame.Simulation>b</SimulationFrame.Simulation>
         <SimulationFrame.Data>c</SimulationFrame.Data>
@@ -195,7 +202,7 @@ describe("SimulationFrame", () => {
 
   it("does not move focus to the About button on initial render", () => {
     const { getByRole } = render(
-      <SimulationFrame projectName="P" simTitle="S" tagline="t" infoModalContent={<p>about</p>}>
+      <SimulationFrame simTitle="S" tagline="t" infoModalContent={<p>about</p>}>
         <SimulationFrame.Trials>a</SimulationFrame.Trials>
         <SimulationFrame.Simulation>b</SimulationFrame.Simulation>
         <SimulationFrame.Data>c</SimulationFrame.Data>
@@ -208,7 +215,7 @@ describe("SimulationFrame", () => {
 
   it("returns focus to the About button when the modal closes", () => {
     const { getByRole, queryByRole } = render(
-      <SimulationFrame projectName="P" simTitle="S" tagline="t" infoModalContent={<p>about</p>}>
+      <SimulationFrame simTitle="S" tagline="t" infoModalContent={<p>about</p>}>
         <SimulationFrame.Trials>a</SimulationFrame.Trials>
         <SimulationFrame.Simulation>b</SimulationFrame.Simulation>
         <SimulationFrame.Data>c</SimulationFrame.Data>
@@ -224,7 +231,7 @@ describe("SimulationFrame", () => {
 
   it("moves focus to the close button on open and closes on Escape from there", () => {
     const { getByRole, queryByRole } = render(
-      <SimulationFrame projectName="P" simTitle="S" tagline="t" infoModalContent={<p>about</p>}>
+      <SimulationFrame simTitle="S" tagline="t" infoModalContent={<p>about</p>}>
         <SimulationFrame.Trials>a</SimulationFrame.Trials>
         <SimulationFrame.Simulation>b</SimulationFrame.Simulation>
         <SimulationFrame.Data>c</SimulationFrame.Data>
@@ -241,7 +248,7 @@ describe("SimulationFrame", () => {
 
   it("does not render an About button when no infoModalContent prop is given", () => {
     const { queryByRole } = render(
-      <SimulationFrame projectName="P" simTitle="S" tagline="t">
+      <SimulationFrame simTitle="S" tagline="t">
         <SimulationFrame.Trials>a</SimulationFrame.Trials>
         <SimulationFrame.Simulation>b</SimulationFrame.Simulation>
         <SimulationFrame.Data>c</SimulationFrame.Data>

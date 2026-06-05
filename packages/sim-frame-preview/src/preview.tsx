@@ -36,7 +36,6 @@ function FrameAtWidth({ px, label, note }: { px: number; label: string; note?: s
       {/* Outer box clamps width to the target; overflow:auto reveals any overflow honestly. */}
       <div style={{ width: px, maxWidth: "100%", overflow: "auto", border: "1px solid #999" }}>
         <SimulationFrame
-          projectName="Mass Sims"
           simTitle="Preview Sim"
           tagline="Placeholder tagline"
           infoModalContent={<p>Placeholder info modal content.</p>}
