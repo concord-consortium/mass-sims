@@ -2,7 +2,7 @@
 
 > **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
 
-**Goal:** Rebuild the shared library to match the demo design (see [demo](https://models-resources.concord.org/demos/branch/masssims/) and source at `~/Documents/webdev/demos`). Concrete deliverables: rewrite `tokens.scss` and `global.scss` to the demo's palette / typography / dimensions; ship partner-branding SVGs in the shared package; restructure `<SimulationFrame>`'s title bar (drop `projectName`, drop the project-bar row, add the partner-branding cluster + restyled About button); add new `<TrialCard>` and `<DataSubsection>` components per the demo; update `packages/sim-frame-preview` to render the new shapes. Defer the About modal redesign to the very last task — it depends on a designer answer that hasn't arrived.
+**Goal:** Rebuild the shared library to match the demo design (see [demo](https://models-resources.concord.org/demos/branch/masssims/) and source at `~/Documents/webdev/demos`). Concrete deliverables: rewrite `tokens.scss` and `global.scss` to the demo's palette / typography / dimensions; ship partner-branding SVGs in the shared package; restructure `<SimulationFrame>`'s title bar (drop `projectName`, drop the project-bar row, add the partner-branding cluster + restyled About button); add new `<TrialCard>` and `<DataSubsection>` components per the demo; update `packages/sim-frame-preview` to render the new shapes. Replace the About modal with the demo's draggable top-right side panel (Task 7), then sweep verification (Task 8).
 
 **Architecture:** Token-driven throughout. `tokens.scss` is the single source of truth for color / typography / spacing / dimensions / radii / focus; `global.scss` imports tokens once per sim and emits the runtime `:root` custom-property mirror. Component SCSS files `@use "tokens"` and namespace their references. `<SimulationFrame>` renders a single 50 px title bar (no project bar — that's Activity Player's chrome) with sim title + tagline on the left and partner logos + About button on the right. `<TrialCard>` carries the common per-trial chrome (letter badge A→J, selected/hover/active states, reset affordance on selected) and accepts sim-specific content as children. `<DataSubsection>` is a flat, count-agnostic sub-section primitive used inside the Data slot — h3 heading, auto-divider between consecutive siblings, NOT a `<Section>` variant.
 
@@ -29,7 +29,7 @@ These were verified by reading the existing code. Honoring them keeps the diff i
 
 ## Scope guardrails (what this plan deliberately does NOT do)
 
-Per the agreed strategy ("rebuild the shared library against the demo; defer About modal pending designer answer"):
+Per the agreed strategy ("rebuild the shared library against the demo, including the About modal as a draggable side panel"):
 
 - **About modal redesign is Task 7.** Earlier tasks (Tasks 1–6) leave the existing centered-overlay-with-portal implementation untouched; Task 7 rewrites it as the demo's draggable top-right side panel. Task 8 is the final verification sweep after the modal lands.
 - **No narrow-mode (676 px) collapse behavior.** The wide-mode 3-column grid will continue to overflow at 676 px in the preview. The deferral notice in the preview's 676 panel stays.
@@ -1355,9 +1355,17 @@ Suggest the commit message: `feat(preview): exercise new TrialCard + DataSubsect
 
 ---
 
-## Task 7: About modal redesign — draggable top-right panel
+## Task 7: About panel redesign — draggable, non-modal, frame-anchored
 
-Replace the existing centered-portaled modal with the draggable side-panel design from the demo (`~/Documents/webdev/demos/index.html`, `.info-modal` and friends). The modal opens at a default top-right position (50 px from the top, 10 px from the right), is dragged via its header, resets to the default position each open, and has no backdrop scrim — the sim content behind it stays interactive.
+Replace the existing centered-portaled modal with the draggable side-panel design from the demo (`~/Documents/webdev/demos/index.html`, `.info-modal` and friends). The panel:
+
+- Opens at a default top-right position (50 px from the top, 10 px from the right) **relative to the frame, not the viewport** — so a sim that renders multiple frames keeps each panel attached to its own frame's corner. This means dropping `createPortal` (used by the centered-overlay implementation): the panel renders inline as a child of `.simulation-frame`, which sets `position: relative` to anchor the absolutely-positioned panel.
+- Is **non-modal** (`role="dialog"` only — NO `aria-modal`). The sim content behind the panel stays interactive; that's the whole point of being draggable. The dialog still uses `aria-labelledby` so screen readers announce it on open, and the close-via-Escape and focus-management contracts (close button focus on open, About-button focus on close) are unchanged.
+- Resets the drag offset to `(0, 0)` on each open — drag position does not persist.
+- Has no backdrop scrim — the sim content behind it stays visible AND interactive.
+- Toggles closed when the About button is clicked again (matches the demo's toggle behavior).
+- Supports **keyboard dragging**: Alt+ArrowKey nudges the panel 10 px in that direction; add Shift for a 40 px step. Required for keyboard accessibility — a draggable element that only responds to a pointing device is exclusionary.
+- The pointer-drag gesture attaches `pointermove` / `pointerup` listeners to `window` (not to the handle itself) so the gesture keeps tracking when the pointer leaves the handle. A `dragCleanupRef` + unmount effect ensures those window listeners can't leak if the frame unmounts mid-drag.
 
 **Files:**
 - Modify: `packages/shared/src/components/simulation-frame/simulation-frame.tsx`
@@ -1366,74 +1374,119 @@ Replace the existing centered-portaled modal with the draggable side-panel desig
 
 **Step 1: Update the tests**
 
-Drop the test `portals the modal outside the .simulation-frame element` if the side-panel doesn't need a portal (it might still — `position: absolute` relative to the title-bar's positioned ancestor is what we want, so portaling depends on whether the SimulationFrame's parent has a positioning context). Add tests for the new behavior:
+Drop the existing `portals the modal outside the .simulation-frame element` test — the new panel is intentionally NOT portaled (frame-anchored placement, see above). Add tests for the new behavior. The panel is non-modal, so do NOT assert `aria-modal="true"` — the absence of `aria-modal` is intentional and a regression would silently re-impose modal semantics.
 
 ```tsx
-it("renders the About modal anchored top-right (panel style, no backdrop)", () => {
-  const { getByRole, container } = render(/* … standard frame with About content … */);
+it("renders the About panel inside the frame, anchored top-right with no backdrop scrim", () => {
+  const { container, getByRole } = render(/* … standard frame with About content … */);
   fireEvent.click(getByRole("button", { name: /about/i }));
   const dialog = getByRole("dialog");
   // No backdrop overlay element wraps the dialog (no full-screen scrim).
   expect(container.querySelector(".simulation-frame-info-overlay")).toBeNull();
-  // The dialog itself is positioned via CSS; trust the CSS rules + visual check rather
-  // than asserting computed style here (jsdom doesn't reliably compute these).
-  expect(dialog).toHaveAttribute("aria-modal", "true");
+  // The panel lives INSIDE the frame so its `position: absolute` anchors to the frame
+  // (which is `position: relative`), not the page — keeping it placed per-frame.
+  const frame = container.querySelector(".simulation-frame");
+  expect(frame?.contains(dialog)).toBe(true);
 });
 
-it("has a draggable header (handle present)", () => {
-  const { getByRole, container } = render(/* … */);
+it("renders a draggable header handle on the About panel", () => {
+  const { container, getByRole } = render(/* … */);
   fireEvent.click(getByRole("button", { name: /about/i }));
-  // The drag handle is identified by a class on the header element.
-  const handle = container.querySelector(".modal-drag-handle");
-  expect(handle).not.toBeNull();
+  // The drag handle is the panel's header, identified by class.
+  expect(container.querySelector(".modal-drag-handle")).not.toBeNull();
 });
 
-it("opens at default position each time (drag position is not persisted)", () => {
-  // Open, simulate a drag (set inline style), close, reopen, and verify the inline
-  // style reset to defaults. Implementation-dependent — tighten once the drag impl lands.
+it("opens the About panel at its default position (no drag offset applied)", () => {
+  const { getByRole } = render(/* … */);
+  fireEvent.click(getByRole("button", { name: /about/i }));
+  // Drag position is a transform offset reset to 0,0 on each open, so the panel always
+  // reappears at its CSS-anchored default rather than wherever it was last dragged.
+  expect(getByRole("dialog")).toHaveStyle({ transform: "translate(0px, 0px)" });
+});
+
+it("toggles the About panel closed when the About button is clicked again", () => {
+  const { getByRole, queryByRole } = render(/* … */);
+  const aboutButton = getByRole("button", { name: /about/i });
+  fireEvent.click(aboutButton);
+  expect(getByRole("dialog")).toBeInTheDocument();
+  fireEvent.click(aboutButton);
+  expect(queryByRole("dialog")).not.toBeInTheDocument();
+});
+
+it("nudges the About panel with Alt+Arrow keyboard dragging", () => {
+  const { getByRole } = render(/* … */);
+  fireEvent.click(getByRole("button", { name: /about/i }));
+  const dialog = getByRole("dialog");
+  // Alt+ArrowRight moves +10px on x; Alt+Shift+ArrowDown then adds +40px on y.
+  fireEvent.keyDown(dialog, { key: "ArrowRight", altKey: true });
+  expect(dialog).toHaveStyle({ transform: "translate(10px, 0px)" });
+  fireEvent.keyDown(dialog, { key: "ArrowDown", altKey: true, shiftKey: true });
+  expect(dialog).toHaveStyle({ transform: "translate(10px, 40px)" });
+});
+
+it("removes drag listeners from window if the frame unmounts mid-drag", () => {
+  // Spy on window.addEventListener / window.removeEventListener, begin a drag
+  // (pointerdown on the handle), then unmount BEFORE pointerup. Verify both listeners
+  // were detached via the dragCleanupRef + unmount effect — otherwise they'd leak.
 });
 ```
 
 **Step 2: Update the component**
 
-Replace the existing modal JSX with a side-panel implementation. Sketch:
+Replace the existing modal JSX with the side-panel implementation. Sketch:
 
 ```tsx
-import { type ReactNode, useEffect, useId, useRef, useState } from "react";
+import {
+  type ReactNode,
+  type PointerEvent as ReactPointerEvent,
+  useEffect,
+  useId,
+  useRef,
+  useState,
+} from "react";
 import "./simulation-frame.scss";
 
 // … inside SimulationFrame, replacing the existing modal block …
 
 {infoModalContent && infoOpen ? (
   <div
+    aria-labelledby={titleId}
     className="simulation-frame-info-modal"
     role="dialog"
-    aria-modal="true"
-    aria-labelledby={titleId}
+    // NO `aria-modal` — this is a non-modal dialog. The sim content behind the panel
+    // stays interactive; that's the point of having a draggable panel.
+    style={{ transform: `translate(${dragOffset.x}px, ${dragOffset.y}px)` }}
     onKeyDown={(e) => {
-      if (e.key === "Escape") setInfoOpen(false);
-    }}
-    style={{
-      // Computed live during drag; reset each open.
-      top: dragOffset.top ?? undefined,
-      left: dragOffset.left ?? undefined,
+      if (e.key === "Escape") {
+        setInfoOpen(false);
+        return;
+      }
+      // Keyboard dragging — Alt+Arrow nudges by 10 px, Shift adds a larger 40 px step.
+      if (!e.altKey) return;
+      const step = e.shiftKey ? 40 : 10;
+      const delta =
+        e.key === "ArrowLeft"  ? { x: -step, y: 0 } :
+        e.key === "ArrowRight" ? { x: step,  y: 0 } :
+        e.key === "ArrowUp"    ? { x: 0, y: -step } :
+        e.key === "ArrowDown"  ? { x: 0, y: step  } : null;
+      if (!delta) return;
+      e.preventDefault();
+      setDragOffset((o) => ({ x: o.x + delta.x, y: o.y + delta.y }));
     }}
   >
-    <header
-      className="modal-drag-handle"
-      onPointerDown={beginDrag}
-    >
+    <header className="modal-drag-handle" onPointerDown={beginDrag}>
+      <img src={infoIcon} alt="" aria-hidden="true" className="modal-header-icon" />
       <h2 id={titleId} className="modal-title">
         About the {simTitle} Simulation
       </h2>
       <button
+        aria-label="Close"
         className="modal-close"
         ref={closeRef}
         type="button"
-        aria-label="Close"
         onClick={() => setInfoOpen(false)}
       >
-        ×
+        <img src={closeIcon} alt="" aria-hidden="true" className="modal-close-icon" />
       </button>
     </header>
     <div className="modal-body">{infoModalContent}</div>
@@ -1441,18 +1494,45 @@ import "./simulation-frame.scss";
 ) : null}
 ```
 
-Drag implementation uses pointer events. Sketch the hook (factor it into `usePanelDrag` if it grows):
+The About button uses a toggle handler so clicking it while the panel is open closes it. Synchronously reset the drag offset on open so the panel never flashes at its previously-dragged location:
 
 ```tsx
-const [dragOffset, setDragOffset] = useState<{ top: number; left: number } | null>(null);
+const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
 
-useEffect(() => {
-  // Reset drag position each time the modal opens.
-  if (infoOpen) setDragOffset(null);
-}, [infoOpen]);
+const toggleInfo = () => {
+  if (!infoOpen) setDragOffset({ x: 0, y: 0 });
+  setInfoOpen((open) => !open);
+};
+```
 
-const beginDrag = (e: React.PointerEvent<HTMLElement>) => {
-  // Implement pointer-capture-based drag here. Update setDragOffset on pointermove.
+Pointer-driven drag attaches its `pointermove` / `pointerup` listeners to `window` for the duration of the gesture so the drag keeps tracking even when the pointer leaves the header. A `dragCleanupRef` + unmount effect ensure the listeners are removed if the frame unmounts mid-drag:
+
+```tsx
+const dragCleanupRef = useRef<(() => void) | null>(null);
+useEffect(() => () => dragCleanupRef.current?.(), []);
+
+const beginDrag = (e: ReactPointerEvent<HTMLElement>) => {
+  // pointerdown on the close button must NOT start a drag.
+  if ((e.target as HTMLElement).closest(".modal-close")) return;
+  e.preventDefault();
+  const startX = e.clientX;
+  const startY = e.clientY;
+  const originX = dragOffset.x;
+  const originY = dragOffset.y;
+  const onMove = (move: PointerEvent) => {
+    setDragOffset({
+      x: originX + (move.clientX - startX),
+      y: originY + (move.clientY - startY),
+    });
+  };
+  const stop = () => {
+    window.removeEventListener("pointermove", onMove);
+    window.removeEventListener("pointerup", stop);
+    dragCleanupRef.current = null;
+  };
+  window.addEventListener("pointermove", onMove);
+  window.addEventListener("pointerup", stop);
+  dragCleanupRef.current = stop;
 };
 ```
 
@@ -1541,7 +1621,7 @@ Replace the `.simulation-frame-info-overlay` block with:
 }
 ```
 
-Decide whether to keep `createPortal`: the panel needs to escape any `overflow: hidden` ancestor in the host sim, so portal is still wise. Keep it.
+**Drop `createPortal`.** The panel anchors to the frame (not the viewport), so it renders inline as a child of `.simulation-frame`. Add `position: relative` to `.simulation-frame` in its SCSS so the absolutely-positioned panel anchors to it.
 
 **Step 4: Run tests + visual check, then stop and wait for user review before doing anything else**
 
@@ -1609,11 +1689,17 @@ No commit for Task 8 — it's verification only.
 - [ ] `<TrialCard>` exported; renders letter badge from index (A → J); selected/hover/active states work; 44 × 44 px reset affordance appears only when selected; `onSelect` and `onReset` fire as expected; reset click does not bubble to onSelect.
 - [ ] `<DataSubsection>` exported; renders title as `<h3>`; auto-divider between consecutive siblings via `& + &`; count-agnostic.
 - [ ] `sim-frame-preview` uses the new component shapes; placeholder TrialCards render A through H; clicking selects; two DataSubsections show with divider between.
-- [ ] About modal redesigned to the demo's draggable top-right side panel; drag position resets each open; no backdrop scrim; Escape, close button, and focus-return all work.
+- [ ] About panel redesigned to the demo's draggable top-right side panel. Drag position resets each open; no backdrop scrim; Escape, close button, and focus-return all work.
+- [ ] About panel is non-modal (`role="dialog"` without `aria-modal`); sim content behind it stays interactive.
+- [ ] About panel anchors to the frame (not the viewport) — verified by a test that the dialog is contained within `.simulation-frame`.
+- [ ] About button toggles the panel closed when clicked while open.
+- [ ] Keyboard dragging via Alt+Arrow (Shift+Alt+Arrow for larger step) works; tested.
+- [ ] Drag-listener cleanup on frame unmount works; tested via spy on `window.add/removeEventListener`.
 - [ ] `yarn typecheck && yarn lint && yarn test && yarn gen-index --check && yarn build` all green; visual sweep at four widths passes.
 
 ## Deferred follow-ups (out of scope here)
 
+- **Section's notched-chip visual treatment.** The demo's chip is a separate element notched onto the panel's top edge, centered horizontally with the chip half-overlapping the panel border (per `ui-design-plan.md` §3 / §13 and the `$section-chip-height` / `$section-chip-overlap` tokens that already exist in `tokens.scss`). The Phase 2a implementation uses a simpler flat header (chip inside the panel, no overlap) — sufficient for the preview and for sims to start composing against, with the notch landing in a follow-up. Token values are already in place; only the SCSS layout work is pending.
 - Narrow-mode (676 px) collapsible/overlay behavior (UI design plan §15 Q30).
 - `useModelState` / `useSimulationRunner` (Phase 2b — Starter sim).
 - Actual Starter sim implementation (Phase 2b).

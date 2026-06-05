@@ -369,11 +369,20 @@ Kept here as a decision log.
 
 20. **Partner branding scope** → Identical across every Mass Sims sim. The DESE + Concord Consortium logos ship as SVGs inside `packages/shared` and are rendered internally by `<SimulationFrame>`. Not configurable per sim, not exposed as a prop.
 
-21. **About-modal pattern** → Draggable side panel anchored top-right (400 px wide, 70 % max height), no backdrop scrim, drag position does not persist (always opens at the default top-right). The About modal is the only modal in the sim that uses this pattern.
+21. **About-panel pattern** → Draggable side panel anchored top-right (400 px wide, 70 % max height). Key properties, as implemented:
+    - **Non-modal** (`role="dialog"` only; no `aria-modal`). Sim content behind the panel stays interactive — that's the whole point of a draggable panel. `aria-labelledby` still points at the panel heading so screen readers announce the dialog on open.
+    - **Frame-anchored** (NOT viewport-anchored). The panel renders inline as a child of `.simulation-frame` (which is `position: relative`), so when a sim renders multiple frames or sits inside a transformed/contained ancestor, each panel stays attached to its own frame's top-right corner. `createPortal` is intentionally NOT used.
+    - **No backdrop scrim.** Sim content behind it is fully visible and interactive.
+    - **Drag position resets each open** — always reappears at the default top-right.
+    - **Toggle behavior**: clicking the About button while the panel is open closes it (matches the demo).
+    - **Keyboard dragging**: Alt+Arrow nudges the panel 10 px in that direction; Shift+Alt+Arrow uses a 40 px step. Required because a draggable affordance has to be operable from the keyboard.
+    - **Drag-listener hygiene**: the pointer-drag gesture attaches `pointermove` / `pointerup` to `window` so the gesture keeps tracking when the pointer leaves the handle; a `dragCleanupRef` + unmount effect detaches them if the frame unmounts mid-drag.
 
-22. **Other dialogs (reload warning, future)** → Conventional centered overlay with backdrop scrim. Implemented by the future shared `<Dialog>` component (Phase 3), distinct from the info modal.
+    The About panel is the only dialog in the sim that uses this pattern.
 
-23. **Credits** → Appear inside the About modal (no separate credits modal).
+22. **Other dialogs (reload warning, future)** → Conventional centered overlay with backdrop scrim, full modal semantics (`aria-modal="true"`). Implemented by the future shared `<Dialog>` component (Phase 3), distinct from the About panel.
+
+23. **Credits** → Appear inside the About panel (no separate credits dialog).
 
 24. **Trial-card affordances** → The trial-card chrome is common across sims and lives in the shared `<TrialCard>` component: 120 × 136 px card, 2 px border, letter badge (A through J, auto-assigned by index) in upper-left, and a 44 × 44 px reset affordance in upper-right that appears only on the selected card. Sim-specific per-trial content goes inside the card as `children`. Trials are reset, not deleted — supersedes the earlier "delete affordance" inheritance from DESE.
 

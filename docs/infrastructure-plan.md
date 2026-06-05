@@ -164,11 +164,21 @@ Built in `packages/shared/src/components/simulation-frame/`. Compound API with t
 </SimulationFrame>
 ```
 
-The three regions are **Trials** (left), **Simulation** (center), and **Data** (right). Each renders inside a `<Section>` wrapper that the frame supplies. The canonical slot label can be overridden per-sim via `<SimulationFrame.Simulation title="Lab">` etc. — slot *identity* (component name, grid-area) stays canonical; only the visible label diverges.
+The three regions are **Trials** (left), **Simulation** (center), and **Data** (right). Each renders inside a `<Section>` wrapper that the frame supplies. The Trials slot additionally wraps its children in a vertically-flexed `.trials-list` container, so multiple `<TrialCard>` children stack with consistent spacing without the sim having to add the layout container itself. The canonical slot label can be overridden per-sim via `<SimulationFrame.Simulation title="Lab">` etc. — slot *identity* (component name, grid-area) stays canonical; only the visible label diverges.
 
 **Notes on the header.** `<SimulationFrame>` renders a single 50 px **title bar** at the top of the sim that contains, left to right: `simTitle` (Lato 24 / 28 px bold), `tagline` (Lato 16 / 20 px), the project-wide partner-branding cluster (DESE + Concord Consortium logos), and the **About** button. The partner-branding cluster is identical across every Mass Sims sim — it ships as SVGs inside `packages/shared` and is rendered internally by `<SimulationFrame>` rather than passed in as a prop. The teal **"[Sim Name] Simulation"** bar above is rendered by Activity Player's wrapper chrome, not by us, so `<SimulationFrame>` has no `projectName` prop and does NOT render that row even in standalone deploys.
 
-**Notes on the About modal.** Triggered from the About button. Renders as a **draggable side panel** anchored top-right (`width: 400 px`, `max-height: 70 %`), not a centered backdrop overlay — the user can drag it around to keep the sim content visible. Drag position is **not persisted**; it always opens at the default top-right. This is the only modal in the sim that uses the side-panel pattern; the future shared `<Dialog>` (Phase 3) used for the reload-warning confirmation and any other dialogs uses a conventional centered overlay.
+**Notes on the About panel.** Triggered from the About button. Renders as a **draggable side panel** anchored top-right (`width: 400 px`, `max-height: 70 %`), not a centered backdrop overlay — the user can drag it around to keep the sim content visible. Key properties:
+
+- **Non-modal** (`role="dialog"` only, no `aria-modal`). The sim content behind the panel stays interactive — that's the whole point of a draggable panel. `aria-labelledby` still wires the panel's heading to the dialog so screen readers announce it on open.
+- **Frame-anchored**, not viewport-anchored. The panel renders inline as a child of `.simulation-frame` (which is `position: relative`), so a sim that renders multiple frames keeps each panel attached to its own frame's corner. `createPortal` is intentionally NOT used.
+- **No backdrop scrim.** The sim content behind it is fully visible and interactive.
+- **Drag position resets on each open** — always reappears at the default top-right offset (50 px from top, 10 px from right).
+- **Toggle**: clicking the About button while the panel is open closes it.
+- **Keyboard dragging**: Alt+Arrow nudges by 10 px (Shift+Alt+Arrow uses a 40 px step). Required to keep the affordance keyboard-accessible.
+- **Drag-listener hygiene**: pointer-drag attaches `pointermove` / `pointerup` to `window`; a `dragCleanupRef` + unmount effect detaches them if the frame unmounts mid-drag.
+
+This is the only dialog in the sim that uses the panel pattern. The future shared `<Dialog>` (Phase 3), used for the reload-warning confirmation and any other modals, is a conventional centered overlay with backdrop scrim and full modal semantics (`aria-modal="true"`).
 
 ### `<Section>` component
 
