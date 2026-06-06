@@ -1,0 +1,72 @@
+@use "@concord-consortium/mass-sims-shared/styles/tokens" as tokens;
+
+.simulation-view {
+  align-items: center;
+  display: flex;
+  flex-direction: column;
+  font-family: tokens.$font-family-base;
+  font-size: tokens.$font-size-base;
+  gap: tokens.$space-2;
+  padding: tokens.$space-2;
+
+  canvas {
+    background: tokens.$color-surface;
+    border: tokens.$border-strong;
+    border-radius: tokens.$radius-md;
+    height: 250px;
+    width: 100%;
+  }
+
+  .controls {
+    display: flex;
+    flex-direction: column;
+    gap: tokens.$space-1;
+    width: 100%;
+  }
+
+  .controls label {
+    align-items: center;
+    color: tokens.$color-text;
+    display: grid;
+    gap: tokens.$space-2;
+    grid-template-columns: 120px 1fr auto;
+  }
+
+  .controls input[type="range"],
+  .controls input[type="number"] {
+    width: 100%;
+  }
+
+  .buttons {
+    display: flex;
+    gap: tokens.$space-2;
+  }
+
+  .buttons button {
+    background: tokens.$color-surface;
+    border: tokens.$border-strong;
+    border-radius: tokens.$radius-md;
+    color: tokens.$color-text;
+    cursor: pointer;
+    font-family: tokens.$font-family-base;
+    font-size: tokens.$font-size-base;
+    font-weight: 700;
+    min-height: tokens.$touch-target-min;
+    padding: tokens.$space-1 tokens.$space-3;
+  }
+
+  .buttons button:hover,
+  .buttons button:focus-visible {
+    background: tokens.$color-surface-hover;
+  }
+
+  .buttons button:focus-visible {
+    outline: tokens.$focus-outline;
+    outline-offset: tokens.$focus-outline-offset;
+  }
+
+  .readout {
+    color: tokens.$color-text-muted;
+    font-size: tokens.$font-size-sm;
+  }
+}

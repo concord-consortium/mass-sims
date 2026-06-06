@@ -1,4 +1,5 @@
 import { SimulationFrame } from "@concord-consortium/mass-sims-shared";
+import { SimulationView } from "./components/simulation-view";
 import "./app.scss";
 
 /**
@@ -23,8 +24,8 @@ export function App() {
     >
       <SimulationFrame.Trials>{/* Task 6 wires real TrialCards here. */}</SimulationFrame.Trials>
       <SimulationFrame.Simulation instruction="Choose parameters, then press Play">
-        {/* Task 5 wires the canvas-based view here. */}
-        <div className="placeholder">Simulation view (Task 5)</div>
+        {/* Task 6 replaces this no-op handler with the trial-list accept callback. */}
+        <SimulationView onTrialComplete={() => {}} />
       </SimulationFrame.Simulation>
       <SimulationFrame.Data>{/* Task 7 wires the DataSubsections here. */}</SimulationFrame.Data>
     </SimulationFrame>
