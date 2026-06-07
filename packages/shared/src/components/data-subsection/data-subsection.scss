@@ -7,7 +7,9 @@
   flex: 1;
   flex-direction: column;
   justify-content: center;
-  padding: tokens.$space-3 tokens.$space-2;
+  // No horizontal padding: the Data column's content padding already provides the column inset,
+  // so data objects (tables, charts) can fill the full column width. Vertical padding only.
+  padding: tokens.$space-3 0;
 
   // 1 px horizontal-rule divider between consecutive siblings.
   & + & {

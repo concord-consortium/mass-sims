@@ -130,7 +130,16 @@
     }
   }
   .data-area {
+    // The Data column reads on a white (surface) background — its data objects (tables, charts)
+    // sit on white, distinct from the muted Trials/Simulation panels (per the demo).
+    background: tokens.$color-surface;
     grid-area: data;
+
+    // ~10px column padding (8px + the 2px border) so data objects fill the column width, per
+    // the demo — tighter than the default section content padding.
+    .content {
+      padding: tokens.$space-2;
+    }
   }
 }
 

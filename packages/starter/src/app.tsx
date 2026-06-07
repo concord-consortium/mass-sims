@@ -1,5 +1,6 @@
 import { SimulationFrame, TrialCard } from "@concord-consortium/mass-sims-shared";
 import { useCallback, useState } from "react";
+import { DataPanel } from "./components/data-panel";
 import { SimulationView } from "./components/simulation-view";
 import type { RecordedTrial, SimInput, SimOutput, SimTransient } from "./model/types";
 import "./app.scss";
@@ -122,7 +123,9 @@ export function App() {
         />
       </SimulationFrame.Simulation>
 
-      <SimulationFrame.Data>{/* Task 7 wires this */}</SimulationFrame.Data>
+      <SimulationFrame.Data>
+        <DataPanel trials={trials} selectedIndex={trials.indexOf(selected)} />
+      </SimulationFrame.Data>
     </SimulationFrame>
   );
 }
