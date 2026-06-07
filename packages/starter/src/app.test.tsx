@@ -1,5 +1,5 @@
 import { fireEvent, render } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { App } from "./app";
 
 // Run the currently-selected trial to completion by shortening it and stepping through.
@@ -55,5 +55,21 @@ describe("Starter App", () => {
     fireEvent.click(view.getByRole("button", { name: "Reset trial A" }));
     expect(view.getByRole("button", { name: "Trial A" })).toBeInTheDocument();
     expect(view.queryByText(/avg \d/i)).toBeNull();
+  });
+
+  it("does NOT register a beforeunload listener before any trial is run", () => {
+    const addSpy = vi.spyOn(window, "addEventListener");
+    render(<App />);
+    expect(addSpy).not.toHaveBeenCalledWith("beforeunload", expect.any(Function));
+    addSpy.mockRestore();
+  });
+
+  it("registers a beforeunload listener once a trial has been run", () => {
+    const addSpy = vi.spyOn(window, "addEventListener");
+    const view = render(<App />);
+    runSelectedTrial(view);
+    // After the trial completes, the reload-warning listener is attached.
+    expect(addSpy).toHaveBeenCalledWith("beforeunload", expect.any(Function));
+    addSpy.mockRestore();
   });
 });

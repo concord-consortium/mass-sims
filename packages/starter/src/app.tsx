@@ -1,4 +1,4 @@
-import { SimulationFrame, TrialCard } from "@concord-consortium/mass-sims-shared";
+import { SimulationFrame, TrialCard, useReloadWarning } from "@concord-consortium/mass-sims-shared";
 import { useCallback, useState } from "react";
 import { DataPanel } from "./components/data-panel";
 import { SimulationView } from "./components/simulation-view";
@@ -40,6 +40,10 @@ export function App() {
   const selected = trials.find((t) => t.id === selectedId) ?? trials[0];
   // Letter for the selected trial (0→A, 1→B, …), shown as a badge in the Simulation region.
   const selectedLetter = String.fromCharCode(65 + Math.max(0, trials.indexOf(selected)));
+
+  // Warn before unload only once a trial has actually been run (has recorded data worth losing).
+  // The sim always has an empty trial A, so guarding on trial count would warn from the start.
+  useReloadWarning(trials.some((t) => t.output !== null));
 
   const addTrial = useCallback(() => {
     if (trials.length >= TRIAL_LIMIT) return;
