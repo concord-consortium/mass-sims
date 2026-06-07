@@ -1,4 +1,4 @@
-import { type Dispatch, type SetStateAction, useCallback, useState } from "react";
+import { type Dispatch, type SetStateAction, useCallback, useRef, useState } from "react";
 
 export interface UseModelStateOptions<IInput, IOutput, ITransient> {
   initialInput: IInput;
@@ -35,7 +35,7 @@ export interface UseModelStateReturn<IInput, IOutput, ITransient> {
  * Sims pass an initial value for each. Setters follow standard `useState` semantics
  * (value-or-updater). Three reset helpers cover the common transition points:
  * `resetTransient` between trials, `resetOutput` to clear accumulated stats, `resetAll`
- * on full sim reset.
+ * on full sim reset; each restores the value provided at mount.
  */
 export function useModelState<IInput, IOutput, ITransient>(
   options: UseModelStateOptions<IInput, IOutput, ITransient>,
@@ -44,13 +44,18 @@ export function useModelState<IInput, IOutput, ITransient>(
   const [input, setInput] = useState<IInput>(initialInput);
   const [output, setOutput] = useState<IOutput>(initialOutput);
   const [transient, setTransient] = useState<ITransient>(initialTransient);
-  const resetTransient = useCallback(() => setTransient(initialTransient), [initialTransient]);
-  const resetOutput = useCallback(() => setOutput(initialOutput), [initialOutput]);
+  // Capture the mount-time initials so reset always restores the values the state was seeded with,
+  // regardless of later prop changes — and so the reset callbacks keep a stable identity.
+  const mountInput = useRef(initialInput);
+  const mountOutput = useRef(initialOutput);
+  const mountTransient = useRef(initialTransient);
+  const resetTransient = useCallback(() => setTransient(mountTransient.current), []);
+  const resetOutput = useCallback(() => setOutput(mountOutput.current), []);
   const resetAll = useCallback(() => {
-    setInput(initialInput);
-    setOutput(initialOutput);
-    setTransient(initialTransient);
-  }, [initialInput, initialOutput, initialTransient]);
+    setInput(mountInput.current);
+    setOutput(mountOutput.current);
+    setTransient(mountTransient.current);
+  }, []);
   return {
     input,
     output,
