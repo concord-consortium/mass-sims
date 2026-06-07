@@ -8,9 +8,8 @@ import "./app.scss";
 const TRIAL_LIMIT = 10; // Matches TrialCard's A–J letter cap.
 const DEFAULT_PARAMS = { walkerCount: 50, stepSize: 1, framesPerTrial: 200 } as const;
 
-// Random ids/seeds. Plain Math.random is fine — neither is security-sensitive. Each trial keeps
-// its own seed for life, so re-running a trial (after Reset) reproduces it exactly (deterministic),
-// while different trials get different seeds and therefore vary.
+// Plain Math.random is fine — ids/seeds aren't security-sensitive. Each trial keeps its seed for
+// life, so re-running reproduces it exactly while different trials vary.
 function makeTrialId(): string {
   return Math.random().toString(36).slice(2, 10);
 }
@@ -27,22 +26,20 @@ function makeEmptyTrial(): RecordedTrial {
 }
 
 /**
- * Starter simulation — a random-walk model used as the template for new sims. App owns the trial
- * list (the source of truth both the Trials slot and the Data slot read from). The sim always has
- * at least one trial: it loads with an empty, selected trial "A" plus a "New" card. Running fills
- * the SELECTED trial's card; "New" adds the next empty trial; Reset clears a trial back to empty
- * (trials are reset, not deleted). See docs/phase-2b-starter-sim-plan.md and ui-design-plan.md §14.
+ * Starter simulation — a random-walk model and the template for new sims. App owns the trial list
+ * that both the Trials and Data slots read from. There is always at least one trial: running fills
+ * the selected trial; "New" adds an empty one; Reset clears a trial back to empty (never deletes).
  */
 export function App() {
   const [trials, setTrials] = useState<RecordedTrial[]>(() => [makeEmptyTrial()]);
   const [selectedId, setSelectedId] = useState(() => trials[0].id);
 
   const selected = trials.find((t) => t.id === selectedId) ?? trials[0];
-  // Letter for the selected trial (0→A, 1→B, …), shown as a badge in the Simulation region.
+  // Selected trial's letter (0→A, 1→B, …).
   const selectedLetter = String.fromCharCode(65 + Math.max(0, trials.indexOf(selected)));
 
-  // Warn before unload only once a trial has actually been run (has recorded data worth losing).
-  // The sim always has an empty trial A, so guarding on trial count would warn from the start.
+  // Warn before unload only once a trial has been run: an empty trial A always exists, so guarding
+  // on trial count would warn from the start.
   useReloadWarning(trials.some((t) => t.output !== null));
 
   const addTrial = useCallback(() => {

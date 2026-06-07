@@ -1,7 +1,7 @@
 @use "@concord-consortium/mass-sims-shared/styles/tokens" as tokens;
 
-// "New trial" card — a sim-owned affordance (the shared TrialCard has no add variant). Matches
-// the TrialCard footprint (120 × 136) with a dashed border to read as "add a slot".
+// "New trial" card — sim-owned (the shared TrialCard has no add variant); matches the TrialCard
+// 120 × 136 footprint.
 .new-trial-card {
   align-items: center;
   background: transparent;

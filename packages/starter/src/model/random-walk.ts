@@ -12,10 +12,9 @@ export function initialTransient(input: SimInput): SimTransient {
 }
 
 export function stepWalkers(prev: SimTransient, input: SimInput): SimTransient {
-  // Per-frame seed key — derived from the trial seed + frame index — so each frame's
-  // random draws don't reuse the previous frame's. `seededRandom` caches a stateful PRNG
-  // per key, so reset it first: this guarantees a given (seed, frame) always reproduces
-  // the same draws, making the model fully deterministic across re-runs of a trial.
+  // Per-frame key (trial seed + frame) so frames draw independently. `seededRandom` caches a
+  // stateful PRNG per key, so reset it first — that makes a given (seed, frame) reproduce the
+  // same draws, keeping the model deterministic across re-runs.
   const key = `${input.seed}:${prev.frame}`;
   resetSeededRandom(key);
   const rng = seededRandom(key);

@@ -4,10 +4,8 @@ import { finalizeTrial, initialTransient, stepWalkers } from "../model/random-wa
 import type { RecordedTrial, SimInput, SimOutput, SimTransient } from "../model/types";
 import "./simulation-view.scss";
 
-// Canvas height is fixed; width tracks the Simulation column (full width). 240px keeps the
-// controls + buttons + readout within the shared frame's fixed-height Simulation slot (562px
-// frame; the slot does not scroll). Trimmed from 250 to make room for the taller title-bar→panel
-// row gap that lets the floating section chip sit clear of the title bar.
+// 240px leaves room for the controls + buttons + readout inside the fixed-height, non-scrolling
+// Simulation slot (562px frame). Width fills the column responsively (see canvasWidth below).
 const CANVAS_HEIGHT = 240;
 const WALKER_DOT_RADIUS = 2;
 const INITIAL_OUTPUT: SimOutput = { avgDistance: 0, stdDevDistance: 0, avgDistanceSeries: [] };
@@ -19,7 +17,7 @@ export interface SimulationViewProps {
    * model state below re-initializes from `trial` on every select / reset / completion.
    */
   trial: RecordedTrial;
-  /** The selected trial's letter (A, B, …), shown as a badge in the region's upper-left. */
+  /** The selected trial's letter (A, B, …). */
   trialLabel: string;
   /** Persist a parameter edit up to the trial (so it survives selecting away and back). */
   onInputChange: (input: SimInput) => void;
@@ -55,7 +53,7 @@ export function SimulationView({
   // A trial is complete once it has run its full frame count. Derived (not stored) so a
   // restored trial — whose snapshot is at the final frame — reads as complete too.
   const isComplete = input.framesPerTrial > 0 && transient.frame >= input.framesPerTrial;
-  // Lock the parameter controls once a run has started or finished; Reset clears it.
+  // Lock the parameter controls once a run has started or finished.
   const inputsLocked = transient.frame > 0;
 
   const onStep = useCallback(
@@ -78,7 +76,6 @@ export function SimulationView({
     if (isComplete && isPlaying) pause();
   }, [isComplete, isPlaying, pause]);
 
-  // Track the canvas's laid-out width so its backing store matches (full column width).
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas || typeof ResizeObserver === "undefined") return;
@@ -89,7 +86,7 @@ export function SimulationView({
     return () => observer.disconnect();
   }, []);
 
-  // Canvas drawing — runs whenever the walkers move or the canvas is resized.
+  // Draw the walkers onto the canvas.
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -106,7 +103,6 @@ export function SimulationView({
     }
   }, [transient.walkers, canvasWidth]);
 
-  // Edit a parameter: update the live state AND persist it onto the trial.
   const updateInput = (patch: Partial<SimInput>) => {
     const next = { ...input, ...patch };
     setInput(next);

@@ -24,8 +24,6 @@ export interface UseSimulationRunnerReturn {
  * that advances the model. `play()` starts the rAF loop; `pause()` stops it; `step()`
  * invokes the callback once without changing the running state (useful for advancing the
  * model frame by frame while paused).
- *
- * See docs/infrastructure-plan.md §3 for the contract.
  */
 export function useSimulationRunner({
   onStep,

@@ -28,8 +28,7 @@
   text-align: center;
 }
 
-// The time-series chart fills the full width of the Data column (minus the column padding);
-// height is fixed. The backing store is rendered at devicePixelRatio for crispness.
+// CSS (display) size; the backing store is sized at devicePixelRatio in JS for crispness.
 .series-chart {
   height: 130px;
   width: 100%;

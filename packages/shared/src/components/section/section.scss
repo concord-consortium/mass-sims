@@ -1,15 +1,5 @@
 @use "../../styles/tokens" as tokens;
 
-// Plain (global) SCSS scoped under a single `.section` root class — the house convention
-// (see dese-models). Children are nested so their selectors stay `.section .chip`, etc.,
-// rather than leaking generic names like `.content`/`.title` into the global scope.
-//
-// The title chip is the demo's "notched" floating treatment (docs/ui-design-plan.md §3 / §13):
-// a rounded, bordered, surface-filled pill centered on the panel's top edge, pulled up by
-// `$section-chip-overlap` so it half-overlaps the border. The chip stays in normal flow (a flex
-// item with a negative top margin), so the content below it clears the chip's lower half without
-// any manual padding. The label is Lato 18px bold; an optional instruction follows as 16px
-// regular, separated by a `•` bullet that this CSS renders (consumers don't include it).
 .section {
   background: tokens.$color-surface-muted;
   border: tokens.$border-strong;
@@ -22,7 +12,7 @@
 
   .chip {
     align-items: center;
-    align-self: center; // shrink to content and center on the panel's top edge
+    align-self: center;
     background: tokens.$color-surface;
     border: tokens.$border-strong;
     border-radius: tokens.$radius-lg;
@@ -55,8 +45,6 @@
     gap: tokens.$space-2;
   }
 
-  // The `•` separator between title and instruction, rendered by Section's own CSS so
-  // consumers pass a plain instruction string with no bullet in their markup.
   .instruction::before {
     content: "•";
   }

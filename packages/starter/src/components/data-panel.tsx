@@ -14,8 +14,7 @@ export interface DataPanelProps {
 }
 
 export function DataPanel({ trials, selectedIndex }: DataPanelProps) {
-  // Aggregate across trials that have actually been run (output !== null); empty trials are
-  // present in the list but contribute no data.
+  // Aggregate only trials that have been run; empty trials in the list contribute no data.
   const distances: number[] = [];
   for (const trial of trials) {
     if (trial.output) distances.push(trial.output.avgDistance);
@@ -134,7 +133,7 @@ function drawChart(
     ctx.fillText((max * frac).toFixed(1), left - 5, y);
   }
 
-  // Plot border (the axes box) — thin and dark.
+  // Plot border (the axes box).
   ctx.strokeStyle = "#333";
   ctx.lineWidth = 1;
   ctx.strokeRect(left, top, plotW, plotH);

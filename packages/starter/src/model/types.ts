@@ -10,7 +10,7 @@ export interface SimInput {
   walkerCount: number;
   /** Per-frame step size in pixels (0.1–5). */
   stepSize: number;
-  /** Total frames per trial (50–500). */
+  /** Total frames per trial (1–500). */
   framesPerTrial: number;
   /** Seed for the seeded-random PRNG — same seed → same trial. */
   seed: string;
@@ -37,9 +37,8 @@ export interface SimTransient {
 }
 
 /**
- * A trial in the Trials column. Created empty (the active trial the sim runs into); becomes
- * "recorded" once it has been run. Trials are reset (cleared back to empty), never deleted —
- * see docs/ui-design-plan.md §14. A new trial only appears when the user clicks the "New" card.
+ * A trial in the Trials column — created empty, becomes "recorded" once it has been run. Reset
+ * clears a trial back to empty; trials are never deleted.
  */
 export interface RecordedTrial {
   /** Stable id (random; not the letter — the letter is derived from list index). */

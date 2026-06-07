@@ -36,9 +36,6 @@ export interface UseModelStateReturn<IInput, IOutput, ITransient> {
  * (value-or-updater). Three reset helpers cover the common transition points:
  * `resetTransient` between trials, `resetOutput` to clear accumulated stats, `resetAll`
  * on full sim reset.
- *
- * See docs/infrastructure-plan.md §3 for the contract. Phase 2b ships this minimal
- * shape; trial-list management lives in the sim until a follow-up hook proves useful.
  */
 export function useModelState<IInput, IOutput, ITransient>(
   options: UseModelStateOptions<IInput, IOutput, ITransient>,
