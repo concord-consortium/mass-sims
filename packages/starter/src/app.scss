@@ -1,11 +1,36 @@
 @use "@concord-consortium/mass-sims-shared/styles/tokens" as tokens;
 
-.placeholder {
+// "New trial" card — a sim-owned affordance (the shared TrialCard has no add variant). Matches
+// the TrialCard footprint (120 × 136) with a dashed border to read as "add a slot".
+.new-trial-card {
   align-items: center;
-  color: tokens.$color-text-muted;
+  background: transparent;
+  border: 2px dashed tokens.$color-border;
+  border-radius: tokens.$radius-md;
+  color: tokens.$color-text;
+  cursor: pointer;
   display: flex;
+  flex-direction: column;
   font-family: tokens.$font-family-base;
   font-size: tokens.$font-size-base;
-  height: 100%;
+  font-weight: 700;
+  gap: tokens.$space-1;
+  height: 136px;
   justify-content: center;
+  width: 120px;
+}
+
+.new-trial-card:hover,
+.new-trial-card:focus-visible {
+  background: tokens.$color-surface-hover;
+}
+
+.new-trial-card:focus-visible {
+  outline: tokens.$focus-outline;
+  outline-offset: tokens.$focus-outline-offset;
+}
+
+.new-trial-icon {
+  font-size: 28px;
+  line-height: 1;
 }

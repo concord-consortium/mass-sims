@@ -6,7 +6,11 @@
   color: tokens.$color-text;
   display: grid;
   font-family: tokens.$font-family-base;
-  gap: tokens.$column-gap;
+  // Row gap (title bar → panels) gives the floating section chips room to sit clear of the
+  // title bar; the chip's upper half pokes ~18px up, so the visible gap is row-gap − 18 (≈ 2px
+  // here). The column gap between the three panels stays at the standard value.
+  column-gap: tokens.$column-gap;
+  row-gap: 20px;
   grid-template-areas:
     "titlebar  titlebar    titlebar"
     "trials    simulation  data";

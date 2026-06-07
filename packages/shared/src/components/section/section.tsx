@@ -14,9 +14,9 @@ export interface SectionProps {
  * sub-sections inside the Data slot. The title chip is a real heading element so screen
  * readers announce it and `aria-labelledby` exposes the section as a named region.
  *
- * Token values (color, radius, border, type) are now derived from the realized demo design.
- * The chip TREATMENT is still simplified, though: the demo's notched chip that overlaps the
- * panel's top edge, and its larger type scale, land in a later task (see section.scss).
+ * Token values (color, radius, border, type) are derived from the realized demo design. The
+ * title chip uses the demo's notched floating treatment — a centered pill straddling the panel's
+ * top edge, with an optional `•`-separated instruction (see section.scss).
  */
 export function Section({ title, instruction, className, children }: SectionProps) {
   const titleId = useId();

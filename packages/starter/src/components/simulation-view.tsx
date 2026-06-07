@@ -1,57 +1,62 @@
 import { useModelState, useSimulationRunner } from "@concord-consortium/mass-sims-shared";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { finalizeTrial, initialTransient, stepWalkers } from "../model/random-walk";
-import type { SimInput, SimOutput, SimTransient } from "../model/types";
+import type { RecordedTrial, SimInput, SimOutput, SimTransient } from "../model/types";
 import "./simulation-view.scss";
 
-// Canvas height is fixed; width tracks the Simulation column (full width). 250px keeps the
+// Canvas height is fixed; width tracks the Simulation column (full width). 240px keeps the
 // controls + buttons + readout within the shared frame's fixed-height Simulation slot (562px
-// frame → ~440px usable; the slot does not scroll).
-const CANVAS_HEIGHT = 250;
+// frame; the slot does not scroll). Trimmed from 250 to make room for the taller title-bar→panel
+// row gap that lets the floating section chip sit clear of the title bar.
+const CANVAS_HEIGHT = 240;
 const WALKER_DOT_RADIUS = 2;
-const DEFAULT_INPUT: SimInput = {
-  walkerCount: 50,
-  stepSize: 1,
-  framesPerTrial: 200,
-  seed: "trial-A",
-};
 const INITIAL_OUTPUT: SimOutput = { avgDistance: 0, stdDevDistance: 0, avgDistanceSeries: [] };
 
-// Option-C determinism support: the random-walk model is deterministic per seed (a given
-// seed + frame always reproduces the same draws), so to keep trials varying we hand each new
-// trial a fresh seed. The first trial uses DEFAULT_INPUT.seed; Reset (the new-trial boundary)
-// swaps in a new one. Plain Math.random is fine — seeds are not security-sensitive.
-function makeSeed(): string {
-  return `trial-${Math.random().toString(36).slice(2, 10)}`;
-}
-
 export interface SimulationViewProps {
-  /** Called each time a trial completes (frame count reaches framesPerTrial). */
-  onTrialComplete: (trial: { input: SimInput; output: SimOutput }) => void;
+  /**
+   * The selected trial — the single source of truth for this run's parameters and (once run)
+   * its result. The parent re-keys this component per trial + completion state, so the live
+   * model state below re-initializes from `trial` on every select / reset / completion.
+   */
+  trial: RecordedTrial;
+  /** The selected trial's letter (A, B, …), shown as a badge in the region's upper-left. */
+  trialLabel: string;
+  /** Persist a parameter edit up to the trial (so it survives selecting away and back). */
+  onInputChange: (input: SimInput) => void;
+  /** Record the finished run into the selected trial (output + final-frame snapshot). */
+  onComplete: (output: SimOutput, finalTransient: SimTransient) => void;
+  /** Clear the selected trial back to empty so it can be re-run (same seed → reproducible). */
+  onReset: () => void;
 }
 
-export function SimulationView({ onTrialComplete }: SimulationViewProps) {
+export function SimulationView({
+  trial,
+  trialLabel,
+  onInputChange,
+  onComplete,
+  onReset,
+}: SimulationViewProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   // Backing-store width tracks the canvas's laid-out width so the drawing fills the column
   // without stretching. Measured via ResizeObserver (guarded — jsdom lacks it in tests).
   const [canvasWidth, setCanvasWidth] = useState(0);
-  const {
-    input,
-    output,
-    transient,
-    setInput,
-    setOutput,
-    setTransient,
-    resetTransient,
-    resetOutput,
-  } = useModelState<SimInput, SimOutput, SimTransient>({
-    initialInput: DEFAULT_INPUT,
-    initialOutput: INITIAL_OUTPUT,
-    initialTransient: initialTransient(DEFAULT_INPUT),
+  // Live model state for the active run, seeded from the selected trial. A completed trial
+  // restores its final-frame snapshot (so its dots show); an empty trial starts at frame 0.
+  const { input, output, transient, setInput, setOutput, setTransient } = useModelState<
+    SimInput,
+    SimOutput,
+    SimTransient
+  >({
+    initialInput: trial.input,
+    initialOutput: trial.output ?? INITIAL_OUTPUT,
+    initialTransient: trial.finalTransient ?? initialTransient(trial.input),
   });
 
-  // Lock the controls once a trial is in progress (frame > 0 and not yet finalized).
-  const trialInProgress = transient.frame > 0 && transient.frame < input.framesPerTrial;
+  // A trial is complete once it has run its full frame count. Derived (not stored) so a
+  // restored trial — whose snapshot is at the final frame — reads as complete too.
+  const isComplete = input.framesPerTrial > 0 && transient.frame >= input.framesPerTrial;
+  // Lock the parameter controls once a run has started or finished; Reset clears it.
+  const inputsLocked = transient.frame > 0;
 
   const onStep = useCallback(
     (_deltaMs: number) => {
@@ -60,21 +65,18 @@ export function SimulationView({ onTrialComplete }: SimulationViewProps) {
       if (next.frame >= input.framesPerTrial) {
         const finalOutput = finalizeTrial(next);
         setOutput(finalOutput);
-        onTrialComplete({ input, output: finalOutput });
-        // Pause the runner — sim authors customize this in their own sims.
+        onComplete(finalOutput, next);
       }
     },
-    [transient, input, setTransient, setOutput, onTrialComplete],
+    [transient, input, setTransient, setOutput, onComplete],
   );
 
   const { isPlaying, play, pause, step } = useSimulationRunner({ onStep });
 
-  // Pause the runner on trial completion so it doesn't loop into the next frame.
+  // Pause the runner the moment the trial completes so it doesn't loop into the next frame.
   useEffect(() => {
-    if (transient.frame >= input.framesPerTrial && isPlaying) {
-      pause();
-    }
-  }, [transient.frame, input.framesPerTrial, isPlaying, pause]);
+    if (isComplete && isPlaying) pause();
+  }, [isComplete, isPlaying, pause]);
 
   // Track the canvas's laid-out width so its backing store matches (full column width).
   useEffect(() => {
@@ -104,17 +106,18 @@ export function SimulationView({ onTrialComplete }: SimulationViewProps) {
     }
   }, [transient.walkers, canvasWidth]);
 
-  const resetTrial = () => {
-    pause();
-    resetTransient();
-    resetOutput();
-    // Hand the next trial a fresh seed so it varies from the one just run (Option C).
-    setInput((p) => ({ ...p, seed: makeSeed() }));
-    setTransient(initialTransient(input));
+  // Edit a parameter: update the live state AND persist it onto the trial.
+  const updateInput = (patch: Partial<SimInput>) => {
+    const next = { ...input, ...patch };
+    setInput(next);
+    onInputChange(next);
   };
 
   return (
     <div className="simulation-view">
+      <span className="trial-badge" aria-hidden="true">
+        {trialLabel}
+      </span>
       <canvas
         ref={canvasRef}
         width={canvasWidth}
@@ -129,8 +132,8 @@ export function SimulationView({ onTrialComplete }: SimulationViewProps) {
             min={1}
             max={500}
             value={input.walkerCount}
-            disabled={trialInProgress}
-            onChange={(e) => setInput((p) => ({ ...p, walkerCount: Number(e.target.value) }))}
+            disabled={inputsLocked}
+            onChange={(e) => updateInput({ walkerCount: Number(e.target.value) })}
           />
           <span>{input.walkerCount}</span>
         </label>
@@ -142,8 +145,8 @@ export function SimulationView({ onTrialComplete }: SimulationViewProps) {
             max={5}
             step={0.1}
             value={input.stepSize}
-            disabled={trialInProgress}
-            onChange={(e) => setInput((p) => ({ ...p, stepSize: Number(e.target.value) }))}
+            disabled={inputsLocked}
+            onChange={(e) => updateInput({ stepSize: Number(e.target.value) })}
           />
           <span>{input.stepSize.toFixed(1)}</span>
         </label>
@@ -154,19 +157,19 @@ export function SimulationView({ onTrialComplete }: SimulationViewProps) {
             min={1}
             max={500}
             value={input.framesPerTrial}
-            disabled={trialInProgress}
-            onChange={(e) => setInput((p) => ({ ...p, framesPerTrial: Number(e.target.value) }))}
+            disabled={inputsLocked}
+            onChange={(e) => updateInput({ framesPerTrial: Number(e.target.value) })}
           />
         </label>
       </div>
       <div className="buttons">
-        <button type="button" onClick={() => (isPlaying ? pause() : play())}>
+        <button type="button" onClick={() => (isPlaying ? pause() : play())} disabled={isComplete}>
           {isPlaying ? "Pause" : "Play"}
         </button>
-        <button type="button" onClick={step}>
+        <button type="button" onClick={step} disabled={isComplete}>
           Step
         </button>
-        <button type="button" onClick={resetTrial}>
+        <button type="button" onClick={onReset} disabled={transient.frame === 0}>
           Reset
         </button>
       </div>

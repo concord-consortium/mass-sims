@@ -36,12 +36,18 @@ export interface SimTransient {
   avgDistanceSeries: number[];
 }
 
-/** A trial that has finished recording. */
+/**
+ * A trial in the Trials column. Created empty (the active trial the sim runs into); becomes
+ * "recorded" once it has been run. Trials are reset (cleared back to empty), never deleted —
+ * see docs/ui-design-plan.md §14. A new trial only appears when the user clicks the "New" card.
+ */
 export interface RecordedTrial {
-  /** Stable id (random; not the letter). */
+  /** Stable id (random; not the letter — the letter is derived from list index). */
   id: string;
-  /** The inputs used for this trial — snapshotted at the moment the trial started. */
+  /** The inputs this trial runs with, including its own fixed seed (deterministic re-runs). */
   input: SimInput;
-  /** The outputs the trial produced. */
-  output: SimOutput;
+  /** The outputs the trial produced, or `null` until it has been run. */
+  output: SimOutput | null;
+  /** Final-frame snapshot used to restore the canvas when the trial is selected; `null` until run. */
+  finalTransient: SimTransient | null;
 }

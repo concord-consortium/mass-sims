@@ -9,11 +9,32 @@
   gap: tokens.$space-2;
   padding: tokens.$space-2;
 
+  // Trial-indicator badge in the panel's upper-left corner (matches the selected TrialCard
+  // badge). Anchored to the enclosing `.section` (the nearest positioned ancestor) so it sits in
+  // the panel corner rather than below the chip-clearance + content padding; the section is its
+  // containing block, which lets it escape the Simulation slot's `overflow: hidden`.
+  .trial-badge {
+    align-items: center;
+    background: tokens.$color-trial-badge-bg-selected;
+    border-radius: tokens.$radius-sm;
+    color: tokens.$color-surface;
+    display: flex;
+    font-size: tokens.$font-size-lg;
+    font-weight: 700;
+    height: 32px;
+    justify-content: center;
+    left: tokens.$space-1;
+    line-height: 1;
+    position: absolute;
+    top: tokens.$space-1;
+    width: 32px;
+  }
+
   canvas {
     background: tokens.$color-surface;
     border: tokens.$border-strong;
     border-radius: tokens.$radius-md;
-    height: 250px;
+    height: 240px;
     width: 100%;
   }
 
