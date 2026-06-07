@@ -221,8 +221,8 @@ Unlike `<Section>`, `<DataSubsection>` does NOT render a chip. The title is a re
 
 Exported from `packages/shared/src/hooks/`:
 
-- `useModelState<IInput, IOutput, ITransient>()` — input/output/snapshot model state.
-- `useSimulationRunner()` — play/pause/step lifecycle.
+- `useModelState<IInput, IOutput, ITransient>({ initialInput, initialOutput, initialTransient })` — returns `{ input, output, transient, setInput, setOutput, setTransient, resetTransient, resetOutput, resetAll }`. Three typed state shapes: input (user-controlled parameters), output (per-trial accumulated record), transient (per-frame model state). Setters follow standard React semantics (value or updater). Three reset helpers: `resetTransient` between trials, `resetOutput` to clear accumulated stats, `resetAll` on full sim reset. Trial-list management is the sim's responsibility (no built-in trial-list state).
+- `useSimulationRunner({ onStep, stepDeltaMs })` — returns `{ isPlaying, play, pause, step }`. Composes `useFrameLoop` underneath. `onStep` runs on every animation frame while `isPlaying` and once per `step()` invocation; `stepDeltaMs` defaults to 16 ms.
 - `useFrameLoop()` — `requestAnimationFrame` wrapper with cleanup + frame-time delta.
 - `useStateWithCallback()` / `useStateWithCallbackLazy()` — set-state-then-do-X.
 - `useInterval()`, `useCurrentAndPrevious()` — small utility hooks.
