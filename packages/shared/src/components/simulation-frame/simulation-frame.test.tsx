@@ -386,4 +386,14 @@ describe("SimulationFrame", () => {
     );
     expect(queryByRole("button", { name: /about/i })).not.toBeInTheDocument();
   });
+
+  it("applies the standalone class by default (outer container visible)", () => {
+    const { container } = render(<SimulationFrame simTitle="Sim" tagline="t" />);
+    expect(container.querySelector(".simulation-frame")).toHaveClass("standalone");
+  });
+
+  it("omits the standalone class when standalone={false} is passed", () => {
+    const { container } = render(<SimulationFrame simTitle="Sim" tagline="t" standalone={false} />);
+    expect(container.querySelector(".simulation-frame")).not.toHaveClass("standalone");
+  });
 });

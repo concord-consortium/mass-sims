@@ -1,3 +1,4 @@
+import clsx from "clsx";
 import {
   type ReactNode,
   type PointerEvent as ReactPointerEvent,
@@ -18,6 +19,14 @@ export interface SimulationFrameProps {
   infoModalContent?: ReactNode;
   simTitle: string;
   tagline: string;
+  /**
+   * When true (default), the frame renders its own 2 px / 10 px-radius outer container.
+   * In Activity Player embeddings, AP's chrome provides the visual container, so the
+   * sim author passes `standalone={false}` to suppress the inner one. Phase 2c's
+   * iframe-phone integration will set this automatically; standalone sims keep the
+   * default.
+   */
+  standalone?: boolean;
 }
 
 interface SlotProps {
@@ -60,14 +69,18 @@ function Data({ children, title = "Data" }: SlotProps) {
 
 /**
  * Three-region simulation shell implementing the §3 API contract (infrastructure-plan.md).
- * STRUCTURE ONLY — wide-mode grid; visual specifics live in tokens.scss. Narrow mode (676 px)
- * collapse behavior is deferred (ui-design-plan.md §8/Q30).
+ * STRUCTURE ONLY — visual specifics live in tokens.scss. Trials is fixed at 155 px;
+ * Simulation and Data flex in a 564 : 285 ratio so the layout adapts to all four
+ * container widths (1044 / 1024 / 989 / 767). When `standalone` (the default), the
+ * frame renders a 2 px / 10 px-radius outer container; embedded sims pass
+ * `standalone={false}` so AP's chrome is the only container.
  */
 export function SimulationFrame({
   simTitle,
   tagline,
   infoModalContent,
   children,
+  standalone = true,
 }: SimulationFrameProps) {
   const [infoOpen, setInfoOpen] = useState(false);
   const triggerRef = useRef<HTMLButtonElement>(null);
@@ -143,7 +156,7 @@ export function SimulationFrame({
   };
 
   return (
-    <div className="simulation-frame">
+    <div className={clsx("simulation-frame", standalone && "standalone")}>
       <header className="title-bar">
         <div className="title-bar-left">
           <h1 className="sim-title">{simTitle}</h1>
