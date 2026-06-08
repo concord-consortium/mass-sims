@@ -96,19 +96,18 @@ $frame-height:                       562px;
 $frame-width-ap-full:                1044px;
 $frame-width-standalone:             1024px;
 $frame-width-ap-2col-hidden:         989px;
-$frame-width-ap-2col-shown:          676px;
-
-// Wide / narrow mode switch breakpoint (narrow-mode behavior still being designed).
-$frame-narrow-breakpoint:            900px;
+$frame-width-ap-2col-shown:          767px;
 
 // Single header row — there is no project bar in the sim (AP renders that).
 $frame-titlebar-height:              50px;
 
-// Concrete column widths at 1044 (AP Full Width). Other widths reuse the same
-// trials/data fixed widths and let the simulation column flex.
+// Columns. Trials is fixed; Simulation and Data flex in a 564 : 285 ratio
+// (calibrated at 1044 px — AP Full Width — and proportionally shrinking
+// below that, down to 767 px AP 2-col with the instructions panel visible).
+// See docs/ui-design-plan.md §7 for the per-context widths.
 $column-trials-width:                155px;
-$column-simulation-width-ap-full:    564px;
-$column-data-width:                  285px;
+$column-simulation-flex:             564;
+$column-data-flex:                   285;
 
 // Body region around the three-column grid.
 $column-gap:                         10px;
@@ -123,9 +122,10 @@ $section-chip-overlap:               17px;
 // CORNER RADII
 // =============================================================================
 
-$radius-sm:              4px;    // small inner badges (trial-card letter)
-$radius-md:              6px;    // buttons (About, trial cards, sim buttons)
-$radius-lg:              8px;    // section panel, section chip, info modal
+$radius-sm:                4px;  // small inner badges (trial-card letter)
+$radius-md:                6px;  // buttons (About, trial cards, sim buttons)
+$radius-lg:                8px;  // section panel, section chip, info modal
+$radius-frame-standalone:  10px; // standalone outer container — see ui-design-plan §7
 
 
 // =============================================================================
