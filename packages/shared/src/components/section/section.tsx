@@ -14,18 +14,18 @@ export interface SectionProps {
  * sub-sections inside the Data slot. The title chip is a real heading element so screen
  * readers announce it and `aria-labelledby` exposes the section as a named region.
  *
- * VISUAL TREATMENT IS A PLACEHOLDER (see docs/simulation-frame-plan.md). Final chip
- * styling, background, shadow, and padding scale arrive via tokens.scss when designs land.
+ * Token values (color, radius, border, type) are now derived from the realized demo design.
+ * The chip TREATMENT is still simplified, though: the demo's notched chip that overlaps the
+ * panel's top edge, and its larger type scale, land in a later task (see section.scss).
  */
 export function Section({ title, instruction, className, children }: SectionProps) {
   const titleId = useId();
   return (
     <section className={clsx("section", className)} aria-labelledby={titleId}>
       <div className="chip">
-        {/* Heading is fixed at <h2>. Sub-sections nested inside the Data slot currently also
-            render <h2> under the Data region's own <h2> (flat heading outline). A configurable
-            heading level (<h3> for sub-sections) is deferred to the Data sub-section variant —
-            an a11y/heading-hierarchy concern, see docs/simulation-frame-plan.md deferred list. */}
+        {/* Heading is fixed at <h2> — Section labels the three top-level frame regions.
+            Sub-sections inside the Data slot use the separate <DataSubsection> component, which
+            renders an <h3> under the Data region's <h2> for a correct nested heading outline. */}
         <h2 id={titleId} className="title">
           {title}
         </h2>

@@ -18,15 +18,12 @@
 // =============================================================================
 // CSS CUSTOM PROPERTIES
 // Mirror selected tokens at runtime so they're available to inline styles and
-// JS-driven theming hooks (e.g., the `--touch-target-min` token referenced by
-// shared controls per docs/ui-design-plan.md §11).
+// JS-driven theming hooks.
 // =============================================================================
 
 :root {
-  --color-primary:       #{tokens.$color-primary};
-  --color-accent:        #{tokens.$color-accent};
-  --color-surface:       #{tokens.$color-surface};
   --color-text:          #{tokens.$color-text};
+  --color-surface:       #{tokens.$color-surface};
   --color-focus-outline: #{tokens.$color-focus-outline};
   --touch-target-min:    #{tokens.$touch-target-min};
   --frame-height:        #{tokens.$frame-height};

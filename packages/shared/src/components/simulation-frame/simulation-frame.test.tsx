@@ -1,10 +1,10 @@
 import { fireEvent, render } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { SimulationFrame } from "./simulation-frame";
 
 function renderFrame(extra?: Partial<{ instruction: string }>) {
   return render(
-    <SimulationFrame projectName="Mass Sims" simTitle="Bananas" tagline="A short description">
+    <SimulationFrame simTitle="Bananas" tagline="A short description">
       <SimulationFrame.Trials>
         <div>trial-row</div>
       </SimulationFrame.Trials>
@@ -19,11 +19,28 @@ function renderFrame(extra?: Partial<{ instruction: string }>) {
 }
 
 describe("SimulationFrame", () => {
-  it("renders the four header props", () => {
+  it("renders the three header props", () => {
     const { getByText } = renderFrame();
-    expect(getByText("Mass Sims")).toBeInTheDocument();
     expect(getByText("Bananas")).toBeInTheDocument();
     expect(getByText("A short description")).toBeInTheDocument();
+  });
+
+  it("renders the DESE and Concord Consortium partner logos in the title bar", () => {
+    const { getByAltText } = renderFrame();
+    expect(getByAltText(/DESE/i)).toBeInTheDocument();
+    expect(getByAltText(/Concord Consortium/i)).toBeInTheDocument();
+  });
+
+  it("renders the About button with an icon and the 'About' label", () => {
+    const { getByRole } = render(
+      <SimulationFrame simTitle="S" tagline="t" infoModalContent={<p>x</p>}>
+        <SimulationFrame.Trials>a</SimulationFrame.Trials>
+        <SimulationFrame.Simulation>b</SimulationFrame.Simulation>
+        <SimulationFrame.Data>c</SimulationFrame.Data>
+      </SimulationFrame>,
+    );
+    // The button's accessible name is the text 'About' (icon is decorative aria-hidden).
+    expect(getByRole("button", { name: "About" })).toBeInTheDocument();
   });
 
   it("renders each slot's children inside a titled region", () => {
@@ -43,7 +60,7 @@ describe("SimulationFrame", () => {
 
   it("gives region headings unique ids across multiple frames in one document", () => {
     const oneFrame = (key: string) => (
-      <SimulationFrame key={key} projectName="P" simTitle={key} tagline="t">
+      <SimulationFrame key={key} simTitle={key} tagline="t">
         <SimulationFrame.Trials>a</SimulationFrame.Trials>
         <SimulationFrame.Simulation>b</SimulationFrame.Simulation>
         <SimulationFrame.Data>c</SimulationFrame.Data>
@@ -72,7 +89,7 @@ describe("SimulationFrame", () => {
 
   it("lets a sim override each slot's visible title", () => {
     const { getByRole, queryByRole } = render(
-      <SimulationFrame projectName="P" simTitle="Bananas" tagline="t">
+      <SimulationFrame simTitle="Bananas" tagline="t">
         <SimulationFrame.Trials title="Crosses">
           <div>tr</div>
         </SimulationFrame.Trials>
@@ -96,7 +113,7 @@ describe("SimulationFrame", () => {
 
   it("places slots in Trials/Simulation/Data order regardless of source order", () => {
     const { getByRole } = render(
-      <SimulationFrame projectName="P" simTitle="S" tagline="t">
+      <SimulationFrame simTitle="S" tagline="t">
         <SimulationFrame.Data>
           <div>d</div>
         </SimulationFrame.Data>
@@ -116,12 +133,7 @@ describe("SimulationFrame", () => {
 
   it("shows an About button but no modal initially", () => {
     const { getByRole, queryByRole } = render(
-      <SimulationFrame
-        projectName="P"
-        simTitle="S"
-        tagline="t"
-        infoModalContent={<p>about this sim</p>}
-      >
+      <SimulationFrame simTitle="S" tagline="t" infoModalContent={<p>about this sim</p>}>
         <SimulationFrame.Trials>a</SimulationFrame.Trials>
         <SimulationFrame.Simulation>b</SimulationFrame.Simulation>
         <SimulationFrame.Data>c</SimulationFrame.Data>
@@ -133,25 +145,20 @@ describe("SimulationFrame", () => {
 
   it("opens the modal with the info content when the About button is clicked", () => {
     const { getByRole, getByText } = render(
-      <SimulationFrame
-        projectName="P"
-        simTitle="S"
-        tagline="t"
-        infoModalContent={<p>about this sim</p>}
-      >
+      <SimulationFrame simTitle="S" tagline="t" infoModalContent={<p>about this sim</p>}>
         <SimulationFrame.Trials>a</SimulationFrame.Trials>
         <SimulationFrame.Simulation>b</SimulationFrame.Simulation>
         <SimulationFrame.Data>c</SimulationFrame.Data>
       </SimulationFrame>,
     );
     fireEvent.click(getByRole("button", { name: /about/i }));
-    expect(getByRole("dialog")).toHaveAttribute("aria-modal", "true");
+    expect(getByRole("dialog")).toBeInTheDocument();
     expect(getByText("about this sim")).toBeInTheDocument();
   });
 
   it("titles the modal contextually from simTitle", () => {
     const { getByRole } = render(
-      <SimulationFrame projectName="P" simTitle="Bananas" tagline="t" infoModalContent={<p>x</p>}>
+      <SimulationFrame simTitle="Bananas" tagline="t" infoModalContent={<p>x</p>}>
         <SimulationFrame.Trials>a</SimulationFrame.Trials>
         <SimulationFrame.Simulation>b</SimulationFrame.Simulation>
         <SimulationFrame.Data>c</SimulationFrame.Data>
@@ -165,7 +172,7 @@ describe("SimulationFrame", () => {
 
   it("closes the modal via the close button", () => {
     const { getByRole, queryByRole } = render(
-      <SimulationFrame projectName="P" simTitle="S" tagline="t" infoModalContent={<p>about</p>}>
+      <SimulationFrame simTitle="S" tagline="t" infoModalContent={<p>about</p>}>
         <SimulationFrame.Trials>a</SimulationFrame.Trials>
         <SimulationFrame.Simulation>b</SimulationFrame.Simulation>
         <SimulationFrame.Data>c</SimulationFrame.Data>
@@ -176,26 +183,156 @@ describe("SimulationFrame", () => {
     expect(queryByRole("dialog")).not.toBeInTheDocument();
   });
 
-  it("portals the modal outside the .simulation-frame element (to document.body)", () => {
+  it("renders the About panel inside the frame, anchored top-right with no backdrop scrim", () => {
     const { container, getByRole } = render(
-      <SimulationFrame projectName="P" simTitle="S" tagline="t" infoModalContent={<p>about</p>}>
+      <SimulationFrame simTitle="S" tagline="t" infoModalContent={<p>about</p>}>
         <SimulationFrame.Trials>a</SimulationFrame.Trials>
         <SimulationFrame.Simulation>b</SimulationFrame.Simulation>
         <SimulationFrame.Data>c</SimulationFrame.Data>
       </SimulationFrame>,
     );
     fireEvent.click(getByRole("button", { name: /about/i }));
-    const frame = container.querySelector(".simulation-frame");
     const dialog = getByRole("dialog");
-    // The dialog must NOT be a descendant of the frame (otherwise a `position: fixed`
-    // ancestor with a transform/filter/contain could trap it), but must be in the document.
-    expect(frame?.contains(dialog)).toBe(false);
-    expect(document.body.contains(dialog)).toBe(true);
+    // No full-screen scrim wraps the dialog — the sim content behind it stays interactive.
+    expect(container.querySelector(".simulation-frame-info-overlay")).toBeNull();
+    // The panel lives INSIDE the frame so its `position: absolute` anchors to the frame
+    // (which is `position: relative`), not the page — keeping it placed per-frame.
+    const frame = container.querySelector(".simulation-frame");
+    expect(frame?.contains(dialog)).toBe(true);
+  });
+
+  it("renders a draggable header handle on the About panel", () => {
+    const { container, getByRole } = render(
+      <SimulationFrame simTitle="S" tagline="t" infoModalContent={<p>about</p>}>
+        <SimulationFrame.Trials>a</SimulationFrame.Trials>
+        <SimulationFrame.Simulation>b</SimulationFrame.Simulation>
+        <SimulationFrame.Data>c</SimulationFrame.Data>
+      </SimulationFrame>,
+    );
+    fireEvent.click(getByRole("button", { name: /about/i }));
+    // The drag handle is the panel's header, identified by class.
+    expect(container.querySelector(".modal-drag-handle")).not.toBeNull();
+  });
+
+  it("opens the About panel at its default position (no drag offset applied)", () => {
+    const { getByRole } = render(
+      <SimulationFrame simTitle="S" tagline="t" infoModalContent={<p>about</p>}>
+        <SimulationFrame.Trials>a</SimulationFrame.Trials>
+        <SimulationFrame.Simulation>b</SimulationFrame.Simulation>
+        <SimulationFrame.Data>c</SimulationFrame.Data>
+      </SimulationFrame>,
+    );
+    fireEvent.click(getByRole("button", { name: /about/i }));
+    // Drag position is a transform offset reset to 0,0 on each open, so the panel always
+    // reappears at its CSS-anchored default rather than wherever it was last dragged.
+    expect(getByRole("dialog")).toHaveStyle({ transform: "translate(0px, 0px)" });
+  });
+
+  it("toggles the About panel closed when the About button is clicked again", () => {
+    const { getByRole, queryByRole } = render(
+      <SimulationFrame simTitle="S" tagline="t" infoModalContent={<p>about</p>}>
+        <SimulationFrame.Trials>a</SimulationFrame.Trials>
+        <SimulationFrame.Simulation>b</SimulationFrame.Simulation>
+        <SimulationFrame.Data>c</SimulationFrame.Data>
+      </SimulationFrame>,
+    );
+    const aboutButton = getByRole("button", { name: /about/i });
+    fireEvent.click(aboutButton);
+    expect(getByRole("dialog")).toBeInTheDocument();
+    // Clicking About again closes the open panel (matches the demo's toggle behavior).
+    fireEvent.click(aboutButton);
+    expect(queryByRole("dialog")).not.toBeInTheDocument();
+  });
+
+  it("nudges the About panel with Alt+Arrow keyboard dragging", () => {
+    const { getByRole } = render(
+      <SimulationFrame simTitle="S" tagline="t" infoModalContent={<p>about</p>}>
+        <SimulationFrame.Trials>a</SimulationFrame.Trials>
+        <SimulationFrame.Simulation>b</SimulationFrame.Simulation>
+        <SimulationFrame.Data>c</SimulationFrame.Data>
+      </SimulationFrame>,
+    );
+    fireEvent.click(getByRole("button", { name: /about/i }));
+    const dialog = getByRole("dialog");
+    // Alt+ArrowRight moves +10px on x; Alt+Shift+ArrowDown then adds +40px on y.
+    fireEvent.keyDown(dialog, { key: "ArrowRight", altKey: true });
+    expect(dialog).toHaveStyle({ transform: "translate(10px, 0px)" });
+    fireEvent.keyDown(dialog, { key: "ArrowDown", altKey: true, shiftKey: true });
+    expect(dialog).toHaveStyle({ transform: "translate(10px, 40px)" });
+  });
+
+  it("removes drag listeners from window if the frame unmounts mid-drag", () => {
+    const addSpy = vi.spyOn(window, "addEventListener");
+    const removeSpy = vi.spyOn(window, "removeEventListener");
+    const { container, getByRole, unmount } = render(
+      <SimulationFrame simTitle="S" tagline="t" infoModalContent={<p>about</p>}>
+        <SimulationFrame.Trials>a</SimulationFrame.Trials>
+        <SimulationFrame.Simulation>b</SimulationFrame.Simulation>
+        <SimulationFrame.Data>c</SimulationFrame.Data>
+      </SimulationFrame>,
+    );
+    fireEvent.click(getByRole("button", { name: /about/i }));
+    const handle = container.querySelector(".modal-drag-handle");
+    if (!handle) throw new Error("expected a drag handle");
+    // Begin a drag (pointer down on the header) but unmount before any pointerup fires.
+    fireEvent.pointerDown(handle, { clientX: 10, clientY: 10 });
+    expect(addSpy).toHaveBeenCalledWith("pointermove", expect.any(Function));
+    expect(addSpy).toHaveBeenCalledWith("pointerup", expect.any(Function));
+    unmount();
+    // Unmount cleanup detaches the gesture's window listeners so they don't leak.
+    expect(removeSpy).toHaveBeenCalledWith("pointermove", expect.any(Function));
+    expect(removeSpy).toHaveBeenCalledWith("pointerup", expect.any(Function));
+    addSpy.mockRestore();
+    removeSpy.mockRestore();
+  });
+
+  it("tears down a prior drag's listeners when a new drag starts before the first ends", () => {
+    const removeSpy = vi.spyOn(window, "removeEventListener");
+    const { container, getByRole } = render(
+      <SimulationFrame simTitle="S" tagline="t" infoModalContent={<p>about</p>}>
+        <SimulationFrame.Trials>a</SimulationFrame.Trials>
+        <SimulationFrame.Simulation>b</SimulationFrame.Simulation>
+        <SimulationFrame.Data>c</SimulationFrame.Data>
+      </SimulationFrame>,
+    );
+    fireEvent.click(getByRole("button", { name: /about/i }));
+    const handle = container.querySelector(".modal-drag-handle");
+    if (!handle) throw new Error("expected a drag handle");
+    fireEvent.pointerDown(handle, { clientX: 0, clientY: 0 });
+    removeSpy.mockClear();
+    // A second pointerdown (e.g. a second touch) must detach the first gesture's listeners
+    // rather than stacking another set that fights over the offset.
+    fireEvent.pointerDown(handle, { clientX: 5, clientY: 5 });
+    expect(removeSpy).toHaveBeenCalledWith("pointermove", expect.any(Function));
+    expect(removeSpy).toHaveBeenCalledWith("pointerup", expect.any(Function));
+    removeSpy.mockRestore();
+  });
+
+  it("ends the drag on pointercancel, not just pointerup", () => {
+    const removeSpy = vi.spyOn(window, "removeEventListener");
+    const { container, getByRole } = render(
+      <SimulationFrame simTitle="S" tagline="t" infoModalContent={<p>about</p>}>
+        <SimulationFrame.Trials>a</SimulationFrame.Trials>
+        <SimulationFrame.Simulation>b</SimulationFrame.Simulation>
+        <SimulationFrame.Data>c</SimulationFrame.Data>
+      </SimulationFrame>,
+    );
+    fireEvent.click(getByRole("button", { name: /about/i }));
+    const handle = container.querySelector(".modal-drag-handle");
+    if (!handle) throw new Error("expected a drag handle");
+    fireEvent.pointerDown(handle, { clientX: 0, clientY: 0 });
+    removeSpy.mockClear();
+    // A pointercancel (browser/OS aborts the pointer) must end the gesture and detach listeners,
+    // since pointerup won't fire in that case.
+    window.dispatchEvent(new Event("pointercancel"));
+    expect(removeSpy).toHaveBeenCalledWith("pointermove", expect.any(Function));
+    expect(removeSpy).toHaveBeenCalledWith("pointercancel", expect.any(Function));
+    removeSpy.mockRestore();
   });
 
   it("does not move focus to the About button on initial render", () => {
     const { getByRole } = render(
-      <SimulationFrame projectName="P" simTitle="S" tagline="t" infoModalContent={<p>about</p>}>
+      <SimulationFrame simTitle="S" tagline="t" infoModalContent={<p>about</p>}>
         <SimulationFrame.Trials>a</SimulationFrame.Trials>
         <SimulationFrame.Simulation>b</SimulationFrame.Simulation>
         <SimulationFrame.Data>c</SimulationFrame.Data>
@@ -208,7 +345,7 @@ describe("SimulationFrame", () => {
 
   it("returns focus to the About button when the modal closes", () => {
     const { getByRole, queryByRole } = render(
-      <SimulationFrame projectName="P" simTitle="S" tagline="t" infoModalContent={<p>about</p>}>
+      <SimulationFrame simTitle="S" tagline="t" infoModalContent={<p>about</p>}>
         <SimulationFrame.Trials>a</SimulationFrame.Trials>
         <SimulationFrame.Simulation>b</SimulationFrame.Simulation>
         <SimulationFrame.Data>c</SimulationFrame.Data>
@@ -224,7 +361,7 @@ describe("SimulationFrame", () => {
 
   it("moves focus to the close button on open and closes on Escape from there", () => {
     const { getByRole, queryByRole } = render(
-      <SimulationFrame projectName="P" simTitle="S" tagline="t" infoModalContent={<p>about</p>}>
+      <SimulationFrame simTitle="S" tagline="t" infoModalContent={<p>about</p>}>
         <SimulationFrame.Trials>a</SimulationFrame.Trials>
         <SimulationFrame.Simulation>b</SimulationFrame.Simulation>
         <SimulationFrame.Data>c</SimulationFrame.Data>
@@ -241,7 +378,7 @@ describe("SimulationFrame", () => {
 
   it("does not render an About button when no infoModalContent prop is given", () => {
     const { queryByRole } = render(
-      <SimulationFrame projectName="P" simTitle="S" tagline="t">
+      <SimulationFrame simTitle="S" tagline="t">
         <SimulationFrame.Trials>a</SimulationFrame.Trials>
         <SimulationFrame.Simulation>b</SimulationFrame.Simulation>
         <SimulationFrame.Data>c</SimulationFrame.Data>

@@ -1,65 +1,122 @@
 @use "../../styles/tokens" as tokens;
 
 .simulation-frame {
-  background: tokens.$color-surface-muted; // PLACEHOLDER backdrop
+  background: tokens.$color-surface;
   box-sizing: border-box;
   color: tokens.$color-text;
   display: grid;
   font-family: tokens.$font-family-base;
-  gap: tokens.$space-2;
+  gap: tokens.$column-gap;
   grid-template-areas:
-    "projectbar projectbar projectbar"
-    "subheader  subheader  subheader"
-    "trials     simulation data";
+    "titlebar  titlebar    titlebar"
+    "trials    simulation  data";
   grid-template-columns:
-    minmax(tokens.$column-trials-min-width, tokens.$column-trials-max-width)
+    tokens.$column-trials-width
     minmax(0, 1fr)
-    minmax(tokens.$column-data-min-width, tokens.$column-data-max-width);
-  grid-template-rows: tokens.$frame-projectbar-height tokens.$frame-subheader-height 1fr;
+    tokens.$column-data-width;
+  grid-template-rows: tokens.$frame-titlebar-height 1fr;
   height: tokens.$frame-height;
-  padding: tokens.$space-2;
+  padding: tokens.$body-padding;
+  position: relative; // positioning context for the absolutely-anchored About panel
   width: 100%;
 
-  .project-bar {
+  .title-bar {
     align-items: center;
+    background: tokens.$color-surface;
     display: flex;
-    font-weight: 700;
-    grid-area: projectbar;
+    grid-area: titlebar;
+    justify-content: space-between;
+    padding: 0 tokens.$space-2 0 tokens.$space-4;
   }
 
-  .sub-header {
+  .title-bar-left {
+    align-items: baseline;
+    display: flex;
+    gap: tokens.$space-2;
+  }
+
+  .title-bar-right {
     align-items: center;
     display: flex;
     gap: tokens.$space-3;
-    grid-area: subheader;
   }
 
   .sim-title {
+    color: tokens.$color-text;
     font-size: tokens.$font-size-xl;
+    font-weight: 700;
+    line-height: tokens.$line-height-lg;
     margin: 0;
   }
 
   .tagline {
-    color: tokens.$color-text-muted;
-    font-size: tokens.$font-size-sm;
+    color: tokens.$color-text;
+    font-size: tokens.$font-size-base;
+    line-height: tokens.$line-height-sm;
+  }
+
+  .partner-logo {
+    display: block;
   }
 
   .info-button {
     align-items: center;
     background: tokens.$color-surface;
-    border: 1px solid tokens.$color-border;
-    border-radius: tokens.$radius-sm;
+    border: tokens.$border-strong;
+    border-radius: tokens.$radius-md;
+    color: tokens.$color-text;
     cursor: pointer;
-    display: inline-flex;
-    justify-content: center;
-    margin-left: auto;
-    min-height: tokens.$touch-target-min;
-    min-width: tokens.$touch-target-min;
+    display: flex;
+    font-family: tokens.$font-family-base;
+    font-size: tokens.$font-size-base;
+    font-weight: 700;
+    gap: tokens.$space-1 + 2;   // 6 px — between icon and "About"
+    height: 34px;               // visible height; expanded touch area via ::after
+    line-height: tokens.$line-height-sm;
+    padding: 3px tokens.$space-3 3px tokens.$space-2;
+    position: relative;
+  }
+
+  // Expanded touch target — extends 7 px above and below to reach 48 px effective.
+  .info-button::after {
+    bottom: -7px;
+    content: "";
+    left: 0;
+    position: absolute;
+    right: 0;
+    top: -7px;
+  }
+
+  .info-button:hover,
+  .info-button:focus-visible {
+    background: tokens.$color-surface-hover;
+  }
+
+  .info-button:active {
+    background: tokens.$color-surface-active;
+  }
+
+  .info-button:focus-visible {
+    outline: tokens.$focus-outline;
+    outline-offset: tokens.$focus-outline-offset;
+  }
+
+  .info-button-icon {
+    height: 24px;
+    pointer-events: none;
+    width: 24px;
   }
 
   // Grid-area assignments applied to each slot's Section root (a direct child) via className.
   .trials-area {
     grid-area: trials;
+
+    .trials-list {
+      align-items: flex-start;
+      display: flex;
+      flex-direction: column;
+      gap: tokens.$column-gap;
+    }
   }
   .simulation-area {
     grid-area: simulation;
@@ -73,27 +130,99 @@
   }
 }
 
-.simulation-frame-info-overlay {
-  align-items: center;
-  background: rgba(tokens.$black, 0.4); // PLACEHOLDER scrim
+// About panel — a draggable, non-modal side panel anchored to the frame's top-right corner.
+// No backdrop scrim: the sim content behind it stays interactive. Position is a transform
+// offset from this CSS anchor (set inline during drag, reset to 0,0 on each open).
+.simulation-frame-info-modal {
+  background: tokens.$color-surface;
+  border: tokens.$border-strong;
+  border-radius: tokens.$radius-lg;
+  box-shadow: 0 4px 16px rgba(tokens.$black, 0.25);
+  box-sizing: border-box;
   display: flex;
-  inset: 0;
-  justify-content: center;
-  position: fixed;
-  z-index: 1000;
+  flex-direction: column;
+  max-height: tokens.$modal-info-max-height-pct;
+  overflow: hidden;
+  position: absolute;
+  right: tokens.$modal-info-offset-right;
+  top: tokens.$modal-info-offset-top;
+  width: tokens.$modal-info-width;
+  z-index: 101;
 
-  .modal {
-    background: tokens.$color-surface;
-    border-radius: tokens.$radius-section;
-    box-sizing: border-box;
-    max-height: 80%; // PLACEHOLDER (no token yet)
-    max-width: 480px; // PLACEHOLDER (no token yet)
-    overflow: auto;
-    padding: tokens.$space-5;
+  .modal-drag-handle {
+    align-items: center;
+    border-bottom: tokens.$border-subtle;
+    cursor: grab;
+    display: flex;
+    flex-shrink: 0;
+    height: 52px;
+    padding: 3px 3px 3px tokens.$space-3;
+    touch-action: none;
+    user-select: none;
+  }
+
+  .modal-drag-handle:active {
+    cursor: grabbing;
+  }
+
+  .modal-header-icon {
+    flex-shrink: 0;
+    height: 24px;
+    margin-right: 10px; // demo-specific; no 10px token on the spacing scale
+    pointer-events: none;
+    width: 24px;
+  }
+
+  .modal-title {
+    color: tokens.$color-text;
+    flex: 1;
+    font-size: tokens.$font-size-lg;
+    font-weight: 700;
+    margin: 0;
   }
 
   .modal-close {
-    min-height: tokens.$touch-target-min;
-    min-width: tokens.$touch-target-min;
+    align-items: center;
+    background: transparent;
+    border: none;
+    border-radius: tokens.$radius-sm;
+    cursor: pointer;
+    display: flex;
+    flex-shrink: 0;
+    height: tokens.$touch-target-min;
+    justify-content: center;
+    padding: 0;
+    width: tokens.$touch-target-min;
+  }
+
+  .modal-close:hover,
+  .modal-close:focus-visible {
+    background: tokens.$color-surface-hover;
+  }
+
+  .modal-close:active {
+    background: tokens.$color-surface-active;
+  }
+
+  .modal-close:focus-visible {
+    outline: tokens.$focus-outline;
+    outline-offset: -2px;
+  }
+
+  .modal-close-icon {
+    height: 24px;
+    pointer-events: none;
+    width: 24px;
+  }
+
+  .modal-body {
+    color: tokens.$color-text;
+    flex: 1;
+    font-size: tokens.$font-size-base;
+    line-height: 22px;
+    min-height: 0;
+    overflow-y: auto;
+    padding: tokens.$space-4 20px 20px;
+    user-select: text;
   }
 }

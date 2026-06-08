@@ -1,12 +1,21 @@
-import { type ReactNode, useEffect, useId, useRef, useState } from "react";
-import { createPortal } from "react-dom";
+import {
+  type ReactNode,
+  type PointerEvent as ReactPointerEvent,
+  useEffect,
+  useId,
+  useRef,
+  useState,
+} from "react";
+import ccLogo from "../../assets/branding/cc-logo.svg";
+import deseLogo from "../../assets/branding/dese-logo.svg";
+import closeIcon from "../../assets/close-icon.svg";
+import infoIcon from "../../assets/info-icon.svg";
 import { Section } from "../section/section";
 import "./simulation-frame.scss";
 
 export interface SimulationFrameProps {
   children?: ReactNode;
   infoModalContent?: ReactNode;
-  projectName: string;
   simTitle: string;
   tagline: string;
 }
@@ -28,7 +37,7 @@ interface SimulationSlotProps extends SlotProps {
 function Trials({ children, title = "Trials" }: SlotProps) {
   return (
     <Section title={title} className="trials-area">
-      {children}
+      <div className="trials-list">{children}</div>
     </Section>
   );
 }
@@ -55,7 +64,6 @@ function Data({ children, title = "Data" }: SlotProps) {
  * collapse behavior is deferred (ui-design-plan.md §8/Q30).
  */
 export function SimulationFrame({
-  projectName,
   simTitle,
   tagline,
   infoModalContent,
@@ -83,61 +91,133 @@ export function SimulationFrame({
     }
   }, [infoOpen]);
 
+  // The About panel is a draggable, non-modal side panel anchored top-right of the frame.
+  // Its position is a transform offset from that CSS anchor.
+  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
+
+  // Toggle the panel from the About button (clicking it while open closes it, like the demo).
+  // Opening resets the panel to its default position. We reset synchronously here — batched
+  // with the open in the same render — rather than in a post-open effect, so the panel never
+  // flashes for a frame at its previously-dragged location before snapping back to default.
+  const toggleInfo = () => {
+    if (!infoOpen) setDragOffset({ x: 0, y: 0 });
+    setInfoOpen((open) => !open);
+  };
+
+  // Tears down an in-progress drag's window listeners. Held in a ref so it can be invoked both
+  // on pointerup (normal end) and on unmount (if the frame is removed mid-drag, before any
+  // pointerup fires — otherwise those window listeners would outlive the component).
+  const dragCleanupRef = useRef<(() => void) | null>(null);
+  useEffect(() => () => dragCleanupRef.current?.(), []);
+
+  // Pointer-driven drag from the header. We attach the move/up listeners to the window for the
+  // duration of the gesture (rather than pointer capture) so it keeps tracking even if the
+  // pointer leaves the header. A pointerdown on the close button does not start a drag.
+  const beginDrag = (e: ReactPointerEvent<HTMLElement>) => {
+    if ((e.target as HTMLElement).closest(".modal-close")) return;
+    // Tear down any still-active gesture before starting a new one, so a second pointerdown
+    // (e.g. a second touch, or a prior drag that ended in pointercancel rather than pointerup)
+    // can't stack a second set of window listeners that fight over the offset.
+    dragCleanupRef.current?.();
+    e.preventDefault();
+    const startX = e.clientX;
+    const startY = e.clientY;
+    const originX = dragOffset.x;
+    const originY = dragOffset.y;
+    const onMove = (move: PointerEvent) => {
+      setDragOffset({ x: originX + (move.clientX - startX), y: originY + (move.clientY - startY) });
+    };
+    // `stop` ends the gesture on pointerup OR pointercancel (the latter fires instead of
+    // pointerup when the browser/OS aborts the pointer), and is also the stored unmount-cleanup
+    // — so the remove-listener logic lives in exactly one place.
+    const stop = () => {
+      window.removeEventListener("pointermove", onMove);
+      window.removeEventListener("pointerup", stop);
+      window.removeEventListener("pointercancel", stop);
+      dragCleanupRef.current = null;
+    };
+    window.addEventListener("pointermove", onMove);
+    window.addEventListener("pointerup", stop);
+    window.addEventListener("pointercancel", stop);
+    dragCleanupRef.current = stop;
+  };
+
   return (
     <div className="simulation-frame">
-      <div className="project-bar">{projectName}</div>
-      <header className="sub-header">
-        <h1 className="sim-title">{simTitle}</h1>
-        <span className="tagline">{tagline}</span>
-        {infoModalContent ? (
-          <button
-            aria-haspopup="dialog"
-            className="info-button"
-            ref={triggerRef}
-            type="button"
-            onClick={() => setInfoOpen(true)}
-          >
-            About
-          </button>
-        ) : null}
+      <header className="title-bar">
+        <div className="title-bar-left">
+          <h1 className="sim-title">{simTitle}</h1>
+          <span className="tagline">{tagline}</span>
+        </div>
+        <div className="title-bar-right">
+          <img className="partner-logo" src={deseLogo} alt="DESE" />
+          <img className="partner-logo" src={ccLogo} alt="Concord Consortium" />
+          {infoModalContent ? (
+            <button
+              aria-expanded={infoOpen}
+              aria-haspopup="dialog"
+              className="info-button"
+              ref={triggerRef}
+              type="button"
+              onClick={toggleInfo}
+            >
+              <img src={infoIcon} alt="" aria-hidden="true" className="info-button-icon" />
+              About
+            </button>
+          ) : null}
+        </div>
       </header>
 
       {children}
 
-      {infoModalContent && infoOpen
-        ? createPortal(
-            // biome-ignore lint/a11y/noStaticElementInteractions: backdrop dismissal is a convenience; Escape and the close button are the keyboard-accessible paths.
-            // biome-ignore lint/a11y/useKeyWithClickEvents: backdrop dismissal is a convenience; Escape and the close button are the keyboard-accessible paths.
-            <div
-              className="simulation-frame-info-overlay"
-              onClick={(e) => {
-                if (e.target === e.currentTarget) setInfoOpen(false);
-              }}
+      {infoModalContent && infoOpen ? (
+        <div
+          aria-labelledby={titleId}
+          className="simulation-frame-info-modal"
+          role="dialog"
+          style={{ transform: `translate(${dragOffset.x}px, ${dragOffset.y}px)` }}
+          onKeyDown={(e) => {
+            if (e.key === "Escape") {
+              setInfoOpen(false);
+              return;
+            }
+            // Keyboard dragging: Alt+Arrow nudges the panel (Shift for a larger step), so the
+            // panel is repositionable without a pointer. Mirrors the demo.
+            if (!e.altKey) return;
+            const step = e.shiftKey ? 40 : 10;
+            const delta =
+              e.key === "ArrowLeft"
+                ? { x: -step, y: 0 }
+                : e.key === "ArrowRight"
+                  ? { x: step, y: 0 }
+                  : e.key === "ArrowUp"
+                    ? { x: 0, y: -step }
+                    : e.key === "ArrowDown"
+                      ? { x: 0, y: step }
+                      : null;
+            if (!delta) return;
+            e.preventDefault();
+            setDragOffset((offset) => ({ x: offset.x + delta.x, y: offset.y + delta.y }));
+          }}
+        >
+          <header className="modal-drag-handle" onPointerDown={beginDrag}>
+            <img src={infoIcon} alt="" aria-hidden="true" className="modal-header-icon" />
+            <h2 className="modal-title" id={titleId}>
+              About the {simTitle} Simulation
+            </h2>
+            <button
+              aria-label="Close"
+              className="modal-close"
+              ref={closeRef}
+              type="button"
+              onClick={() => setInfoOpen(false)}
             >
-              <div
-                aria-labelledby={titleId}
-                aria-modal="true"
-                className="modal"
-                role="dialog"
-                onKeyDown={(e) => {
-                  if (e.key === "Escape") setInfoOpen(false);
-                }}
-              >
-                <h2 id={titleId}>About the {simTitle} Simulation</h2>
-                {infoModalContent}
-                <button
-                  className="modal-close"
-                  ref={closeRef}
-                  type="button"
-                  onClick={() => setInfoOpen(false)}
-                >
-                  Close
-                </button>
-              </div>
-            </div>,
-            document.body,
-          )
-        : null}
+              <img src={closeIcon} alt="" aria-hidden="true" className="modal-close-icon" />
+            </button>
+          </header>
+          <div className="modal-body">{infoModalContent}</div>
+        </div>
+      ) : null}
     </div>
   );
 }

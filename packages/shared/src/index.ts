@@ -4,11 +4,16 @@
 // and hooks land. See ../../../docs/infrastructure-plan.md §3 for the full intended contract.
 
 // Components
+export {
+  DataSubsection,
+  type DataSubsectionProps,
+} from "./components/data-subsection/data-subsection";
 export { Section, type SectionProps } from "./components/section/section";
 export {
   SimulationFrame,
   type SimulationFrameProps,
 } from "./components/simulation-frame/simulation-frame";
+export { TrialCard, type TrialCardProps } from "./components/trial-card/trial-card";
 
 // Hooks
 export { useCurrentAndPrevious } from "./hooks/use-current-and-previous";
