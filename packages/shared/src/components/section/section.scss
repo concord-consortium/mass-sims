@@ -18,11 +18,10 @@
     box-sizing: border-box;
     display: flex;
     height: tokens.$section-chip-height;
-    // Center the chip vertically on the panel's top border: pull up half the chip height plus
-    // half the section's 2px border (the flex content-box starts inside that border).
-    margin-top: calc((#{tokens.$section-chip-height} + 2px) / -2);
+    margin-top: calc((#{tokens.$section-chip-height} + #{tokens.$border-strong-width}) / -2);
     max-width: calc(100% - #{tokens.$space-3 * 2});
     overflow: hidden;
+    text-overflow: ellipsis;
     white-space: nowrap;
   }
 

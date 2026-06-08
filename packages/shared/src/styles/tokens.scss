@@ -132,7 +132,8 @@ $radius-frame-standalone:  10px; // standalone outer container — see ui-design
 // BORDERS
 // =============================================================================
 
-$border-strong:          2px solid $color-border;          // Section, button, card, chip
+$border-strong-width:    2px;                              // strong-border width (single source of truth)
+$border-strong:          $border-strong-width solid $color-border;   // Section, button, card, chip
 $border-subtle:          1px solid $color-border-subtle;   // modal header rule
 $border-divider:         1px solid $color-divider;         // DataSubsection separator
 
