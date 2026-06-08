@@ -53,7 +53,7 @@ Per the agreed Phase 2 split ("starter sim + model hooks in Phase 2b; iframe-pho
 - **No per-sim CI workflow generation.** The Starter doesn't need its own deploy; it's a template, not a deployable sim.
 - **No charting library.** The Data panel's plots are raw Canvas 2D — choosing Recharts / Visx / D3 (Q19) is open, and locking it in via the Starter would be premature.
 - **No Section notched-chip visual treatment.** Still deferred from Phase 2a; tokens exist but the SCSS layout work is pending. The Starter renders against the simplified flat-header Section.
-- **No narrow-mode (676 px) layout.** Still designer-pending (Q30). The Starter wide-mode layout is the only thing that has to look right.
+- **No narrow-mode (676 px) layout.** Still designer-pending (Q30). The Starter wide-mode layout is the only thing that has to look right. *Resolved by the addendum below — the three columns flex to fit every target width; there is no separate narrow mode.*
 - **No multiple sims.** Just the Starter. `sim-one` and `sim-two` continue as the placeholder deploy-verification sims; nothing in this branch touches them beyond confirming they still build.
 
 ---
@@ -136,6 +136,51 @@ task's body has been updated to match; this log is the at-a-glance summary.
     `.section` so it escapes the slot's `overflow: hidden`.
   - Section tests are structural/accessibility-only, so they're unaffected; shared + preview + starter
     all green.
+
+- **Task 7 — data panel (adapted for the active-trial model + visual review).** The plan's Task 7
+  predated the active-trial rework, so the `DataPanel` was adapted and then refined after visual
+  review against the demo:
+  - `RecordedTrial.output` is **nullable**, so the panel aggregates only trials that have been run
+    (empty trials contribute nothing), and reads the selected trial's series via `?.output?...`. App
+    passes `selectedIndex = trials.indexOf(selected)` (it tracks `selectedId`).
+  - **Data objects are always present** (per the demo): the Summary table always renders, showing
+    `Trials run: 0` + em-dashes before any run; the chart always renders with a "No data" state. The
+    plan's "Select a trial…" empty-state copy was dropped (trial A is always selected).
+  - Headings are **title-cased** ("Summary Statistics", "Average Distance Over Time").
+  - **Shared (Data-column, all sims):** the Data column reads on a **white** background, and its
+    content padding is tightened (8px) with the DataSubsection's horizontal padding dropped, so data
+    objects fill the column width.
+  - The time-series chart is a **full-width, devicePixelRatio-crisp** canvas with a plot border,
+    y-axis ticks/labels, and x-axis ticks (not the plan's fixed 240×80 line-only canvas).
+
+- **Shared `Section` — gray chip fill + background-separated instruction (user-requested, visual
+  review).** A follow-on to the notched-chip deviation above; **supersedes the `•` bullet** it
+  introduced. After comparing against the demo/spec the user asked for gray-filled title chips with
+  the Simulation chip's instruction separated by a background change rather than a bullet. Edits the
+  **shared library** (affects all sims + `sim-frame-preview`):
+  - `section.scss` — chip background changed from surface white to `$color-surface-muted` (#e8e8e8).
+    The `.instruction::before { content: "•" }` rule is **removed**; the title (gray, inherited) and
+    instruction (white, `$color-surface`) segments are now separated purely by the background change.
+    `overflow: hidden` on the chip clips the segment backgrounds to its rounded corners, and the two
+    segments stretch to the chip's full height (each centering its own text). An initial `border-left`
+    divider on `.instruction` was dropped per the user's tweak — the color change alone is the seam.
+  - Section tests are structural/accessibility-only, so they're unaffected; shared + preview + starter
+    all green.
+
+- **Full-bleed Simulation canvas — edge-to-edge column (user-requested, visual review).** Per the
+  demo/spec the simulation stage spans the column's full width. Edits **shared + starter** (height
+  stays 240px from the notched-chip deviation; only horizontal layout + the canvas border change):
+  - `simulation-frame.scss` (shared) — the Simulation slot's `.content` drops its horizontal padding
+    (`padding: $space-4 0`), so the stage spans the full column width for every sim; vertical padding
+    (chip clearance) is unchanged.
+  - `simulation-view.scss` (starter) — the canvas breaks out of the `.simulation-view` padding to
+    reach the panel's inner edges (`margin: 0 calc(-1 * $space-2)` + `width: calc(100% + $space-2 *
+    2)`) and **drops its own border + radius**, reading as a white stage on the gray panel bounded by
+    the panel border (matching the demo). Controls/buttons/readout keep their inset (the
+    `.simulation-view` padding is unchanged).
+  - No `.tsx` change — the existing `ResizeObserver` already measures the canvas's laid-out width, so
+    the backing store and drawing fill the new full-bleed width and stay centered. All sims build;
+    tests green.
 
 - **Incidental Biome auto-format.** A handful of files copied verbatim from the plan triggered
   Biome's formatter (single-line interfaces expanded, multi-line imports collapsed, barrel exports
@@ -1447,10 +1492,19 @@ Suggest the commit message: `feat(starter): wire TrialCards to record completed 
 
 ## Task 7: Starter sim — data panel
 
+> **⚠️ Adapted during implementation — see the "data panel" deviation in the Deviations log.** The
+> code snippets below predate the active-trial rework and several visual-review changes, so they no
+> longer match the shipped component: `RecordedTrial.output` is nullable (the panel aggregates only
+> run trials), the data objects are always present (table dashes / chart "No data" instead of
+> empty-state copy), headings are title-cased, the Data column is white, and the chart is a
+> full-width, devicePixelRatio-crisp canvas with a plot border + axis ticks. The authoritative
+> source is the implemented `packages/starter/src/components/data-panel.tsx`. Snippets kept for
+> structure.
+
 Populates `<SimulationFrame.Data>` with two `<DataSubsection>` children:
 
-1. **"Summary statistics"** — aggregated avg distance + stddev across ALL trials (a numeric readout).
-2. **"Avg distance over time"** — a small canvas line chart showing the most recently selected trial's `avgDistanceSeries`.
+1. **"Summary Statistics"** — aggregated avg distance + stddev across ALL trials (a numeric readout).
+2. **"Average Distance Over Time"** — a small canvas line chart showing the most recently selected trial's `avgDistanceSeries`.
 
 **Files:**
 - Create: `packages/starter/src/components/data-panel.tsx`
@@ -1527,7 +1581,7 @@ export function DataPanel({ trials, selectedIndex }: DataPanelProps) {
 
   return (
     <>
-      <DataSubsection title="Summary statistics">
+      <DataSubsection title="Summary Statistics">
         {trials.length === 0 ? (
           <p className="empty">No trials yet — run one to start collecting data.</p>
         ) : (
@@ -1541,7 +1595,7 @@ export function DataPanel({ trials, selectedIndex }: DataPanelProps) {
           </dl>
         )}
       </DataSubsection>
-      <DataSubsection title="Avg distance over time">
+      <DataSubsection title="Average Distance Over Time">
         {selectedSeries ? (
           <SeriesCanvas series={selectedSeries} />
         ) : (
@@ -1584,7 +1638,7 @@ function SeriesCanvas({ series }: { series: readonly number[] }) {
     });
     ctx.stroke();
   }, [series]);
-  return <canvas ref={ref} width={240} height={80} aria-label="Avg distance over time" />;
+  return <canvas ref={ref} width={240} height={80} aria-label="Average distance over time chart" />;
 }
 ```
 
@@ -1766,13 +1820,479 @@ Open the printed URL. Confirm:
 - The 50 px title bar shows "Random Walk" + tagline left, DESE / CC logos + About button right.
 - The Simulation slot canvas renders; Play starts the simulation, Pause stops it, Step advances one frame, Reset clears.
 - Parameter sliders work and lock during a running trial.
-- Running a trial to completion appends a TrialCard (A, B, C, …) to the Trials column with the avg-distance and stddev numbers.
-- Clicking a TrialCard selects it; the time-series chart in the Data panel updates to show that trial's series. Clicking the reset button on a selected card removes that trial.
-- The "Summary statistics" subsection updates as trials accumulate.
+- The Trials column loads with an empty, selected trial A plus a "New" card.
+- Running a trial to completion fills the selected TrialCard with the avg-distance and stddev numbers (no append-on-complete); the "New" card adds the next empty trial (B, C, …).
+- Clicking a TrialCard selects it and restores that trial's state; the time-series chart in the Data panel updates to show that trial's series. Clicking the reset button on the selected card clears that trial back to empty (does not delete it).
+- The "Summary Statistics" subsection updates as trials accumulate.
 - Clicking About opens the draggable side panel; close button + Escape close it; About again toggles closed.
-- After at least one trial exists, attempting to navigate away triggers the browser's "Leave site?" prompt.
+- After at least one trial has been run, attempting to navigate away triggers the browser's "Leave site?" prompt.
 
 No commit for Task 10 — verification only.
+
+---
+
+# Addendum — responsive column widths + standalone outer container
+
+After Tasks 1–10 had landed, the designer published an updated demo and four
+fresh container-context screenshots. The substantive change: **column widths
+are no longer fixed per width context — Trials stays pinned at 155 px, but the
+Simulation and Data columns flex** in a 564 : 285 ratio, sharing whatever
+horizontal space is left after Trials. This collapses what used to be a
+"narrow mode" question (Q30) into a single layout that works at every width
+from 767 px (AP 2-col, instructions panel visible) up to 1044 px (AP Full
+Width). Standalone gets a new visual treatment too: a 2 px / 10 px-radius
+outer container that AP's own chrome already provides in the embedded cases.
+
+The demo's source pins the model down concretely (`~/Documents/webdev/demos/index.html`):
+
+```js
+const AP_WIDTH = 1100;
+const AP_CONTENT_W_EXPANDED  = 767;   // AP 2-col, instructions panel visible
+const AP_CONTENT_W_COLLAPSED = 989;   // AP 2-col, instructions panel collapsed to tab
+const panels = [
+  { name: "Trials",     fixedWidth: 155, ... },
+  { name: "Simulation", flex: 564, ... },
+  { name: "Data",       flex: 285, ... }
+];
+```
+
+The 564 and 285 happen to equal the absolute column widths at the 1044 calibration
+point — so the layout is calibrated at AP Full Width and proportionally shrinks
+below that. The Simulation and Data columns split the space left after Trials (155),
+the two column gaps (10 + 10), and the body padding (10 + 10) are subtracted — i.e.
+`width − 195` px — in the 564 : 285 ratio:
+
+| Context                         | Width  | Trials | Simulation | Data |
+|---------------------------------|-------:|-------:|-----------:|-----:|
+| AP Full Width                   | 1044   | 155    | 564        | 285  |
+| Standalone                      | 1024   | 155    | ≈ 551      | ≈ 278 |
+| AP 2-col, sidebar collapsed     |  989   | 155    | ≈ 527      | ≈ 267 |
+| AP 2-col, sidebar expanded      |  767   | 155    | ≈ 380      | ≈ 192 |
+
+(Approximate — `minmax(0, Nfr)` is what CSS Grid will actually round.)
+
+The other visible design changes (sim-title font, chip styling, etc.) are
+deliberately ignored here per user direction; this addendum is scoped to
+column widths and the standalone container.
+
+---
+
+## Task 11: Token updates for flexible columns + standalone radius
+
+**Files:**
+- Modify: `packages/shared/src/styles/tokens.scss`
+
+**Step 1: Edit the layout-dimensions block**
+
+Open `packages/shared/src/styles/tokens.scss`. In the LAYOUT DIMENSIONS section:
+
+- **Change** the AP 2-col-shown width from 676 to **767**:
+  ```scss
+  $frame-width-ap-2col-shown:          767px;
+  ```
+- **Remove** the now-unused narrow-mode breakpoint line, since narrow mode is
+  superseded by flex columns:
+  ```scss
+  // (delete this block)
+  // Wide / narrow mode switch breakpoint (narrow-mode behavior still being designed).
+  $frame-narrow-breakpoint:            900px;
+  ```
+- **Replace** the two absolute simulation/data column widths with unitless
+  flex tokens. Update the comment block so it explains the new model:
+  ```scss
+  // Columns. Trials is fixed; Simulation and Data flex in a 564 : 285 ratio
+  // (calibrated at 1044 px — AP Full Width — and proportionally shrinking
+  // below that, down to 767 px AP 2-col with the instructions panel visible).
+  // See docs/ui-design-plan.md §7 for the per-context widths.
+  $column-trials-width:                155px;
+  $column-simulation-flex:             564;
+  $column-data-flex:                   285;
+  ```
+  (The old `$column-simulation-width-ap-full` and `$column-data-width` go away.)
+
+**Step 2: Add the standalone outer-container radius**
+
+In the CORNER RADII section, add the new token below `$radius-lg`:
+
+```scss
+$radius-frame-standalone:  10px;   // standalone outer container — see ui-design-plan §7
+```
+
+**Step 3: Confirm nothing else referenced the removed tokens**
+
+```bash
+cd /Users/emcelroy/Documents/webdev/mass-sims
+grep -rn "column-simulation-width-ap-full\|column-data-width\|frame-narrow-breakpoint" packages docs || echo "clean"
+```
+
+Expected: `clean`. (If any reference turns up, fix it in this task before
+moving on — likely sites are `simulation-frame.scss`, `sim-frame-preview`,
+or doc snippets; those are addressed in Tasks 12–14 but a stray reference
+elsewhere would fail typecheck/build.)
+
+**Step 4: Run checks**
+
+```bash
+yarn workspace @concord-consortium/mass-sims-shared typecheck
+yarn workspace @concord-consortium/mass-sims-shared lint
+yarn workspace @concord-consortium/mass-sims-shared build
+```
+
+Expected: all pass. (No tests touch the tokens directly; visual verification
+is in Task 15.)
+
+**Step 5: Stop and wait for user review before doing anything else**
+
+Suggest the commit message: `refactor(shared/tokens): flex column ratios; AP 2-col shown 767; standalone radius`
+
+(Suggested files to stage when the user is ready: `packages/shared/src/styles/tokens.scss`.)
+
+---
+
+## Task 12: SimulationFrame — flex grid + `standalone` outer container
+
+**Files:**
+- Modify: `packages/shared/src/components/simulation-frame/simulation-frame.tsx`
+- Modify: `packages/shared/src/components/simulation-frame/simulation-frame.scss`
+- Modify: `packages/shared/src/components/simulation-frame/simulation-frame.test.tsx`
+
+**Step 1: Update the grid template + add the standalone outer treatment**
+
+In `simulation-frame.scss`, replace the three `grid-template-columns` lines
+with the flex form so Simulation and Data both shrink in the demo's 564 : 285
+ratio while Trials stays pinned:
+
+```scss
+// Trials is fixed at 155 px; Simulation and Data share the remaining space in
+// a 564 : 285 ratio (≈ 66.4 % : 33.6 %). This calibrates to the absolute
+// 155 / 564 / 285 layout at 1044 px (AP Full Width) and proportionally shrinks
+// below — down to 767 px AP 2-col with the instructions panel visible.
+// `minmax(0, …fr)` lets the children actually shrink rather than refusing to
+// dip below their content's intrinsic width. See ui-design-plan.md §7.
+grid-template-columns:
+  tokens.$column-trials-width
+  minmax(0, #{tokens.$column-simulation-flex}fr)
+  minmax(0, #{tokens.$column-data-flex}fr);
+```
+
+Then, at the bottom of the `.simulation-frame { … }` rules (just inside the
+closing brace), add the standalone modifier — a 2 px outer border with the
+new 10 px radius, clipping inside:
+
+```scss
+&.standalone {
+  border: tokens.$border-strong;
+  border-radius: tokens.$radius-frame-standalone;
+  overflow: hidden;
+}
+```
+
+**Step 2: Add the `standalone` prop (default `true`)**
+
+In `simulation-frame.tsx`:
+
+- Extend the props interface:
+  ```ts
+  export interface SimulationFrameProps {
+    children?: ReactNode;
+    infoModalContent?: ReactNode;
+    simTitle: string;
+    tagline: string;
+    /**
+     * When true (default), the frame renders its own 2 px / 10 px-radius outer container.
+     * In Activity Player embeddings, AP's chrome provides the visual container, so the
+     * sim author passes `standalone={false}` to suppress the inner one. Phase 2c's
+     * iframe-phone integration will set this automatically; standalone sims keep the
+     * default.
+     */
+    standalone?: boolean;
+  }
+  ```
+- Default it in the function signature and use `clsx` for class composition
+  (the shared library already uses `clsx` elsewhere — match that style):
+  ```ts
+  import clsx from "clsx";
+  …
+  export function SimulationFrame({
+    simTitle,
+    tagline,
+    infoModalContent,
+    children,
+    standalone = true,
+  }: SimulationFrameProps) {
+    …
+    return (
+      <div className={clsx("simulation-frame", standalone && "standalone")}>
+  ```
+- Update the JSDoc on the function to drop the stale "narrow mode (676 px)"
+  reference and reflect the new model:
+  ```ts
+  /**
+   * Three-region simulation shell implementing the §3 API contract (infrastructure-plan.md).
+   * STRUCTURE ONLY — visual specifics live in tokens.scss. Trials is fixed at 155 px;
+   * Simulation and Data flex in a 564 : 285 ratio so the layout adapts to all four
+   * container widths (1044 / 1024 / 989 / 767). When `standalone` (the default), the
+   * frame renders a 2 px / 10 px-radius outer container; embedded sims pass
+   * `standalone={false}` so AP's chrome is the only container.
+   */
+  ```
+
+**Step 3: Test the new prop**
+
+Add tests to `simulation-frame.test.tsx` (extend the existing describe block,
+matching the established style):
+
+```tsx
+it("applies the standalone class by default (outer container visible)", () => {
+  const { container } = render(
+    <SimulationFrame simTitle="Sim" tagline="t" />,
+  );
+  expect(container.querySelector(".simulation-frame")).toHaveClass("standalone");
+});
+
+it("omits the standalone class when standalone={false} is passed", () => {
+  const { container } = render(
+    <SimulationFrame simTitle="Sim" tagline="t" standalone={false} />,
+  );
+  expect(container.querySelector(".simulation-frame")).not.toHaveClass("standalone");
+});
+```
+
+**Step 4: Run checks**
+
+```bash
+yarn workspace @concord-consortium/mass-sims-shared test simulation-frame
+yarn workspace @concord-consortium/mass-sims-shared typecheck
+yarn workspace @concord-consortium/mass-sims-shared lint
+yarn workspace @concord-consortium/mass-sims-shared build
+```
+
+Expected: all SimulationFrame tests (including the two new ones) pass.
+
+**Step 5: Stop and wait for user review before doing anything else**
+
+Suggest the commit message: `feat(shared/SimulationFrame): flex Simulation+Data columns; standalone outer container`
+
+(Suggested files to stage when the user is ready: the three modified files
+above.)
+
+---
+
+## Task 13: sim-frame-preview — update the width sweep to 767 + standalone toggle
+
+**Files:**
+- Modify: `packages/sim-frame-preview/src/preview.tsx`
+
+**Step 1: Replace the 676 panel with 767 and add a `standalone` flag per panel**
+
+Only the 1024 panel is conceptually standalone — the AP-context panels
+should render with `standalone={false}` so they preview AP-side accurately.
+Replace the `WIDTHS` array (dropping the unused `note` field along with the
+676 entry):
+
+```ts
+const WIDTHS: Array<{ px: number; label: string; standalone: boolean }> = [
+  { px: 1044, label: "1044 — Activity Player Full Width",            standalone: false },
+  { px: 1024, label: "1024 — Standalone",                            standalone: true  },
+  { px: 989,  label: "989 — AP 2-col, instructions panel collapsed", standalone: false },
+  { px: 767,  label: "767 — AP 2-col, instructions panel visible",   standalone: false },
+];
+```
+
+**Step 2: Update `FrameAtWidth` to consume the new flag**
+
+Update the signature and the `<SimulationFrame>` call, and drop the orange
+`note` span from the figcaption (which had no remaining call site):
+
+```tsx
+function FrameAtWidth({ px, label, standalone }: { px: number; label: string; standalone: boolean }) {
+  const [selectedIndex, setSelectedIndex] = useState(0);
+
+  return (
+    <figure style={{ margin: "0 0 32px" }}>
+      <figcaption style={{ fontFamily: "system-ui", fontSize: 13, marginBottom: 6 }}>
+        <strong>{label}</strong>
+      </figcaption>
+      <div style={{ width: px, maxWidth: "100%", overflow: "auto", border: "1px solid #999" }}>
+        <SimulationFrame
+          simTitle="Preview Sim"
+          tagline="An interactive placeholder simulation"
+          infoModalContent={<p>Placeholder info modal content.</p>}
+          standalone={standalone}
+        >
+          …existing slot children unchanged…
+        </SimulationFrame>
+      </div>
+    </figure>
+  );
+}
+```
+
+**Step 3: Run checks + visual sweep**
+
+```bash
+yarn workspace sim-frame-preview typecheck
+yarn workspace sim-frame-preview lint
+yarn workspace sim-frame-preview build
+yarn workspace sim-frame-preview dev
+```
+
+Open the printed URL. Confirm at every panel:
+
+- Trials is exactly 155 px (verify via DevTools — it should not shrink).
+- The Simulation and Data columns shrink proportionally as the panel
+  width drops from 1044 → 767. At 767, Data is roughly 200 px and still
+  shows its content (placeholder DataSubsections).
+- The 1024 (Standalone) panel shows the 2 px rounded outer container.
+- The other panels (1044 / 989 / 767) render without the outer container
+  (AP would provide it in real use).
+
+**Step 4: Stop and wait for user review before doing anything else**
+
+Suggest the commit message: `chore(sim-frame-preview): widths 767 + standalone toggle (drop 676 overflow case)`
+
+(Suggested files to stage when the user is ready: `packages/sim-frame-preview/src/preview.tsx`.)
+
+---
+
+## Task 14: Documentation updates (ui-design-plan, infrastructure-plan, close Q30)
+
+**Files:**
+- Modify: `docs/ui-design-plan.md`
+- Modify: `docs/infrastructure-plan.md`
+
+**Step 1: `docs/ui-design-plan.md`**
+
+Find and update the following sections (search for the headings; line
+numbers may have drifted):
+
+- **§6 (target dimensions) / §7 (wide-mode columns).** Replace the 676 entry
+  with 767. Replace the per-context column-width table with the
+  Trials-fixed / Sim+Data-flex story. Use the same approximate-width table
+  from the addendum's preface above. Add a paragraph explaining that the
+  layout is calibrated at 1044 (where the columns are exactly 155 / 564 /
+  285) and proportionally shrinks below that. Drop any "wide mode" naming
+  — there is no longer a mode switch.
+
+- **§8 (narrow mode / responsive behavior).** Rewrite this section in three
+  or four sentences: the design no longer has a separate narrow mode;
+  columns flex from 767 to 1044. Move the original "alternate-layout
+  hypothesis" prose into a small "Earlier hypothesis (closed)" subsection
+  for historical context.
+
+- **§13 (token list).** In the layout-dimensions row, replace
+  `$column-simulation-width-ap-full` and `$column-data-width` with
+  `$column-simulation-flex (unitless: 564)` and `$column-data-flex
+  (unitless: 285)`. In the corner-radii row, add
+  `$radius-frame-standalone (10 px — standalone outer container)`. In
+  the layout-dimensions row, also change the AP 2-col-shown value from
+  676 to 767, and remove the `$frame-narrow-breakpoint` row entirely.
+
+- **§14 (resolved decisions).** Add two new entries:
+  > **Columns flex below 1044.** Trials stays fixed at 155 px; Simulation
+  > and Data share the remaining space in a 564 : 285 ratio. The previous
+  > "fixed three columns at 1044, alternate layout below" model is
+  > superseded.
+  >
+  > **Standalone sims render an outer container.** A 2 px solid border
+  > with a 10 px corner radius wraps the SimulationFrame when
+  > `standalone={true}` (the default). AP-embedded sims pass
+  > `standalone={false}` so AP's chrome is the only visual container.
+
+- **§15 (open questions).** Mark **Q30 (narrow-mode collapsible behavior)
+  closed** with a one-line resolution pointing at the new §7/§8 prose:
+  > **Closed.** The three columns flex from 767 to 1044; no alternate
+  > layout is required. See §7.
+
+- **§16 (deferred items).** Remove any "narrow-mode layout" bullet that
+  references Q30.
+
+**Step 2: `docs/infrastructure-plan.md`**
+
+In §3 ("Hooks & components contract"), find the `<SimulationFrame>` bullet
+or paragraph and add a `standalone?: boolean` prop to its API listing,
+with a one-sentence description:
+
+```markdown
+- `<SimulationFrame standalone?>` — see §7 of the UI design plan for the
+  three-column flex layout. The optional `standalone` prop (default
+  `true`) toggles a 2 px / 10 px-radius outer container; AP-embedded
+  sims pass `standalone={false}` so AP's chrome is the only container.
+```
+
+**Step 3: Run checks**
+
+```bash
+yarn lint  # in case any code-fence content is lint-checked
+```
+
+(Doc-only edits don't need a typecheck / test pass.)
+
+**Step 4: Stop and wait for user review before doing anything else**
+
+Suggest the commit message: `docs: flex columns, standalone container, close Q30 (ui-design + infra plans)`
+
+(Suggested files to stage when the user is ready: `docs/ui-design-plan.md`,
+`docs/infrastructure-plan.md`.)
+
+---
+
+## Task 15: Full-repo verification
+
+**Step 1: Run the whole repo's checks**
+
+```bash
+yarn typecheck
+yarn lint
+yarn test
+yarn gen-index --check
+```
+
+Expected: all pass.
+
+**Step 2: Confirm sims still build**
+
+```bash
+MASS_SIMS_VERSION_PATH=version/release yarn build
+```
+
+Expected: `sim-one`, `sim-two`, `starter` all build cleanly.
+
+**Step 3: Final visual sweep**
+
+```bash
+yarn workspace sim-frame-preview dev
+```
+
+Open the printed URL and walk through all four width panels. Confirm:
+
+- **1044 (AP Full)** — Trials 155, Simulation ~564, Data ~285. No outer container.
+- **1024 (Standalone)** — Columns shrink slightly from 1044. 2 px rounded
+  outer container visible.
+- **989 (AP 2-col, collapsed)** — Columns shrink further. No outer container.
+- **767 (AP 2-col, expanded)** — Columns at their narrowest; Data still
+  shows its DataSubsections; no horizontal overflow anywhere. No outer
+  container.
+
+Then bring up the Starter sim:
+
+```bash
+yarn workspace starter dev
+```
+
+Confirm the Starter sim still renders correctly at its default width
+(Starter inherits the `standalone={true}` default — the outer container
+should appear) and that:
+
+- All Task 10 visual-sweep checks still pass (trials, simulation view,
+  data panel, About panel, reload warning).
+- The trial-letter badge still sits in the simulation panel's top-left
+  corner — confirm the new `overflow: hidden` on the outer container
+  doesn't clip it (it shouldn't; the badge is inside the panel, not
+  outside the frame).
+- The columns visibly flex if you resize the browser window down.
+
+No commit for Task 15 — verification only.
 
 ---
 
@@ -1783,12 +2303,16 @@ No commit for Task 10 — verification only.
 - [ ] `packages/starter/` is a real sim that composes `<SimulationFrame>`, `<TrialCard>`, and `<DataSubsection>`.
 - [ ] The Starter renders a random-walk model with adjustable parameters (walker count, step size, frames per trial), drives the canvas via `useSimulationRunner`, and records up to 10 trials.
 - [ ] Trial-list state is hoisted to `App`; both Trials and Data slots read from it.
-- [ ] Selecting a TrialCard updates the Data panel's time-series chart.
-- [ ] Resetting a TrialCard removes that trial from the list.
-- [ ] `useReloadWarning` is wired and fires only when at least one trial exists.
+- [ ] Selecting a TrialCard restores its state and updates the Data panel's time-series chart.
+- [ ] Resetting a TrialCard clears that trial to its empty state while keeping the card in the list.
+- [ ] `useReloadWarning` is wired and fires only once at least one trial has been run.
 - [ ] About panel renders with sim-specific content (random-walk explanation).
 - [ ] `docs/infrastructure-plan.md` §3 reflects the concrete hook signatures.
-- [ ] `yarn typecheck && yarn lint && yarn test && yarn gen-index --check && yarn build` all green; visual sweep at the four target widths passes (the wide-mode 3-column grid intentionally overflows at 676 — narrow mode is still designer-pending).
+- [ ] `yarn typecheck && yarn lint && yarn test && yarn gen-index --check && yarn build` all green; visual sweep at the four target widths passes (no overflow — the columns flex per the addendum).
+- [ ] Addendum: tokens updated for flex columns + `$radius-frame-standalone`; `$column-simulation-width-ap-full`, `$column-data-width`, and `$frame-narrow-breakpoint` removed.
+- [ ] Addendum: `<SimulationFrame>` has a `standalone?: boolean` prop (default `true`), Simulation+Data columns flex in a 564 : 285 ratio, and the standalone outer container renders only when `standalone={true}`.
+- [ ] Addendum: `sim-frame-preview` width sweep covers 1044 / 1024 / 989 / 767 with `standalone` toggled per panel; no overflow at any width.
+- [ ] Addendum: `ui-design-plan.md` §6-§8, §13-§16 reflect the flex-column model; Q30 closed; `infrastructure-plan.md` §3 documents the new `standalone` prop.
 
 ---
 
@@ -1798,7 +2322,7 @@ No commit for Task 10 — verification only.
 - Dual-transport `useLogEvent` (lara-interactive-api + GA4) and the per-control automatic event emission described in infrastructure plan §9 (Phase 2c).
 - `yarn new-sim <name>` scaffolding script and `scripts/gen-workflows.ts` (Phase 2c).
 - Section's notched-chip visual treatment (still deferred from Phase 2a).
-- Narrow-mode (676 px) collapsible/overlay behavior (Q30, designer working on it).
+- ~~Narrow-mode (676 px) collapsible/overlay behavior (Q30, designer working on it).~~ *Closed by the addendum — columns flex; no narrow mode.*
 - Charting library decision (Q19) — Starter uses raw canvas; first sim that needs grouped/stacked charts forces the decision.
 - A dedicated trial-list hook (e.g. `useTrialList<I, O>`) if the per-sim ad-hoc trial-list state proves repetitive across the next 2–3 sims.
 - Empty-state copy / styling polish (Q35).

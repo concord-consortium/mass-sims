@@ -179,11 +179,13 @@ The layout is **calibrated at 1044 px** (AP Full Width), where the columns are e
 | Context                         | Width  | Trials | Simulation | Data |
 |---------------------------------|-------:|-------:|-----------:|-----:|
 | AP Full Width                   | 1044   | 155    | 564        | 285  |
-| Standalone                      | 1024   | 155    | 564 × 869/869 ≈ 577 | 285 × 869/869 ≈ 292 |
-| AP 2-col, sidebar collapsed     |  989   | 155    | ≈ 554      | ≈ 280 |
-| AP 2-col, sidebar expanded      |  767   | 155    | ≈ 393      | ≈ 199 |
+| Standalone                      | 1024   | 155    | ≈ 551      | ≈ 278 |
+| AP 2-col, sidebar collapsed     |  989   | 155    | ≈ 527      | ≈ 267 |
+| AP 2-col, sidebar expanded      |  767   | 155    | ≈ 380      | ≈ 192 |
 
-(Approximate — `minmax(0, Nfr)` is what CSS Grid will actually round.)
+(Approximate — `minmax(0, Nfr)` is what CSS Grid will actually round. The Simulation
+and Data columns split `width − 195` px — the space left after Trials (155), the two
+column gaps (10 + 10), and the body padding (10 + 10) — in the 564 : 285 ratio.)
 
 The flex ratio is expressed as the unitless `$column-simulation-flex` (564) and `$column-data-flex` (285) tokens, applied as `minmax(0, 564fr)` / `minmax(0, 285fr)` so the columns shrink rather than refusing to dip below their content's intrinsic width.
 
