@@ -31,10 +31,9 @@
 
   canvas {
     background: tokens.$color-surface;
-    border: tokens.$border-strong;
-    border-radius: tokens.$radius-md;
     height: 240px;
-    width: 100%;
+    margin: 0 calc(-1 * #{tokens.$space-2});
+    width: calc(100% + #{tokens.$space-2} * 2);
   }
 
   .controls {

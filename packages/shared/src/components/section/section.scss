@@ -11,42 +11,40 @@
   position: relative;
 
   .chip {
-    align-items: center;
     align-self: center;
-    background: tokens.$color-surface;
+    background: tokens.$color-surface-muted;
     border: tokens.$border-strong;
     border-radius: tokens.$radius-lg;
     box-sizing: border-box;
     display: flex;
-    gap: tokens.$space-2;
     height: tokens.$section-chip-height;
     // Center the chip vertically on the panel's top border: pull up half the chip height plus
     // half the section's 2px border (the flex content-box starts inside that border).
     margin-top: calc((#{tokens.$section-chip-height} + 2px) / -2);
     max-width: calc(100% - #{tokens.$space-3 * 2});
-    padding: 0 tokens.$space-3;
+    overflow: hidden;
     white-space: nowrap;
   }
 
   .title {
+    align-items: center;
     color: tokens.$color-text;
+    display: flex;
     font-family: tokens.$font-family-base;
     font-size: tokens.$font-size-lg;
     font-weight: 700;
     margin: 0;
+    padding: 0 tokens.$space-3;
   }
 
   .instruction {
     align-items: center;
+    background: tokens.$color-surface;
     color: tokens.$color-text-muted;
     display: flex;
     font-size: tokens.$font-size-base;
     font-weight: 400;
-    gap: tokens.$space-2;
-  }
-
-  .instruction::before {
-    content: "•";
+    padding: 0 tokens.$space-3;
   }
 
   .content {
