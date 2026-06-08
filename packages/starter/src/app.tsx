@@ -31,8 +31,13 @@ function makeEmptyTrial(): RecordedTrial {
  * the selected trial; "New" adds an empty one; Reset clears a trial back to empty (never deletes).
  */
 export function App() {
-  const [trials, setTrials] = useState<RecordedTrial[]>(() => [makeEmptyTrial()]);
-  const [selectedId, setSelectedId] = useState(() => trials[0].id);
+  // Trials + selected id live in one state object so they update atomically — adding a trial
+  // appends it AND selects it in a single update, so the selection can never point at a trial the
+  // A–J cap rejected.
+  const [{ trials, selectedId }, setState] = useState(() => {
+    const first = makeEmptyTrial();
+    return { trials: [first], selectedId: first.id };
+  });
 
   const selected = trials.find((t) => t.id === selectedId) ?? trials[0];
   // Selected trial's letter (0→A, 1→B, …).
@@ -42,26 +47,38 @@ export function App() {
   // on trial count would warn from the start.
   useReloadWarning(trials.some((t) => t.output !== null));
 
+  // New trials are built outside the updater (makeEmptyTrial is impure) so the updater stays pure.
   const addTrial = useCallback(() => {
-    if (trials.length >= TRIAL_LIMIT) return;
     const trial = makeEmptyTrial();
-    setTrials((prev) => (prev.length >= TRIAL_LIMIT ? prev : [...prev, trial]));
-    setSelectedId(trial.id);
-  }, [trials.length]);
-
-  const resetTrial = useCallback((id: string) => {
-    setTrials((prev) =>
-      prev.map((t) => (t.id === id ? { ...t, output: null, finalTransient: null } : t)),
+    setState((prev) =>
+      prev.trials.length >= TRIAL_LIMIT // refuse past the A–J cap
+        ? prev
+        : { trials: [...prev.trials, trial], selectedId: trial.id },
     );
   }, []);
-
-  const updateInput = useCallback((id: string, input: SimInput) => {
-    setTrials((prev) => prev.map((t) => (t.id === id ? { ...t, input } : t)));
+  const selectTrial = useCallback((id: string) => {
+    setState((prev) => (prev.selectedId === id ? prev : { ...prev, selectedId: id }));
   }, []);
-
+  const resetTrial = useCallback((id: string) => {
+    setState((prev) => ({
+      ...prev,
+      trials: prev.trials.map((t) =>
+        t.id === id ? { ...t, output: null, finalTransient: null } : t,
+      ),
+    }));
+  }, []);
+  const updateInput = useCallback((id: string, input: SimInput) => {
+    setState((prev) => ({
+      ...prev,
+      trials: prev.trials.map((t) => (t.id === id ? { ...t, input } : t)),
+    }));
+  }, []);
   const completeTrial = useCallback(
     (id: string, output: SimOutput, finalTransient: SimTransient) => {
-      setTrials((prev) => prev.map((t) => (t.id === id ? { ...t, output, finalTransient } : t)));
+      setState((prev) => ({
+        ...prev,
+        trials: prev.trials.map((t) => (t.id === id ? { ...t, output, finalTransient } : t)),
+      }));
     },
     [],
   );
@@ -84,7 +101,7 @@ export function App() {
             key={trial.id}
             index={i}
             selected={trial.id === selectedId}
-            onSelect={() => setSelectedId(trial.id)}
+            onSelect={() => selectTrial(trial.id)}
             onReset={() => resetTrial(trial.id)}
             resetDisabled={trial.output === null}
           >

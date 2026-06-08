@@ -20,9 +20,13 @@ export function Section({ title, instruction, className, children }: SectionProp
     <section className={clsx("section", className)} aria-labelledby={titleId}>
       <div className="chip">
         <h2 id={titleId} className="title">
-          {title}
+          <span className="chip-text">{title}</span>
         </h2>
-        {instruction ? <div className="instruction">{instruction}</div> : null}
+        {instruction ? (
+          <div className="instruction">
+            <span className="chip-text">{instruction}</span>
+          </div>
+        ) : null}
       </div>
       <div className="content">{children}</div>
     </section>

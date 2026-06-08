@@ -21,8 +21,6 @@
     margin-top: calc((#{tokens.$section-chip-height} + #{tokens.$border-strong-width}) / -2);
     max-width: calc(100% - #{tokens.$space-3 * 2});
     overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
   }
 
   .title {
@@ -33,6 +31,7 @@
     font-size: tokens.$font-size-lg;
     font-weight: 700;
     margin: 0;
+    min-width: 0;
     padding: 0 tokens.$space-3;
   }
 
@@ -43,7 +42,14 @@
     display: flex;
     font-size: tokens.$font-size-base;
     font-weight: 400;
+    min-width: 0;
     padding: 0 tokens.$space-3;
+  }
+
+  .chip-text {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .content {

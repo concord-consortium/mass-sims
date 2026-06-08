@@ -58,6 +58,8 @@ export function SimulationView({
 
   const onStep = useCallback(
     (_deltaMs: number) => {
+      if (transient.frame >= input.framesPerTrial) return;
+
       const next = stepWalkers(transient, input);
       setTransient(next);
       if (next.frame >= input.framesPerTrial) {
