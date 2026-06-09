@@ -1,5 +1,22 @@
 import { fireEvent, render } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
+// Mock the lara-interactive-api surface the Starter uses for AP saved-state sync.
+// Hoisted because `vi.mock` is hoisted above the module body (a plain top-level `const`
+// would be referenced before initialization under Vitest 4). The hook returns null by
+// default (standalone); individual tests override per-case via the `beforeEach` below.
+// Note: `log` is intentionally NOT re-exported here — the shared <Button>'s useLogEvent
+// imports it from this module, but it's only called on press (and is wrapped in a
+// try/catch), so an undefined `log` is a harmless no-op in these tests.
+const { useInitMessageMock, setInteractiveStateMock } = vi.hoisted(() => ({
+  useInitMessageMock: vi.fn(),
+  setInteractiveStateMock: vi.fn(),
+}));
+vi.mock("@concord-consortium/lara-interactive-api", () => ({
+  useInitMessage: useInitMessageMock,
+  setInteractiveState: setInteractiveStateMock,
+}));
+
 import { App } from "./app";
 
 // Run the currently-selected trial to completion by shortening it and stepping through.
@@ -8,6 +25,13 @@ function runSelectedTrial(view: ReturnType<typeof render>, frames = 2) {
   const stepButton = view.getByRole("button", { name: /step/i });
   for (let i = 0; i < frames; i++) fireEvent.click(stepButton);
 }
+
+// Default every test to standalone — the real useInitMessage returns null (never
+// undefined) when there's no AP parent. Tests that exercise embedded behavior override
+// this in their own body. (Matters because App derives `isEmbedded = initMsg !== null`.)
+beforeEach(() => {
+  useInitMessageMock.mockReturnValue(null);
+});
 
 describe("Starter App", () => {
   it("renders the SimulationFrame with the Random Walk title", () => {
@@ -70,6 +94,76 @@ describe("Starter App", () => {
     runSelectedTrial(view);
     // After the trial completes, the reload-warning listener is attached.
     expect(addSpy).toHaveBeenCalledWith("beforeunload", expect.any(Function));
+    addSpy.mockRestore();
+  });
+});
+
+describe("Starter App — AP saved state", () => {
+  beforeEach(() => {
+    useInitMessageMock.mockReturnValue(null);
+    setInteractiveStateMock.mockReset();
+  });
+
+  it("renders the default empty trial when no init message arrives (standalone)", () => {
+    const { getByRole, queryByRole } = render(<App />);
+    expect(getByRole("button", { name: "Trial A" })).toBeInTheDocument();
+    expect(queryByRole("button", { name: "Trial B" })).toBeNull();
+  });
+
+  it("restores trials + selectedId from a runtime init message's interactiveState", () => {
+    // Build a saved state with two trials, the second selected.
+    const trialA = {
+      id: "saved-A",
+      input: { walkerCount: 50, stepSize: 1, framesPerTrial: 200, seed: "saved-A" },
+      output: { avgDistance: 3.14, stdDevDistance: 0.5, avgDistanceSeries: [1, 2, 3] },
+      finalTransient: null,
+    };
+    const trialB = {
+      id: "saved-B",
+      input: { walkerCount: 100, stepSize: 2, framesPerTrial: 200, seed: "saved-B" },
+      output: null,
+      finalTransient: null,
+    };
+    useInitMessageMock.mockReturnValue({
+      mode: "runtime",
+      interactiveState: { trials: [trialA, trialB], selectedId: "saved-B" },
+    });
+    const view = render(<App />);
+    // Both saved trials render as cards, and the saved selection is honored.
+    expect(view.getByRole("button", { name: "Trial A" })).toBeInTheDocument();
+    expect(view.getByRole("button", { name: "Trial B" })).toBeInTheDocument();
+    // Trial A's avg-distance readout shows the saved output.
+    expect(view.getByText(/avg 3/i)).toBeInTheDocument();
+  });
+
+  it("does NOT restore when the init message has interactiveState: null (first session)", () => {
+    useInitMessageMock.mockReturnValue({ mode: "runtime", interactiveState: null });
+    const view = render(<App />);
+    expect(view.getByRole("button", { name: "Trial A" })).toBeInTheDocument();
+    expect(view.queryByRole("button", { name: "Trial B" })).toBeNull();
+  });
+
+  it("calls setInteractiveState on every trial-list change (add / complete / reset)", () => {
+    const view = render(<App />);
+    // Initial mount triggers at least one push (the default state).
+    expect(setInteractiveStateMock).toHaveBeenCalled();
+    setInteractiveStateMock.mockClear();
+
+    // Add Trial B → push.
+    fireEvent.click(view.getByRole("button", { name: "New trial" }));
+    expect(setInteractiveStateMock).toHaveBeenCalled();
+    const lastCall = setInteractiveStateMock.mock.calls.at(-1)?.[0] as { trials: unknown[] };
+    expect(lastCall.trials).toHaveLength(2);
+  });
+
+  it("does NOT register a beforeunload listener when embedded (AP persists progress)", () => {
+    // Embedded: an init message is present, so progress round-trips through AP and the
+    // standalone reload warning is suppressed even after a trial has been run.
+    useInitMessageMock.mockReturnValue({ mode: "runtime", interactiveState: null });
+    const addSpy = vi.spyOn(window, "addEventListener");
+    const view = render(<App />);
+    runSelectedTrial(view);
+    expect(addSpy).not.toHaveBeenCalledWith("beforeunload", expect.any(Function));
     addSpy.mockRestore();
   });
 });

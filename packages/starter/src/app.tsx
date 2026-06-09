@@ -1,7 +1,9 @@
+import { setInteractiveState, useInitMessage } from "@concord-consortium/lara-interactive-api";
 import { SimulationFrame, TrialCard, useReloadWarning } from "@concord-consortium/mass-sims-shared";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { DataPanel } from "./components/data-panel";
 import { SimulationView } from "./components/simulation-view";
+import type { SavedState } from "./model/saved-state";
 import type { RecordedTrial, SimInput, SimOutput, SimTransient } from "./model/types";
 import "./app.scss";
 
@@ -50,13 +52,39 @@ export function App() {
   // Data panel never shows a stale series belonging to a different trial.
   const [liveSeries, setLiveSeries] = useState<number[] | null>(null);
 
+  // AP saved-state sync — restore on init, push on every trial-list change. The
+  // lara-interactive-api hooks handle standalone-vs-embedded internally: outside AP,
+  // useInitMessage stays null and setInteractiveState is a no-op, so no guards are
+  // needed here. See infrastructure-plan.md §3 "AP state sync" for the convention.
+  const initMsg = useInitMessage<SavedState>();
+  // Embedded once the AP handshake has delivered an init message; null in standalone.
+  const isEmbedded = initMsg !== null;
+  useEffect(() => {
+    // The `interactiveState` field is present on runtime + report init messages. In
+    // runtime mode it's null on the very first session and populated thereafter; in
+    // report mode it's always populated (we render the saved data read-only). For
+    // the Starter as a template we accept both — a sim with report-mode interactivity
+    // restrictions can layer that on with `initMsg.mode === "report"`.
+    if (initMsg && "interactiveState" in initMsg && initMsg.interactiveState) {
+      setState(initMsg.interactiveState);
+    }
+  }, [initMsg]);
+  useEffect(() => {
+    // Pushing on every trials/selectedId change is fine — these mutate on user actions
+    // (add/select/reset/complete), not per-frame, so the call rate stays low. The
+    // per-frame walker movement and liveSeries are NOT included in SavedState by design.
+    setInteractiveState<SavedState>({ trials, selectedId });
+  }, [trials, selectedId]);
+
   const selected = trials.find((t) => t.id === selectedId) ?? trials[0];
   // Selected trial's letter (0→A, 1→B, …).
   const selectedLetter = String.fromCharCode(65 + Math.max(0, trials.indexOf(selected)));
 
   // Warn before unload only once a trial has been run: an empty trial A always exists, so guarding
-  // on trial count would warn from the start.
-  useReloadWarning(trials.some((t) => t.output !== null));
+  // on trial count would warn from the start. Suppressed when embedded — AP persists every change
+  // via setInteractiveState, so progress isn't at risk on reload, and a beforeunload prompt would
+  // also fire spuriously during AP's normal page-to-page navigation.
+  useReloadWarning(!isEmbedded && trials.some((t) => t.output !== null));
 
   // New trials are built outside the updater (makeEmptyTrial is impure) so the updater stays pure.
   const addTrial = useCallback(() => {
