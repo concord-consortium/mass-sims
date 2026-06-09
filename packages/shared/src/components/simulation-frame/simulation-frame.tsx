@@ -4,6 +4,7 @@ import {
   type PointerEvent as ReactPointerEvent,
   useEffect,
   useId,
+  useMemo,
   useRef,
   useState,
 } from "react";
@@ -18,15 +19,8 @@ export interface SimulationFrameProps {
   children?: ReactNode;
   infoModalContent?: ReactNode;
   simTitle: string;
-  tagline: string;
-  /**
-   * When true (default), the frame renders its own 2 px / 10 px-radius outer container.
-   * In Activity Player embeddings, AP's chrome provides the visual container, so the
-   * sim author passes `standalone={false}` to suppress the inner one. Phase 2c's
-   * iframe-phone integration will set this automatically; standalone sims keep the
-   * default.
-   */
   standalone?: boolean;
+  tagline: string;
 }
 
 interface SlotProps {
@@ -71,17 +65,19 @@ function Data({ children, title = "Data" }: SlotProps) {
  * Three-region simulation shell implementing the §3 API contract (infrastructure-plan.md).
  * STRUCTURE ONLY — visual specifics live in tokens.scss. Trials is fixed at 155 px;
  * Simulation and Data flex in a 564 : 285 ratio so the layout adapts to all four
- * container widths (1044 / 1024 / 989 / 767). When `standalone` (the default), the
- * frame renders a 2 px / 10 px-radius outer container; embedded sims pass
- * `standalone={false}` so AP's chrome is the only container.
+ * container widths (1044 / 1024 / 989 / 767). The `standalone` prop toggles a
+ * 2 px / 10 px-radius outer container that AP-embedded sims suppress so AP's chrome is
+ * the only container.
  */
 export function SimulationFrame({
   simTitle,
   tagline,
   infoModalContent,
   children,
-  standalone = true,
+  standalone,
 }: SimulationFrameProps) {
+  const urlStandalone = useUrlStandaloneParam();
+  const effectiveStandalone = standalone ?? urlStandalone ?? true;
   const [infoOpen, setInfoOpen] = useState(false);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const closeRef = useRef<HTMLButtonElement>(null);
@@ -156,7 +152,7 @@ export function SimulationFrame({
   };
 
   return (
-    <div className={clsx("simulation-frame", standalone && "standalone")}>
+    <div className={clsx("simulation-frame", effectiveStandalone && "standalone")}>
       <header className="title-bar">
         <div className="title-bar-left">
           <h1 className="sim-title">{simTitle}</h1>
@@ -238,3 +234,13 @@ export function SimulationFrame({
 SimulationFrame.Trials = Trials;
 SimulationFrame.Simulation = Simulation;
 SimulationFrame.Data = Data;
+
+function useUrlStandaloneParam(): boolean | undefined {
+  return useMemo(() => {
+    if (typeof window === "undefined") return undefined;
+    const v = new URLSearchParams(window.location.search).get("standalone");
+    if (v === "false") return false;
+    if (v === "true") return true;
+    return undefined;
+  }, []);
+}
