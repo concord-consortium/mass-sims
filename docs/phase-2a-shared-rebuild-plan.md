@@ -1699,12 +1699,15 @@ No commit for Task 8 — it's verification only.
 
 ## Deferred follow-ups (out of scope here)
 
-- **Section's notched-chip visual treatment.** The demo's chip is a separate element notched onto the panel's top edge, centered horizontally with the chip half-overlapping the panel border (per `ui-design-plan.md` §3 / §13 and the `$section-chip-height` / `$section-chip-overlap` tokens that already exist in `tokens.scss`). The Phase 2a implementation uses a simpler flat header (chip inside the panel, no overlap) — sufficient for the preview and for sims to start composing against, with the notch landing in a follow-up. Token values are already in place; only the SCSS layout work is pending.
 - Narrow-mode (676 px) collapsible/overlay behavior (UI design plan §15 Q30).
-- `useModelState` / `useSimulationRunner` (Phase 2b — Starter sim).
-- Actual Starter sim implementation (Phase 2b).
 - iframe-phone embedding, dual-transport `useLogEvent`, `yarn new-sim` scaffolding, per-sim CI workflow generation (Phase 2c).
 - Sim-title-bar typography at narrower widths (Q32 — designer working on it).
 - Trial-card scrolling behavior (Q33).
 - DataSubsection vertical proportions (Q34).
 - Empty-state copy and styling (Q35).
+
+**Closed since this plan was written (shipped in Phase 2b):**
+
+- ~~Section's notched-chip visual treatment~~ → Implemented: the floating chip notched onto the panel's top edge (centered, half-overlapping the border, with a `•`-separated instruction), using the `$section-chip-height` / `$section-chip-overlap` tokens.
+- ~~`useModelState` / `useSimulationRunner` hooks~~ → Shipped.
+- ~~Starter sim implementation~~ → Shipped (the random-walk Starter sim).

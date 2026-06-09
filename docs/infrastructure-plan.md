@@ -1,6 +1,6 @@
 # Mass Sims — Infrastructure Plan
 
-**Status:** Phase 0 complete; Phase 1 in progress (shared library v0 — utility hooks + design tokens ported, Vitest set up; `SimulationFrame`/`Section` skeleton + info modal built to the §3 API, with a non-deployed four-width × 562 preview. Structure complete; final visual treatment and narrow mode deferred). Plan kept in sync as Phase 0/1 lessons are absorbed.
+**Status:** Phase 0 complete; Phase 1 in progress (shared library v0 — utility hooks + design tokens ported, Vitest set up; `SimulationFrame`/`Section` skeleton + info modal built to the §3 API, with a non-deployed four-width × 562 preview. Structure complete; final visual treatment deferred). Plan kept in sync as Phase 0/1 lessons are absorbed.
 **Date:** May 26, 2026
 **Author:** Plan assembled by Claude based on analysis of `foss` and `dese-models`
 **Scope:** Tooling, file structure, dependencies, build, CI/CD, hooks API, deployment, transferability. **Visual design lives in a separate document — [UI Design Plan](./ui-design-plan.md)** — and iterates on a different cadence.
@@ -168,6 +168,8 @@ The three regions are **Trials** (left), **Simulation** (center), and **Data** (
 
 **Notes on the header.** `<SimulationFrame>` renders a single 50 px **title bar** at the top of the sim that contains, left to right: `simTitle` (Lato 24 / 28 px bold), `tagline` (Lato 16 / 20 px), the project-wide partner-branding cluster (DESE + Concord Consortium logos), and the **About** button. The partner-branding cluster is identical across every Mass Sims sim — it ships as SVGs inside `packages/shared` and is rendered internally by `<SimulationFrame>` rather than passed in as a prop. The teal **"[Sim Name] Simulation"** bar above is rendered by Activity Player's wrapper chrome, not by us, so `<SimulationFrame>` has no `projectName` prop and does NOT render that row even in standalone deploys.
 
+**Notes on the standalone container.** `<SimulationFrame standalone?>` — see §7 of the [UI design plan](./ui-design-plan.md) for the three-column flex layout. The optional `standalone` prop (default `true`) toggles a 2 px / 10 px-radius outer container; AP-embedded sims pass `standalone={false}` so AP's chrome is the only container.
+
 **Notes on the About panel.** Triggered from the About button. Renders as a **draggable side panel** anchored top-right (`width: 400 px`, `max-height: 70 %`), not a centered backdrop overlay — the user can drag it around to keep the sim content visible. Key properties:
 
 - **Non-modal** (`role="dialog"` only, no `aria-modal`). The sim content behind the panel stays interactive — that's the whole point of a draggable panel. `aria-labelledby` still wires the panel's heading to the dialog so screen readers announce it on open.
@@ -221,8 +223,8 @@ Unlike `<Section>`, `<DataSubsection>` does NOT render a chip. The title is a re
 
 Exported from `packages/shared/src/hooks/`:
 
-- `useModelState<IInput, IOutput, ITransient>()` — input/output/snapshot model state.
-- `useSimulationRunner()` — play/pause/step lifecycle.
+- `useModelState<IInput, IOutput, ITransient>({ initialInput, initialOutput, initialTransient })` — returns `{ input, output, transient, setInput, setOutput, setTransient, resetTransient, resetOutput, resetAll }`. Three typed state shapes: input (user-controlled parameters), output (per-trial accumulated record), transient (per-frame model state). Setters follow standard React semantics (value or updater). Three reset helpers: `resetTransient` between trials, `resetOutput` to clear accumulated stats, `resetAll` on full sim reset. Trial-list management is the sim's responsibility (no built-in trial-list state).
+- `useSimulationRunner({ onStep, stepDeltaMs })` — returns `{ isPlaying, play, pause, step }`. Composes `useFrameLoop` underneath. `onStep` runs on every animation frame while `isPlaying` and once per `step()` invocation; `stepDeltaMs` defaults to 16 ms.
 - `useFrameLoop()` — `requestAnimationFrame` wrapper with cleanup + frame-time delta.
 - `useStateWithCallback()` / `useStateWithCallbackLazy()` — set-state-then-do-X.
 - `useInterval()`, `useCurrentAndPrevious()` — small utility hooks.
@@ -245,7 +247,7 @@ Exported from `packages/shared/src/utils/`:
 
 ### What's deliberately *not* in this section
 
-Layout details, dimensions (1044/1024/989/676 × 562), narrow-mode collapsible behavior, chrome suppression when embedded, scrolling rules, touch interaction specifics, color palette, region visual styling — all in the [UI Design Plan](./ui-design-plan.md).
+Layout details, dimensions (1044/1024/989/767 × 562), the three-column flex behavior, chrome suppression when embedded, scrolling rules, touch interaction specifics, color palette, region visual styling — all in the [UI Design Plan](./ui-design-plan.md).
 
 ---
 
@@ -591,7 +593,7 @@ Create the `concord-consortium/mass-sims` repo. Set up the empty Yarn + Lerna mo
 **Phase 1 — Shared library v0 (≈ 1-2 weeks)**
 Port the smaller utility hooks and design tokens from FOSS/DESE. Build the three-region `SimulationFrame` component fresh — slot API and `<Section>` wrapper per §3, visual specifics per the [UI Design Plan](./ui-design-plan.md). Implement `useReloadWarning`. Port the FOSS palette into `tokens.scss` with token-only access (plus the global stylesheet that mirrors selected tokens as CSS custom properties). Set up Vitest + a couple of smoke tests. Confirm rendering at the four target widths × 562 px from the UI plan.
 
-> **Status (Phase 1 build):** `Section` and the `SimulationFrame` compound component (header + Trials/Simulation/Data slots + wide-mode grid + accessible info modal) are built to the §3 API and exported from the shared barrel; the four-width × 562 render check is satisfied by the non-deployed `packages/sim-frame-preview` workspace. Utility hooks, tokens, and `global.scss` are in place. **Deferred:** narrow-mode (676 px) collapse behavior, final Section/chip/region visual treatment, and designer-tuned slot proportions. Styling is plain (global) SCSS scoped under a per-component root class (the verified house convention — see the corrected Styling note in §1); the info-modal prop is `infoModalContent`. See [docs/simulation-frame-plan.md](./simulation-frame-plan.md).
+> **Status (Phase 1 build):** `Section` and the `SimulationFrame` compound component (header + Trials/Simulation/Data slots + three-column flex grid + accessible info modal) are built to the §3 API and exported from the shared barrel; the four-width × 562 render check is satisfied by the non-deployed `packages/sim-frame-preview` workspace. Utility hooks, tokens, and `global.scss` are in place. **Deferred:** final Section/chip/region visual treatment and designer-tuned slot proportions. Styling is plain (global) SCSS scoped under a per-component root class (the verified house convention — see the corrected Styling note in §1); the info-modal prop is `infoModalContent`. See [docs/simulation-frame-plan.md](./simulation-frame-plan.md).
 
 **Phase 2 — Starter simulation + iframe embedding + logging + scaffolding (≈ 2-3 weeks)**
 Build `packages/starter` as a minimal but real simulation that exercises trials list + simulation region + data panel. Wire `useModelState`, `useSimulationRunner`, `useFrameLoop`. Implement `useIframePhone` and prove a round-trip with a local Activity Player smoke test (or a minimal harness page). Implement `useLogEvent` with the dual-transport design (lara-interactive-api + GA4 via inline `gtag.js`) — wire the shared controls (`Button`, `Slider`, `Switch`, `Select`, `Checkbox`) to emit log events automatically. Continuous controls emit on commit only (`pointerup`/`change`), not during drag. Inject `VITE_GA_PROPERTY_ID` into each sim's `index.html` template; verify GA is fully disabled when the env var is empty. End-to-end verification: logs reach portal-report *and* events appear in GA4 DebugView for the configured property. Confirm `yarn workspace starter dev` boots, hot-reloads, builds. Ship to a "branch" S3 path and verify it loads inside Activity Player as an iframe interactive. Build `scripts/new-sim.ts`, `scripts/gen-index.ts`, and `scripts/gen-workflows.ts` along with their CI verify-mode checks — these unlock easy growth toward 20+ sims and should exist before the first real sim, not after the fifth.
@@ -682,7 +684,7 @@ A decision log. Items numbered here so the gaps reflect what's been delegated to
 
 There are currently no infrastructure-level open questions. Phase 0 can start when the team is ready.
 
-UI-flavored open questions (Q9 UI component library, Q19 graphing library, Q20 rendering layer, Q21 `<RunsTable>`/`<BarGraph>` scope, Q30 narrow-mode layout, Q31 chrome suppression) live in the [UI Design Plan §15](./ui-design-plan.md) and do not gate Phase 0. Phase 1 needs UI plan input on those items before its visual work can complete, but the contract in §3 is enough to start scaffolding the shared library.
+UI-flavored open questions (Q9 UI component library, Q19 graphing library, Q20 rendering layer, Q21 `<RunsTable>`/`<BarGraph>` scope) live in the [UI Design Plan §15](./ui-design-plan.md) and do not gate Phase 0. Phase 1 needs UI plan input on those items before its visual work can complete, but the contract in §3 is enough to start scaffolding the shared library.
 
 ---
 

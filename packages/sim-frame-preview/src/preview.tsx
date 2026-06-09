@@ -2,28 +2,31 @@ import { DataSubsection, SimulationFrame, TrialCard } from "@concord-consortium/
 import { useState } from "react";
 
 // The four exact widths from ui-design-plan.md §6. Height is fixed at 562 px by the frame.
-const WIDTHS: Array<{ px: number; label: string; note?: string }> = [
-  { px: 1044, label: "1044 — Activity Player Full Width" },
-  { px: 1024, label: "1024 — Standalone" },
-  { px: 989, label: "989 — AP 2-col, left hidden (tightest wide)" },
-  {
-    px: 676,
-    label: "676 — AP 2-col, left shown (NARROW)",
-    note: "Narrow-mode layout is deferred (Q30). The wide 3-column grid intentionally overflows here.",
-  },
+const WIDTHS: Array<{ px: number; label: string; standalone: boolean }> = [
+  { px: 1044, label: "1044 — Activity Player Full Width", standalone: false },
+  { px: 1024, label: "1024 — Standalone", standalone: true },
+  { px: 989, label: "989 — AP 2-col, instructions panel collapsed", standalone: false },
+  { px: 767, label: "767 — AP 2-col, instructions panel visible", standalone: false },
 ];
 
 // Eight placeholder trials (A–H), within the TrialCard A–J cap. Letters double as stable keys.
 const PLACEHOLDER_TRIAL_LETTERS = ["A", "B", "C", "D", "E", "F", "G", "H"];
 
-function FrameAtWidth({ px, label, note }: { px: number; label: string; note?: string }) {
+function FrameAtWidth({
+  px,
+  label,
+  standalone,
+}: {
+  px: number;
+  label: string;
+  standalone: boolean;
+}) {
   const [selectedIndex, setSelectedIndex] = useState(0);
 
   return (
     <figure style={{ margin: "0 0 32px" }}>
       <figcaption style={{ fontFamily: "system-ui", fontSize: 13, marginBottom: 6 }}>
         <strong>{label}</strong>
-        {note ? <span style={{ color: "#b45309" }}> — {note}</span> : null}
       </figcaption>
       {/* Outer box clamps width to the target; overflow:auto reveals any overflow honestly. */}
       <div style={{ width: px, maxWidth: "100%", overflow: "auto", border: "1px solid #999" }}>
@@ -31,6 +34,7 @@ function FrameAtWidth({ px, label, note }: { px: number; label: string; note?: s
           simTitle="Preview Sim"
           tagline="An interactive placeholder simulation"
           infoModalContent={<p>Placeholder info modal content.</p>}
+          standalone={standalone}
         >
           <SimulationFrame.Trials>
             {PLACEHOLDER_TRIAL_LETTERS.map((letter, i) => (

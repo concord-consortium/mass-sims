@@ -1,13 +1,5 @@
 @use "../../styles/tokens" as tokens;
 
-// Plain (global) SCSS scoped under a single `.section` root class — the house convention
-// (see dese-models). Children are nested so their selectors stay `.section .chip`, etc.,
-// rather than leaking generic names like `.content`/`.title` into the global scope.
-//
-// Token VALUES (color, radius, border, type) are now derived from the realized demo design
-// (see the tokens.scss header and docs/ui-design-plan.md §13). The Section's CHIP TREATMENT,
-// however, is still simplified: the demo's notched chip that overlaps the panel's top edge
-// (cf. the not-yet-wired `$section-chip-*` tokens) and its type scale land in a later task.
 .section {
   background: tokens.$color-surface-muted;
   border: tokens.$border-strong;
@@ -16,26 +8,48 @@
   display: flex;
   flex-direction: column;
   min-height: 0; // allow the content to scroll inside a grid track
+  position: relative;
 
   .chip {
-    align-items: baseline;
+    align-self: center;
+    background: tokens.$color-surface-muted;
+    border: tokens.$border-strong;
+    border-radius: tokens.$radius-lg;
+    box-sizing: border-box;
     display: flex;
-    gap: tokens.$space-2;
-    padding: tokens.$space-2 tokens.$space-3;
+    height: tokens.$section-chip-height;
+    margin-top: calc((#{tokens.$section-chip-height} + #{tokens.$border-strong-width}) / -2);
+    max-width: calc(100% - #{tokens.$space-3 * 2});
+    overflow: hidden;
   }
 
   .title {
+    align-items: center;
     color: tokens.$color-text;
-    font-family: tokens.$font-family-condensed;
-    font-size: tokens.$font-size-sm;
+    display: flex;
+    font-family: tokens.$font-family-base;
+    font-size: tokens.$font-size-lg;
     font-weight: 700;
     margin: 0;
+    min-width: 0;
+    padding: 0 tokens.$space-3;
   }
 
   .instruction {
+    align-items: center;
+    background: tokens.$color-surface;
     color: tokens.$color-text-muted;
-    font-size: tokens.$font-size-xs;
+    display: flex;
+    font-size: tokens.$font-size-base;
     font-weight: 400;
+    min-width: 0;
+    padding: 0 tokens.$space-3;
+  }
+
+  .chip-text {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .content {

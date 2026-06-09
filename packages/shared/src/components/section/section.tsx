@@ -13,23 +13,20 @@ export interface SectionProps {
  * Labeled, rounded region used by all three SimulationFrame slots and by sims that add
  * sub-sections inside the Data slot. The title chip is a real heading element so screen
  * readers announce it and `aria-labelledby` exposes the section as a named region.
- *
- * Token values (color, radius, border, type) are now derived from the realized demo design.
- * The chip TREATMENT is still simplified, though: the demo's notched chip that overlaps the
- * panel's top edge, and its larger type scale, land in a later task (see section.scss).
  */
 export function Section({ title, instruction, className, children }: SectionProps) {
   const titleId = useId();
   return (
     <section className={clsx("section", className)} aria-labelledby={titleId}>
       <div className="chip">
-        {/* Heading is fixed at <h2> — Section labels the three top-level frame regions.
-            Sub-sections inside the Data slot use the separate <DataSubsection> component, which
-            renders an <h3> under the Data region's <h2> for a correct nested heading outline. */}
         <h2 id={titleId} className="title">
-          {title}
+          <span className="chip-text">{title}</span>
         </h2>
-        {instruction ? <div className="instruction">{instruction}</div> : null}
+        {instruction ? (
+          <div className="instruction">
+            <span className="chip-text">{instruction}</span>
+          </div>
+        ) : null}
       </div>
       <div className="content">{children}</div>
     </section>

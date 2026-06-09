@@ -6,14 +6,21 @@
   color: tokens.$color-text;
   display: grid;
   font-family: tokens.$font-family-base;
-  gap: tokens.$column-gap;
+  column-gap: tokens.$column-gap;
+  row-gap: 20px;
   grid-template-areas:
     "titlebar  titlebar    titlebar"
     "trials    simulation  data";
+  // Trials is fixed at 155 px; Simulation and Data share the remaining space in
+  // a 564 : 285 ratio (≈ 66.4 % : 33.6 %). This calibrates to the absolute
+  // 155 / 564 / 285 layout at 1044 px (AP Full Width) and proportionally shrinks
+  // below — down to 767 px AP 2-col with the instructions panel visible.
+  // `minmax(0, …fr)` lets the children actually shrink rather than refusing to
+  // dip below their content's intrinsic width. See ui-design-plan.md §7.
   grid-template-columns:
     tokens.$column-trials-width
-    minmax(0, 1fr)
-    tokens.$column-data-width;
+    minmax(0, #{tokens.$column-simulation-flex}fr)
+    minmax(0, #{tokens.$column-data-flex}fr);
   grid-template-rows: tokens.$frame-titlebar-height 1fr;
   height: tokens.$frame-height;
   padding: tokens.$body-padding;
@@ -123,10 +130,24 @@
 
     .content {
       overflow: hidden;
+      padding: tokens.$space-4 0;
     }
   }
   .data-area {
+    // The Data column reads on white, distinct from the muted Trials/Simulation panels.
+    background: tokens.$color-surface;
     grid-area: data;
+
+    // Tighter than the default section padding so data objects fill the column width.
+    .content {
+      padding: tokens.$space-2;
+    }
+  }
+
+  &.standalone {
+    border: tokens.$border-strong;
+    border-radius: tokens.$radius-frame-standalone;
+    overflow: hidden;
   }
 }
 

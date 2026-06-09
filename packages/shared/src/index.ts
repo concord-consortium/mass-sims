@@ -19,7 +19,17 @@ export { TrialCard, type TrialCardProps } from "./components/trial-card/trial-ca
 export { useCurrentAndPrevious } from "./hooks/use-current-and-previous";
 export { useFrameLoop } from "./hooks/use-frame-loop";
 export { useInterval } from "./hooks/use-interval";
+export {
+  type UseModelStateOptions,
+  type UseModelStateReturn,
+  useModelState,
+} from "./hooks/use-model-state";
 export { useReloadWarning } from "./hooks/use-reload-warning";
+export {
+  type UseSimulationRunnerOptions,
+  type UseSimulationRunnerReturn,
+  useSimulationRunner,
+} from "./hooks/use-simulation-runner";
 export {
   useStateWithCallback,
   useStateWithCallbackInstant,

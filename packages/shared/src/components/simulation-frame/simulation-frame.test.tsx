@@ -1,5 +1,5 @@
 import { fireEvent, render } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { SimulationFrame } from "./simulation-frame";
 
 function renderFrame(extra?: Partial<{ instruction: string }>) {
@@ -385,5 +385,60 @@ describe("SimulationFrame", () => {
       </SimulationFrame>,
     );
     expect(queryByRole("button", { name: /about/i })).not.toBeInTheDocument();
+  });
+
+  it("applies the standalone class by default (outer container visible)", () => {
+    const { container } = render(<SimulationFrame simTitle="Sim" tagline="t" />);
+    expect(container.querySelector(".simulation-frame")).toHaveClass("standalone");
+  });
+
+  it("omits the standalone class when standalone={false} is passed", () => {
+    const { container } = render(<SimulationFrame simTitle="Sim" tagline="t" standalone={false} />);
+    expect(container.querySelector(".simulation-frame")).not.toHaveClass("standalone");
+  });
+
+  describe("?standalone= URL param", () => {
+    const setUrlParam = (value: string | null) => {
+      const url = new URL(window.location.href);
+      url.search = "";
+      if (value !== null) url.searchParams.set("standalone", value);
+      window.history.replaceState({}, "", url.toString());
+    };
+
+    afterEach(() => setUrlParam(null));
+
+    it("omits the standalone class when ?standalone=false is in the URL", () => {
+      setUrlParam("false");
+      const { container } = render(<SimulationFrame simTitle="Sim" tagline="t" />);
+      expect(container.querySelector(".simulation-frame")).not.toHaveClass("standalone");
+    });
+
+    it("keeps the standalone class when ?standalone=true is in the URL", () => {
+      setUrlParam("true");
+      const { container } = render(<SimulationFrame simTitle="Sim" tagline="t" />);
+      expect(container.querySelector(".simulation-frame")).toHaveClass("standalone");
+    });
+
+    it("ignores unrecognized values and falls back to the default (true)", () => {
+      setUrlParam("yes");
+      const { container } = render(<SimulationFrame simTitle="Sim" tagline="t" />);
+      expect(container.querySelector(".simulation-frame")).toHaveClass("standalone");
+    });
+
+    it("explicit standalone={true} prop wins over ?standalone=false in the URL", () => {
+      setUrlParam("false");
+      const { container } = render(
+        <SimulationFrame simTitle="Sim" tagline="t" standalone={true} />,
+      );
+      expect(container.querySelector(".simulation-frame")).toHaveClass("standalone");
+    });
+
+    it("explicit standalone={false} prop wins over ?standalone=true in the URL", () => {
+      setUrlParam("true");
+      const { container } = render(
+        <SimulationFrame simTitle="Sim" tagline="t" standalone={false} />,
+      );
+      expect(container.querySelector(".simulation-frame")).not.toHaveClass("standalone");
+    });
   });
 });

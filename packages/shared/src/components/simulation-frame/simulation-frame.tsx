@@ -1,8 +1,10 @@
+import clsx from "clsx";
 import {
   type ReactNode,
   type PointerEvent as ReactPointerEvent,
   useEffect,
   useId,
+  useMemo,
   useRef,
   useState,
 } from "react";
@@ -17,6 +19,7 @@ export interface SimulationFrameProps {
   children?: ReactNode;
   infoModalContent?: ReactNode;
   simTitle: string;
+  standalone?: boolean;
   tagline: string;
 }
 
@@ -60,15 +63,21 @@ function Data({ children, title = "Data" }: SlotProps) {
 
 /**
  * Three-region simulation shell implementing the §3 API contract (infrastructure-plan.md).
- * STRUCTURE ONLY — wide-mode grid; visual specifics live in tokens.scss. Narrow mode (676 px)
- * collapse behavior is deferred (ui-design-plan.md §8/Q30).
+ * STRUCTURE ONLY — visual specifics live in tokens.scss. Trials is fixed at 155 px;
+ * Simulation and Data flex in a 564 : 285 ratio so the layout adapts to all four
+ * container widths (1044 / 1024 / 989 / 767). The `standalone` prop toggles a
+ * 2 px / 10 px-radius outer container that AP-embedded sims suppress so AP's chrome is
+ * the only container.
  */
 export function SimulationFrame({
   simTitle,
   tagline,
   infoModalContent,
   children,
+  standalone,
 }: SimulationFrameProps) {
+  const urlStandalone = useUrlStandaloneParam();
+  const effectiveStandalone = standalone ?? urlStandalone ?? true;
   const [infoOpen, setInfoOpen] = useState(false);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const closeRef = useRef<HTMLButtonElement>(null);
@@ -143,7 +152,7 @@ export function SimulationFrame({
   };
 
   return (
-    <div className="simulation-frame">
+    <div className={clsx("simulation-frame", effectiveStandalone && "standalone")}>
       <header className="title-bar">
         <div className="title-bar-left">
           <h1 className="sim-title">{simTitle}</h1>
@@ -225,3 +234,13 @@ export function SimulationFrame({
 SimulationFrame.Trials = Trials;
 SimulationFrame.Simulation = Simulation;
 SimulationFrame.Data = Data;
+
+function useUrlStandaloneParam(): boolean | undefined {
+  return useMemo(() => {
+    if (typeof window === "undefined") return undefined;
+    const v = new URLSearchParams(window.location.search).get("standalone");
+    if (v === "false") return false;
+    if (v === "true") return true;
+    return undefined;
+  }, []);
+}

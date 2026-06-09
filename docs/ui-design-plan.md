@@ -148,9 +148,9 @@ The UI designer has specified four exact widths and one fixed height that the la
 | Activity Player — Full Width layout | **1044 px** | 562 px |
 | Standalone | **1024 px** | 562 px |
 | Activity Player — 2-Column layout, left column hidden | **989 px** | 562 px |
-| Activity Player — 2-Column layout, left column displayed | **676 px** | 562 px |
+| Activity Player — 2-Column layout, left column displayed | **767 px** | 562 px |
 
-The height (**562 px**) is fixed across all four modes — it's the height Activity Player gives the iframe. Three of the four widths comfortably accommodate the three-column layout. The narrow 676 px case does not and needs a different layout (see §8).
+The height (**562 px**) is fixed across all four modes — it's the height Activity Player gives the iframe. All four widths accommodate the three-column layout: Trials stays fixed at 155 px while the Simulation and Data columns flex to share the remaining space (see §7).
 
 ### Why 562 × 1044: device chrome math
 
@@ -170,44 +170,53 @@ The Chromebook's 609 px available height is the tightest of the supported device
 
 ---
 
-## 7. Wide mode — widths 989, 1024, 1044 px
+## 7. Column layout — Trials fixed, Simulation and Data flex
 
-All three columns side by side, as drawn in the layout diagram. The grid template above produces:
+All three columns sit side by side, as drawn in the layout diagram. Trials stays fixed at 155 px; the Simulation and Data columns share the remaining space in a 564 : 285 ratio. There is no longer a mode switch — the same three-column grid serves every target width.
 
-| Width | Trials col | Simulation col | Data col |
-| ---: | ---: | ---: | ---: |
-| 1044 px | 200 | 524 | 320 |
-| 1024 px | 200 | 504 | 320 |
-| 989 px (tightest wide) | 200 | 469 | 320 |
+The layout is **calibrated at 1044 px** (AP Full Width), where the columns are exactly 155 / 564 / 285, and shrinks proportionally below that down to 767 px (AP 2-col with the instructions panel visible):
 
-469 px of simulation column at the tightest wide mode is workable for most sim visualizations; final designer tuning may push the trials max down to 180 to give the simulation column more room, but that's a per-pixel adjustment, not an architectural change.
+| Context                         | Width  | Trials | Simulation | Data |
+|---------------------------------|-------:|-------:|-----------:|-----:|
+| AP Full Width                   | 1044   | 155    | 564        | 285  |
+| Standalone                      | 1024   | 155    | ≈ 551      | ≈ 278 |
+| AP 2-col, sidebar collapsed     |  989   | 155    | ≈ 527      | ≈ 267 |
+| AP 2-col, sidebar expanded      |  767   | 155    | ≈ 380      | ≈ 192 |
+
+(Approximate — `minmax(0, Nfr)` is what CSS Grid will actually round. The Simulation
+and Data columns split `width − 195` px — the space left after Trials (155), the two
+column gaps (10 + 10), and the body padding (10 + 10) — in the 564 : 285 ratio.)
+
+The flex ratio is expressed as the unitless `$column-simulation-flex` (564) and `$column-data-flex` (285) tokens, applied as `minmax(0, 564fr)` / `minmax(0, 285fr)` so the columns shrink rather than refusing to dip below their content's intrinsic width.
 
 ---
 
-## 8. Narrow mode — width 676 px
+## 8. Responsive behavior — columns flex, no separate narrow mode
 
-The three-column side-by-side layout breaks below ~900 px (the simulation column would be < 260 px wide, unusable). At 676 px we need an alternate layout.
+There is no longer a separate narrow-mode layout. The three columns flex to fit every target width: Trials stays fixed at 155 px while Simulation and Data shrink proportionally in their 564 : 285 ratio from 1044 px down to 767 px (see §7). The earlier plan switched to an alternate layout below ~900 px; that mode switch has been removed, so `<SimulationFrame>` carries no narrow-mode renderer and no `$frame-narrow-breakpoint`. Q30 is closed (see §15).
 
-### Working hypothesis: collapsible Trials and/or Data, overlaying the Simulation
+### Earlier hypothesis (closed)
 
-Current thinking — subject to designer iteration:
+The following was the working hypothesis before the flex-column model superseded it, kept for historical context.
+
+The three-column side-by-side layout was assumed to break below ~900 px (the simulation column would be < 260 px wide, unusable), so at 676 px an alternate layout was thought necessary.
+
+**Working hypothesis: collapsible Trials and/or Data, overlaying the Simulation**
 
 - One or both side columns (Trials, Data) become **collapsible** at narrow widths.
 - When the user opens a collapsed column, it **overlays the Simulation** rather than reflowing the layout.
 - The simulation column **does not shrink and grow** as overlays open and close; it keeps its size. The overlay sits on top of the simulation column and can be dismissed.
 - This means the simulation viewport stays stable for the student, which avoids re-layout artifacts mid-interaction (especially mid-drag-and-drop or mid-animation).
 
-This is not yet locked in — there's still some uncertainty about whether the simulation column really won't need to resize when the overlays close, or whether some sims might prefer a push-instead-of-overlay behavior. See §11 open questions.
-
-### Other shapes considered (not currently preferred)
+**Other shapes considered (not preferred)**
 
 - Trials as a thin horizontal strip above or below simulation + data — loses the vertical-list affordance.
 - Data panel tabbed/togglable with the simulation column — splits the student's attention awkwardly.
-- Drop to a two-column layout with trials moved into a sticky strip — middle-ground; loses the consistent visual signature with wide mode.
+- Drop to a two-column layout with trials moved into a sticky strip — middle-ground; loses the consistent visual signature.
 
-### Architectural seam
+**Architectural seam (removed)**
 
-The `SimulationFrame` component supports the narrow mode via a `layout="narrow" | "wide"` prop driven by a CSS container query (or `window.matchMedia`) at the ~900 px breakpoint. The narrow-mode renderer is built once in shared and inherited by every sim.
+The `SimulationFrame` was to support narrow mode via a `layout="narrow" | "wide"` prop driven by a CSS container query (or `window.matchMedia`) at the ~900 px breakpoint. The flex-column model removed the need for it.
 
 ---
 
@@ -311,11 +320,11 @@ Inherited from earlier drafts and confirmed compatible with the demo's gap / pad
 | `$frame-width-ap-full` | 1044 px | Activity Player Full Width |
 | `$frame-width-standalone` | 1024 px | Standalone deploy |
 | `$frame-width-ap-2col-hidden` | 989 px | AP 2-Column, resources hidden |
-| `$frame-width-ap-2col-shown` | 676 px | AP 2-Column, resources shown (narrow mode) |
+| `$frame-width-ap-2col-shown` | 767 px | AP 2-Column, instructions panel visible |
 | `$frame-titlebar-height` | 50 px | The single sim title bar |
 | `$column-trials-width` | 155 px | Trials column — fixed across all layouts |
-| `$column-simulation-width-ap-full` | 564 px | Simulation column at 1044 px (flexes at other widths) |
-| `$column-data-width` | 285 px | Data column — fixed across all layouts |
+| `$column-simulation-flex` | 564 (unitless) | Simulation column flex ratio (shares space with Data) |
+| `$column-data-flex` | 285 (unitless) | Data column flex ratio (shares space with Simulation) |
 | `$column-gap` | 10 px | Gap between the three columns |
 | `$body-padding` | 10 px | Padding around the body region |
 | `$section-chip-height` | 36 px | The notched title chip |
@@ -331,6 +340,7 @@ Inherited from earlier drafts and confirmed compatible with the demo's gap / pad
 | `$radius-sm` | 4 px | Inner badges (trial-card letter) |
 | `$radius-md` | 6 px | Buttons (About, sim-buttons, trial cards) |
 | `$radius-lg` | 8 px | Section panel, Section chip, info modal |
+| `$radius-frame-standalone` | 10 px | Standalone outer container (2 px border + this radius) |
 | `$border-strong` | 2 px solid `$color-border` | Section / button / card / chip border |
 | `$focus-outline` | 2 px solid `$color-focus-outline` | Default focus ring (2 px offset) |
 
@@ -362,7 +372,7 @@ Kept here as a decision log.
 15. **Run history persistence** → Not persisted across reloads, but the shell shows the browser's native unload confirmation when at least one run exists.
 16. **Default color palette** → Demo-derived (see §13): mostly grayscale (`#333`, `#555`, `#fff`, `#e8e8e8`, `#f0f0f0`, `#d0d0d0`) plus `#005FCC` for focus outlines and `#e8e8e8` for the Section panel interior. FOSS's blue/orange/green/purple palette was the placeholder seed; it has been superseded. Sim-specific accent colors live in the sim, not in shared tokens.
 17. **Light/dark mode** → No.
-18. **Devices and viewport** → Four exact widths (1044, 1024, 989, 676) at a fixed 562 px height. Widths are driven by Activity Player's embedding modes; height is driven by working backwards from the tightest available viewport across supported devices (Chromebook is the binding constraint at 609 px available height). Supported devices: Teacher Desktop, Chromebook, iPad 10th gen (landscape), Android tablet (landscape). iPad ≤ 9th gen has a known 20 px width-overflow on the right edge of the data column, accepted as a known edge case. Wide mode (≥ 989 px) renders three columns side by side; narrow mode (676 px) uses an alternate layout (working hypothesis: collapsible/overlay — see §8). Touch-friendly hit targets (≥ 44 × 44 px) throughout. Trials list and data panel scroll vertically inside their columns; the simulation column does not scroll.
+18. **Devices and viewport** → Four exact widths (1044, 1024, 989, 767) at a fixed 562 px height. Widths are driven by Activity Player's embedding modes; height is driven by working backwards from the tightest available viewport across supported devices (Chromebook is the binding constraint at 609 px available height). Supported devices: Teacher Desktop, Chromebook, iPad 10th gen (landscape), Android tablet (landscape). iPad ≤ 9th gen has a known 20 px width-overflow on the right edge of the data column, accepted as a known edge case. The three columns flex to fit every width — Trials fixed at 155 px, Simulation and Data sharing the rest in a 564 : 285 ratio (see §7); there is no separate narrow mode. Touch-friendly hit targets (≥ 44 × 44 px) throughout. Trials list and data panel scroll vertically inside their columns; the simulation column does not scroll.
 
 19. **Sim title bar (one row, always rendered)** → `<SimulationFrame>` renders a single 50 px header row with `simTitle` + `tagline` on the left and project-wide partner branding (DESE + Concord Consortium SVGs) + the About button on the right. No project bar in the sim itself. The teal "[Sim] Simulation" bar above is Activity Player's chrome and is not modeled by `<SimulationFrame>` at all. No chrome-suppression mode — what the sim renders is the same standalone and embedded.
 
@@ -389,7 +399,11 @@ Kept here as a decision log.
 
 26. **Section title chip — bullet separator** → Section's CSS renders the `•` between title and instruction via `::before` on the instruction element. Consumers pass `title` and `instruction` as props; the bullet is invisible to the API.
 
-27. **AP 2-Column "Resources" panel** → Activity Player renders its own teacher-facing resources sidebar in the 2-Column layout. The sim does not render this — the 989 / 676 px widths are simply what AP allocates to the sim after its sidebar takes its share.
+27. **AP 2-Column "Resources" panel** → Activity Player renders its own teacher-facing resources sidebar in the 2-Column layout. The sim does not render this — the 989 / 767 px widths are simply what AP allocates to the sim after its sidebar takes its share.
+
+28. **Columns flex below 1044.** Trials stays fixed at 155 px; Simulation and Data share the remaining space in a 564 : 285 ratio. The previous "fixed three columns at 1044, alternate layout below" model is superseded.
+
+29. **Standalone sims render an outer container.** A 2 px solid border with a 10 px corner radius wraps the SimulationFrame when `standalone={true}` (the default). AP-embedded sims pass `standalone={false}` so AP's chrome is the only visual container.
 
 ---
 
@@ -407,15 +421,11 @@ These remain unanswered. Each is a decision the designer + team need to make.
 
 **Q21. `<RunsTable>` and `<BarGraph>` in shared, or sim-specific?** Hinges on how uniform the data shapes are across the planned four sims.
 
-**Q30. Narrow-mode (676 px) layout.** The designer is actively working on this. The first sim's demo only realizes the wide AP Full Width view; the narrow-mode layout (Trials/Data behavior at 676 px) is not yet specified. The wide-mode 3-column grid will overflow at 676 px until this lands. Open sub-questions:
-- Working hypothesis is collapsible Trials/Data overlaying the simulation column, without it resizing as overlays open and close — to be confirmed by the designer.
-- Which side(s) get collapsible behavior — Trials only? Data only? Both?
-- What triggers the collapse — a button, a swipe, automatic at narrow widths?
-- When collapsed, is there still a thin "tab" affordance visible on the simulation column edge, or is the collapsed region fully hidden behind a hamburger-style menu?
+~~**Q30. Narrow-mode (676 px) layout.**~~ **Closed.** The three columns flex from 767 to 1044; no alternate layout is required. See §7.
 
 ~~**Q31. Chrome suppression when embedded in Activity Player.**~~ **Resolved (#19):** the sim renders one 50 px title bar always, in standalone and embedded mode. There is no project bar to suppress.
 
-**Q32. Sim-title typography at narrower widths.** The designed sim-title-bar at 1044 px shows `simTitle` at 24 / 28 px bold beside `tagline` at 16 / 20 px regular. Whether the tagline truncates, wraps, hides, or scales at 989 / 676 px is still being designed.
+**Q32. Sim-title typography at narrower widths.** The designed sim-title-bar at 1044 px shows `simTitle` at 24 / 28 px bold beside `tagline` at 16 / 20 px regular. Whether the tagline truncates, wraps, hides, or scales at 989 / 767 px is still being designed.
 
 **Q33. Trial-card scrolling behavior.** Demo's Trials column is `overflow-y: auto` with `padding: 31 px 0 12 px 15 px`. Whether the scroll indicator is custom-styled, whether the chip is sticky-pinned at the top when the column scrolls, etc., is not yet specified.
 
@@ -429,7 +439,6 @@ These remain unanswered. Each is a decision the designer + team need to make.
 
 A running list of things the designer is iterating on. Items here may move into Resolved or Open Questions as decisions firm up.
 
-- The narrow-mode (676 px) collapsible behavior (see Q30) — actively in design.
 - Sim-title typography at narrower widths (see Q32).
 - Trial-card scrolling behavior — sticky chip, custom scroll indicator, etc. (see Q33).
 - `<DataSubsection>` sub-section vertical proportions (see Q34).
@@ -445,6 +454,7 @@ A running list of things the designer is iterating on. Items here may move into 
 - ~~Delete affordance~~ → No delete. Trials are reset via the upper-right reset button on the selected card (Resolved #24).
 - ~~Specific colors~~ → Demo palette identified; mostly grayscale + focus blue + panel-surface tone (Resolved §13).
 - ~~Embedded-mode chrome suppression~~ → No suppression mode (Resolved #19, §15 Q31 closed).
+- ~~Narrow-mode (676 px) collapsible behavior~~ → No separate narrow mode; columns flex from 767 to 1044 (Resolved #28, §7/§8, Q30 closed).
 
 ---
 
