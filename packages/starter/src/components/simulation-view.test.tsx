@@ -70,6 +70,28 @@ describe("SimulationView", () => {
     expect(onReset).toHaveBeenCalledTimes(1);
   });
 
+  it("fires onProgress whenever a new avg-distance sample lands (every 10 frames)", () => {
+    const onProgress = vi.fn();
+    const { getByRole, getByLabelText } = render(
+      <SimulationView trial={emptyTrial()} {...noopProps} onProgress={onProgress} />,
+    );
+    // Set a 20-frame trial — short enough that we can step through it but long enough that two
+    // samples (frame 10 and frame 20) land. SAMPLE_EVERY = 10 in the model.
+    fireEvent.change(getByLabelText(/frames per trial/i), { target: { value: "20" } });
+    const stepButton = getByRole("button", { name: /step/i });
+    // Step 9 frames: no sample yet (sample lands AT frame 10, not before).
+    for (let i = 0; i < 9; i++) fireEvent.click(stepButton);
+    expect(onProgress).not.toHaveBeenCalled();
+    // 10th step lands the first sample.
+    fireEvent.click(stepButton);
+    expect(onProgress).toHaveBeenCalledTimes(1);
+    expect(onProgress.mock.calls[0][0]).toHaveLength(1);
+    // Step another 10 frames to land the second sample.
+    for (let i = 0; i < 10; i++) fireEvent.click(stepButton);
+    expect(onProgress).toHaveBeenCalledTimes(2);
+    expect(onProgress.mock.calls[1][0]).toHaveLength(2);
+  });
+
   it("disables Play for an already-completed trial (must Reset first)", () => {
     const completed: RecordedTrial = {
       id: "t1",

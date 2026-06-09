@@ -11,9 +11,17 @@ export interface DataPanelProps {
   trials: readonly RecordedTrial[];
   /** Index of the selected trial, or null. Its series drives the time-series chart. */
   selectedIndex: number | null;
+  /**
+   * In-progress avg-distance series from the currently-running trial, or null/undefined when
+   * no run is active. When set, the time-series chart prefers this over the selected trial's
+   * recorded `output.avgDistanceSeries`, letting the chart animate as the run unfolds. App
+   * is responsible for clearing this on every trial-list-mutating boundary so a stale series
+   * from a previous run can never be shown.
+   */
+  liveSeries?: readonly number[] | null;
 }
 
-export function DataPanel({ trials, selectedIndex }: DataPanelProps) {
+export function DataPanel({ trials, selectedIndex, liveSeries }: DataPanelProps) {
   // Aggregate only trials that have been run; empty trials in the list contribute no data.
   const distances: number[] = [];
   for (const trial of trials) {
@@ -26,7 +34,9 @@ export function DataPanel({ trials, selectedIndex }: DataPanelProps) {
     selectedIndex !== null && selectedIndex >= 0 && selectedIndex < trials.length
       ? trials[selectedIndex]
       : null;
-  const selectedSeries = selected?.output?.avgDistanceSeries ?? [];
+  // Prefer the in-progress live series while it's set; otherwise fall back to the trial's
+  // committed output series (post-completion) or an empty series (empty trial).
+  const selectedSeries = liveSeries ?? selected?.output?.avgDistanceSeries ?? [];
 
   return (
     <>

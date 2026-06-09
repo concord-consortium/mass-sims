@@ -25,6 +25,13 @@ export interface SimulationViewProps {
   onComplete: (output: SimOutput, finalTransient: SimTransient) => void;
   /** Clear the selected trial back to empty so it can be re-run (same seed → reproducible). */
   onReset: () => void;
+  /**
+   * Fires whenever a new avg-distance sample lands during a run — i.e. every `SAMPLE_EVERY`
+   * frames (10 by default). Lets the App lift the in-progress series out of this component
+   * (which encapsulates per-frame transient state) so the Data panel can render a live chart.
+   * No-ops outside of a run; not fired on the per-frame walker updates.
+   */
+  onProgress?: (series: readonly number[]) => void;
 }
 
 export function SimulationView({
@@ -33,6 +40,7 @@ export function SimulationView({
   onInputChange,
   onComplete,
   onReset,
+  onProgress,
 }: SimulationViewProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   // Backing-store width tracks the canvas's laid-out width so the drawing fills the column
@@ -62,13 +70,18 @@ export function SimulationView({
 
       const next = stepWalkers(transient, input);
       setTransient(next);
+      // A new series sample lands every SAMPLE_EVERY (10) frames; only fire onProgress on
+      // those frames so the Data panel re-renders at ~6 Hz (at 60 fps), not on every frame.
+      if (next.avgDistanceSeries.length > transient.avgDistanceSeries.length) {
+        onProgress?.(next.avgDistanceSeries);
+      }
       if (next.frame >= input.framesPerTrial) {
         const finalOutput = finalizeTrial(next);
         setOutput(finalOutput);
         onComplete(finalOutput, next);
       }
     },
-    [transient, input, setTransient, setOutput, onComplete],
+    [transient, input, setTransient, setOutput, onComplete, onProgress],
   );
 
   const { isPlaying, play, pause, step } = useSimulationRunner({ onStep });

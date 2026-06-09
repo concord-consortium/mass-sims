@@ -49,4 +49,22 @@ describe("DataPanel", () => {
     const empty = render(<DataPanel trials={[emptyTrial()]} selectedIndex={0} />);
     expect(empty.getByLabelText(/distance over time/i)).toBeInTheDocument();
   });
+
+  it("renders the chart with liveSeries when supplied (in-progress run on an empty trial)", () => {
+    // Empty (unrun) selected trial but a live series is supplied — the chart should render with
+    // the live data rather than showing "No data". jsdom can't introspect canvas pixels so we
+    // assert the chart frame is present and the component renders without error.
+    const { getByLabelText } = render(
+      <DataPanel trials={[emptyTrial()]} selectedIndex={0} liveSeries={[1, 2, 3]} />,
+    );
+    expect(getByLabelText(/distance over time/i)).toBeInTheDocument();
+  });
+
+  it("falls back to the output series when liveSeries is null", () => {
+    const { getByLabelText } = render(
+      <DataPanel trials={[runTrial(5)]} selectedIndex={0} liveSeries={null} />,
+    );
+    // Check that the chart still renders against the output series.
+    expect(getByLabelText(/distance over time/i)).toBeInTheDocument();
+  });
 });

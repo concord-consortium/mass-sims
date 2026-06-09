@@ -29,6 +29,13 @@ function makeEmptyTrial(): RecordedTrial {
  * Starter simulation — a random-walk model and the template for new sims. App owns the trial list
  * that both the Trials and Data slots read from. There is always at least one trial: running fills
  * the selected trial; "New" adds an empty one; Reset clears a trial back to empty (never deletes).
+ *
+ * Live data flow: `SimulationView`'s `useModelState` holds the in-progress `transient` locally
+ * for per-frame perf, but the Data panel's chart needs to see the avg-distance series as it grows.
+ * App hoists just that one slice via the `onProgress` callback into `liveSeries` state and forwards
+ * it to `DataPanel`. The Data panel prefers the live series while it's set; once a trial completes
+ * (or the selection / reset / new-trial path fires) `liveSeries` is cleared and the panel falls
+ * back to the trial's recorded `output.avgDistanceSeries`.
  */
 export function App() {
   // Trials + selected id live in one state object so they update atomically — adding a trial
@@ -38,6 +45,10 @@ export function App() {
     const first = makeEmptyTrial();
     return { trials: [first], selectedId: first.id };
   });
+  // Most-recent in-progress avg-distance series from the running trial, or null when no run is
+  // active. Cleared on every trial-list-mutating boundary (select, reset, add, complete) so the
+  // Data panel never shows a stale series belonging to a different trial.
+  const [liveSeries, setLiveSeries] = useState<number[] | null>(null);
 
   const selected = trials.find((t) => t.id === selectedId) ?? trials[0];
   // Selected trial's letter (0→A, 1→B, …).
@@ -50,6 +61,7 @@ export function App() {
   // New trials are built outside the updater (makeEmptyTrial is impure) so the updater stays pure.
   const addTrial = useCallback(() => {
     const trial = makeEmptyTrial();
+    setLiveSeries(null);
     setState((prev) =>
       prev.trials.length >= TRIAL_LIMIT // refuse past the A–J cap
         ? prev
@@ -57,9 +69,11 @@ export function App() {
     );
   }, []);
   const selectTrial = useCallback((id: string) => {
+    setLiveSeries(null);
     setState((prev) => (prev.selectedId === id ? prev : { ...prev, selectedId: id }));
   }, []);
   const resetTrial = useCallback((id: string) => {
+    setLiveSeries(null);
     setState((prev) => ({
       ...prev,
       trials: prev.trials.map((t) =>
@@ -75,6 +89,9 @@ export function App() {
   }, []);
   const completeTrial = useCallback(
     (id: string, output: SimOutput, finalTransient: SimTransient) => {
+      // Clear live series — output.avgDistanceSeries (now committed) takes over as the source
+      // the Data panel reads from.
+      setLiveSeries(null);
       setState((prev) => ({
         ...prev,
         trials: prev.trials.map((t) => (t.id === id ? { ...t, output, finalTransient } : t)),
@@ -82,6 +99,11 @@ export function App() {
     },
     [],
   );
+  const handleProgress = useCallback((series: readonly number[]) => {
+    // The runner emits a fresh array per sample; copy defensively to keep the state value
+    // immutable from this side of the callback boundary.
+    setLiveSeries([...series]);
+  }, []);
 
   return (
     <SimulationFrame
@@ -138,11 +160,16 @@ export function App() {
             completeTrial(selected.id, output, finalTransient)
           }
           onReset={() => resetTrial(selected.id)}
+          onProgress={handleProgress}
         />
       </SimulationFrame.Simulation>
 
       <SimulationFrame.Data>
-        <DataPanel trials={trials} selectedIndex={trials.indexOf(selected)} />
+        <DataPanel
+          trials={trials}
+          selectedIndex={trials.indexOf(selected)}
+          liveSeries={liveSeries}
+        />
       </SimulationFrame.Data>
     </SimulationFrame>
   );
