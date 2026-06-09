@@ -1,25 +1,5 @@
 @use "@concord-consortium/mass-sims-shared/styles/tokens" as tokens;
 
-.summary {
-  color: tokens.$color-text;
-  display: grid;
-  font-family: tokens.$font-family-base;
-  font-size: tokens.$font-size-base;
-  gap: tokens.$space-1 tokens.$space-2;
-  grid-template-columns: auto auto;
-  margin: 0;
-}
-
-.summary dt {
-  font-weight: 400;
-}
-
-.summary dd {
-  font-weight: 700;
-  margin: 0;
-  text-align: right;
-}
-
 .empty {
   color: tokens.$color-text-muted;
   font-family: tokens.$font-family-base;
@@ -28,8 +8,13 @@
   text-align: center;
 }
 
-// CSS (display) size; the backing store is sized at devicePixelRatio in JS for crispness.
+// CSS (display) sizes; the backing store is sized at devicePixelRatio in JS for crispness.
 .series-chart {
   height: 130px;
+  width: 100%;
+}
+
+.histogram-chart {
+  height: 160px;
   width: 100%;
 }
