@@ -19,6 +19,7 @@ export { TrialCard, type TrialCardProps } from "./components/trial-card/trial-ca
 export { useCurrentAndPrevious } from "./hooks/use-current-and-previous";
 export { useFrameLoop } from "./hooks/use-frame-loop";
 export { useInterval } from "./hooks/use-interval";
+export { type LogEvent, useLogEvent } from "./hooks/use-log-event";
 export {
   type UseModelStateOptions,
   type UseModelStateReturn,
