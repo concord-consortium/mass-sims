@@ -1,0 +1,55 @@
+@use "../../styles/tokens" as tokens;
+
+.button {
+  align-items: center;
+  background: tokens.$color-surface;
+  border: tokens.$border-strong;
+  border-radius: tokens.$radius-md;
+  color: tokens.$color-text;
+  cursor: pointer;
+  display: inline-flex;
+  font-family: tokens.$font-family-base;
+  font-size: tokens.$font-size-base;
+  font-weight: 700;
+  justify-content: center;
+  line-height: tokens.$line-height-sm;
+  // Sized to clear the 44 px touch-target minimum via an expanded ::after — visible
+  // box stays 34 px so dense control rows don't bloat. Matches `.info-button` in
+  // simulation-frame.scss.
+  min-height: 34px;
+  min-width: 60px;
+  padding: 3px tokens.$space-3;
+  position: relative;
+  user-select: none;
+
+  // Expanded touch target (7 px above and below → 48 px effective). Matches the
+  // existing pattern on .info-button.
+  &::after {
+    bottom: -7px;
+    content: "";
+    left: 0;
+    position: absolute;
+    right: 0;
+    top: -7px;
+  }
+
+  &[data-hovered],
+  &:focus-visible {
+    background: tokens.$color-surface-hover;
+  }
+
+  &[data-pressed] {
+    background: tokens.$color-surface-active;
+  }
+
+  &:focus-visible {
+    outline: tokens.$focus-outline;
+    outline-offset: tokens.$focus-outline-offset;
+  }
+
+  &[data-disabled] {
+    color: tokens.$color-text-muted;
+    cursor: not-allowed;
+    opacity: 0.5;
+  }
+}

@@ -4,6 +4,7 @@
 // and hooks land. See ../../../docs/infrastructure-plan.md §3 for the full intended contract.
 
 // Components
+export { Button, type ButtonProps } from "./components/button/button";
 export {
   DataSubsection,
   type DataSubsectionProps,
