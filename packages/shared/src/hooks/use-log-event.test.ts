@@ -1,9 +1,7 @@
 import { renderHook } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-// `vi.mock` is hoisted above the module body, so the mock fn must be created via
-// `vi.hoisted` to exist when the factory runs (a plain top-level `const` would be
-// referenced before initialization).
+// vi.hoisted so the mock fn exists when the hoisted vi.mock factory runs.
 const { log } = vi.hoisted(() => ({ log: vi.fn() }));
 vi.mock("@concord-consortium/lara-interactive-api", () => ({
   log,

@@ -1,9 +1,7 @@
 import { fireEvent, render } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-// `vi.mock` is hoisted above the module body, so the spy must be created via
-// `vi.hoisted` to exist when the factory runs (Vitest 4 hoists `vi.mock` above
-// plain top-level `const`s).
+// vi.hoisted so the spy exists when the hoisted vi.mock factory runs.
 const { logEventSpy } = vi.hoisted(() => ({ logEventSpy: vi.fn() }));
 vi.mock("../../hooks/use-log-event", () => ({
   useLogEvent: () => logEventSpy,

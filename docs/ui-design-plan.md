@@ -413,7 +413,7 @@ These remain unanswered. Each is a decision the designer + team need to make.
 
 ### Visual / interaction
 
-**Q9. UI component library.** MUI v9 (decoupled from Emotion) vs. dropping MUI entirely vs. an alternative (Radix / Headless UI / shadcn-style). Depends on how much of MUI we actually need beyond Button, Slider, Dialog. Lower MUI usage → dropping it shrinks bundle and API surface.
+~~**Q9. UI component library.** MUI v9 (decoupled from Emotion) vs. dropping MUI entirely vs. an alternative (Radix / Headless UI / shadcn-style).~~ **Closed.** Resolved to `react-aria-components`. See infrastructure-plan.md §11 #9 and §3 "Shared controls policy."
 
 **Q19. Graphing library.** Recharts / Visx / Chart.js / D3 — different sims will likely need different chart types. Decision affects the shared library's chart primitives and per-sim dependencies.
 

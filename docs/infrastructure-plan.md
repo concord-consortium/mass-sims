@@ -219,6 +219,24 @@ Exported from the shared library; rendered by each sim inside `<SimulationFrame.
 
 Unlike `<Section>`, `<DataSubsection>` does NOT render a chip. The title is a real heading element (`<h3>` — semantically a sub-heading under the Data region's `<h2>`), centered above the content, with a 1 px horizontal-rule divider rendered automatically between consecutive `<DataSubsection>` siblings. Sims may render any number of `<DataSubsection>` siblings (one, two, three, more). **`<DataSubsection>` is not a `<Section>` variant** — the markup, ARIA structure, and visual treatment differ on purpose; consumers should not try to reconcile the two by configuring `<Section>` for the Data slot.
 
+### `<Button>` component
+
+Exported from the shared library; the first wrapper around a `react-aria-components` primitive per the [Shared controls policy](#shared-controls-policy) below. Used wherever a sim needs an interactive press button.
+
+```tsx
+<Button action="play_pressed" actionParams={{ trial: "A" }} onPress={play}>
+  Play
+</Button>
+```
+
+Props: `action?: string` (snake_case event name; omitted disables logging), `actionParams?: Record<string, unknown>`, plus all react-aria `ButtonProps` (`isDisabled`, `onPress`, `aria-label`, `type`, …). The wrapper applies token-driven hover/press/focus/disabled treatment (via `data-hovered` / `data-pressed` / `data-disabled` attribute selectors, not CSS pseudo-classes), auto-emits via `useLogEvent` when `action` is present, and forwards everything else to react-aria unchanged. Visual variants are intentionally not exposed yet — the demo uses one button shape everywhere; Phase 3 may add `variant?: …` if a control needs a lower-emphasis treatment.
+
+### AP state sync
+
+Sims wire Activity Player state sync by importing from `@concord-consortium/lara-interactive-api` **directly** — `useInitMessage` for the saved-state restore on init, `setInteractiveState` to push new state up during the sim's lifetime, and `useAuthoredState` if the activity has author-supplied configuration. The library handles standalone-vs-embedded detection internally: in standalone mode `useInitMessage()` stays `null` and `setInteractiveState()` is a no-op, so no extra guards are needed. (lara-interactive-api also offers a combined `useInteractiveState` `[state, setState]` hook; mass-sims sims keep state in their own React tree and push it via `setInteractiveState` in an effect, which composes more cleanly with the existing trial-list state.)
+
+See `docs/adding-a-new-sim.md` for the canonical wiring pattern (worked example with the restore-on-init and push-on-change effects in context).
+
 ### Hooks contract
 
 Exported from `packages/shared/src/hooks/`:
@@ -228,8 +246,7 @@ Exported from `packages/shared/src/hooks/`:
 - `useFrameLoop()` — `requestAnimationFrame` wrapper with cleanup + frame-time delta.
 - `useStateWithCallback()` / `useStateWithCallbackLazy()` — set-state-then-do-X.
 - `useInterval()`, `useCurrentAndPrevious()` — small utility hooks.
-- `useIframePhone()` — Activity Player parent ↔ child state sync; no-ops when standalone.
-- `useLogEvent()` — dual-transport action logging (portal-report + GA4); no-ops independently per transport when not configured. See §5 for detail.
+- `useLogEvent()` — returns `LogEvent`, `(eventName: string, parameters?: Record<string, unknown>) => void`. Stable across rerenders. Dual-transport: portal-report via lara-interactive-api `log(action, data)` (when embedded), GA4 via `window.gtag('event', …)` (when the gtag snippet has loaded — `VITE_GA_PROPERTY_ID` configured at build time). Each transport no-ops independently when not configured. In dev, validates the event name (snake_case, ≤ 40 chars) and params (≤ 25 keys, values ≤ 100 chars) and throws on violation; in prod the validation is skipped so a misnamed event silently drops rather than crashing the sim. See §5 for detail.
 - `useReloadWarning()` — `beforeunload` confirmation when at least one trial is recorded.
 
 ### Utilities
@@ -244,6 +261,18 @@ Exported from `packages/shared/src/utils/`:
 ### Design tokens
 
 `packages/shared/src/styles/tokens.scss` is the single source of truth for color, spacing, typography, corner radii, section-chip dimensions, and the `--touch-target-min` token. The UI Design Plan owns the actual values; this plan owns the convention that nothing outside `tokens.scss` should hard-code these. Component `.scss` files `@use` the tokens module for variable access; a sibling `global.scss` (imported once per sim from its entry point) is the single place that emits the runtime `:root { --foo: ... }` mirror — splitting tokens from globals prevents the `:root` block from being duplicated across separately-compiled component stylesheets in the final bundle.
+
+### Shared controls policy
+
+Every shared interactive control (Button, Slider, Switch, Select, Checkbox, NumberField, …) in `packages/shared/src/components/` is a **thin wrapper around a `react-aria-components` primitive**. The wrapper does three things and only three things:
+
+1. **Applies our design tokens and SCSS** — every wrapper has a matching `.scss` file scoped under a single root class (e.g. `.button`), pulling tokens via `@use "../../styles/tokens" as tokens;`. The visual treatment lives here, not in the consumer.
+2. **Wires `useLogEvent` auto-emit** — every wrapper accepts an optional `action?: string` prop and calls `logEvent(action, params)` on the relevant commit event (press for buttons, change-on-pointer-up for sliders, change for switches/selects/checkboxes). When `action` is omitted the control still works but emits nothing — useful for cosmetic controls or sub-controls inside a larger composite that emits one logical event.
+3. **Forwards all other react-aria props** — wrappers do NOT recreate react-aria's prop surface. Spread the rest. Sims compose around the wrapper using react-aria's native API (`isDisabled`, `onPress`, `aria-label`, …), not a re-invented one.
+
+Wrappers never re-export react-aria-components directly. Sims import controls only from the `@concord-consortium/mass-sims-shared` barrel; if a sim needs a primitive we haven't wrapped yet, that's a signal to add a wrapper (so the auto-emit and token application stay centralized), not to bring `react-aria-components` into the sim's dependency graph.
+
+The first wrapper, `<Button>`, ships in Phase 2c along with `useLogEvent`; the rest follow in Phase 3.
 
 ### What's deliberately *not* in this section
 
@@ -298,7 +327,7 @@ Do **not** backport:
 
 **However** — two architectural concepts from DESE's TestNav layer are worth keeping, rebuilt on top of CC's own libraries:
 
-1. **State sync via `iframe-phone`** (replaces DESE's external state listener). `useIframePhone()` in `packages/shared/hooks/` hands the host (Activity Player) an `init` payload, listens for `setLearnerState` from the host, and pushes `interactiveState` updates back up.
+1. **State sync via `@concord-consortium/lara-interactive-api`** (replaces DESE's external state listener). Sims use lara-interactive-api's `useInitMessage` (restore on init) and `setInteractiveState` (push on change) directly — the library handles init handshakes, saved-state restore, and push-up of new state via iframe-phone, with standalone-vs-embedded detection built in. See §3 "AP state sync" for the convention.
 2. **Action logging via `useLogEvent`** (replaces DESE's `logEvent` callback). A single emit point in `packages/shared/hooks/use-log-event.ts` fans out to two transports:
    - **Portal-report** via `@concord-consortium/lara-interactive-api` — fires when the sim is embedded in Activity Player (or any compatible host).
    - **Google Analytics 4** via inline `gtag.js` — fires when a repo-wide `VITE_GA_PROPERTY_ID` env var is set at build time. Empty/missing means GA is disabled.
@@ -357,18 +386,18 @@ Target versions, current as of May 2026. Pin minor where stability matters, allo
 | `lerna` | `^4` | Monorepo orchestrator; matches FOSS/DESE |
 | `@biomejs/biome` | `^2.4.0` | Lint + format in one tool. Pin the minor explicitly: the config schema changed between 2.0 and 2.2 (folder-ignore patterns dropped the trailing `/**`, `organizeImports` moved into `assist.actions.source`, `noConsoleLog` renamed to `noConsole`). The `$schema` URL in `biome.json` must track the installed minor or the IDE complains and the CLI may warn on schema drift. When bumping the package, update the URL in the same commit. |
 | `lefthook` | latest | Git precommit/prepush hooks |
-| `@mui/material` | `^9` *(optional)* | Decoupled from Emotion in v9 — see Open Questions |
+| `react-aria-components` | `^1.18` | Headless, fully-accessible UI primitives from Adobe. Every shared interactive control is a thin wrapper around a react-aria primitive that applies our tokens, SCSS, and the `useLogEvent` auto-emit. Replaces MUI as the resolved answer to the UI-library question (UI Design Plan §15 Q9, now closed). |
 | `@tanstack/react-table` | `^8` | Replaces `react-table@^7` |
 | `@dnd-kit/core`, `@dnd-kit/sortable` | latest | Keyboard-accessible DnD |
-| `iframe-phone` | latest | Concord's parent ↔ child iframe messaging (for Activity Player embed) |
-| `@concord-consortium/lara-interactive-api` | latest | Portal-report-compatible action logging; pairs with `iframe-phone` |
+| `iframe-phone` | `^1.3.1` | Concord's parent ↔ child iframe messaging (for Activity Player embed). Stable; last published 2021. |
+| `@concord-consortium/lara-interactive-api` | `^1.9.4` | Portal-report-compatible state sync + action logging; uses `iframe-phone` under the hood. |
 | `gtag.js` (inline, no npm dep) | from Google CDN | GA4 transport. Loaded via `<script>` in each sim's `index.html` template; property ID injected at build time from `VITE_GA_PROPERTY_ID`. |
 | `focus-trap-react` | latest | Dialog focus trap |
 | `clsx` | latest | Tiny class joiner |
 | `sass`, `postcss`, `autoprefixer` | latest | SCSS compilation + browser prefix |
 | `@axe-core/react` | latest | Dev-only |
 
-Removed compared to FOSS/DESE: `webpack` and all loaders, `jest` and `ts-jest`, `cypress`, `eslint` and all eslint plugins (replaced by Biome), `react-howler`, the entire translation tooling, `@material-ui/core@^4` (DESE), `@svgr/webpack` (replaced by `vite-plugin-svgr`).
+Removed compared to FOSS/DESE: `webpack` and all loaders, `jest` and `ts-jest`, `cypress`, `eslint` and all eslint plugins (replaced by Biome), `react-howler`, the entire translation tooling, `@material-ui/core@^4` (DESE), `@svgr/webpack` (replaced by `vite-plugin-svgr`), and any `@mui/*` (the UI library answer is `react-aria-components` — see §11 #9 closed).
 
 **Net change count vs. FOSS:** Vite (replaces Webpack), Vitest (rides with Vite), Biome (replaces ESLint), Playwright (replaces Cypress), plus Lefthook (new addition). Yarn workspaces and Lerna are unchanged.
 
@@ -595,14 +624,20 @@ Port the smaller utility hooks and design tokens from FOSS/DESE. Build the three
 
 > **Status (Phase 1 build):** `Section` and the `SimulationFrame` compound component (header + Trials/Simulation/Data slots + three-column flex grid + accessible info modal) are built to the §3 API and exported from the shared barrel; the four-width × 562 render check is satisfied by the non-deployed `packages/sim-frame-preview` workspace. Utility hooks, tokens, and `global.scss` are in place. **Deferred:** final Section/chip/region visual treatment and designer-tuned slot proportions. Styling is plain (global) SCSS scoped under a per-component root class (the verified house convention — see the corrected Styling note in §1); the info-modal prop is `infoModalContent`. See [docs/simulation-frame-plan.md](./simulation-frame-plan.md).
 
-**Phase 2 — Starter simulation + iframe embedding + logging + scaffolding (≈ 2-3 weeks)**
-Build `packages/starter` as a minimal but real simulation that exercises trials list + simulation region + data panel. Wire `useModelState`, `useSimulationRunner`, `useFrameLoop`. Implement `useIframePhone` and prove a round-trip with a local Activity Player smoke test (or a minimal harness page). Implement `useLogEvent` with the dual-transport design (lara-interactive-api + GA4 via inline `gtag.js`) — wire the shared controls (`Button`, `Slider`, `Switch`, `Select`, `Checkbox`) to emit log events automatically. Continuous controls emit on commit only (`pointerup`/`change`), not during drag. Inject `VITE_GA_PROPERTY_ID` into each sim's `index.html` template; verify GA is fully disabled when the env var is empty. End-to-end verification: logs reach portal-report *and* events appear in GA4 DebugView for the configured property. Confirm `yarn workspace starter dev` boots, hot-reloads, builds. Ship to a "branch" S3 path and verify it loads inside Activity Player as an iframe interactive. Build `scripts/new-sim.ts`, `scripts/gen-index.ts`, and `scripts/gen-workflows.ts` along with their CI verify-mode checks — these unlock easy growth toward 20+ sims and should exist before the first real sim, not after the fifth.
+**Phase 2 — Starter simulation + iframe embedding + logging + scaffolding (≈ 4-6 weeks total)**
+Phase 2 was always going to be the biggest single block, so it's split into three landed-incrementally subphases.
 
-**Phase 3 — Port the controls and viz components (≈ 2-3 weeks)**
-Port FOSS/DESE's V2 controls (sliders, buttons, switches, selects, checkboxes), the table component (on Tanstack Table v8), and a graphing primitive. Add unit tests for each. Add `@axe-core/react` and resolve any flagged issues.
+- **Phase 2a — Shared library rebuild against the demo design (✅ COMPLETE).** Token rewrite (`tokens.scss`, `global.scss`), partner-branding SVGs, restructured `<SimulationFrame>` (50 px title bar, draggable About panel, no project bar), new `<TrialCard>` and `<DataSubsection>` components, `sim-frame-preview` workspace updated. See [docs/phase-2a-shared-rebuild-plan.md](./phase-2a-shared-rebuild-plan.md).
+
+- **Phase 2b — Starter sim + simulation state hooks (✅ COMPLETE).** Built `packages/starter` as a real random-walk simulation; landed `useModelState<IInput, IOutput, ITransient>` and `useSimulationRunner`. Addendum (Tasks 11–15) added responsive column flex behavior + standalone outer container to `<SimulationFrame>`. See [docs/phase-2b-starter-sim-plan.md](./phase-2b-starter-sim-plan.md).
+
+- **Phase 2c — AP embedding, action logging, react-aria foundation, scaffolding (≈ 2-3 weeks).** Wire sims to `@concord-consortium/lara-interactive-api`'s state sync (`useInitMessage` + `setInteractiveState`) directly — no custom wrapper hook in shared; the convention is documented in §3 above and shown by worked example in `docs/adding-a-new-sim.md`. Prove the round-trip with a local Activity Player smoke test. Implement `useLogEvent` with the dual-transport design (portal-report via lara-interactive-api + GA4 via inline `gtag.js`) — continuous controls emit on commit only (`pointerup`/`change`), not during drag. Inject `VITE_GA_PROPERTY_ID` into each sim's `index.html` template; verify GA is fully disabled when the env var is empty. Land the **react-aria-components foundation** (the UI primitives library, decision 9 in §11) plus the first shared control, `<Button>`, wired to auto-emit log events; migrate Starter's existing Play/Pause/Step/Reset to it. Build `scripts/new-sim.ts` and `scripts/gen-workflows.ts` along with their CI `--check` modes — these unlock easy growth toward 20+ sims and should exist before the first real sim, not after the fifth. (`scripts/gen-index.ts` already shipped in Phase 1.) See [docs/phase-2c-embedding-logging-scaffolding-plan.md](./phase-2c-embedding-logging-scaffolding-plan.md).
+
+**Phase 3 — Port the remaining controls + viz components (≈ 2-3 weeks)**
+With the react-aria-components pattern established in Phase 2c, mechanically port the remaining V2 controls (`Slider`, `Switch`, `Select`, `Checkbox`, `NumberField`) as thin wrappers, plus the table component (on Tanstack Table v8) and a graphing primitive. Each control auto-emits via `useLogEvent` per the convention established in §3. Add unit tests for each. Add `@axe-core/react` and resolve any flagged issues. Migrate the remaining Starter native HTML inputs (walker-count slider, step-size slider, frames-per-trial number input) to the new shared controls. Also build a multi-sim test harness workspace (`packages/sim-test-harness`) that loads every sim at the four target widths via `<iframe>` cards — discovers sims the same way `gen-index` does, points at deployed branch URLs in CI or local dev URLs at the dev workstation. Complements `sim-frame-preview` (frame-only with placeholder content) by surveying real sims across widths; feeds Phase 5's visual-regression snapshots.
 
 **Phase 4 — First real simulation (≈ 2-4 weeks per sim, depending on complexity)**
-Scaffold `simulations/sim-one` from the starter. Iterate on the shared layer as gaps appear. The first real sim is where the abstractions get stress-tested; budget extra time.
+Scaffold `simulations/sim-one` from the starter. Iterate on the shared layer as gaps appear. The first real sim is where the abstractions get stress-tested; budget extra time. Specifically: settle the framework-level pattern for in-progress transient state escaping `useModelState` / `useSimulationRunner` to consumers outside the Simulation slot (live charts in the Data panel, live readouts elsewhere). The Phase 2b Starter intentionally leaves this question open — `output` is committed only at trial completion — because the first real sim's live-visualization shape is the right data point to design against. Candidate shapes include an `onTransientChange` option on `useSimulationRunner`, a pub-sub primitive, or hoisting transient state out of `<SimulationView>`.
 
 **Phase 5 — Hardening + documentation (≈ 1-2 weeks)**
 Playwright suite covering critical paths in every sim. Lighthouse / axe audits. Final CI polish. Documentation in `packages/shared/README.md` covering the public component/hook API — important at the 4-sim starting point, essential by the time the repo crosses 10 sims. Include a `docs/adding-a-new-sim.md` that walks through `yarn new-sim` and the conventions a new sim author needs to know. Add a `docs/deployment.md` documenting how to build the static output and deploy it to an arbitrary host — written with the future DESE-org handoff in mind so we don't have to reverse-engineer it later.
@@ -612,9 +647,9 @@ Playwright suite covering critical paths in every sim. Lighthouse / axe audits. 
 ## 10. Risks and mitigations
 
 - **The three-region slot API may not fit every future sim.** Mitigation: design the slot API to allow a sim to opt out of a region (e.g., `<SimulationFrame.Data />` empty hides the column). Also expose a `layout` prop on the frame for escape hatches. (Visual-layout-specific risks live in the UI Design Plan.)
-- **iframe-phone state contracts can drift between Activity Player versions.** Mitigation: pin the `iframe-phone` version, write a small `useIframePhone` adapter that wraps the library's API, and add a Playwright test that loads a sim into a fixture Activity Player page to detect regressions.
+- **iframe-phone / lara-interactive-api state contracts can drift between Activity Player versions.** Mitigation: pin `iframe-phone` and `@concord-consortium/lara-interactive-api` versions explicitly (the latter handles the protocol details so sims work against a stable API surface), and add a Playwright test that loads a sim into a fixture Activity Player page to detect regressions.
 - **Touch-target enforcement at the infrastructure level.** Mitigation: expose `--touch-target-min` as a design token in `tokens.scss` (mirrored to a CSS custom property by `global.scss`); consider a lint rule on shared controls that flags hit areas below the token. (Specific touch-target values and per-control sizing are UI Design Plan concerns.)
-- **MUI v9 is brand new (May 2026); migration churn is possible.** Mitigation: the UI library choice is open (UI Design Plan §15 Q9). If the answer ends up being "drop MUI," that simplifies the dependency tree.
+- **react-aria-components API drift.** Adobe ships frequent minors (1.x line is on a steady cadence). Mitigation: pin the minor (`^1.18`); audit the changelog before each minor bump; component wrappers in `packages/shared` mediate consumers from direct react-aria API, so a forced upgrade touches one component file, not every sim.
 - **React Compiler interactions.** If we enable React 19's compiler, some manual `useMemo`/`useCallback` patterns inherited from DESE become noise. Mitigation: hold off on enabling the compiler until after Phase 2 stabilizes, then sweep to remove redundant memos.
 - **TestNav-shaped state-sync expectations may haunt some hooks ported from DESE.** Mitigation: when porting `useModelState`, strip the external-listener API in one go and don't add it back unless a concrete reuse case appears.
 - **Vite + S3 publicPath pattern is unproven at CC.** Engineer 1 flagged this. Mitigation: the Phase 0 spike proves the pattern with a hello-world before we sink Phase 1 work into it. If the pattern can't be made to work reasonably, the rollback to Webpack 5 is documented in the addendum below.
@@ -623,7 +658,7 @@ Playwright suite covering critical paths in every sim. Lighthouse / axe audits. 
 - **Lefthook hook installation must be reliable across dev machines.** Mitigation: install via the repo's `postinstall` script and document the fallback (`yarn lefthook install`) in `CONTRIBUTING.md`.
 - **CI time and shared-library API churn as sim count grows.** With a 20+ sim target, two scale risks bite: (1) CI wall-clock time inflates if every sim is rebuilt on every push, and (2) any breaking change to `packages/shared` ripples across every sim simultaneously. Mitigations: per-sim workflow files with path-filter triggers (see §8 "CI structure at scale") for the first; treat `packages/shared`'s exported surface as a public API from day one, with deprecation rather than removal, and add visual / snapshot tests for shared components in Phase 3 for the second. Revisit Turborepo specifically as the sim count approaches 15-20 — its caching becomes a meaningful CI win at that scale even though it's overkill at 4-6.
 - **Sim-list duplication.** DESE's pattern has the sim list duplicated across CI workflows, deploy scripts, and the root index page; each new sim requires updates in multiple places. Mitigation: the workspace list in root `package.json` is the single source of truth. `scripts/gen-index.ts` and `scripts/gen-workflows.ts` regenerate dependent artifacts from it, and CI verifies the generated outputs are up to date.
-- **Portal-report event-shape compatibility.** We're relying on `@concord-consortium/lara-interactive-api` to produce events portal-report knows how to render. Mitigation: in Phase 2, ship the starter to a CC dev portal and verify logs appear correctly in portal-report before locking the event vocabulary. Treat the per-event payload shape as a versioned contract.
+- **Portal-report event-shape compatibility.** We're relying on `@concord-consortium/lara-interactive-api` to produce events portal-report knows how to render. Mitigation: in Phase 2, ship the starter to a CC dev portal and verify logs appear correctly in portal-report before locking the event vocabulary. Treat the per-event payload shape as a versioned contract. **Verified in Phase 2c** (manual AP smoke test): the `useLogEvent` → `log(action, data)` calls land in portal-report's interactive-event view with the expected `{ trial }` params, and the `useInitMessage` / `setInteractiveState` round-trip restores trials + selection on reload.
 - **GA4 + K-12 privacy/compliance.** Google's terms prohibit GA from being "designed to specifically target users under 13," and GA4's default settings can create COPPA/FERPA exposure with minor users. Mitigation: before enabling GA in any production deploy, verify with CC's privacy/legal owner (a) that IP anonymization is on, (b) that Google Signals and advertising features are disabled at the property level, and (c) the policy on standalone classroom deploys. Document the resolved policy in `docs/analytics.md`. The plan defaults to GA being **off** in any environment where the env var isn't explicitly set.
 - **GA4 event-name constraints.** GA4 enforces `snake_case`, ≤ 40 char names, ≤ 25 custom params, ≤ 100 char values; some event names are reserved. Mitigation: enforce these constraints at the `useLogEvent` boundary (validate in dev mode, fail loudly), so portal-report-compatible names are also GA-compatible. Document the convention in `docs/logging.md`.
 - **DESE-org transferability lag.** We're designing for transfer without knowing the target. Mitigation: see §13 — the design constraint is fully captured even though the delivery isn't. If concrete DESE constraints surface later, they should be checked against §13's checklist; deltas become discrete tasks.
@@ -647,7 +682,7 @@ A decision log. Items numbered here so the gaps reflect what's been delegated to
 6. **Package manager + monorepo orchestrator** → Stay on **Yarn 1.x workspaces + Lerna 4**, unchanged from FOSS. Avoids adding pnpm as a third package manager and avoids a simultaneous Turborepo migration. Given the 20+ sim growth expectation, Turborepo is a likely future addition (it layers on top of yarn workspaces without disruption) — but the right time to introduce it is when CI cache misses are actually costing minutes, not now.
 7. **React version** → React 19.2.
 8. **TypeScript version** → TypeScript 6.x.
-9. **UI component library** → *Open. Tracked in [UI Design Plan §15 Q9](./ui-design-plan.md).*
+9. **UI component library** → **`react-aria-components`** (Adobe). Headless, fully-accessible primitives; each shared interactive control in `packages/shared` is a thin wrapper around a react-aria primitive that applies our tokens, our SCSS, and the `useLogEvent` auto-emit. MUI is not used. Rationale: headless primitives let us match the demo-derived visual design without fighting a theme system, and Adobe's accessibility testing is deep. UI Design Plan §15 Q9 closed by this decision.
 10. **Unit-test framework** → Vitest. (Comes essentially free with Vite; running Jest with Vite is more work.)
 11. **E2E framework** → Playwright.
 22. **Storybook** → No (FOSS does not use it; following that pattern).
@@ -696,7 +731,7 @@ We may eventually need to hand the simulations (code, built artifacts, or both) 
 
 1. **Fully static build output.** Vite produces HTML + JS + CSS + assets; no server-side code, no runtime dependencies on CC infrastructure. Built sims can be served from any static host (S3, Cloudflare Pages, GitHub Pages, a plain Apache/Nginx, etc.) without modification.
 2. **Relative asset paths.** The Phase 0 Vite/S3 publicPath spike establishes that built bundles load their assets relative to the JS bundle, not from a hard-coded absolute URL. A built sim can be relocated to a new host and path without rebuilding.
-3. **Opt-out iframe-phone state sync.** `useIframePhone` detects whether a compatible parent is present and no-ops cleanly when standalone. DESE hosting without Activity Player works without code changes.
+3. **Opt-out AP state sync.** lara-interactive-api's hooks detect whether a compatible parent is present and no-op cleanly when standalone: `useInitMessage()` stays `null` and `setInteractiveState()` is a no-op. DESE hosting without Activity Player works without code changes.
 4. **Opt-out portal-report logging.** `useLogEvent`'s portal-report transport (via `@concord-consortium/lara-interactive-api`) no-ops when there's no compatible parent. If DESE wants its own per-learner reporting, the hook is the natural seam to redirect events to a different endpoint.
 5. **Opt-out GA.** `useLogEvent`'s GA transport is disabled whenever `VITE_GA_PROPERTY_ID` is empty at build time. For a DESE-hosted build, the natural handoff is to either leave the env var unset (no GA) or substitute DESE's own GA4 property ID. Either way, no code changes required.
 6. **MIT license.** No legal encumbrance on transfer.

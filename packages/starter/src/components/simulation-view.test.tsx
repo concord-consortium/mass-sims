@@ -2,12 +2,9 @@ import { fireEvent, render } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import type { RecordedTrial } from "../model/types";
 
-// The shared <Button> auto-emits via `useLogEvent`, which forwards to
-// lara-interactive-api's `log(action, data)`. We can't intercept that by mocking the
-// shared barrel's `useLogEvent` — the real Button closes over its own module-relative
-// import — so we mock the underlying `log` transport instead and assert the real
-// Button → useLogEvent → log chain end-to-end. Hoisted because `vi.mock` is hoisted
-// above the module body.
+// The shared <Button> auto-emits via useLogEvent → lara-interactive-api's log(action, data).
+// Mock that transport (not useLogEvent, which Button imports internally) and assert the press
+// emits. vi.hoisted so the mock fn exists when vi.mock runs.
 const { log } = vi.hoisted(() => ({ log: vi.fn() }));
 vi.mock("@concord-consortium/lara-interactive-api", () => ({ log }));
 

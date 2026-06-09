@@ -31,18 +31,13 @@ export type LogEvent = (eventName: string, parameters?: Record<string, unknown>)
  * gets the event; when standalone (not embedded), GA still gets it. Both
  * transports are silent no-ops when their transport isn't available.
  *
- * Sims either call this directly for sim-specific events ("trial_started",
- * "fungus_introduced") or rely on shared controls' built-in auto-emit via their
- * `action` prop.
- *
  * See infrastructure-plan.md §5 and §11 #27–#32 for the contract.
  */
 export function useLogEvent(): LogEvent {
   return useCallback((eventName, parameters) => {
     validate(eventName, parameters);
     try {
-      // lara-interactive-api's `log(action, data)` — the event name is the action,
-      // params are the data payload. Fires into portal-report when embedded.
+      // lara-interactive-api log(action, data): event name → action, params → data.
       log(eventName, parameters);
     } catch {
       // lara-interactive-api throws if it hasn't initialized — treat as no-op.

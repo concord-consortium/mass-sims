@@ -1,13 +1,8 @@
 import { fireEvent, render } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-// Mock the lara-interactive-api surface the Starter uses for AP saved-state sync.
-// Hoisted because `vi.mock` is hoisted above the module body (a plain top-level `const`
-// would be referenced before initialization under Vitest 4). The hook returns null by
-// default (standalone); individual tests override per-case via the `beforeEach` below.
-// Note: `log` is intentionally NOT re-exported here — the shared <Button>'s useLogEvent
-// imports it from this module, but it's only called on press (and is wrapped in a
-// try/catch), so an undefined `log` is a harmless no-op in these tests.
+// Mock the lara-interactive-api surface the Starter uses for AP saved-state sync. vi.hoisted
+// so the mocks exist when vi.mock runs; defaults to standalone (null), overridden per-case.
 const { useInitMessageMock, setInteractiveStateMock } = vi.hoisted(() => ({
   useInitMessageMock: vi.fn(),
   setInteractiveStateMock: vi.fn(),
@@ -26,9 +21,8 @@ function runSelectedTrial(view: ReturnType<typeof render>, frames = 2) {
   for (let i = 0; i < frames; i++) fireEvent.click(stepButton);
 }
 
-// Default every test to standalone — the real useInitMessage returns null (never
-// undefined) when there's no AP parent. Tests that exercise embedded behavior override
-// this in their own body. (Matters because App derives `isEmbedded = initMsg !== null`.)
+// Default every test to standalone — App derives `isEmbedded = initMsg !== null`, and the
+// real useInitMessage returns null (not undefined) with no AP parent. Embedded tests override.
 beforeEach(() => {
   useInitMessageMock.mockReturnValue(null);
 });
@@ -129,10 +123,9 @@ describe("Starter App — AP saved state", () => {
       interactiveState: { trials: [trialA, trialB], selectedId: "saved-B" },
     });
     const view = render(<App />);
-    // Both saved trials render as cards, and the saved selection is honored.
     expect(view.getByRole("button", { name: "Trial A" })).toBeInTheDocument();
     expect(view.getByRole("button", { name: "Trial B" })).toBeInTheDocument();
-    // Trial A's avg-distance readout shows the saved output.
+    // /avg 3/ matches trial A's saved avgDistance (3.14).
     expect(view.getByText(/avg 3/i)).toBeInTheDocument();
   });
 
@@ -157,8 +150,7 @@ describe("Starter App — AP saved state", () => {
   });
 
   it("does NOT register a beforeunload listener when embedded (AP persists progress)", () => {
-    // Embedded: an init message is present, so progress round-trips through AP and the
-    // standalone reload warning is suppressed even after a trial has been run.
+    // Embedded: AP persists progress, so the standalone reload warning stays off.
     useInitMessageMock.mockReturnValue({ mode: "runtime", interactiveState: null });
     const addSpy = vi.spyOn(window, "addEventListener");
     const view = render(<App />);

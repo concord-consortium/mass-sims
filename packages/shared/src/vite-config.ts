@@ -12,9 +12,7 @@ import { defineConfig, type Plugin, type UserConfig } from "vite";
  * gzipped) and async-loaded, so disabling GA leaves zero overhead in the bundle.
  */
 export function gtagInjector(): Plugin {
-  // Read VITE_GA_PROPERTY_ID from Vite's resolved env (which merges `.env*` files and
-  // matching `process.env` vars) rather than `process` directly — the shared package's
-  // tsconfig has no Node types and we keep it that way (no new dev deps).
+  // VITE_GA_PROPERTY_ID from Vite's resolved env (merges `.env*` files + matching process.env).
   let id = "";
   return {
     name: "mass-sims:gtag-injector",
