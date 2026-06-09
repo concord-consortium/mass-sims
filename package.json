@@ -20,10 +20,12 @@
   "scripts": {
     "build": "lerna run build",
     "test": "lerna run test",
+    "test:scripts": "vitest run",
     "lint": "biome check .",
     "lint:fix": "biome check --write .",
     "format": "biome format --write .",
     "typecheck": "lerna run typecheck",
+    "new-sim": "tsx scripts/new-sim.ts",
     "gen-index": "tsx scripts/gen-index.ts",
     "build:top-test": "tsx scripts/build-top-test.ts",
     "serve:top-test": "serve -p 8000 top-test",
