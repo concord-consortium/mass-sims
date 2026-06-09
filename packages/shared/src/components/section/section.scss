@@ -17,10 +17,13 @@
     border-radius: tokens.$radius-lg;
     box-sizing: border-box;
     display: flex;
+    flex-shrink: 0;
     height: tokens.$section-chip-height;
     margin-top: calc((#{tokens.$section-chip-height} + #{tokens.$border-strong-width}) / -2);
     max-width: calc(100% - #{tokens.$space-3 * 2});
     overflow: hidden;
+    position: relative;
+    z-index: 1;
   }
 
   .title {
@@ -57,5 +60,12 @@
     min-height: 0;
     overflow: auto;
     padding: tokens.$space-4;
+  }
+
+  &.simulation-area .chip {
+    border-top-right-radius: calc(#{tokens.$section-chip-height} / 2);
+    border-bottom-right-radius: calc(#{tokens.$section-chip-height} / 2);
+    border-top-left-radius: tokens.$radius-lg;
+    border-bottom-left-radius: tokens.$radius-lg;
   }
 }

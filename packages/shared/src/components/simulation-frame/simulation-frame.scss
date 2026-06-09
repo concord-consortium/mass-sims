@@ -147,6 +147,8 @@
   &.standalone {
     border: tokens.$border-strong;
     border-radius: tokens.$radius-frame-standalone;
+    margin: 0 auto;
+    max-width: 1024px;
     overflow: hidden;
   }
 }
