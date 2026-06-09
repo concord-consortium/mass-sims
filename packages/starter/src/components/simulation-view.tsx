@@ -1,4 +1,4 @@
-import { useModelState, useSimulationRunner } from "@concord-consortium/mass-sims-shared";
+import { Button, useModelState, useSimulationRunner } from "@concord-consortium/mass-sims-shared";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { finalizeTrial, initialTransient, stepWalkers } from "../model/random-walk";
 import type { RecordedTrial, SimInput, SimOutput, SimTransient } from "../model/types";
@@ -174,15 +174,30 @@ export function SimulationView({
         </label>
       </div>
       <div className="buttons">
-        <button type="button" onClick={() => (isPlaying ? pause() : play())} disabled={isComplete}>
+        <Button
+          action={isPlaying ? "pause_pressed" : "play_pressed"}
+          actionParams={{ trial: trialLabel }}
+          onPress={() => (isPlaying ? pause() : play())}
+          isDisabled={isComplete}
+        >
           {isPlaying ? "Pause" : "Play"}
-        </button>
-        <button type="button" onClick={step} disabled={isComplete}>
+        </Button>
+        <Button
+          action="step_pressed"
+          actionParams={{ trial: trialLabel }}
+          onPress={() => step()}
+          isDisabled={isComplete}
+        >
           Step
-        </button>
-        <button type="button" onClick={onReset} disabled={transient.frame === 0}>
+        </Button>
+        <Button
+          action="reset_pressed"
+          actionParams={{ trial: trialLabel }}
+          onPress={onReset}
+          isDisabled={transient.frame === 0}
+        >
           Reset
-        </button>
+        </Button>
       </div>
       <div className="readout">
         Frame {transient.frame} / {input.framesPerTrial} · avg distance{" "}
