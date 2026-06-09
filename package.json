@@ -27,6 +27,8 @@
     "typecheck": "lerna run typecheck",
     "new-sim": "tsx scripts/new-sim.ts",
     "gen-index": "tsx scripts/gen-index.ts",
+    "gen-workflows": "tsx scripts/gen-workflows.ts",
+    "gen-workflows:check": "tsx scripts/gen-workflows.ts --check",
     "build:top-test": "tsx scripts/build-top-test.ts",
     "serve:top-test": "serve -p 8000 top-test",
     "clean": "lerna run clean && rimraf node_modules top-test",

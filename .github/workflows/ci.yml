@@ -7,46 +7,41 @@ on:
   pull_request:
   workflow_dispatch:
 
-# OIDC: we need id-token write to assume the AWS deploy role.
-permissions:
-  id-token: write
-  contents: read
-
 env:
   NODE_VERSION: "24"
-  AWS_REGION: us-east-1
-  S3_BUCKET: models-resources
-  PROJECT_PREFIX: mass-sims
 
 jobs:
-  build_and_deploy:
+  checks:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v5
-
-      - name: Set up Node
-        uses: actions/setup-node@v5
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: "yarn"
+      - run: yarn install --frozen-lockfile
+      - run: yarn lint
+      - run: yarn typecheck
+      - run: yarn test
+      - run: yarn test:scripts
+      - run: yarn gen-index --check
+      - run: yarn gen-workflows --check
 
-      - name: Install dependencies
-        run: yarn install --frozen-lockfile
+  deploy_root:
+    name: Deploy root index.html
+    needs: checks
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+    env:
+      AWS_REGION: us-east-1
+      S3_BUCKET: models-resources
+      PROJECT_PREFIX: mass-sims
+    steps:
+      - uses: actions/checkout@v5
 
-      - name: Lint
-        run: yarn lint
-
-      - name: Typecheck
-        run: yarn typecheck
-
-      - name: Verify root index.html is up to date with workspaces
-        run: yarn gen-index --check
-
-      # Determine the deploy path BEFORE build, because each sim's postbuild script reads
-      # MASS_SIMS_VERSION_PATH to generate dist/index-top.html with the right asset paths.
-      # On PRs and other non-push events, we default to version/release so the build still
-      # produces a valid index-top.html (it just won't be deployed).
       - name: Determine deploy path
         id: deploy_path
         run: |
@@ -58,88 +53,16 @@ jobs:
             echo "path=version/release" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: Build
-        env:
-          MASS_SIMS_VERSION_PATH: ${{ steps.deploy_path.outputs.path }}
-        run: yarn build
-
-      # ---------- Deploy ----------
-      # Only deploy on push (not on PR). Branch pushes go to branch/<name>/; tag pushes go
-      # to version/<tag>/. Promotion to the top-level URLs is a separate step run from the
-      # Release workflow (.github/workflows/release.yml). See docs/infrastructure-plan.md §8.
-
       - name: Configure AWS credentials (OIDC)
-        if: github.event_name == 'push'
         uses: aws-actions/configure-aws-credentials@v6.1.3
         with:
           role-to-assume: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
           aws-region: ${{ env.AWS_REGION }}
 
-      - name: Deploy each sim to S3 (versioned path)
-        if: github.event_name == 'push'
-        env:
-          DEPLOY_PATH: ${{ steps.deploy_path.outputs.path }}
-        run: |
-          set -e
-          # Deploy a single workspace's dist/ to the correct versioned S3 path.
-          deploy_dir() {
-            local pkg_dir="$1"
-            local sim_name
-            sim_name="$(basename "$pkg_dir")"
-            if [ ! -d "$pkg_dir/dist" ]; then
-              echo "::warning::No dist/ in $pkg_dir, skipping."
-              return
-            fi
-            echo "Deploying $sim_name from $pkg_dir/dist"
-            aws s3 sync "$pkg_dir/dist" \
-              "s3://${S3_BUCKET}/${PROJECT_PREFIX}/${DEPLOY_PATH}/${sim_name}/" \
-              --delete \
-              --cache-control "public,max-age=31536000,immutable" \
-              --exclude "index.html" \
-              --exclude "index-top.html"
-            aws s3 cp "$pkg_dir/dist/index.html" \
-              "s3://${S3_BUCKET}/${PROJECT_PREFIX}/${DEPLOY_PATH}/${sim_name}/index.html" \
-              --cache-control "public,max-age=60,must-revalidate"
-            # Upload index-top.html so the Release workflow can promote it to the
-            # top-level <sim>/index.html via S3-to-S3 copy.
-            if [ -f "$pkg_dir/dist/index-top.html" ]; then
-              aws s3 cp "$pkg_dir/dist/index-top.html" \
-                "s3://${S3_BUCKET}/${PROJECT_PREFIX}/${DEPLOY_PATH}/${sim_name}/index-top.html" \
-                --cache-control "public,max-age=60,must-revalidate"
-            fi
-          }
-
-          # packages/starter is a template, not a deployable sim — copied by `yarn new-sim`
-          # to scaffold new sims. Only simulations/* are deployed.
-          shopt -s nullglob
-          for sim_dir in simulations/*/; do
-            deploy_dir "${sim_dir%/}"
-          done
-
-      - name: Deploy versioned root index.html
-        if: github.event_name == 'push'
+      - name: Upload root index.html
         env:
           DEPLOY_PATH: ${{ steps.deploy_path.outputs.path }}
         run: |
           aws s3 cp index.html \
             "s3://${S3_BUCKET}/${PROJECT_PREFIX}/${DEPLOY_PATH}/index.html" \
             --cache-control "public,max-age=60,must-revalidate"
-
-      - name: Print deploy URLs
-        if: github.event_name == 'push'
-        env:
-          DEPLOY_PATH: ${{ steps.deploy_path.outputs.path }}
-        run: |
-          BASE="https://${S3_BUCKET}.concord.org/${PROJECT_PREFIX}"
-          echo "=== Versioned URLs ==="
-          echo "Root index: ${BASE}/${DEPLOY_PATH}/index.html"
-          for sim_dir in simulations/*/; do
-            sim_name="$(basename "${sim_dir%/}")"
-            echo "${sim_name}:    ${BASE}/${DEPLOY_PATH}/${sim_name}/index.html"
-          done
-          if [[ "${GITHUB_REF}" == refs/tags/* ]]; then
-            echo ""
-            echo "Tag deployed to versioned path. To promote ${GITHUB_REF_NAME} to top-level URLs,"
-            echo "manually trigger the Release workflow:"
-            echo "  GitHub → Actions → Release → Run workflow → version=${GITHUB_REF_NAME}"
-          fi
