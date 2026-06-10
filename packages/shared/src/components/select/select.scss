@@ -1,0 +1,86 @@
+@use "../../styles/tokens" as tokens;
+
+.select {
+  display: flex;
+  flex-direction: column;
+  gap: tokens.$space-1;
+  font-family: tokens.$font-family-base;
+  font-size: tokens.$font-size-base;
+
+  > label {
+    color: tokens.$color-text;
+    font-weight: 700;
+  }
+
+  .react-aria-Button {
+    align-items: center;
+    background: tokens.$color-surface;
+    border: tokens.$border-strong;
+    border-radius: tokens.$radius-md;
+    color: tokens.$color-text;
+    cursor: pointer;
+    display: flex;
+    font: inherit;
+    gap: tokens.$space-2;
+    justify-content: space-between;
+    padding: 4px tokens.$space-2;
+
+    &[data-hovered] {
+      background: tokens.$color-surface-hover;
+    }
+    &[data-pressed] {
+      background: tokens.$color-surface-active;
+    }
+    &[data-focus-visible] {
+      outline: tokens.$focus-outline;
+      outline-offset: tokens.$focus-outline-offset;
+    }
+    &[data-disabled] {
+      color: tokens.$color-text-muted;
+      cursor: not-allowed;
+      opacity: 0.5;
+    }
+  }
+
+  .react-aria-SelectValue[data-placeholder="true"] {
+    color: tokens.$color-text-muted;
+  }
+}
+
+// The Popover is portaled to document.body, so it lives under its own root class.
+.select-popover {
+  background: tokens.$color-surface;
+  border: tokens.$border-strong;
+  border-radius: tokens.$radius-md;
+  font-family: tokens.$font-family-base;
+  font-size: tokens.$font-size-base;
+  overflow: auto;
+
+  .react-aria-ListBox {
+    display: flex;
+    flex-direction: column;
+    outline: none;
+    padding: tokens.$space-1;
+  }
+
+  .react-aria-ListBoxItem {
+    border-radius: tokens.$radius-sm;
+    color: tokens.$color-text;
+    cursor: pointer;
+    outline: none;
+    padding: 4px tokens.$space-2;
+
+    &[data-hovered],
+    &[data-focused] {
+      background: tokens.$color-surface-hover;
+    }
+    &[data-selected] {
+      background: tokens.$color-surface-active;
+      font-weight: 700;
+    }
+    &[data-disabled] {
+      color: tokens.$color-text-muted;
+      cursor: not-allowed;
+    }
+  }
+}

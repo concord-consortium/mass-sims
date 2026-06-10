@@ -15,6 +15,11 @@ export {
 } from "./components/number-field/number-field";
 export { Section, type SectionProps } from "./components/section/section";
 export {
+  Select,
+  type SelectOption,
+  type SelectProps,
+} from "./components/select/select";
+export {
   SimulationFrame,
   type SimulationFrameProps,
 } from "./components/simulation-frame/simulation-frame";
