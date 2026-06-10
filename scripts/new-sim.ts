@@ -11,7 +11,7 @@
 // What it does:
 //   1. Validates the name.
 //   2. Copies packages/starter/ to simulations/<name>/ (skipping node_modules,
-//      dist, coverage, .vite).
+//      dist, coverage, .vite, and *.tsbuildinfo files).
 //   3. Substitutes the name + title placeholders.
 //   4. Prints next-step reminders.
 //
@@ -27,7 +27,13 @@ const REPO_ROOT = resolve(SCRIPT_DIR, "..");
 
 const SIM_NAME_PATTERN = /^[a-z][a-z0-9-]*$/;
 const RESERVED = new Set(["shared", "starter", "sim-frame-preview", "mass-sims"]);
-const SKIP_DIRS = new Set(["node_modules", "dist", "coverage", ".vite", ".tsbuildinfo"]);
+const SKIP_DIRS = new Set(["node_modules", "dist", "coverage", ".vite"]);
+
+/** Paths excluded from the starter copy: build/dep directories and any *.tsbuildinfo file. */
+function shouldSkipCopy(src: string): boolean {
+  const base = basename(src);
+  return SKIP_DIRS.has(base) || base.endsWith(".tsbuildinfo");
+}
 
 export function isValidSimName(name: string): boolean {
   if (!SIM_NAME_PATTERN.test(name)) return false;
@@ -78,7 +84,7 @@ function main() {
   console.log(`Copying ${sourceDir} → ${targetDir}`);
   cpSync(sourceDir, targetDir, {
     recursive: true,
-    filter: (src) => !SKIP_DIRS.has(basename(src)),
+    filter: (src) => !shouldSkipCopy(src),
   });
 
   // Walk the copied tree and substitute.

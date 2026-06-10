@@ -24,7 +24,7 @@
     "lint": "biome check src",
     "test": "vitest run --passWithNoTests",
     "test:watch": "vitest",
-    "clean": "rimraf dist .tsbuildinfo"
+    "clean": "rimraf --glob dist '*.tsbuildinfo'"
   },
   "dependencies": {
     "@concord-consortium/lara-interactive-api": "^1.9.4",

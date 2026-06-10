@@ -10,7 +10,7 @@ The one new shared hook is `useLogEvent`, which fans events out to two transport
 
 The **react-aria-components** foundation is documented in [infrastructure-plan.md §3 "Shared controls policy"](./infrastructure-plan.md): every shared interactive control is a thin wrapper around a react-aria primitive that (a) applies our tokens and SCSS, (b) wires `useLogEvent` auto-emit via an `action?: string` prop, and (c) forwards all other react-aria props unchanged. `<Button>` is the first such wrapper. After Phase 2c lands, Phase 3 ports the remaining controls (Slider, Switch, Select, Checkbox, NumberField) mechanically against this established pattern.
 
-`yarn new-sim <name>` copies `packages/starter/` into `simulations/<name>/`, runs name/title substitution, updates the workspace list, and reminds the developer to run `yarn install` and `yarn gen-index`. `scripts/gen-workflows.ts` generates a per-sim CI workflow file (`.github/workflows/sim-<name>.yml`) from a template so adding a sim doesn't require hand-editing CI — and the existing `ci.yml` becomes a cross-cutting "checks" job (lint / typecheck / test / gen-index --check / gen-workflows --check) decoupled from per-sim build+deploy.
+`yarn new-sim <name>` copies `packages/starter/` into `simulations/<name>/`, runs name/title substitution, and reminds the developer to run `yarn install` and `yarn gen-index`. (It does **not** edit the root `workspaces` list — the `simulations/*` glob picks up the new package automatically.) `scripts/gen-workflows.ts` generates a per-sim CI workflow file (`.github/workflows/sim-<name>.yml`) from a template so adding a sim doesn't require hand-editing CI — and the existing `ci.yml` becomes a cross-cutting "checks" job (lint / typecheck / test / gen-index --check / gen-workflows --check) decoupled from per-sim build+deploy.
 
 **Tech Stack:** React 19.2, TypeScript 6, Vite 8, Vitest 4 + @testing-library/react (jsdom), plain (global) SCSS via side-effect imports scoped under a root class, `clsx` for class composition, Biome (lint/format), `tsx` for `.ts` scripts run from npm. New runtime additions in this phase: `react-aria-components ^1.18`, `iframe-phone ^1.3.1`, `@concord-consortium/lara-interactive-api ^1.9.4`. No new dev dependencies.
 
@@ -879,7 +879,7 @@ Create `scripts/new-sim.ts`:
 // What it does:
 //   1. Validates the name.
 //   2. Copies packages/starter/ to simulations/<name>/ (skipping node_modules,
-//      dist, coverage, .vite).
+//      dist, coverage, .vite, and *.tsbuildinfo files).
 //   3. Substitutes the name + title placeholders.
 //   4. Prints next-step reminders.
 //
@@ -887,7 +887,7 @@ Create `scripts/new-sim.ts`:
 // new sim directory is picked up automatically — this script does NOT edit workspaces.
 
 import { cpSync, existsSync, readdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
-import { dirname, join, resolve } from "node:path";
+import { basename, dirname, join, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const SCRIPT_DIR = dirname(fileURLToPath(import.meta.url));
@@ -895,7 +895,13 @@ const REPO_ROOT = resolve(SCRIPT_DIR, "..");
 
 const SIM_NAME_PATTERN = /^[a-z][a-z0-9-]*$/;
 const RESERVED = new Set(["shared", "starter", "sim-frame-preview", "mass-sims"]);
-const SKIP_DIRS = new Set(["node_modules", "dist", "coverage", ".vite", ".tsbuildinfo"]);
+const SKIP_DIRS = new Set(["node_modules", "dist", "coverage", ".vite"]);
+
+/** Paths excluded from the starter copy: build/dep directories and any *.tsbuildinfo file. */
+function shouldSkipCopy(src: string): boolean {
+  const base = basename(src);
+  return SKIP_DIRS.has(base) || base.endsWith(".tsbuildinfo");
+}
 
 export function isValidSimName(name: string): boolean {
   if (!SIM_NAME_PATTERN.test(name)) return false;
@@ -946,15 +952,17 @@ function main() {
   console.log(`Copying ${sourceDir} → ${targetDir}`);
   cpSync(sourceDir, targetDir, {
     recursive: true,
-    filter: (src) => {
-      const base = src.split("/").pop() ?? "";
-      return !SKIP_DIRS.has(base);
-    },
+    filter: (src) => !shouldSkipCopy(src),
   });
 
   // Walk the copied tree and substitute.
   walk(targetDir, (filePath) => {
-    const relPath = filePath.slice(targetDir.length + 1);
+    // Normalize to forward slashes so substituteInFile's path checks (e.g. "src/app.tsx") work on
+    // Windows, where filePath uses backslash separators.
+    const relPath = filePath
+      .slice(targetDir.length + 1)
+      .split(sep)
+      .join("/");
     const content = readFileSync(filePath, "utf8");
     const next = substituteInFile(content, "starter", name, relPath);
     if (next !== content) writeFileSync(filePath, next);
