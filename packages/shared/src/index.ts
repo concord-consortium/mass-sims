@@ -5,6 +5,7 @@
 
 // Components
 export { Button, type ButtonProps } from "./components/button/button";
+export { Checkbox, type CheckboxProps } from "./components/checkbox/checkbox";
 export {
   DataSubsection,
   type DataSubsectionProps,
