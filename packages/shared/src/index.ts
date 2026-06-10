@@ -9,6 +9,10 @@ export {
   DataSubsection,
   type DataSubsectionProps,
 } from "./components/data-subsection/data-subsection";
+export {
+  NumberField,
+  type NumberFieldProps,
+} from "./components/number-field/number-field";
 export { Section, type SectionProps } from "./components/section/section";
 export {
   SimulationFrame,

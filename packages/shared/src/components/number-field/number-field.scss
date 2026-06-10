@@ -1,0 +1,70 @@
+@use "../../styles/tokens" as tokens;
+
+.number-field {
+  display: flex;
+  flex-direction: column;
+  gap: tokens.$space-1;
+  font-family: tokens.$font-family-base;
+  font-size: tokens.$font-size-base;
+
+  > label {
+    color: tokens.$color-text;
+    font-weight: 700;
+  }
+
+  .react-aria-Group {
+    border: tokens.$border-strong;
+    border-radius: tokens.$radius-md;
+    display: flex;
+    overflow: hidden;
+
+    &[data-focus-within] {
+      outline: tokens.$focus-outline;
+      outline-offset: tokens.$focus-outline-offset;
+    }
+  }
+
+  .react-aria-Input {
+    background: tokens.$color-surface;
+    border: none;
+    color: tokens.$color-text;
+    flex: 1;
+    font: inherit;
+    min-width: 0;
+    outline: none;
+    padding: 4px tokens.$space-2;
+    text-align: center;
+  }
+
+  .react-aria-Button {
+    background: tokens.$color-surface;
+    border: none;
+    border-left: tokens.$border-strong;
+    color: tokens.$color-text;
+    cursor: pointer;
+    font: inherit;
+    font-size: tokens.$font-size-lg;
+    line-height: 1;
+    min-width: 28px;
+    padding: 0 tokens.$space-1;
+
+    &[slot="decrement"] {
+      border-left: none;
+      border-right: tokens.$border-strong;
+    }
+    &[data-hovered] {
+      background: tokens.$color-surface-hover;
+    }
+    &[data-pressed] {
+      background: tokens.$color-surface-active;
+    }
+    &[data-disabled] {
+      color: tokens.$color-text-muted;
+      cursor: not-allowed;
+    }
+  }
+
+  &[data-disabled] {
+    opacity: 0.5;
+  }
+}
