@@ -67,7 +67,7 @@ export function LineChart<T extends Record<string, number | string>>({
   const top = 12;
   const right = 14;
   const bottom = 24 + (xLabel ? 16 : 0);
-  const left = 40 + (yLabel ? 18 : 0);
+  const left = 40 + (yLabel ? 9 : 0);
   const plotW = Math.max(0, width - left - right);
   const plotH = height - top - bottom;
   const yValues = data.map((d) => Number(d[yKey]));

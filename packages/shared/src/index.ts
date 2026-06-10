@@ -10,6 +10,7 @@ export {
   DataSubsection,
   type DataSubsectionProps,
 } from "./components/data-subsection/data-subsection";
+export { Histogram, type HistogramProps } from "./components/histogram/histogram";
 export { LineChart, type LineChartProps } from "./components/line-chart/line-chart";
 export {
   NumberField,

@@ -1,7 +1,7 @@
 import { render } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import type { RecordedTrial, Walker } from "../model/types";
-import { DataPanel, histogramBins, niceStep } from "./data-panel";
+import { DataPanel } from "./data-panel";
 
 const runTrial = (avg: number, walkers: Walker[] = [{ x: 3, y: 4 }]): RecordedTrial => ({
   id: `id-${avg}`,
@@ -15,51 +15,6 @@ const emptyTrial = (id = "empty"): RecordedTrial => ({
   input: { walkerCount: 50, stepSize: 1, framesPerTrial: 100, seed: "x" },
   output: null,
   finalTransient: null,
-});
-
-describe("niceStep", () => {
-  it("rounds a raw step up to a friendly 1/2/5 × 10ⁿ value", () => {
-    expect(niceStep(0.8)).toBe(1);
-    expect(niceStep(1.5)).toBe(2);
-    expect(niceStep(4.4)).toBe(5);
-    expect(niceStep(7)).toBe(10);
-    expect(niceStep(44)).toBe(50);
-  });
-});
-
-describe("histogramBins", () => {
-  it("groups walker distances into fixed, round-width bins", () => {
-    // Distances 0, 5, 12, 30; target 7 → raw 30/7 ≈ 4.3 → width 5; 6 bins spanning 0..30.
-    const walkers: Walker[] = [
-      { x: 0, y: 0 },
-      { x: 5, y: 0 },
-      { x: 12, y: 0 },
-      { x: 30, y: 0 },
-    ];
-    expect(histogramBins(walkers, 7)).toEqual({ counts: [1, 1, 1, 0, 0, 1], binWidth: 5, max: 30 });
-  });
-
-  it("fits the bin count to the data so the last bin holds the farthest walkers", () => {
-    // Distances 0 and 25 → width 5, ceil(25/5)=5 bins; axis max 25, no empty trailing bin.
-    const walkers: Walker[] = [
-      { x: 0, y: 0 },
-      { x: 25, y: 0 },
-    ];
-    expect(histogramBins(walkers, 7)).toEqual({ counts: [1, 0, 0, 0, 1], binWidth: 5, max: 25 });
-  });
-
-  it("returns a single empty bin when there are no walkers", () => {
-    expect(histogramBins([], 7)).toEqual({ counts: [0], binWidth: 1, max: 1 });
-  });
-
-  it("collapses to the first bin when every walker is at the origin", () => {
-    const walkers: Walker[] = [
-      { x: 0, y: 0 },
-      { x: 0, y: 0 },
-      { x: 0, y: 0 },
-    ];
-    expect(histogramBins(walkers, 7)).toEqual({ counts: [3], binWidth: 1, max: 1 });
-  });
 });
 
 describe("DataPanel", () => {
