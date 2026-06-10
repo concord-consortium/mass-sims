@@ -1,4 +1,4 @@
-import { DataSubsection } from "@concord-consortium/mass-sims-shared";
+import { DataSubsection, LineChart } from "@concord-consortium/mass-sims-shared";
 import { useEffect, useRef, useState } from "react";
 import type { RecordedTrial, Walker } from "../model/types";
 import "./data-panel.scss";
@@ -11,7 +11,6 @@ const TARGET_BINS = 7; // aim for ~7 histogram bins; the actual count depends on
 // The histogram is a little taller and has more left/bottom room than the time-series chart so its
 // axis titles ("# of walkers", "Distance from start") have somewhere to sit.
 const TS_H = 130;
-const TS_MARGIN: Margin = { top: 12, right: 12, bottom: 22, left: 36 };
 const HIST_H = 160;
 const HIST_MARGIN: Margin = { top: 12, right: 12, bottom: 40, left: 46 };
 
@@ -39,6 +38,9 @@ export function DataPanel({ trials, selectedIndex, liveSeries }: DataPanelProps)
   const selectedSeries = liveSeries ?? selected?.output?.avgDistanceSeries ?? [];
   // Final walker positions for the distribution histogram — only present once the trial completes.
   const finalWalkers = selected?.finalTransient?.walkers ?? [];
+  // Shape the avg-distance samples into (frame, avg) points for the shared LineChart. Sample i
+  // lands at frame (i + 1) * SAMPLE_EVERY (the model samples every SAMPLE_EVERY frames).
+  const seriesData = selectedSeries.map((avg, i) => ({ frame: (i + 1) * SAMPLE_EVERY, avg }));
 
   return (
     <>
@@ -46,7 +48,14 @@ export function DataPanel({ trials, selectedIndex, liveSeries }: DataPanelProps)
         <Histogram walkers={finalWalkers} />
       </DataSubsection>
       <DataSubsection title="Average Distance Over Time">
-        <TimeSeriesChart series={selectedSeries} />
+        <LineChart
+          data={seriesData}
+          xKey="frame"
+          yKey="avg"
+          height={TS_H}
+          ariaLabel="Average distance over time"
+          emptyState="No data"
+        />
       </DataSubsection>
     </>
   );
@@ -120,43 +129,6 @@ function Histogram({ walkers }: { walkers: readonly Walker[] }) {
   }, [walkers, width]);
   return (
     <canvas ref={ref} className="histogram-chart" aria-label="Final distance distribution chart" />
-  );
-}
-
-/**
- * Small line chart of avg distance over a trial's frames. Always renders its frame (plot border +
- * y-axis ticks/labels + x-axis ticks); draws the series line when there are ≥ 2 samples, otherwise
- * shows a "No data" state (the selected trial may not have been run yet).
- */
-function TimeSeriesChart({ series }: { series: readonly number[] }) {
-  const ref = useRef<HTMLCanvasElement>(null);
-  // The chart fills its container's width (full Data column minus padding); track the laid-out
-  // width so the backing store matches it (guarded — jsdom lacks ResizeObserver in tests).
-  const [width, setWidth] = useState(0);
-  useEffect(() => {
-    const canvas = ref.current;
-    if (!canvas || typeof ResizeObserver === "undefined") return;
-    const observer = new ResizeObserver((entries) => {
-      setWidth(Math.round(entries[0].contentRect.width));
-    });
-    observer.observe(canvas);
-    return () => observer.disconnect();
-  }, []);
-  useEffect(() => {
-    const canvas = ref.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
-    // Render at device-pixel resolution so the chart is crisp (not upscaled/fuzzy) on HiDPI
-    // screens; CSS size stays logical (width × TS_H), so we draw in logical units.
-    const dpr = window.devicePixelRatio || 1;
-    canvas.width = width * dpr;
-    canvas.height = TS_H * dpr;
-    ctx.scale(dpr, dpr);
-    drawChart(ctx, width, TS_H, series);
-  }, [series, width]);
-  return (
-    <canvas ref={ref} className="series-chart" aria-label="Average distance over time chart" />
   );
 }
 
@@ -290,49 +262,4 @@ function drawHistogram(
     const h = (count / yMax) * plotH;
     ctx.fillRect(left + i * barW + barGap / 2, top + plotH - h, barW - barGap, h);
   });
-}
-
-function drawChart(
-  ctx: CanvasRenderingContext2D,
-  width: number,
-  height: number,
-  series: readonly number[],
-) {
-  ctx.clearRect(0, 0, width, height);
-  const hasData = series.length >= 2;
-  const max = hasData ? Math.max(...series, 1) : 1;
-  const { top, left, plotW, plotH } = drawAxes(
-    ctx,
-    width,
-    height,
-    TS_MARGIN,
-    max,
-    (v) => v.toFixed(1),
-    hasData,
-  );
-
-  if (!hasData) {
-    drawNoData(ctx, left, top, plotW, plotH);
-    return;
-  }
-
-  // X-axis labels: frame range.
-  ctx.fillStyle = "#555";
-  ctx.textAlign = "center";
-  ctx.textBaseline = "top";
-  ctx.fillText("0", left, top + plotH + 4);
-  ctx.textAlign = "right";
-  ctx.fillText(String(series.length * SAMPLE_EVERY), left + plotW, top + plotH + 4);
-
-  // Series line.
-  ctx.strokeStyle = "#333";
-  ctx.lineWidth = 1.5;
-  ctx.beginPath();
-  series.forEach((v, i) => {
-    const x = left + (i / (series.length - 1)) * plotW;
-    const y = top + plotH - (v / max) * plotH;
-    if (i === 0) ctx.moveTo(x, y);
-    else ctx.lineTo(x, y);
-  });
-  ctx.stroke();
 }

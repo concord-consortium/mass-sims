@@ -132,7 +132,7 @@ describe("SimulationView", () => {
 
   it("renders the example display-option controls (Select, Switch, Checkbox)", () => {
     const { getByText, getByRole } = render(<SimulationView trial={emptyTrial()} {...noopProps} />);
-    expect(getByText("Dot color")).toBeInTheDocument(); // Select label
+    expect(getByText(/dot color/i)).toBeInTheDocument(); // Select label
     expect(getByRole("switch", { name: /show origin/i })).toBeInTheDocument();
     expect(getByRole("checkbox", { name: /large dots/i })).toBeInTheDocument();
   });

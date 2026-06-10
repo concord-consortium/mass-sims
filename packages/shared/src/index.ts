@@ -10,6 +10,7 @@ export {
   DataSubsection,
   type DataSubsectionProps,
 } from "./components/data-subsection/data-subsection";
+export { LineChart, type LineChartProps } from "./components/line-chart/line-chart";
 export {
   NumberField,
   type NumberFieldProps,

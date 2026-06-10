@@ -8,12 +8,7 @@
   text-align: center;
 }
 
-// CSS (display) sizes; the backing store is sized at devicePixelRatio in JS for crispness.
-.series-chart {
-  height: 130px;
-  width: 100%;
-}
-
+// CSS (display) size; the backing store is sized at devicePixelRatio in JS for crispness.
 .histogram-chart {
   height: 160px;
   width: 100%;
