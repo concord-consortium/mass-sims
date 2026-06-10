@@ -19,6 +19,7 @@ export {
   type SimulationFrameProps,
 } from "./components/simulation-frame/simulation-frame";
 export { Slider, type SliderProps } from "./components/slider/slider";
+export { Switch, type SwitchProps } from "./components/switch/switch";
 export { TrialCard, type TrialCardProps } from "./components/trial-card/trial-card";
 
 // Hooks
