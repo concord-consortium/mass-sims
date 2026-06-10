@@ -76,7 +76,12 @@ export function Slider({
       {label != null ? <Label>{label}</Label> : null}
       <SliderOutput />
       <SliderTrack>
-        <SliderThumb />
+        {({ state }) => (
+          <>
+            <div className="slider-fill" style={{ width: `${state.getThumbPercent(0) * 100}%` }} />
+            <SliderThumb />
+          </>
+        )}
       </SliderTrack>
     </AriaSlider>
   );

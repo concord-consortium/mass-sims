@@ -12,20 +12,25 @@
     font-weight: 700;
   }
 
+  // Trigger.
   .react-aria-Button {
     align-items: center;
     background: tokens.$color-surface;
     border: tokens.$border-strong;
     border-radius: tokens.$radius-md;
+    box-sizing: border-box;
     color: tokens.$color-text;
     cursor: pointer;
     display: flex;
     font: inherit;
-    gap: tokens.$space-2;
-    justify-content: space-between;
-    padding: 4px tokens.$space-2;
+    font-weight: 700;
+    gap: 6px;
+    min-height: tokens.$touch-target-min;
+    padding: tokens.$space-2 10px;
+    white-space: nowrap;
 
-    &[data-hovered] {
+    &[data-hovered],
+    &[data-focus-visible] {
       background: tokens.$color-surface-hover;
     }
     &[data-pressed] {
@@ -36,43 +41,81 @@
       outline-offset: tokens.$focus-outline-offset;
     }
     &[data-disabled] {
-      color: tokens.$color-text-muted;
-      cursor: not-allowed;
-      opacity: 0.5;
+      border-color: rgba(tokens.$color-border, 0.35);
+      color: rgba(tokens.$color-text, 0.35);
+      cursor: default;
+    }
+    // Square the bottom corners when open so the trigger joins the popover below it.
+    &[aria-expanded="true"] {
+      border-radius: tokens.$radius-md tokens.$radius-md 0 0;
     }
   }
 
-  .react-aria-SelectValue[data-placeholder="true"] {
-    color: tokens.$color-text-muted;
+  .react-aria-SelectValue {
+    flex: 1;
+    line-height: tokens.$line-height-sm;
+    text-align: left;
+
+    // Placeholder uses the regular weight; a chosen value inherits the trigger's bold.
+    &[data-placeholder="true"] {
+      font-weight: 400;
+    }
+  }
+
+  .select-caret {
+    fill: currentColor;
+    flex-shrink: 0;
+    height: 24px;
+    transition: transform 0.2s ease;
+    width: 24px;
+  }
+  .react-aria-Button[aria-expanded="true"] .select-caret {
+    transform: rotate(180deg);
   }
 }
 
-// The Popover is portaled to document.body, so it lives under its own root class.
+// The Popover is portaled to document.body, so it lives under its own root class. With
+// offset={0} it sits flush below the trigger; border-top:none + the trigger's own bottom
+// border form the divider, matching the designer's attached-list look. `--trigger-width`
+// (set by react-aria on the popover) keeps the list the same width as the trigger.
 .select-popover {
   background: tokens.$color-surface;
   border: tokens.$border-strong;
-  border-radius: tokens.$radius-md;
-  font-family: tokens.$font-family-base;
-  font-size: tokens.$font-size-base;
-  overflow: auto;
+  border-radius: 0 0 tokens.$radius-md tokens.$radius-md;
+  border-top: none;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  box-sizing: border-box;
+  overflow: hidden;
+  width: var(--trigger-width);
 
   .react-aria-ListBox {
     display: flex;
     flex-direction: column;
     outline: none;
-    padding: tokens.$space-1;
   }
 
   .react-aria-ListBoxItem {
-    border-radius: tokens.$radius-sm;
+    align-items: center;
+    box-sizing: border-box;
     color: tokens.$color-text;
     cursor: pointer;
+    display: flex;
+    font-family: tokens.$font-family-base;
+    font-size: tokens.$font-size-base;
+    line-height: tokens.$line-height-sm;
+    min-height: tokens.$touch-target-min;
     outline: none;
-    padding: 4px tokens.$space-2;
+    padding: 10px;
+    white-space: nowrap;
 
     &[data-hovered],
     &[data-focused] {
       background: tokens.$color-surface-hover;
+    }
+
+    &[data-focus-visible] {
+      outline: tokens.$focus-outline;
+      outline-offset: -2px;
     }
     &[data-selected] {
       background: tokens.$color-surface-active;

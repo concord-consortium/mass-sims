@@ -65,9 +65,12 @@ export function Select<K extends Key = string>({
       {label != null ? <Label>{label}</Label> : null}
       <Button>
         <SelectValue />
-        <span aria-hidden="true">▾</span>
+        <svg className="select-caret" viewBox="0 0 24 24" aria-hidden="true">
+          <polygon points="16.59 8.59 12 13.17 7.41 8.59 6 10 12 16 18 10" />
+        </svg>
       </Button>
-      <Popover className="select-popover">
+      {/* offset={0} so the popover sits flush below the trigger (see select.scss). */}
+      <Popover className="select-popover" offset={0}>
         <ListBox items={options}>
           {(item: SelectOption<K>) => <ListBoxItem id={item.id}>{item.label}</ListBoxItem>}
         </ListBox>

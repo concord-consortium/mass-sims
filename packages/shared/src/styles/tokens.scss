@@ -28,6 +28,7 @@
 
 $gray-text:              #333;
 $gray-text-muted:        #555;
+$gray-medium:            #767676;
 $gray-border-subtle:     #ccc;
 $gray-surface-active:    #d0d0d0;
 $gray-trial-badge:       #e0e0e0;
@@ -50,6 +51,7 @@ $color-surface-hover:              $gray-surface-hover;
 $color-surface-active:             $gray-surface-active;
 $color-border:                     $gray-text-muted;          // 2 px strong border
 $color-border-subtle:              $gray-border-subtle;       // 1 px modal header rule
+$color-track-muted:                $gray-medium;              // muted control track — Switch off-state, Slider unfilled rail (3:1 on panel)
 $color-divider:                    $gray-text-muted;          // 1 px DataSubsection rule
 $color-focus-outline:              $focus-blue;
 $color-trial-badge-bg:             $gray-trial-badge;

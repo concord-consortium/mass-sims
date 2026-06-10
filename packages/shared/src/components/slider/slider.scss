@@ -31,16 +31,29 @@
     display: flex;
     grid-area: track;
     height: 24px;
+    position: relative;
     width: 100%;
 
-    // Track rail.
+    // Unfilled rail (full width). The filled portion below sits on top of it.
     &::before {
-      background: tokens.$color-surface-muted;
+      background: tokens.$color-track-muted;
       border-radius: tokens.$radius-sm;
       content: "";
       display: block;
       height: 4px;
       width: 100%;
+    }
+
+    // Filled portion, from the left edge to the thumb (width set inline from the thumb
+    // percent).
+    .slider-fill {
+      background: tokens.$color-text;
+      border-radius: tokens.$radius-sm;
+      height: 4px;
+      left: 0;
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
     }
 
     &[data-disabled] {
