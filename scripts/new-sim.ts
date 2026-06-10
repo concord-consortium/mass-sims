@@ -19,7 +19,7 @@
 // new sim directory is picked up automatically — this script does NOT edit workspaces.
 
 import { cpSync, existsSync, readdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
-import { dirname, join, resolve } from "node:path";
+import { basename, dirname, join, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const SCRIPT_DIR = dirname(fileURLToPath(import.meta.url));
@@ -78,15 +78,17 @@ function main() {
   console.log(`Copying ${sourceDir} → ${targetDir}`);
   cpSync(sourceDir, targetDir, {
     recursive: true,
-    filter: (src) => {
-      const base = src.split("/").pop() ?? "";
-      return !SKIP_DIRS.has(base);
-    },
+    filter: (src) => !SKIP_DIRS.has(basename(src)),
   });
 
   // Walk the copied tree and substitute.
   walk(targetDir, (filePath) => {
-    const relPath = filePath.slice(targetDir.length + 1);
+    // Normalize to forward slashes so substituteInFile's path checks (e.g. "src/app.tsx") work on
+    // Windows, where filePath uses backslash separators.
+    const relPath = filePath
+      .slice(targetDir.length + 1)
+      .split(sep)
+      .join("/");
     const content = readFileSync(filePath, "utf8");
     const next = substituteInFile(content, "starter", name, relPath);
     if (next !== content) writeFileSync(filePath, next);
