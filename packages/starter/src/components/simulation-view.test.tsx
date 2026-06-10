@@ -26,14 +26,15 @@ const noopProps = {
 
 describe("SimulationView", () => {
   it("renders the canvas and the parameter controls", () => {
-    const { getByRole, getByLabelText } = render(
-      <SimulationView trial={emptyTrial()} {...noopProps} />,
-    );
+    const { getByRole } = render(<SimulationView trial={emptyTrial()} {...noopProps} />);
     expect(getByRole("button", { name: /play/i })).toBeInTheDocument();
     expect(getByRole("button", { name: /reset/i })).toBeInTheDocument();
-    expect(getByLabelText(/walker count/i)).toBeInTheDocument();
-    expect(getByLabelText(/step size/i)).toBeInTheDocument();
-    expect(getByLabelText(/frames per trial/i)).toBeInTheDocument();
+    // Walker Count + Step Size are shared <Slider>s (role "slider"); Frames per Trial is a
+    // shared <NumberField> (role "textbox" in rac ^1.18). All get their accessible name
+    // from the control's Label.
+    expect(getByRole("slider", { name: /walker count/i })).toBeInTheDocument();
+    expect(getByRole("slider", { name: /step size/i })).toBeInTheDocument();
+    expect(getByRole("textbox", { name: /frames per trial/i })).toBeInTheDocument();
   });
 
   it("shows the trial letter badge in the region", () => {
@@ -53,11 +54,16 @@ describe("SimulationView", () => {
 
   it("calls onComplete with the output and final snapshot when framesPerTrial is reached", () => {
     const onComplete = vi.fn();
-    const { getByRole, getByLabelText } = render(
-      <SimulationView trial={emptyTrial()} {...noopProps} onComplete={onComplete} />,
+    // A 2-frame trial so we can step through it quickly (avoids rAF in jsdom). Set via the
+    // trial fixture rather than typing into the NumberField (which commits on blur) — the
+    // fixture is more direct since this test isn't exercising the input control.
+    const { getByRole } = render(
+      <SimulationView
+        trial={emptyTrial({ framesPerTrial: 2 })}
+        {...noopProps}
+        onComplete={onComplete}
+      />,
     );
-    // Shorten the trial so we can step through it quickly (avoids rAF in jsdom).
-    fireEvent.change(getByLabelText(/frames per trial/i), { target: { value: "2" } });
     const stepButton = getByRole("button", { name: /step/i });
     fireEvent.click(stepButton);
     fireEvent.click(stepButton);
@@ -79,12 +85,16 @@ describe("SimulationView", () => {
 
   it("fires onProgress whenever a new avg-distance sample lands (every 10 frames)", () => {
     const onProgress = vi.fn();
-    const { getByRole, getByLabelText } = render(
-      <SimulationView trial={emptyTrial()} {...noopProps} onProgress={onProgress} />,
+    // A 20-frame trial — short enough to step through but long enough that two samples
+    // (frame 10 and frame 20) land. SAMPLE_EVERY = 10 in the model. Set via the trial
+    // fixture (see the onComplete test for why not via the NumberField).
+    const { getByRole } = render(
+      <SimulationView
+        trial={emptyTrial({ framesPerTrial: 20 })}
+        {...noopProps}
+        onProgress={onProgress}
+      />,
     );
-    // Set a 20-frame trial — short enough that we can step through it but long enough that two
-    // samples (frame 10 and frame 20) land. SAMPLE_EVERY = 10 in the model.
-    fireEvent.change(getByLabelText(/frames per trial/i), { target: { value: "20" } });
     const stepButton = getByRole("button", { name: /step/i });
     // Step 9 frames: no sample yet (sample lands AT frame 10, not before).
     for (let i = 0; i < 9; i++) fireEvent.click(stepButton);
@@ -106,6 +116,34 @@ describe("SimulationView", () => {
     expect(log).toHaveBeenCalledWith(
       "play_pressed",
       expect.objectContaining({ trial: expect.any(String) }),
+    );
+  });
+
+  it("emits walkers_set on a walker-count slider commit", () => {
+    log.mockReset();
+    const { getByRole } = render(<SimulationView trial={emptyTrial()} {...noopProps} />);
+    // ArrowRight nudges the slider one step and commits (onChangeEnd) → log on release.
+    fireEvent.keyDown(getByRole("slider", { name: /walker count/i }), { key: "ArrowRight" });
+    expect(log).toHaveBeenCalledWith(
+      "walkers_set",
+      expect.objectContaining({ value: expect.any(Number), trial: "A" }),
+    );
+  });
+
+  it("renders the example display-option controls (Select, Switch, Checkbox)", () => {
+    const { getByText, getByRole } = render(<SimulationView trial={emptyTrial()} {...noopProps} />);
+    expect(getByText("Dot color")).toBeInTheDocument(); // Select label
+    expect(getByRole("switch", { name: /show origin/i })).toBeInTheDocument();
+    expect(getByRole("checkbox", { name: /large dots/i })).toBeInTheDocument();
+  });
+
+  it("emits show_origin_set when the Show origin switch is toggled", () => {
+    log.mockReset();
+    const { getByRole } = render(<SimulationView trial={emptyTrial()} {...noopProps} />);
+    fireEvent.click(getByRole("switch", { name: /show origin/i }));
+    expect(log).toHaveBeenCalledWith(
+      "show_origin_set",
+      expect.objectContaining({ value: true, trial: "A" }),
     );
   });
 

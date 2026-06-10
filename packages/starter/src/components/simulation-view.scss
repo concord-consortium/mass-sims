@@ -31,38 +31,36 @@
 
   canvas {
     background: tokens.$color-surface;
-    height: 240px;
+    height: 200px;
     margin: 0 calc(-1 * #{tokens.$space-2});
     width: calc(100% + #{tokens.$space-2} * 2);
   }
 
   .controls {
-    display: flex;
-    flex-direction: column;
-    gap: tokens.$space-1;
+    align-items: start;
+    box-sizing: border-box;
+    column-gap: tokens.$space-6;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    padding: 0 10px;
+    row-gap: tokens.$space-2;
     width: 100%;
   }
 
-  .controls label {
+  .display-options {
     align-items: center;
-    color: tokens.$color-text;
-    display: grid;
-    gap: tokens.$space-2;
-    grid-template-columns: 120px 1fr auto;
-  }
-
-  .controls input[type="range"],
-  .controls input[type="number"] {
+    box-sizing: border-box;
+    column-gap: tokens.$space-5;
+    display: flex;
+    flex-wrap: wrap;
+    padding: 0 10px;
+    row-gap: tokens.$space-1;
     width: 100%;
   }
 
   .buttons {
     display: flex;
     gap: tokens.$space-2;
-  }
-
-  .readout {
-    color: tokens.$color-text-muted;
-    font-size: tokens.$font-size-sm;
+    margin-top: 5px;
   }
 }
