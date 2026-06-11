@@ -28,8 +28,9 @@ export interface HistogramBins {
  */
 export function histogramBins(values: readonly number[], targetBinCount: number): HistogramBins {
   if (values.length === 0) return { counts: [0], binWidth: 1 };
+  const bins = Math.max(1, targetBinCount);
   const maxValue = Math.max(...values);
-  const binWidth = niceStep(maxValue / targetBinCount);
+  const binWidth = niceStep(maxValue / bins);
   const binCount = Math.max(1, Math.ceil(maxValue / binWidth));
   const counts = new Array<number>(binCount).fill(0);
   for (const v of values) {

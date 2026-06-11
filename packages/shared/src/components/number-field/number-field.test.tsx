@@ -18,6 +18,11 @@ describe("NumberField", () => {
     expect(getByRole("textbox")).toHaveValue("200");
   });
 
+  it("supports uncontrolled mode via defaultValue (no value prop)", () => {
+    const { getByRole } = render(<NumberField label="Frames" defaultValue={150} />);
+    expect(getByRole("textbox")).toHaveValue("150");
+  });
+
   it("renders increment and decrement buttons", () => {
     const { getAllByRole } = render(<NumberField label="Frames" value={100} />);
     const buttons = getAllByRole("button");

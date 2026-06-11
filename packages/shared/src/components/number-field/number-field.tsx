@@ -7,7 +7,7 @@ import "./number-field.scss";
 
 export interface NumberFieldProps {
   label?: ReactNode;
-  value: number;
+  value?: number;
   defaultValue?: number;
   minValue?: number;
   maxValue?: number;

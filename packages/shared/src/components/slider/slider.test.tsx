@@ -25,6 +25,13 @@ describe("Slider", () => {
     expect(container.querySelector(".slider")).toBeInTheDocument();
   });
 
+  it("supports uncontrolled mode via defaultValue (no value prop)", () => {
+    const { getByRole } = render(
+      <Slider label="Walkers" defaultValue={30} minValue={0} maxValue={100} />,
+    );
+    expect(getByRole("slider")).toHaveAttribute("aria-valuetext", "30");
+  });
+
   it("calls onChange during drag (keyboard nudge)", () => {
     const onChange = vi.fn();
     const { getByRole } = render(

@@ -13,7 +13,7 @@ import "./slider.scss";
 
 export interface SliderProps {
   label?: ReactNode;
-  value: number;
+  value?: number;
   defaultValue?: number;
   minValue?: number;
   maxValue?: number;

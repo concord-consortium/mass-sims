@@ -34,4 +34,10 @@ describe("histogramBins", () => {
     // 0 and 25 → width 5, ceil(25/5)=5 bins; the upper-edge value lands in the last bin.
     expect(histogramBins([0, 25], 7)).toEqual({ counts: [1, 0, 0, 0, 1], binWidth: 5 });
   });
+
+  it("clamps a non-positive bin count to 1 (no divide-by-zero / Infinity binWidth)", () => {
+    // bins → max(1, n); maxValue 10 / 1 → niceStep(10) = 10 → one bin holding both values.
+    expect(histogramBins([5, 10], 0)).toEqual({ counts: [2], binWidth: 10 });
+    expect(histogramBins([5, 10], -7)).toEqual({ counts: [2], binWidth: 10 });
+  });
 });

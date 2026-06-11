@@ -6,6 +6,7 @@ const Y_TICKS = 3;
 const POINT_RADIUS = 3;
 
 export interface LineChartProps<T> {
+  /** Series data, sorted ascending by `xKey`. */
   data: readonly T[];
   xKey: keyof T;
   yKey: keyof T;
@@ -21,6 +22,11 @@ export interface LineChartProps<T> {
  * Hand-rolled SVG line chart. Single-series only — multi-series and other chart kinds
  * (bar, scatter, area) are deferred until a sim needs them. Token-driven via CSS classes
  * that target the SVG primitives in `line-chart.scss`.
+ *
+ * **`data` must be sorted ascending by `xKey`.** The line connects points in array order and
+ * the x-axis range is taken from the first/last datum, so unsorted input renders incorrectly
+ * (zigzag line and/or wrong axis bounds). A line chart is x-ordered by nature; the only
+ * consumer (the Starter) builds its series in frame order.
  */
 export function LineChart<T extends Record<string, number | string>>({
   data,
