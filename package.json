@@ -20,11 +20,15 @@
   "scripts": {
     "build": "lerna run build",
     "test": "lerna run test",
+    "test:scripts": "vitest run",
     "lint": "biome check .",
     "lint:fix": "biome check --write .",
     "format": "biome format --write .",
     "typecheck": "lerna run typecheck",
+    "new-sim": "tsx scripts/new-sim.ts",
     "gen-index": "tsx scripts/gen-index.ts",
+    "gen-workflows": "tsx scripts/gen-workflows.ts",
+    "gen-workflows:check": "tsx scripts/gen-workflows.ts --check",
     "build:top-test": "tsx scripts/build-top-test.ts",
     "serve:top-test": "serve -p 8000 top-test",
     "clean": "lerna run clean && rimraf node_modules top-test",
@@ -38,6 +42,7 @@
     "sass": "^1.80.0",
     "serve": "^14.0.0",
     "tsx": "^4.0.0",
-    "typescript": "^6.0.0"
+    "typescript": "^6.0.0",
+    "vitest": "^4.0.0"
   }
 }

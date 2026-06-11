@@ -1,7 +1,9 @@
+import { setInteractiveState, useInitMessage } from "@concord-consortium/lara-interactive-api";
 import { SimulationFrame, TrialCard, useReloadWarning } from "@concord-consortium/mass-sims-shared";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { DataPanel } from "./components/data-panel";
 import { SimulationView } from "./components/simulation-view";
+import type { SavedState } from "./model/saved-state";
 import type { RecordedTrial, SimInput, SimOutput, SimTransient } from "./model/types";
 import "./app.scss";
 
@@ -50,13 +52,30 @@ export function App() {
   // Data panel never shows a stale series belonging to a different trial.
   const [liveSeries, setLiveSeries] = useState<number[] | null>(null);
 
+  // AP saved-state sync: restore on init, push on change. Standalone-safe — outside AP,
+  // useInitMessage stays null and setInteractiveState is a no-op. See infra-plan §3.
+  const initMsg = useInitMessage<SavedState>();
+  // Embedded once the AP handshake has delivered an init message; null in standalone.
+  const isEmbedded = initMsg !== null;
+  useEffect(() => {
+    // `"interactiveState" in initMsg` narrows the union to the runtime/report variants;
+    // the truthy check skips the first-session null.
+    if (initMsg && "interactiveState" in initMsg && initMsg.interactiveState) {
+      setState(initMsg.interactiveState);
+    }
+  }, [initMsg]);
+  useEffect(() => {
+    // Trials/selectedId change on user actions, not per-frame, so the push rate stays low.
+    setInteractiveState<SavedState>({ trials, selectedId });
+  }, [trials, selectedId]);
+
   const selected = trials.find((t) => t.id === selectedId) ?? trials[0];
   // Selected trial's letter (0→A, 1→B, …).
   const selectedLetter = String.fromCharCode(65 + Math.max(0, trials.indexOf(selected)));
 
-  // Warn before unload only once a trial has been run: an empty trial A always exists, so guarding
-  // on trial count would warn from the start.
-  useReloadWarning(trials.some((t) => t.output !== null));
+  // Warn before unload once a trial has been run — standalone only. When embedded, AP persists
+  // every change, so the prompt would be wrong and would fire during AP's own navigation.
+  useReloadWarning(!isEmbedded && trials.some((t) => t.output !== null));
 
   // New trials are built outside the updater (makeEmptyTrial is impure) so the updater stays pure.
   const addTrial = useCallback(() => {

@@ -61,29 +61,6 @@
     gap: tokens.$space-2;
   }
 
-  .buttons button {
-    background: tokens.$color-surface;
-    border: tokens.$border-strong;
-    border-radius: tokens.$radius-md;
-    color: tokens.$color-text;
-    cursor: pointer;
-    font-family: tokens.$font-family-base;
-    font-size: tokens.$font-size-base;
-    font-weight: 700;
-    min-height: tokens.$touch-target-min;
-    padding: tokens.$space-1 tokens.$space-3;
-  }
-
-  .buttons button:hover,
-  .buttons button:focus-visible {
-    background: tokens.$color-surface-hover;
-  }
-
-  .buttons button:focus-visible {
-    outline: tokens.$focus-outline;
-    outline-offset: tokens.$focus-outline-offset;
-  }
-
   .readout {
     color: tokens.$color-text-muted;
     font-size: tokens.$font-size-sm;

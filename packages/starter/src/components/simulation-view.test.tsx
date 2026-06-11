@@ -1,6 +1,13 @@
 import { fireEvent, render } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import type { RecordedTrial } from "../model/types";
+
+// The shared <Button> auto-emits via useLogEvent → lara-interactive-api's log(action, data).
+// Mock that transport (not useLogEvent, which Button imports internally) and assert the press
+// emits. vi.hoisted so the mock fn exists when vi.mock runs.
+const { log } = vi.hoisted(() => ({ log: vi.fn() }));
+vi.mock("@concord-consortium/lara-interactive-api", () => ({ log }));
+
 import { SimulationView } from "./simulation-view";
 
 const emptyTrial = (overrides: Partial<RecordedTrial["input"]> = {}): RecordedTrial => ({
@@ -90,6 +97,16 @@ describe("SimulationView", () => {
     for (let i = 0; i < 10; i++) fireEvent.click(stepButton);
     expect(onProgress).toHaveBeenCalledTimes(2);
     expect(onProgress.mock.calls[1][0]).toHaveLength(2);
+  });
+
+  it("emits play_pressed when Play is clicked", () => {
+    log.mockReset();
+    const { getByRole } = render(<SimulationView trial={emptyTrial()} {...noopProps} />);
+    fireEvent.click(getByRole("button", { name: /play/i }));
+    expect(log).toHaveBeenCalledWith(
+      "play_pressed",
+      expect.objectContaining({ trial: expect.any(String) }),
+    );
   });
 
   it("disables Play for an already-completed trial (must Reset first)", () => {

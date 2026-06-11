@@ -1095,7 +1095,7 @@ A non-deployed dev page rendering the frame at all four target widths simultaneo
     "lint": "biome check src",
     "test": "vitest run",
     "test:watch": "vitest",
-    "clean": "rimraf dist .tsbuildinfo"
+    "clean": "rimraf --glob dist '*.tsbuildinfo'"
   },
   "dependencies": {
     "@concord-consortium/mass-sims-shared": "0.0.1",

@@ -4,6 +4,7 @@
 // and hooks land. See ../../../docs/infrastructure-plan.md §3 for the full intended contract.
 
 // Components
+export { Button, type ButtonProps } from "./components/button/button";
 export {
   DataSubsection,
   type DataSubsectionProps,
@@ -19,6 +20,7 @@ export { TrialCard, type TrialCardProps } from "./components/trial-card/trial-ca
 export { useCurrentAndPrevious } from "./hooks/use-current-and-previous";
 export { useFrameLoop } from "./hooks/use-frame-loop";
 export { useInterval } from "./hooks/use-interval";
+export { type LogEvent, useLogEvent } from "./hooks/use-log-event";
 export {
   type UseModelStateOptions,
   type UseModelStateReturn,

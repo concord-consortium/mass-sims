@@ -71,7 +71,7 @@ jobs:
             fi
             echo "Promoting ${sim_name}: ${src} -> ${dst}"
             aws s3 cp "$src" "$dst" \
-              --cache-control "public,max-age=60,must-revalidate"
+              --cache-control "no-cache"
           done
 
       - name: Promote root index.html
@@ -87,7 +87,7 @@ jobs:
           fi
           echo "Promoting root: ${src} -> ${dst}"
           aws s3 cp "$src" "$dst" \
-            --cache-control "public,max-age=60,must-revalidate"
+            --cache-control "no-cache"
 
       - name: Print promoted URLs
         env:
