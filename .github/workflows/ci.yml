@@ -27,6 +27,9 @@ jobs:
       - run: yarn gen-index --check
       - run: yarn gen-workflows --check
 
+  # Deploy split: per-sim sim-<name>.yml workflows handle incremental branch deploys (path-filtered
+  # to the changed sim). The two jobs below cover what those can't — deploy_root always ships the
+  # cross-cutting root index, and deploy_all_sims rebuilds EVERY sim on a release tag (see its note).
   deploy_root:
     name: Deploy root index.html
     needs: checks
@@ -66,3 +69,69 @@ jobs:
           aws s3 cp index.html \
             "s3://${S3_BUCKET}/${PROJECT_PREFIX}/${DEPLOY_PATH}/index.html" \
             --cache-control "no-cache"
+
+  # Release builds: a version tag must produce a COMPLETE version/<tag>/ snapshot, so we rebuild
+  # every sim here rather than leaning on per-sim path filters (which GitHub bypasses on tag pushes
+  # anyway — an undocumented quirk we deliberately don't depend on). Runs only on tag pushes; branch
+  # deploys stay incremental via the per-sim sim-<name>.yml workflows.
+  deploy_all_sims:
+    name: Deploy all sims (release)
+    needs: checks
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+    env:
+      AWS_REGION: us-east-1
+      S3_BUCKET: models-resources
+      PROJECT_PREFIX: mass-sims
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "yarn"
+      - run: yarn install --frozen-lockfile
+
+      - name: Build all sims
+        env:
+          MASS_SIMS_VERSION_PATH: version/${{ github.ref_name }}
+        run: yarn build
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v6.1.3
+        with:
+          role-to-assume: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Deploy every sim to the versioned path
+        env:
+          DEPLOY_PATH: version/${{ github.ref_name }}
+        run: |
+          set -e
+          shopt -s nullglob
+          # packages/starter is a template and packages/sim-frame-preview is a dev tool — neither
+          # lives under simulations/, so only real sims are deployed.
+          for sim_dir in simulations/*/; do
+            sim_name="$(basename "$sim_dir")"
+            if [ ! -d "$sim_dir/dist" ]; then
+              echo "::warning::No dist/ in $sim_dir, skipping."
+              continue
+            fi
+            echo "Deploying $sim_name"
+            aws s3 sync "$sim_dir/dist" \
+              "s3://${S3_BUCKET}/${PROJECT_PREFIX}/${DEPLOY_PATH}/${sim_name}/" \
+              --delete \
+              --cache-control "public,max-age=31536000,immutable" \
+              --exclude "index.html" \
+              --exclude "index-top.html"
+            aws s3 cp "$sim_dir/dist/index.html" \
+              "s3://${S3_BUCKET}/${PROJECT_PREFIX}/${DEPLOY_PATH}/${sim_name}/index.html" \
+              --cache-control "no-cache"
+            if [ -f "$sim_dir/dist/index-top.html" ]; then
+              aws s3 cp "$sim_dir/dist/index-top.html" \
+                "s3://${S3_BUCKET}/${PROJECT_PREFIX}/${DEPLOY_PATH}/${sim_name}/index-top.html" \
+                --cache-control "no-cache"
+            fi
+          done

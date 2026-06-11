@@ -5,9 +5,14 @@
 name: Deploy sim-two
 
 on:
+  # Branch pushes only — these per-sim deploys are incremental, gated by the path filter so a
+  # branch push only rebuilds the sim(s) it touched. Tag (release) pushes are deliberately NOT
+  # handled here: GitHub bypasses `paths` filters on tag pushes, so a tag would rebuild every sim
+  # regardless. Rather than rely on that undocumented quirk, ci.yml's `deploy_all_sims` job owns
+  # tag builds and rebuilds EVERY sim for a complete version/<tag>/ snapshot. Do not add
+  # `tags:` here without removing it from that job.
   push:
     branches: ["**"]
-    tags: ["v*"]
     paths:
       - "simulations/sim-two/**"
       - "packages/shared/**"
