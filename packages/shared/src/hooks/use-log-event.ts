@@ -31,6 +31,10 @@ export type LogEvent = (eventName: string, parameters?: Record<string, unknown>)
  * gets the event; when standalone (not embedded), GA still gets it. Both
  * transports are silent no-ops when their transport isn't available.
  *
+ * Planned (deferred) refactor: resolve a swappable log service from React context rather than
+ * calling the transports directly here — this hook keeps its signature. See infrastructure-plan.md
+ * §13 "Deferred but planned: a context-injected log service".
+ *
  * See infrastructure-plan.md §5 and §11 #27–#32 for the contract.
  */
 export function useLogEvent(): LogEvent {

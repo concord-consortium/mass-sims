@@ -742,7 +742,7 @@ We may eventually need to hand the simulations (code, built artifacts, or both) 
 ### What we're deliberately *not* doing yet
 
 - **Not** stripping CC branding from the source (the credits/info modal still says "Concord Consortium"). A future DESE handover would substitute via a config switch, not a fork.
-- **Not** investing in a generic logging-adapter abstraction. `useLogEvent` is portal-report-specific. If DESE wants alternative analytics, that's a small follow-up rather than premature abstraction now.
+- **Deferred but planned: a context-injected log service.** `useLogEvent` currently calls the portal-report + GA transports directly. We plan to refactor it to resolve a *log service* from a top-level React context, making the dual-transport logger one swappable implementation set by the app. This formalizes the §13.4 seam — giving a DESE deployment a clean place to plug in alternative analytics — and lets tests inject a mock service via a provider instead of mocking the `lara-interactive-api` module. Chosen shape: keep `useLogEvent`'s signature (it reads the service from context and still returns a `logEvent` fn), so call sites and `<Button>` are unaffected and no caller churns. **Out of scope for Phase 2c** (tracked in that plan's deferred follow-ups); no hard deadline — do it as a cleanup, and it becomes a prerequisite once a second log implementation (e.g. DESE analytics) is actually needed.
 - **Not** building a `.tar.gz` export script for handoff. We'll write one if/when the transfer scope is clear.
 
 ### To revisit when DESE transfer requirements are known

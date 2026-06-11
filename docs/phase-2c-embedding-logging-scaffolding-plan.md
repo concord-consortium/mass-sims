@@ -1851,5 +1851,6 @@ No commit for Task 10 — verification only.
 - `@axe-core/react` integration for dev-time a11y warnings (Phase 3 or 5).
 - A dedicated `<TrialCard>` "add" variant or a more general dashed-card primitive to replace the Starter's ad-hoc "+ New" trial card with a shared component.
 - A `useTrialList<I, O>` hook if the per-sim ad-hoc trial-list state proves repetitive across the next 2–3 sims.
+- A **context-injected log service**: refactor `useLogEvent` to resolve a swappable log service from a top-level React context, with the current dual-transport (portal-report + GA) logger as the default implementation the app provides. Enables pluggable logging (e.g. a DESE deployment swapping analytics) and provider-based mocking in tests instead of mocking the `lara-interactive-api` module. Keep `useLogEvent`'s signature (read the service from context, still return a `logEvent` fn) so call sites and `<Button>` are unaffected. Decided to do this (raised in Phase 2c review); deliberately deferred beyond this branch, timing flexible. See infrastructure-plan.md §13.
 - Localization / multi-locale support — repo is committed to English-only (decision #23).
 - Custom domain GA4 properties per-sim (decision #30 keeps it repo-wide).
