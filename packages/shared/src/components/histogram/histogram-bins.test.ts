@@ -40,4 +40,9 @@ describe("histogramBins", () => {
     expect(histogramBins([5, 10], 0)).toEqual({ counts: [2], binWidth: 10 });
     expect(histogramBins([5, 10], -7)).toEqual({ counts: [2], binWidth: 10 });
   });
+
+  it("clamps a stray negative value into the first bin (values are expected ≥ 0)", () => {
+    // target 5 → binWidth 2, 5 bins; -3 would compute a negative index, so it's clamped to bin 0.
+    expect(histogramBins([-3, 0, 10], 5)).toEqual({ counts: [2, 0, 0, 0, 1], binWidth: 2 });
+  });
 });

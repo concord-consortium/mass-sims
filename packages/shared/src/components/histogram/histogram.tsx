@@ -139,7 +139,7 @@ export function Histogram({
             textAnchor="middle"
             dominantBaseline="hanging"
           >
-            {i * binWidth}
+            {Number((i * binWidth).toPrecision(12))}
           </text>
         ))}
 

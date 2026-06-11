@@ -34,8 +34,9 @@ export function histogramBins(values: readonly number[], targetBinCount: number)
   const binCount = Math.max(1, Math.ceil(maxValue / binWidth));
   const counts = new Array<number>(binCount).fill(0);
   for (const v of values) {
-    // The last bin includes the upper edge so the max value isn't lost.
-    const idx = Math.min(binCount - 1, Math.floor(v / binWidth));
+    // Clamp into [0, binCount-1]: the last bin includes the upper edge (so the max value isn't
+    // lost), and any stray negative input lands in the first bin instead of a phantom -1 index.
+    const idx = Math.min(binCount - 1, Math.max(0, Math.floor(v / binWidth)));
     counts[idx] += 1;
   }
   return { counts, binWidth };

@@ -61,4 +61,17 @@ describe("Histogram", () => {
     const labels = container.querySelectorAll(".histogram-x-tick-label");
     expect(labels.length).toBeGreaterThanOrEqual(2);
   });
+
+  it("formats fractional bin-boundary labels without floating-point noise", () => {
+    // maxValue 1, target 5 → binWidth 0.2; boundary 3 (3 * 0.2) is 0.6000000000000001 raw.
+    const { container } = render(
+      <Histogram values={[0, 0.5, 1]} targetBinCount={5} height={160} />,
+    );
+    const labels = Array.from(
+      container.querySelectorAll(".histogram-x-tick-label"),
+      (el) => el.textContent,
+    );
+    expect(labels).toContain("0.6");
+    expect(labels.some((t) => t?.includes("0.6000000000000001"))).toBe(false);
+  });
 });

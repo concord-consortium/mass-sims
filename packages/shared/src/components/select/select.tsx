@@ -52,9 +52,12 @@ export function Select<K extends Key = string>({
   return (
     <AriaSelect
       isDisabled={isDisabled}
-      value={selectedKey ?? undefined}
+      value={selectedKey}
       defaultValue={defaultSelectedKey}
       onChange={(key) => {
+        // rac can pass null (cleared selection); our public onSelectionChange is non-null and
+        // logging "null" would be bogus, so ignore clears.
+        if (key === null) return;
         const k = key as K;
         if (action) logEvent(action, { value: String(k), ...actionParams });
         onSelectionChange?.(k);
