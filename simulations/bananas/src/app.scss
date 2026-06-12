@@ -44,8 +44,23 @@
     border-color: #9E8540;
   }
 
+  // About button: amber border, a matching amber (i) icon, and banana hover/
+  // active backgrounds (btnHover / btnActive) in place of the shared grays.
   .info-button {
     border-color: #9E8540;
+
+    &:hover,
+    &:focus-visible {
+      background: #FFF3C4; // btnHover
+    }
+
+    &:active {
+      background: #FFE680; // btnActive
+    }
+
+    .info-button-icon {
+      color: #9E8540; // match the button border (icon paints via currentColor)
+    }
   }
 
   .title-bar {
@@ -84,11 +99,24 @@
     }
 
     // Brown (iconColor) for the header info + close glyphs, which paint via
-    // currentColor. The title-bar About button's icon is intentionally left at
-    // the default text color, matching the demo.
+    // currentColor. (The title-bar About button's icon is amber instead — see
+    // .info-button above.)
     .modal-header-icon,
     .modal-close-icon {
       color: #5C4813;
+    }
+
+    // Banana hover/active backgrounds for the close (X) button, replacing the
+    // shared grays — mirrors the About button (btnHover / btnActive).
+    .modal-close {
+      &:hover,
+      &:focus-visible {
+        background: #FFF3C4; // btnHover
+      }
+
+      &:active {
+        background: #FFE680; // btnActive
+      }
     }
   }
 }
