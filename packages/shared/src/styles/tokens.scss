@@ -126,8 +126,9 @@ $section-chip-overlap:               17px;
 
 $radius-sm:                4px;  // small inner badges (trial-card letter)
 $radius-md:                6px;  // buttons (About, trial cards, sim buttons)
-$radius-lg:                8px;  // section panel, section chip, info modal
+$radius-lg:                8px;  // section panel, info modal
 $radius-frame-standalone:  10px; // standalone outer container — see ui-design-plan §7
+$radius-pill:              999px; // fully-rounded ends — section title chip, tabs
 
 
 // =============================================================================

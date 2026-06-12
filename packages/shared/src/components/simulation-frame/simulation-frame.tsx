@@ -10,9 +10,8 @@ import {
 } from "react";
 import ccLogo from "../../assets/branding/cc-logo.svg";
 import deseLogo from "../../assets/branding/dese-logo.svg";
-import closeIcon from "../../assets/close-icon.svg";
-import infoIcon from "../../assets/info-icon.svg";
 import { Section } from "../section/section";
+import { CloseIcon, InfoIcon } from "./icons";
 import "./simulation-frame.scss";
 
 export interface SimulationFrameProps {
@@ -170,7 +169,7 @@ export function SimulationFrame({
               type="button"
               onClick={toggleInfo}
             >
-              <img src={infoIcon} alt="" aria-hidden="true" className="info-button-icon" />
+              <InfoIcon className="info-button-icon" />
               About
             </button>
           ) : null}
@@ -210,7 +209,7 @@ export function SimulationFrame({
           }}
         >
           <header className="modal-drag-handle" onPointerDown={beginDrag}>
-            <img src={infoIcon} alt="" aria-hidden="true" className="modal-header-icon" />
+            <InfoIcon className="modal-header-icon" />
             <h2 className="modal-title" id={titleId}>
               About the {simTitle} Simulation
             </h2>
@@ -221,7 +220,7 @@ export function SimulationFrame({
               type="button"
               onClick={() => setInfoOpen(false)}
             >
-              <img src={closeIcon} alt="" aria-hidden="true" className="modal-close-icon" />
+              <CloseIcon className="modal-close-icon" />
             </button>
           </header>
           <div className="modal-body">{infoModalContent}</div>

@@ -9,7 +9,8 @@
     // Restricts ambient types to vite/client, which declares the side-effect `*.scss` (and
     // asset) module imports components use (e.g. `import "./section.scss"`). Note: an explicit
     // list opts OUT of auto-including other @types/* — add them here if needed (e.g. "node").
-    "types": ["vite/client"]
+    // vite-plugin-svgr/client declares the `*.svg?react` component module (see icons.tsx).
+    "types": ["vite/client", "vite-plugin-svgr/client"]
   },
   "include": ["src/**/*"],
   "references": [{ "path": "./tsconfig.node.json" }]

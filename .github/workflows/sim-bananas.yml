@@ -2,7 +2,7 @@
 # To change the template, edit scripts/workflows/sim-template.yml and run
 # `yarn gen-workflows` to regenerate every sim-*.yml file.
 
-name: Deploy sim-one
+name: Deploy bananas
 
 on:
   # Branch pushes only — these per-sim deploys are incremental, gated by the path filter so a
@@ -14,9 +14,9 @@ on:
   push:
     branches: ["**"]
     paths:
-      - "simulations/sim-one/**"
+      - "simulations/bananas/**"
       - "packages/shared/**"
-      - ".github/workflows/sim-sim-one.yml"
+      - ".github/workflows/sim-bananas.yml"
   workflow_dispatch:
 
 permissions:
@@ -28,7 +28,7 @@ env:
   AWS_REGION: us-east-1
   S3_BUCKET: models-resources
   PROJECT_PREFIX: mass-sims
-  SIM_NAME: sim-one
+  SIM_NAME: bananas
 
 jobs:
   build_and_deploy:
