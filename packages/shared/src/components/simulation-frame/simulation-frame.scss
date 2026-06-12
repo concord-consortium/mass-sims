@@ -32,7 +32,7 @@ $titlebar-accent: 7px;
     minmax(0, #{tokens.$column-data-flex}fr);
   grid-template-rows: tokens.$frame-titlebar-height 1fr;
   height: tokens.$frame-height;
-  min-width: tokens.$frame-min-width;
+  min-width: tokens.$frame-width-ap-2col-shown;
   // No top padding so the title bar sits flush to the top; it cancels the
   // horizontal padding with a negative margin to span edge-to-edge.
   padding: 0 tokens.$body-padding tokens.$body-padding;
