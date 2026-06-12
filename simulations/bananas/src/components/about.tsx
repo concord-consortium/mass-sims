@@ -1,16 +1,3 @@
-/**
- * Bananas sim About-panel content. Rendered as the `infoModalContent` prop of the
- * shared `<SimulationFrame>` — appears in the draggable About side panel when the
- * user clicks the About button in the title bar.
- *
- * Copy ported verbatim from ~/Documents/webdev/demos (Bananas demo, the
- * aboutContent.bananas block). All four sections from the demo are included:
- * Overview, About the Genetics, How It Works, Keep in Mind. The Keep-in-Mind
- * section references features (offspring grid markers, dual markers,
- * irreversible fungus) that don't yet exist in this scaffolded shell — that's
- * an intentional forward-reference to the final design; the underlying features
- * land in follow-up stories.
- */
 export function AboutContent() {
   return (
     <>

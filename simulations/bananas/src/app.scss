@@ -1,11 +1,5 @@
 @use "@concord-consortium/mass-sims-shared/styles/tokens" as tokens;
 
-// ---------------------------------------------------------------------------
-// Slackey font (self-hosted). Copied from ~/Documents/webdev/demos/fonts/.
-// Used for the BANANAS title-bar wordmark; fall back to Lato (the shared
-// library's default sans) if the .woff2 fails to load.
-// ---------------------------------------------------------------------------
-
 @font-face {
   font-family: "Slackey";
   font-style: normal;
@@ -14,52 +8,29 @@
   src: url("./assets/fonts/slackey.woff2") format("woff2");
 }
 
-// ---------------------------------------------------------------------------
-// Bananas theme overrides. Values ported from the demo's SIMS.bananas.theme
-// block (~/Documents/webdev/demos/index.html). Per-sim CSS loads after the
-// shared library's, so equally-specific rules win the cascade — no extra
-// scope-class wrapper needed.
-//
-// Only the values that affect currently-visible chrome are applied:
-//   - titleBarBg:  #FFF3C4  →  .title-bar background
-//   - titleText:   #5C4813  →  .sim-title color + Slackey font, + section chip title
-//   - surface:     #FFFDF2  →  .simulation-frame background + .section surface
-//   - panelTabBg:  #FFECA0  →  .chip (section title pill) background
-//   - panelBorder: #9E8540  →  .section / .chip border color
-//
-// Selectors target the shared components' real rendered class names (verified
-// against packages/shared/src/components/{simulation-frame,section}): the
-// Section renders `.section > .chip > .title`, NOT a single `.section-chip`.
-//
-// Trial-card, cross-row, parent-dropdown, and other UI-specific theme values
-// stay deferred until those UI elements exist in follow-up stories.
-// ---------------------------------------------------------------------------
-
+// Bananas theme. The sim's CSS loads after the shared library's, so these
+// equal-specificity overrides win the cascade without extra wrappers.
 .simulation-frame {
   background: #FFFDF2;
 
-  // Amber borders (the demo's panelBorder / aboutBorder) replace the shared
-  // dark-gray $color-border on the standalone container + the About button.
   &.standalone {
     border-color: #9E8540;
   }
 
-  // About button: amber border, a matching amber (i) icon, and banana hover/
-  // active backgrounds (btnHover / btnActive) in place of the shared grays.
   .info-button {
     border-color: #9E8540;
 
     &:hover,
     &:focus-visible {
-      background: #FFF3C4; // btnHover
+      background: #FFF3C4;
     }
 
     &:active {
-      background: #FFE680; // btnActive
+      background: #FFE680;
     }
 
     .info-button-icon {
-      color: #9E8540; // match the button border (icon paints via currentColor)
+      color: #9E8540;
     }
   }
 
@@ -68,7 +39,7 @@
   }
 
   .sim-title {
-    color: #5C4813; // titleText
+    color: #5C4813;
     font-family: "Slackey", #{tokens.$font-family-base};
     font-weight: 400;
   }
@@ -87,35 +58,27 @@
     }
   }
 
-  // About panel: amber border + divider (modalBorder/aboutBorder) and a cream
-  // header (surface) replace the shared dark-gray defaults. The modal body
-  // stays white, matching the demo.
   .simulation-frame-info-modal {
     border-color: #9E8540;
 
     .modal-drag-handle {
-      background: #FFFDF2; // surface
-      border-bottom-color: #9E8540; // modalBorder
+      background: #FFFDF2;
+      border-bottom-color: #9E8540;
     }
 
-    // Brown (iconColor) for the header info + close glyphs, which paint via
-    // currentColor. (The title-bar About button's icon is amber instead — see
-    // .info-button above.)
     .modal-header-icon,
     .modal-close-icon {
       color: #5C4813;
     }
 
-    // Banana hover/active backgrounds for the close (X) button, replacing the
-    // shared grays — mirrors the About button (btnHover / btnActive).
     .modal-close {
       &:hover,
       &:focus-visible {
-        background: #FFF3C4; // btnHover
+        background: #FFF3C4;
       }
 
       &:active {
-        background: #FFE680; // btnActive
+        background: #FFE680;
       }
     }
   }

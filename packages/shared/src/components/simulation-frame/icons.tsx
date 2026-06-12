@@ -2,13 +2,10 @@ import CloseSvg from "../../assets/close-icon.svg?react";
 import InfoSvg from "../../assets/info-icon.svg?react";
 
 /**
- * Decorative title-bar / About-panel icons. The `?react` suffix runs each SVG
- * through vite-plugin-svgr (see `svgrPlugin` in vite-config), turning the asset
- * into a React component. The assets paint with `fill="currentColor"`, so an
- * icon takes its color from the CSS `color` of its container — that's how the
- * About panel themes its info/close glyphs per-sim. The icons are purely
- * decorative (callers pair them with accessible labels), so each is
- * `aria-hidden`.
+ * Decorative title-bar / About-panel icons. The `?react` suffix imports each SVG
+ * as a React component (via vite-plugin-svgr); the assets paint with
+ * `fill="currentColor"`, so an icon takes its color from its container's CSS
+ * `color` — how sims theme the About-panel glyphs. Decorative, so `aria-hidden`.
  */
 
 interface IconProps {

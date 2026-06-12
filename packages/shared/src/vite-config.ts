@@ -3,15 +3,11 @@ import { defineConfig, type Plugin, type UserConfig } from "vite";
 import svgr from "vite-plugin-svgr";
 
 /**
- * Shared svgr plugin. Turns `import Icon from "./icon.svg?react"` into a React
- * component; plain `import url from "./icon.svg"` still resolves to a URL (for
- * `<img>`). svgo is disabled so hand-authored `fill="currentColor"` and the
- * `viewBox` survive untouched — that's what lets an icon be themed via the CSS
- * `color` property (see components/simulation-frame/icons.tsx).
- *
- * Every Mass Sims Vite build AND Vitest config must include this, because the
- * `?react` imports live in this shared package's source, which each sim bundles
- * and tests. Centralizing here keeps the dependency + options in one place.
+ * svgr plugin: `import Icon from "./icon.svg?react"` → a React component; plain
+ * `import url from "./icon.svg"` stays a URL. svgo is off so hand-authored
+ * `fill="currentColor"` + `viewBox` survive (lets icons be themed via CSS
+ * `color`). Every sim's Vite build and Vitest config needs it, since the
+ * `?react` imports live in this package's source.
  */
 export function svgrPlugin(): Plugin {
   return svgr({ svgrOptions: { svgo: false } });

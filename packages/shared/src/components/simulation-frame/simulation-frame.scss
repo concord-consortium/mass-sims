@@ -1,14 +1,12 @@
 @use "../../styles/tokens" as tokens;
 
-// Row gap between the title bar and the content row. Sized so each section
-// chip — lifted by its own negative margin to straddle the panel's top border —
-// lands with its TOP exactly at the title bar's 50px bottom edge, matching the
-// demo (chip tops align with the title bar's background lip). It equals the
-// chip's overhang above the panel's top border: (chipHeight - border) / 2.
+// Row gap between the title bar and the content row, sized so each section chip
+// — lifted by its own negative margin — lands with its top at the title bar's
+// bottom edge. Equals the chip's overhang above the panel border.
 $titlebar-content-gap: (tokens.$section-chip-height - tokens.$border-strong-width) * 0.5;
 
-// How far the title-bar background bleeds below its 50px box, forming the lip
-// the section chips overlap onto (the demo's per-theme titleAccent; 7px here).
+// How far the title-bar background bleeds below the bar, forming the lip the
+// section chips overlap onto.
 $titlebar-accent: 7px;
 
 .simulation-frame {
@@ -35,8 +33,7 @@ $titlebar-accent: 7px;
   grid-template-rows: tokens.$frame-titlebar-height 1fr;
   height: tokens.$frame-height;
   min-width: tokens.$frame-min-width;
-  // No top padding: the title bar sits flush to the top inner edge as a clean
-  // 50px bar. Sides + bottom keep the body padding; the title bar cancels the
+  // No top padding so the title bar sits flush to the top; it cancels the
   // horizontal padding with a negative margin to span edge-to-edge.
   padding: 0 tokens.$body-padding tokens.$body-padding;
   position: relative; // positioning context for the absolutely-anchored About panel
@@ -48,23 +45,17 @@ $titlebar-accent: 7px;
     display: flex;
     grid-area: titlebar;
     justify-content: space-between;
-    // Full-bleed the sides: cancel the frame's horizontal body padding so the
-    // bar background reaches the container's inner edges (clipped to the rounded
-    // corners by the standalone container's overflow: hidden). No vertical
-    // margin — the frame drops its top padding, so the bar is a clean 50px flush
-    // to the top, matching the demo's 50px title-bar div.
+    // Cancel the frame's horizontal padding so the bar background reaches the
+    // container's inner edges (clipped to the rounded corners when standalone).
     margin: 0 (tokens.$body-padding * -1);
-    // Right padding equals the frame's body padding (the column inset) so the
-    // About button's right edge lines up with the Data column's right edge.
-    // Left padding is larger so the title sits a touch more inset (demo parity).
+    // Right padding = the column inset, so the About button's right edge lines
+    // up with the Data column's.
     padding: 0 tokens.$body-padding 0 tokens.$space-4;
     position: relative; // containing block for the background-lip ::after
 
-    // The background "lip": bleed the title-bar color a few px below its 50px
-    // box so the section chips — whose tops align with the bar's bottom edge —
-    // overlap onto it. `background: inherit` picks up whatever per-sim title-bar
-    // color is set. It paints behind the later-in-DOM panels + chips, so the
-    // chips render on top of the lip. Matches the demo's titleAccent.
+    // Bleed the title-bar color below the bar so the section chips overlap onto
+    // it. `background: inherit` picks up the per-sim color; painting behind the
+    // later-in-DOM panels keeps the chips on top of the lip.
     &::after {
       background: inherit;
       content: "";
@@ -93,18 +84,11 @@ $titlebar-accent: 7px;
     color: tokens.$color-text;
     display: flex;
     font-size: tokens.$font-size-xl;
-    font-synthesis: none; // don't fake-bold display fonts (e.g. Slackey ships 400 only)
+    font-synthesis: none; // don't synthesize bold for display fonts (Slackey is 400 only)
     font-weight: 700;
-    // Constrain the title to a 28px box with line-height 1 and center the glyph
-    // inside it (matches the demo's .sim-title-name), so display fonts with tall
-    // intrinsic metrics still center-align cleanly against the tagline.
-    height: tokens.$line-height-lg; // 28px — the 24/28 title type pairing
+    height: tokens.$line-height-lg;
     line-height: 1;
     margin: 0;
-    // Sims pass a normally-cased title (e.g. "Bananas"); the title-bar wordmark
-    // is always rendered in caps. Uppercasing here (not in the prop) keeps the
-    // accessible name + the About-panel title ("About the Bananas Simulation")
-    // in natural case.
     text-transform: uppercase;
   }
 
@@ -300,10 +284,6 @@ $titlebar-accent: 7px;
     padding: tokens.$space-4 20px 20px;
     user-select: text;
 
-    // Baseline typography for sim-authored About content. Mirrors the demo's
-    // .info-modal-body rules: headings sit at body size (distinguished by
-    // weight, not scale), and the first child hugs the body padding (no extra
-    // top margin) instead of inheriting the browser's default block margins.
     h3 {
       font-size: tokens.$font-size-base;
       font-weight: 700;
