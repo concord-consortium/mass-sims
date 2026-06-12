@@ -62,6 +62,15 @@ Replace these with your own model's types and stepping logic, then update
 handle the input/output/transient state split and the play/pause/step loop — keep using
 them.
 
+For parameter inputs and data visualization, use the **shared controls and charts** from
+`@concord-consortium/mass-sims-shared` rather than native HTML elements — the Starter's
+`simulation-view.tsx` already demonstrates one of each control (`<Slider>`, `<NumberField>`,
+`<Switch>`, `<Select>`, `<Checkbox>`) and `data-panel.tsx` uses the shared `<LineChart>` and
+`<Histogram>`. They apply the design tokens, are fully accessible (react-aria under the hood),
+and **auto-emit a log event when given an `action="…"` prop** (snake_case). See
+[infrastructure-plan.md §3](./infrastructure-plan.md) for the component catalog and the
+"Shared controls policy."
+
 ## 5. Wire Activity Player saved state
 
 Sims import lara-interactive-api's state-sync API **directly** — there is no shared wrapper

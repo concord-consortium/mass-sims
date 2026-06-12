@@ -1,0 +1,40 @@
+@use "../../styles/tokens" as tokens;
+
+.histogram {
+  display: block;
+  font-family: tokens.$font-family-base;
+  font-size: tokens.$font-size-sm;
+  width: 100%;
+
+  svg {
+    display: block;
+  }
+
+  .histogram-grid {
+    stroke: tokens.$color-border-subtle;
+    stroke-width: 1;
+  }
+
+  .histogram-y-tick-label,
+  .histogram-x-tick-label {
+    fill: tokens.$color-text-muted;
+  }
+
+  .histogram-axis-title {
+    fill: tokens.$color-text-muted;
+  }
+
+  .histogram-bar {
+    fill: tokens.$color-text;
+  }
+}
+
+.histogram-empty {
+  align-items: center;
+  color: tokens.$color-text-muted;
+  display: flex;
+  font-family: tokens.$font-family-base;
+  font-size: tokens.$font-size-sm;
+  justify-content: center;
+  width: 100%;
+}

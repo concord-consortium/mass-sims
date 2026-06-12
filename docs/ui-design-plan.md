@@ -415,7 +415,7 @@ These remain unanswered. Each is a decision the designer + team need to make.
 
 ~~**Q9. UI component library.** MUI v9 (decoupled from Emotion) vs. dropping MUI entirely vs. an alternative (Radix / Headless UI / shadcn-style).~~ **Closed.** Resolved to `react-aria-components`. See infrastructure-plan.md §11 #9 and §3 "Shared controls policy."
 
-**Q19. Graphing library.** Recharts / Visx / Chart.js / D3 — different sims will likely need different chart types. Decision affects the shared library's chart primitives and per-sim dependencies.
+~~**Q19. Graphing library.** Recharts / Visx / Chart.js / D3 — different sims will likely need different chart types. Decision affects the shared library's chart primitives and per-sim dependencies.~~ **Closed.** Resolved to **hand-rolled SVG** (no charting library) — shared `<LineChart>` and `<Histogram>` in `packages/shared` are React + SCSS + SVG, matching FOSS / DESE precedent. See infrastructure-plan.md §11 #19 and §3's `<LineChart>` / `<Histogram>` entries.
 
 **Q20. Simulation rendering layer.** Plain DOM/SVG vs Canvas 2D vs Three.js vs Pixi.js. Standardize on one, or accept per-sim choice?
 

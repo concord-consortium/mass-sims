@@ -11,26 +11,21 @@
   font-family: tokens.$font-family-base;
   font-size: tokens.$font-size-base;
   font-weight: 700;
+  // Gap between an optional leading icon and the label
+  gap: tokens.$space-1;
   justify-content: center;
   line-height: tokens.$line-height-sm;
-  // Sized to clear the 44 px touch-target minimum via an expanded ::after — visible
-  // box stays 34 px so dense control rows don't bloat. Matches `.info-button` in
-  // simulation-frame.scss.
-  min-height: 34px;
+  min-height: tokens.$touch-target-min;
   min-width: 60px;
-  padding: 3px tokens.$space-3;
-  position: relative;
+  padding: tokens.$space-2 tokens.$space-3;
   user-select: none;
 
-  // Expanded touch target (7 px above and below → 48 px effective). Matches the
-  // existing pattern on .info-button.
-  &::after {
-    bottom: -7px;
-    content: "";
-    left: 0;
-    position: absolute;
-    right: 0;
-    top: -7px;
+  // Optional leading icon (sims pass an <img> / <svg> before the label).
+  img,
+  svg {
+    flex-shrink: 0;
+    height: 24px;
+    width: 24px;
   }
 
   &[data-hovered],
@@ -48,8 +43,13 @@
   }
 
   &[data-disabled] {
-    color: tokens.$color-text-muted;
-    cursor: not-allowed;
-    opacity: 0.5;
+    border-color: rgba(tokens.$color-border, 0.35);
+    color: rgba(tokens.$color-text, 0.35);
+    cursor: default;
+
+    img,
+    svg {
+      opacity: 0.35;
+    }
   }
 }

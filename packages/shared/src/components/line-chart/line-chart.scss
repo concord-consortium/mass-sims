@@ -1,0 +1,47 @@
+@use "../../styles/tokens" as tokens;
+
+.line-chart {
+  display: block;
+  font-family: tokens.$font-family-base;
+  font-size: tokens.$font-size-sm;
+  width: 100%;
+
+  svg {
+    display: block;
+  }
+
+  .line-chart-grid {
+    stroke: tokens.$color-border-subtle;
+    stroke-width: 1;
+  }
+
+  .line-chart-y-tick-label,
+  .line-chart-x-tick-label {
+    fill: tokens.$color-text-muted;
+  }
+
+  .line-chart-axis-title {
+    fill: tokens.$color-text-muted;
+  }
+
+  .line-chart-series {
+    stroke: tokens.$color-text;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-width: 2.5;
+  }
+
+  .line-chart-point {
+    fill: tokens.$color-text;
+  }
+}
+
+.line-chart-empty {
+  align-items: center;
+  color: tokens.$color-text-muted;
+  display: flex;
+  font-family: tokens.$font-family-base;
+  font-size: tokens.$font-size-sm;
+  justify-content: center;
+  width: 100%;
+}

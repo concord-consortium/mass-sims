@@ -5,15 +5,29 @@
 
 // Components
 export { Button, type ButtonProps } from "./components/button/button";
+export { Checkbox, type CheckboxProps } from "./components/checkbox/checkbox";
 export {
   DataSubsection,
   type DataSubsectionProps,
 } from "./components/data-subsection/data-subsection";
+export { Histogram, type HistogramProps } from "./components/histogram/histogram";
+export { LineChart, type LineChartProps } from "./components/line-chart/line-chart";
+export {
+  NumberField,
+  type NumberFieldProps,
+} from "./components/number-field/number-field";
 export { Section, type SectionProps } from "./components/section/section";
+export {
+  Select,
+  type SelectOption,
+  type SelectProps,
+} from "./components/select/select";
 export {
   SimulationFrame,
   type SimulationFrameProps,
 } from "./components/simulation-frame/simulation-frame";
+export { Slider, type SliderProps } from "./components/slider/slider";
+export { Switch, type SwitchProps } from "./components/switch/switch";
 export { TrialCard, type TrialCardProps } from "./components/trial-card/trial-card";
 
 // Hooks

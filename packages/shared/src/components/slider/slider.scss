@@ -1,0 +1,88 @@
+@use "../../styles/tokens" as tokens;
+
+.slider {
+  align-items: center;
+  display: grid;
+  font-family: tokens.$font-family-base;
+  font-size: tokens.$font-size-base;
+  grid-template-areas:
+    "label  output"
+    "track  track";
+  grid-template-columns: 1fr auto;
+  row-gap: tokens.$space-1;
+  width: 100%;
+
+  > label {
+    color: tokens.$color-text;
+    font-weight: 700;
+    grid-area: label;
+  }
+
+  > [slot="output"],
+  > output {
+    color: tokens.$color-text;
+    font-variant-numeric: tabular-nums;
+    grid-area: output;
+  }
+
+  .react-aria-SliderTrack {
+    align-items: center;
+    cursor: pointer;
+    display: flex;
+    grid-area: track;
+    height: 24px;
+    position: relative;
+    width: 100%;
+
+    // Unfilled rail (full width). The filled portion below sits on top of it.
+    &::before {
+      background: tokens.$color-track-muted;
+      border-radius: tokens.$radius-sm;
+      content: "";
+      display: block;
+      height: 4px;
+      width: 100%;
+    }
+
+    // Filled portion, from the left edge to the thumb (width set inline from the thumb
+    // percent).
+    .slider-fill {
+      background: tokens.$color-text;
+      border-radius: tokens.$radius-sm;
+      height: 4px;
+      left: 0;
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+    }
+
+    &[data-disabled] {
+      cursor: not-allowed;
+      opacity: 0.5;
+    }
+  }
+
+  .react-aria-SliderThumb {
+    background: tokens.$color-text;
+    border: 2px solid tokens.$color-surface;
+    border-radius: 50%;
+    box-shadow: 0 0 0 1px tokens.$color-text;
+    height: 16px;
+    top: 50%;
+    width: 16px;
+
+    &[data-hovered],
+    &[data-focus-visible] {
+      background: tokens.$color-text-muted;
+    }
+
+    &[data-dragging] {
+      background: tokens.$color-focus-outline;
+    }
+
+    &[data-focus-visible] {
+      outline: tokens.$focus-outline;
+      outline-offset: tokens.$focus-outline-offset;
+    }
+  }
+}

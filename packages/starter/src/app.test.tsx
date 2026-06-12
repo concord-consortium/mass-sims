@@ -15,8 +15,12 @@ vi.mock("@concord-consortium/lara-interactive-api", () => ({
 import { App } from "./app";
 
 // Run the currently-selected trial to completion by shortening it and stepping through.
+// The frames input is a shared <NumberField> (role "textbox") that commits on blur, so
+// change + blur to push the shortened value into the trial before stepping.
 function runSelectedTrial(view: ReturnType<typeof render>, frames = 2) {
-  fireEvent.change(view.getByLabelText(/frames per trial/i), { target: { value: String(frames) } });
+  const framesInput = view.getByRole("textbox", { name: /frames per trial/i });
+  fireEvent.change(framesInput, { target: { value: String(frames) } });
+  fireEvent.blur(framesInput);
   const stepButton = view.getByRole("button", { name: /step/i });
   for (let i = 0; i < frames; i++) fireEvent.click(stepButton);
 }
