@@ -14,7 +14,7 @@
     align-self: center;
     background: tokens.$color-surface-muted;
     border: tokens.$border-strong;
-    border-radius: tokens.$radius-lg;
+    border-radius: tokens.$radius-pill;
     box-sizing: border-box;
     display: flex;
     flex-shrink: 0;
@@ -60,12 +60,5 @@
     min-height: 0;
     overflow: auto;
     padding: tokens.$space-4;
-  }
-
-  &.simulation-area .chip {
-    border-top-right-radius: calc(#{tokens.$section-chip-height} / 2);
-    border-bottom-right-radius: calc(#{tokens.$section-chip-height} / 2);
-    border-top-left-radius: tokens.$radius-lg;
-    border-bottom-left-radius: tokens.$radius-lg;
   }
 }
