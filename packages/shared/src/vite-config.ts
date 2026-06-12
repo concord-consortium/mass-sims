@@ -59,11 +59,10 @@ export function createSimViteConfig(overrides: SimViteConfigOverrides): UserConf
     base: "./",
     plugins: [svgrPlugin(), react(), gtagInjector()],
     experimental: {
-      // Vite equivalent of Webpack's `publicPath: "auto"`. Chunks live at
-      // `<sim>/assets/<chunk>-<hash>.js`, so `new URL("..", import.meta.url)` resolves to
-      // the sim root; appending the asset path yields the right absolute URL whether the
-      // HTML is at the per-version URL or the promoted top-level URL. See
-      // docs/infrastructure-plan.md §8.
+      // Chunks live at `<sim>/assets/<chunk>-<hash>.js`, so `new URL("..",
+      // import.meta.url)` resolves to the sim root; appending the asset path yields the
+      // right absolute URL whether the HTML is at the per-version URL or the promoted
+      // top-level URL.
       renderBuiltUrl(filename, { hostType }) {
         if (hostType === "js") {
           return {
