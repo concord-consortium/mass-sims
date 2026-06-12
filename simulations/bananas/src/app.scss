@@ -82,5 +82,13 @@
       background: #FFFDF2; // surface
       border-bottom-color: #9E8540; // modalBorder
     }
+
+    // Brown (iconColor) for the header info + close glyphs, which paint via
+    // currentColor. The title-bar About button's icon is intentionally left at
+    // the default text color, matching the demo.
+    .modal-header-icon,
+    .modal-close-icon {
+      color: #5C4813;
+    }
   }
 }

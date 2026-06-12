@@ -1,5 +1,21 @@
 import react from "@vitejs/plugin-react";
 import { defineConfig, type Plugin, type UserConfig } from "vite";
+import svgr from "vite-plugin-svgr";
+
+/**
+ * Shared svgr plugin. Turns `import Icon from "./icon.svg?react"` into a React
+ * component; plain `import url from "./icon.svg"` still resolves to a URL (for
+ * `<img>`). svgo is disabled so hand-authored `fill="currentColor"` and the
+ * `viewBox` survive untouched — that's what lets an icon be themed via the CSS
+ * `color` property (see components/simulation-frame/icons.tsx).
+ *
+ * Every Mass Sims Vite build AND Vitest config must include this, because the
+ * `?react` imports live in this shared package's source, which each sim bundles
+ * and tests. Centralizing here keeps the dependency + options in one place.
+ */
+export function svgrPlugin(): Plugin {
+  return svgr({ svgrOptions: { svgo: false } });
+}
 
 /**
  * Vite plugin: when VITE_GA_PROPERTY_ID is set at build/dev time, inject the
@@ -45,7 +61,7 @@ export interface SimViteConfigOverrides {
 export function createSimViteConfig(overrides: SimViteConfigOverrides): UserConfig {
   return defineConfig({
     base: "./",
-    plugins: [react(), gtagInjector()],
+    plugins: [svgrPlugin(), react(), gtagInjector()],
     experimental: {
       // Vite equivalent of Webpack's `publicPath: "auto"`. Chunks live at
       // `<sim>/assets/<chunk>-<hash>.js`, so `new URL("..", import.meta.url)` resolves to

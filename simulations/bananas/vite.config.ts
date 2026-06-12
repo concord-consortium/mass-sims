@@ -1,4 +1,4 @@
-import { gtagInjector } from "@concord-consortium/mass-sims-shared/vite-config";
+import { gtagInjector, svgrPlugin } from "@concord-consortium/mass-sims-shared/vite-config";
 import react from "@vitejs/plugin-react";
 import { defineConfig } from "vite";
 
@@ -14,7 +14,7 @@ import { defineConfig } from "vite";
 
 export default defineConfig({
   base: "./",
-  plugins: [react(), gtagInjector()],
+  plugins: [svgrPlugin(), react(), gtagInjector()],
   build: {
     outDir: "dist",
     emptyOutDir: true,

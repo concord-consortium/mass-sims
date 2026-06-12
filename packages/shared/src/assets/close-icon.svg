@@ -1,17 +1,1 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<svg width="24px" height="24px" viewBox="0 0 24 24" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
-    <title>Close ICON</title>
-    <defs>
-        <path d="M0,0 L3963,0 L3963,6320 L0,6320 L0,0 Z" id="path-1"></path>
-        <path d="M0,0 L24,0 L24,24 L0,24 L0,0 Z" id="path-2"></path>
-    </defs>
-    <g id="MassSims-General-Design" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
-        <g id="MassSims:-General-Design" transform="translate(-2472, -159)" xlink:href="#path-1">
-            <use fill="#FFFFFF" fill-rule="evenodd" xlink:href="#path-1" display="none"></use>
-            <g id="Close-ICON" transform="translate(2472, 159)" xlink:href="#path-2">
-                <polygon id="Path" points="0 0 24 0 24 24 0 24" display="none"></polygon>
-                <polygon id="Path" fill="#000000" fill-rule="evenodd" points="19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12"></polygon>
-            </g>
-        </g>
-    </g>
-</svg>
+<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><polygon fill="currentColor" fill-rule="evenodd" points="19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12"/></svg>
