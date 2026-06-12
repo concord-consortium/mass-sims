@@ -1,0 +1,28 @@
+.control-bar {
+  display: flex;
+  flex-shrink: 0;
+  gap: 10px;
+  justify-content: center;
+  padding: 10px;
+
+  .control-button {
+    align-items: center;
+    display: flex;
+    gap: 4px;
+    padding: 8px 12px 8px 8px;
+  }
+
+  .control-button-icon {
+    display: block;
+    flex-shrink: 0;
+    height: 24px;
+    width: 24px;
+  }
+
+  // Override the shared Button's disabled border with the banana theme's
+  // btnBorderDisabled; the shared [data-disabled] selector handles the muted
+  // text + icon (it fades both color and svg opacity to 0.35).
+  .control-button[data-disabled] {
+    border-color: rgba(158, 133, 64, 0.35);
+  }
+}
