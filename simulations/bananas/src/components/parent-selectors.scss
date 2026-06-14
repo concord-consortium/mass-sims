@@ -1,6 +1,11 @@
 @use "@concord-consortium/mass-sims-shared/styles/tokens" as tokens;
 @use "../theme" as theme;
 
+// 868px is the narrowest width where full-size (80px) circles still fit beside
+// the parent Selects; at/below this the row switches to compact sizing (smaller
+// circles + carets).
+$compact-max-width: 867px;
+
 .parent-selectors {
   align-items: center;
   display: flex;
@@ -17,6 +22,13 @@
       font-weight: 700;
       text-align: center;
     }
+
+    @media (max-width: $compact-max-width) {
+      .select-caret {
+        height: 18px;
+        width: 18px;
+      }
+    }
   }
 
   .parent-circle {
@@ -29,6 +41,11 @@
     justify-content: center;
     overflow: hidden;
     width: 80px;
+
+    @media (max-width: $compact-max-width) {
+      height: 56px;
+      width: 56px;
+    }
   }
 
   .cross-symbol {
