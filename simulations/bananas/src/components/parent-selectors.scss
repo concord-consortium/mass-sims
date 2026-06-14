@@ -1,4 +1,5 @@
 @use "@concord-consortium/mass-sims-shared/styles/tokens" as tokens;
+@use "../theme" as theme;
 
 .parent-selectors {
   align-items: center;
@@ -20,7 +21,7 @@
 
   .parent-circle {
     align-items: center;
-    background: #fffdf2;
+    background: theme.$surface;
     border-radius: 50%;
     display: flex;
     flex-shrink: 0;

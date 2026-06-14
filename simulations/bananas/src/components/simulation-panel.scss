@@ -1,4 +1,5 @@
 @use "@concord-consortium/mass-sims-shared/styles/tokens" as tokens;
+@use "../theme" as theme;
 
 .bananas-simulation-panel {
   display: flex;
@@ -19,8 +20,8 @@
   }
 
   .status-pill {
-    background: #fffdf2;
-    border: 2px solid #9e8540;
+    background: theme.$surface;
+    border: 2px solid theme.$border;
     border-radius: 999px;
     color: tokens.$color-text;
     font-family: tokens.$font-family-base;

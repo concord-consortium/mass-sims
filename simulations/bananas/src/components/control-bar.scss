@@ -1,3 +1,5 @@
+@use "../theme" as theme;
+
 .control-bar {
   display: flex;
   flex-shrink: 0;
@@ -20,6 +22,6 @@
   }
 
   .control-button[data-disabled] {
-    border-color: rgba(158, 133, 64, 0.35);
+    border-color: theme.$border-faint;
   }
 }
