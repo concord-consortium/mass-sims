@@ -6,17 +6,21 @@
   flex-shrink: 0;
   gap: 10px;
   justify-content: center;
-  padding: 2px 10px 10px;
+  padding: 2px 10px 30px;
 
   .parent-select {
     flex: 1;
     min-width: 0; // Allow the Select to shrink within the flex row at narrower widths.
+
+    .react-aria-Label {
+      font-weight: 700;
+      text-align: center;
+    }
   }
 
   .parent-circle {
     align-items: center;
     background: #fffdf2;
-    border: 2px solid #9e8540;
     border-radius: 50%;
     display: flex;
     flex-shrink: 0;

@@ -19,9 +19,6 @@
     width: 24px;
   }
 
-  // Override the shared Button's disabled border with the banana theme's
-  // btnBorderDisabled; the shared [data-disabled] selector handles the muted
-  // text + icon (it fades both color and svg opacity to 0.35).
   .control-button[data-disabled] {
     border-color: rgba(158, 133, 64, 0.35);
   }

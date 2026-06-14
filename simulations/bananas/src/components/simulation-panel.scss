@@ -34,13 +34,12 @@
   }
 
   .offspring-grid {
-    align-items: center;
+    align-items: flex-start;
     background: #fff;
-    border-top: 2px solid #9e8540;
     display: flex;
     flex: 1;
     flex-direction: column;
-    justify-content: center;
+    justify-content: flex-start;
     min-height: 0;
     overflow-y: auto;
     padding: 30px 17px 7px;

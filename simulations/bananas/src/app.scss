@@ -48,6 +48,14 @@
     background: #FFFDF2;
     border-color: #9E8540;
 
+    &.simulation-area {
+      background: #FFF3C4;
+
+      .content {
+        padding-bottom: 0;
+      }
+    }
+
     .chip {
       background: #FFECA0;
       border-color: #9E8540;
@@ -55,6 +63,30 @@
 
     .title {
       color: #5C4813;
+    }
+  }
+
+  .select .react-aria-Button {
+    background: #FFFDF2;
+    border-color: #9E8540;
+
+    &[data-hovered],
+    &[data-focus-visible] {
+      background: #FFF3C4;
+    }
+
+    &[data-pressed] {
+      background: #FFE680;
+    }
+
+    // After a mouse selection react-aria restores focus to the trigger with a
+    // plain .focus(). Since the click landed on the option (not the trigger), the
+    // browser applies native :focus-visible and shows its default focus ring.
+    // react-aria's data-focus-visible is modality-based, so it's correctly absent
+    // for pointer use — gate on it: suppress the outline whenever it's absent, and
+    // the shared [data-focus-visible] rule still supplies the keyboard ring.
+    &:not([data-focus-visible]) {
+      outline: none;
     }
   }
 
@@ -80,6 +112,22 @@
       &:active {
         background: #FFE680;
       }
+    }
+  }
+}
+
+.select-popover {
+  background: #FFFDF2;
+  border-color: #9E8540;
+
+  .react-aria-ListBoxItem {
+    &[data-hovered],
+    &[data-focused] {
+      background: #FFF3C4;
+    }
+
+    &[data-selected] {
+      background: #FFE680;
     }
   }
 }
