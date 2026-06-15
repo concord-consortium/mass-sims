@@ -150,6 +150,11 @@ Put sim-specific images / SVGs in `src/assets/` and import them so Vite fingerpr
 into `dist/assets/`. Shared partner-branding SVGs already live in the shared library; don't
 duplicate them.
 
+For a monochrome icon you want to theme, import the SVG with the `?react` suffix
+(`import Icon from "./icon.svg?react"`) so it renders as a component; give the asset
+`fill="currentColor"` and it takes its color from CSS `color`. See
+[`packages/shared/README.md`](../packages/shared/README.md) for the full SVG import convention.
+
 ## 8. Deploy
 
 Deployment is automatic via the generated `sim-<name>.yml` workflow:

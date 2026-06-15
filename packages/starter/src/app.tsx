@@ -5,6 +5,7 @@ import { DataPanel } from "./components/data-panel";
 import { SimulationView } from "./components/simulation-view";
 import type { SavedState } from "./model/saved-state";
 import type { RecordedTrial, SimInput, SimOutput, SimTransient } from "./model/types";
+
 import "./app.scss";
 
 const TRIAL_LIMIT = 10; // Matches TrialCard's A–J letter cap.

@@ -1,5 +1,14 @@
 @use "../../styles/tokens" as tokens;
 
+// Row gap between the title bar and the content row, sized so each section chip
+// — lifted by its own negative margin — lands with its top at the title bar's
+// bottom edge. Equals the chip's overhang above the panel border.
+$titlebar-content-gap: (tokens.$section-chip-height - tokens.$border-strong-width) * 0.5;
+
+// How far the title-bar background bleeds below the bar, forming the lip the
+// section chips overlap onto.
+$titlebar-accent: 7px;
+
 .simulation-frame {
   background: tokens.$color-surface;
   box-sizing: border-box;
@@ -7,7 +16,7 @@
   display: grid;
   font-family: tokens.$font-family-base;
   column-gap: tokens.$column-gap;
-  row-gap: 20px;
+  row-gap: $titlebar-content-gap;
   grid-template-areas:
     "titlebar  titlebar    titlebar"
     "trials    simulation  data";
@@ -23,7 +32,10 @@
     minmax(0, #{tokens.$column-data-flex}fr);
   grid-template-rows: tokens.$frame-titlebar-height 1fr;
   height: tokens.$frame-height;
-  padding: tokens.$body-padding;
+  min-width: tokens.$frame-width-ap-2col-shown;
+  // No top padding so the title bar sits flush to the top; it cancels the
+  // horizontal padding with a negative margin to span edge-to-edge.
+  padding: 0 tokens.$body-padding tokens.$body-padding;
   position: relative; // positioning context for the absolutely-anchored About panel
   width: 100%;
 
@@ -33,11 +45,30 @@
     display: flex;
     grid-area: titlebar;
     justify-content: space-between;
-    padding: 0 tokens.$space-2 0 tokens.$space-4;
+    // Cancel the frame's horizontal padding so the bar background reaches the
+    // container's inner edges (clipped to the rounded corners when standalone).
+    margin: 0 (tokens.$body-padding * -1);
+    // Right padding = the column inset, so the About button's right edge lines
+    // up with the Data column's.
+    padding: 0 tokens.$body-padding 0 tokens.$space-4;
+    position: relative; // containing block for the background-lip ::after
+
+    // Bleed the title-bar color below the bar so the section chips overlap onto
+    // it. `background: inherit` picks up the per-sim color; painting behind the
+    // later-in-DOM panels keeps the chips on top of the lip.
+    &::after {
+      background: inherit;
+      content: "";
+      height: $titlebar-accent;
+      left: 0;
+      position: absolute;
+      right: 0;
+      top: 100%;
+    }
   }
 
   .title-bar-left {
-    align-items: baseline;
+    align-items: center;
     display: flex;
     gap: tokens.$space-2;
   }
@@ -49,11 +80,16 @@
   }
 
   .sim-title {
+    align-items: center;
     color: tokens.$color-text;
+    display: flex;
     font-size: tokens.$font-size-xl;
+    font-synthesis: none; // don't synthesize bold for display fonts (Slackey is 400 only)
     font-weight: 700;
-    line-height: tokens.$line-height-lg;
+    height: tokens.$line-height-lg;
+    line-height: 1;
     margin: 0;
+    text-transform: uppercase;
   }
 
   .tagline {
@@ -77,7 +113,7 @@
     font-family: tokens.$font-family-base;
     font-size: tokens.$font-size-base;
     font-weight: 700;
-    gap: tokens.$space-1 + 2;   // 6 px — between icon and "About"
+    gap: tokens.$space-1 + 2;
     height: 34px;               // visible height; expanded touch area via ::after
     line-height: tokens.$line-height-sm;
     padding: 3px tokens.$space-3 3px tokens.$space-2;
@@ -247,5 +283,29 @@
     overflow-y: auto;
     padding: tokens.$space-4 20px 20px;
     user-select: text;
+
+    h3 {
+      font-size: tokens.$font-size-base;
+      font-weight: 700;
+      margin: tokens.$space-4 0 tokens.$space-1 + 2;
+    }
+
+    h3:first-child {
+      margin-top: 0;
+    }
+
+    p {
+      margin: 0 0 tokens.$space-3;
+    }
+
+    ul,
+    ol {
+      margin: 0 0 tokens.$space-3;
+      padding-left: 20px;
+    }
+
+    li {
+      margin-bottom: tokens.$space-1;
+    }
   }
 }

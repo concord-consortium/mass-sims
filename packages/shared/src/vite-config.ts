@@ -1,5 +1,17 @@
 import react from "@vitejs/plugin-react";
 import { defineConfig, type Plugin, type UserConfig } from "vite";
+import svgr from "vite-plugin-svgr";
+
+/**
+ * svgr plugin: `import Icon from "./icon.svg?react"` → a React component; plain
+ * `import url from "./icon.svg"` stays a URL. svgo is off so hand-authored
+ * `fill="currentColor"` + `viewBox` survive (lets icons be themed via CSS
+ * `color`). Every sim's Vite build and Vitest config needs it, since the
+ * `?react` imports live in this package's source.
+ */
+export function svgrPlugin(): Plugin {
+  return svgr({ svgrOptions: { svgo: false } });
+}
 
 /**
  * Vite plugin: when VITE_GA_PROPERTY_ID is set at build/dev time, inject the
@@ -45,13 +57,12 @@ export interface SimViteConfigOverrides {
 export function createSimViteConfig(overrides: SimViteConfigOverrides): UserConfig {
   return defineConfig({
     base: "./",
-    plugins: [react(), gtagInjector()],
+    plugins: [svgrPlugin(), react(), gtagInjector()],
     experimental: {
-      // Vite equivalent of Webpack's `publicPath: "auto"`. Chunks live at
-      // `<sim>/assets/<chunk>-<hash>.js`, so `new URL("..", import.meta.url)` resolves to
-      // the sim root; appending the asset path yields the right absolute URL whether the
-      // HTML is at the per-version URL or the promoted top-level URL. See
-      // docs/infrastructure-plan.md §8.
+      // Chunks live at `<sim>/assets/<chunk>-<hash>.js`, so `new URL("..",
+      // import.meta.url)` resolves to the sim root; appending the asset path yields the
+      // right absolute URL whether the HTML is at the per-version URL or the promoted
+      // top-level URL.
       renderBuiltUrl(filename, { hostType }) {
         if (hostType === "js") {
           return {
