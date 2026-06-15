@@ -113,7 +113,7 @@ $titlebar-accent: 7px;
     font-family: tokens.$font-family-base;
     font-size: tokens.$font-size-base;
     font-weight: 700;
-    gap: tokens.$space-1 + 2;   // 6 px — between icon and "About"
+    gap: tokens.$space-1 + 2;
     height: 34px;               // visible height; expanded touch area via ::after
     line-height: tokens.$line-height-sm;
     padding: 3px tokens.$space-3 3px tokens.$space-2;
@@ -287,7 +287,7 @@ $titlebar-accent: 7px;
     h3 {
       font-size: tokens.$font-size-base;
       font-weight: 700;
-      margin: tokens.$space-4 0 tokens.$space-1 + 2; // 16px 0 6px
+      margin: tokens.$space-4 0 tokens.$space-1 + 2;
     }
 
     h3:first-child {

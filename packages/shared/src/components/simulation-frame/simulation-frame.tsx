@@ -12,6 +12,7 @@ import ccLogo from "../../assets/branding/cc-logo.svg";
 import deseLogo from "../../assets/branding/dese-logo.svg";
 import { Section } from "../section/section";
 import { CloseIcon, InfoIcon } from "./icons";
+
 import "./simulation-frame.scss";
 
 export interface SimulationFrameProps {
