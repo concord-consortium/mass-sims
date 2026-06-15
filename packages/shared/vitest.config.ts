@@ -5,9 +5,9 @@ import { defineConfig } from "vitest/config";
 // `globals: false` matches the project-wide convention — tests always import from
 // "vitest" rather than relying on injected globals (see Addendum A.2 of the plan).
 //
-// svgr (svgo off) transforms this package's own `?react` icon imports. Inlined
-// rather than importing the `svgrPlugin` helper, which would cross this
-// package's tsconfig project boundary.
+// Configured inline rather than via the shared `createSimVitestConfig` helper:
+// importing it (or `svgrPlugin`) from this package's own src/ would cross its
+// tsconfig project boundary. svgr (svgo off) transforms the `?react` icon imports.
 
 export default defineConfig({
   plugins: [svgr({ svgrOptions: { svgo: false } }), react()],
