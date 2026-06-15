@@ -1,4 +1,4 @@
-import { render } from "@testing-library/react";
+import { fireEvent, render } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import { ParentSelectors } from "./parent-selectors";
 
@@ -25,11 +25,15 @@ describe("ParentSelectors", () => {
   });
 
   it("renders each Select with the five parent options", () => {
-    const { getAllByRole } = render(<ParentSelectors />);
+    const { getAllByRole, getByRole } = render(<ParentSelectors />);
     const triggers = getAllByRole("button");
     expect(triggers).toHaveLength(2);
-    for (const trigger of triggers) {
-      expect(trigger.textContent).toMatch(/Select/);
+    // Both Selects render from the same PARENT_OPTIONS list, so opening one and
+    // asserting all five options appear covers the list for both.
+    fireEvent.click(triggers[0]);
+    expect(getAllByRole("option")).toHaveLength(5);
+    for (const label of ["Wild W1", "Wild W2", "Wild W3", "Cavendish C1", "Cavendish C2"]) {
+      expect(getByRole("option", { name: label })).toBeInTheDocument();
     }
   });
 });

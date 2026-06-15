@@ -18,6 +18,7 @@ export function ParentSelectors() {
         options={PARENT_OPTIONS}
         placeholder="Select…"
         className="parent-select"
+        selectedKey={null}
       />
       <div className="parent-circle" aria-hidden="true" />
       <span className="cross-symbol" aria-hidden="true">
@@ -29,6 +30,7 @@ export function ParentSelectors() {
         options={PARENT_OPTIONS}
         placeholder="Select…"
         className="parent-select"
+        selectedKey={null}
       />
     </div>
   );
