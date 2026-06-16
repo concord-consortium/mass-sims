@@ -18,7 +18,6 @@
     background: tokens.$color-surface;
     border: tokens.$border-strong;
     border-radius: tokens.$radius-md;
-    box-sizing: border-box;
     color: tokens.$color-text;
     cursor: pointer;
     display: flex;
@@ -84,7 +83,6 @@
   border-radius: 0 0 tokens.$radius-md tokens.$radius-md;
   border-top: none;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-  box-sizing: border-box;
   overflow: hidden;
   width: var(--trigger-width);
 
@@ -96,7 +94,6 @@
 
   .react-aria-ListBoxItem {
     align-items: center;
-    box-sizing: border-box;
     color: tokens.$color-text;
     cursor: pointer;
     display: flex;

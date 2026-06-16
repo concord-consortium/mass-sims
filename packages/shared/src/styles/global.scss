@@ -16,6 +16,49 @@
 
 
 // =============================================================================
+// WEB FONTS (self-hosted)
+// Lato (the base UI font) and Roboto Condensed (the condensed face) that
+// `tokens.$font-family-base` / `$font-family-condensed` reference. Self-hosted
+// woff2 — no third-party request, so they work offline and inside Activity
+// Player. Sim-specific display faces (e.g. Bananas' Slackey) stay per-sim.
+// `font-display: swap` paints fallback text immediately, then swaps in the
+// webfont once it loads. Roboto Condensed is a variable face (weights 100–900).
+// =============================================================================
+
+@font-face {
+  font-display: swap;
+  font-family: "Lato";
+  font-style: normal;
+  font-weight: 400;
+  src: url("../assets/fonts/lato-400.woff2") format("woff2");
+}
+
+@font-face {
+  font-display: swap;
+  font-family: "Lato";
+  font-style: italic;
+  font-weight: 400;
+  src: url("../assets/fonts/lato-400-italic.woff2") format("woff2");
+}
+
+@font-face {
+  font-display: swap;
+  font-family: "Lato";
+  font-style: normal;
+  font-weight: 700;
+  src: url("../assets/fonts/lato-700.woff2") format("woff2");
+}
+
+@font-face {
+  font-display: swap;
+  font-family: "Roboto Condensed";
+  font-style: normal;
+  font-weight: 100 900;
+  src: url("../assets/fonts/roboto-condensed.woff2") format("woff2");
+}
+
+
+// =============================================================================
 // CSS CUSTOM PROPERTIES
 // Mirror selected tokens at runtime so they're available to inline styles and
 // JS-driven theming hooks.
@@ -27,4 +70,12 @@
   --color-focus-outline: #{tokens.$color-focus-outline};
   --touch-target-min:    #{tokens.$touch-target-min};
   --frame-height:        #{tokens.$frame-height};
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  letter-spacing: 0.02em;
 }
