@@ -1,4 +1,5 @@
 @use "@concord-consortium/mass-sims-shared/styles/tokens" as tokens;
+@use "./theme" as theme;
 
 @font-face {
   font-family: "Slackey";
@@ -11,75 +12,123 @@
 // Bananas theme. The sim's CSS loads after the shared library's, so these
 // equal-specificity overrides win the cascade without extra wrappers.
 .simulation-frame {
-  background: #FFFDF2;
+  background: theme.$surface;
 
   &.standalone {
-    border-color: #9E8540;
+    border-color: theme.$border;
   }
 
   .info-button {
-    border-color: #9E8540;
+    border-color: theme.$border;
 
     &:hover,
     &:focus-visible {
-      background: #FFF3C4;
+      background: theme.$accent;
     }
 
     &:active {
-      background: #FFE680;
+      background: theme.$accent-strong;
     }
 
     .info-button-icon {
-      color: #9E8540;
+      color: theme.$border;
     }
   }
 
   .title-bar {
-    background: #FFF3C4;
+    background: theme.$accent;
   }
 
   .sim-title {
-    color: #5C4813;
+    color: theme.$heading;
     font-family: "Slackey", #{tokens.$font-family-base};
     font-weight: 400;
   }
 
   .section {
-    background: #FFFDF2;
-    border-color: #9E8540;
+    background: theme.$surface;
+    border-color: theme.$border;
+
+    &.simulation-area {
+      background: theme.$accent;
+
+      .content {
+        padding-bottom: 0;
+      }
+    }
 
     .chip {
-      background: #FFECA0;
-      border-color: #9E8540;
+      background: theme.$tab;
+      border-color: theme.$border;
     }
 
     .title {
-      color: #5C4813;
+      color: theme.$heading;
+    }
+  }
+
+  .select .react-aria-Button {
+    background: theme.$surface;
+    border-color: theme.$border;
+
+    &[data-hovered],
+    &[data-focus-visible] {
+      background: theme.$accent;
+    }
+
+    &[data-pressed] {
+      background: theme.$accent-strong;
+    }
+
+    // After a mouse selection react-aria restores focus to the trigger with a
+    // plain .focus(). Since the click landed on the option (not the trigger), the
+    // browser applies native :focus-visible and shows its default focus ring.
+    // react-aria's data-focus-visible is modality-based, so it's correctly absent
+    // for pointer use — gate on it: suppress the outline whenever it's absent, and
+    // the shared [data-focus-visible] rule still supplies the keyboard ring.
+    &:not([data-focus-visible]) {
+      outline: none;
     }
   }
 
   .simulation-frame-info-modal {
-    border-color: #9E8540;
+    border-color: theme.$border;
 
     .modal-drag-handle {
-      background: #FFFDF2;
-      border-bottom-color: #9E8540;
+      background: theme.$surface;
+      border-bottom-color: theme.$border;
     }
 
     .modal-header-icon,
     .modal-close-icon {
-      color: #5C4813;
+      color: theme.$heading;
     }
 
     .modal-close {
       &:hover,
       &:focus-visible {
-        background: #FFF3C4;
+        background: theme.$accent;
       }
 
       &:active {
-        background: #FFE680;
+        background: theme.$accent-strong;
       }
+    }
+  }
+}
+
+.select-popover {
+  background: theme.$surface;
+  border-color: theme.$border;
+
+  .react-aria-ListBoxItem {
+    &[data-hovered],
+    &[data-focused] {
+      background: theme.$accent;
+    }
+
+    &[data-selected] {
+      background: theme.$accent-strong;
     }
   }
 }

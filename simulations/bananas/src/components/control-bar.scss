@@ -1,0 +1,27 @@
+@use "../theme" as theme;
+
+.control-bar {
+  display: flex;
+  flex-shrink: 0;
+  gap: 10px;
+  justify-content: center;
+  padding: 10px;
+
+  .control-button {
+    align-items: center;
+    display: flex;
+    gap: 4px;
+    padding: 8px 12px 8px 8px;
+  }
+
+  .control-button-icon {
+    display: block;
+    flex-shrink: 0;
+    height: 24px;
+    width: 24px;
+  }
+
+  .control-button[data-disabled] {
+    border-color: theme.$border-faint;
+  }
+}
