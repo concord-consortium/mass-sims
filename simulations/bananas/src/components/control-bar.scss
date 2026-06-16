@@ -1,5 +1,18 @@
 @use "../theme" as theme;
 
+// The controls stack/stretch when the panel is narrow. @container (panel-based, accurate) is the
+// primary trigger; the @media fallback approximates it for browsers without container-query
+// support. Breakpoints: 535px = panel width (matches the spec); 1026px = the viewport width at
+// which the panel reaches 535px in this frame (keep both in sync with fungus-switch.scss).
+@mixin stacked-controls {
+  align-items: stretch;
+
+  .control-button {
+    height: auto;
+    white-space: normal;
+  }
+}
+
 .control-bar {
   display: flex;
   flex-shrink: 0;
@@ -9,9 +22,21 @@
 
   .control-button {
     align-items: center;
+    background: theme.$surface;
+    border-color: theme.$border;
     display: flex;
     gap: 4px;
     padding: 8px 12px 8px 8px;
+    white-space: nowrap;
+
+    &[data-hovered],
+    &:focus-visible {
+      background: theme.$accent;
+    }
+
+    &[data-pressed] {
+      background: theme.$accent-strong;
+    }
   }
 
   .control-button-icon {
@@ -23,5 +48,16 @@
 
   .control-button[data-disabled] {
     border-color: theme.$border-faint;
+  }
+
+  // Narrow panel: the Fungus switch stacks taller, so stretch the buttons to match its height.
+  @container bananas-sim-panel (max-width: 535px) {
+    @include stacked-controls;
+  }
+
+  @supports not (container-type: inline-size) {
+    @media (max-width: 1026px) {
+      @include stacked-controls;
+    }
   }
 }
