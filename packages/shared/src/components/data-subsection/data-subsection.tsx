@@ -3,7 +3,7 @@ import "./data-subsection.scss";
 
 export interface DataSubsectionProps {
   children?: ReactNode;
-  title: string;
+  title: ReactNode;
 }
 
 /**

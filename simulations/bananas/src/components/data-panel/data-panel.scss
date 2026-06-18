@@ -1,0 +1,192 @@
+@use "@concord-consortium/mass-sims-shared/styles/tokens" as tokens;
+@use "../../theme" as theme;
+
+.bananas-data-panel {
+  // Named query container so the title line-break and legend gap respond to the *panel*
+  // width — one pane of the layout, not the viewport.
+  container: bananas-data-panel / inline-size;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+
+  > .data-subsection:nth-child(1) {
+    flex: 0 0 auto;
+    justify-content: flex-start;
+    padding: 0 0 8px;
+  }
+
+  > .data-subsection:nth-child(2) {
+    flex: 1 1 auto;
+    align-items: stretch;
+    justify-content: flex-start;
+    overflow: hidden;
+    padding: 10px 0 12px;
+  }
+
+  > .data-subsection:nth-child(2) > .body {
+    align-items: stretch;
+  }
+
+  > .data-subsection + .data-subsection {
+    border-top-color: theme.$border;
+  }
+
+  > .data-subsection > .body {
+    flex-direction: column;
+    min-height: 0;
+  }
+
+  .data-chart-body {
+    align-items: center;
+    display: flex;
+    flex: 0 0 90px;
+    height: 90px;
+    justify-content: center;
+    width: 100%;
+  }
+
+  .phenotypes-pie {
+    display: block;
+    height: 100%;
+    max-width: 100%;
+    width: auto;
+  }
+
+  .resistance-bar-chart {
+    display: block;
+    flex-shrink: 0;
+    width: 100%;
+  }
+  .bar-chart-gridline {
+    stroke: theme.$chart-gridline;
+    stroke-width: 1;
+  }
+  .bar-chart-axis-label {
+    fill: tokens.$color-text;
+    font-family: tokens.$font-family-condensed;
+    font-size: tokens.$font-size-base;
+  }
+  .bar-chart-empty-label {
+    fill: tokens.$color-text;
+    font-family: tokens.$font-family-base;
+    font-size: tokens.$font-size-base;
+  }
+
+  // Bar-chart title break point — the title is always on two lines but shifts where it breaks.
+  // Wide (≥230px container): "Fungus Resistance over" / "All Crosses". Narrow (<230px): "Fungus
+  // Resistance" / "over All Crosses". Each .rt-break injects a forced newline via ::after when
+  // shown; toggling which one shows moves the break without a <br> (the text stays one phrase).
+  .resistance-title .rt-break {
+    display: none;
+  }
+  .resistance-title .rt-break::after {
+    content: "\A";
+    white-space: pre;
+  }
+  // Default (wide): break after "over".
+  .resistance-title .rt-break--2 {
+    display: inline;
+  }
+  // Narrow: break after "Resistance" instead.
+  @container bananas-data-panel (max-width: 229px) {
+    .resistance-title .rt-break--2 {
+      display: none;
+    }
+    .resistance-title .rt-break--1 {
+      display: inline;
+    }
+  }
+  // Fallback for browsers without container queries — switch to the narrow break by viewport,
+  // matching the control-bar's fallback breakpoint.
+  @supports not (container-type: inline-size) {
+    @media (max-width: 1026px) {
+      .resistance-title .rt-break--2 {
+        display: none;
+      }
+      .resistance-title .rt-break--1 {
+        display: inline;
+      }
+    }
+  }
+
+  .phenotypes-pill {
+    align-items: center;
+    background: tokens.$color-surface;
+    border-radius: tokens.$radius-pill;
+    color: tokens.$color-text;
+    display: inline-flex;
+    font-family: tokens.$font-family-base;
+    font-size: tokens.$font-size-base;
+    font-weight: 700;
+    line-height: tokens.$line-height-sm;
+    padding: 6px 12px;
+    white-space: nowrap;
+  }
+
+  // Pie empty state — circle fills with the title-bar background ($accent, what app.scss's
+  // .title-bar uses); "No data" label is the standard text color.
+  .phenotypes-pie__circle {
+    fill: theme.$accent;
+  }
+  .phenotypes-pie__label {
+    fill: tokens.$color-text;
+    font-family: tokens.$font-family-base;
+    font-size: tokens.$font-size-base;
+  }
+
+  // Legend — demo's .data-chart-legend / .data-legend-item / -label / -swatch / -pct (renamed).
+  // Sits directly below the fixed-height chart body; flex-shrink:0 keeps it at full height.
+  .data-legend {
+    align-items: center;
+    color: tokens.$color-text;
+    display: flex;
+    flex-shrink: 0;
+    font-size: tokens.$font-size-base;
+    // Gap grows linearly from 4px (at 150px container) to 20px (at 285px), matching the demo's
+    // per-frame recompute — expressed against the container's inline size so it's smooth, not
+    // stepped. See the @supports fallback below for browsers without container queries.
+    gap: clamp(4px, calc((100cqi - 150px) * (20 - 4) / (285 - 150) + 4px), 20px);
+    justify-content: center;
+    line-height: tokens.$line-height-sm;
+    padding: 10px 8px 0;
+  }
+
+  // Container-query fallback: a fixed mid-range gap where cqi units aren't supported.
+  @supports not (container-type: inline-size) {
+    .data-legend {
+      gap: 12px;
+    }
+  }
+  .legend-item {
+    align-items: center;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+  .legend-label {
+    align-items: center;
+    display: flex;
+    gap: 4px;
+  }
+  .legend-pct {
+    color: tokens.$color-text;
+    font-size: tokens.$font-size-base;
+    font-weight: 700;
+  }
+  .legend-swatch {
+    border: 1px solid tokens.$color-text;
+    border-radius: 2px;
+    flex-shrink: 0;
+    height: 16px;
+    width: 16px;
+  }
+  .phenotypes-swatch--healthy,
+  .resistance-swatch--healthy {
+    background: theme.$banana-healthy-legend;
+  }
+  .phenotypes-swatch--infected,
+  .resistance-swatch--infected {
+    background: theme.$banana-infected;
+  }
+}
