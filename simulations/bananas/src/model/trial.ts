@@ -13,6 +13,14 @@ export interface TrialState {
 }
 
 /**
+ * The shape persisted to / restored from Activity Player's `interactiveState`. The whole
+ * `TrialState` is JSON-serializable — `crosses` holds plain `OffspringPlant` objects — so it
+ * round-trips verbatim, with no per-frame transient to strip. Named distinctly because this is
+ * a wire format: changing `TrialState`'s shape changes what restores from saved sessions.
+ */
+export type SavedState = TrialState;
+
+/**
  * Factory (not a shared constant): each call returns a fresh object, so resets and separate
  * trials never share the mutable `crosses` array.
  */

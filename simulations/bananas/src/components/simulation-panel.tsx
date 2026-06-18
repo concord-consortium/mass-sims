@@ -1,18 +1,22 @@
 import clsx from "clsx";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import BananaTreeIcon from "../assets/icons/banana-tree.svg?react";
 import BananaTreeInfectedIcon from "../assets/icons/banana-tree-infected.svg?react";
 import FungusAddedIcon from "../assets/icons/fungus-added.svg?react";
-import { MAX_CROSSES, makeCross, type ParentId } from "../model/genetics";
-import { emptyTrial, type TrialState } from "../model/trial";
+import { MAX_CROSSES, type ParentId } from "../model/genetics";
+import type { TrialState } from "../model/trial";
 import { ControlBar } from "./control-bar";
 import { ParentSelectors } from "./parent-selectors";
 
 import "./simulation-panel.scss";
 
 export interface SimulationPanelProps {
-  /** RNG injection seam. Defaults to `Math.random`; tests pass a seeded PRNG for deterministic crosses. */
-  rng?: () => number;
+  trial: TrialState;
+  onSelectParent1: (id: ParentId) => void;
+  onSelectParent2: (id: ParentId) => void;
+  onCrossPlants: () => void;
+  onSetFungus: (value: boolean) => void;
+  onResetTrial: () => void;
 }
 
 /** Builds the status pill content, or `null` when both parents aren't selected yet (no pill). */
@@ -116,26 +120,14 @@ function renderOffspringGrid(trial: TrialState) {
   );
 }
 
-export function SimulationPanel({ rng = Math.random }: SimulationPanelProps) {
-  const [trial, setTrial] = useState<TrialState>(emptyTrial);
-
-  const onSelectParent1 = (id: ParentId) => setTrial((t) => (t.locked ? t : { ...t, p1: id }));
-  const onSelectParent2 = (id: ParentId) => setTrial((t) => (t.locked ? t : { ...t, p2: id }));
-
-  const onCrossPlants = () =>
-    setTrial((t) => {
-      if (!t.p1 || !t.p2 || t.crosses.length >= MAX_CROSSES) return t;
-      const plants = makeCross(t.p1, t.p2, t.fungusOn, rng);
-      return { ...t, locked: true, crosses: [...t.crosses, plants] };
-    });
-
-  // Defensive guard: ignore writes the UI shouldn't have allowed (no parents, or crossing
-  // started). The switch already enforces isFungusLocked; this is the last line of defense.
-  const onSetFungus = (value: boolean) =>
-    setTrial((t) => (!t.p1 || !t.p2 || t.crosses.length > 0 ? t : { ...t, fungusOn: value }));
-
-  const onResetTrial = () => setTrial(emptyTrial());
-
+export function SimulationPanel({
+  trial,
+  onSelectParent1,
+  onSelectParent2,
+  onCrossPlants,
+  onSetFungus,
+  onResetTrial,
+}: SimulationPanelProps) {
   const bothParentsSelected = !!(trial.p1 && trial.p2);
   const atCrossCap = trial.crosses.length >= MAX_CROSSES;
   const canCross = bothParentsSelected && !atCrossCap;
