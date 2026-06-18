@@ -39,14 +39,12 @@ const LOCKED_ONE_CROSS = trial({
 
 describe("SimulationPanel rendering", () => {
   it("renders selectors, the grid hint, and no pill for an empty trial", () => {
-    const { getByLabelText, getByRole, queryByRole } = render(
+    const { getByLabelText, getByText, queryByRole } = render(
       <SimulationPanel trial={emptyTrial()} {...handlers()} />,
     );
     expect(getByLabelText("Parent 1")).toBeInTheDocument();
     expect(getByLabelText("Parent 2")).toBeInTheDocument();
-    expect(getByRole("list", { name: /crosses/i })).toHaveTextContent(
-      /Each cross will produce 5–20 offspring\./i,
-    );
+    expect(getByText(/Each cross will produce 5–20 offspring\./i)).toBeInTheDocument();
     expect(queryByRole("status")).not.toBeInTheDocument();
   });
 

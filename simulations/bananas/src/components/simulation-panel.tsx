@@ -51,9 +51,11 @@ function renderStatusPill(trial: TrialState) {
 }
 
 /**
- * Renders the offspring grid: a single top "Fungus introduced" marker when fungus is on (it's
- * all-or-nothing for the trial, so no between-row markers), the cross rows or an empty-state
- * hint, and the "Max crosses reached" notice at the cap.
+ * Renders the offspring grid contents: a top "Fungus introduced" marker when fungus is on (it's
+ * all-or-nothing for the trial, so no between-row markers), the <ul> of cross rows (empty until
+ * the first cross), the empty-state hint, and the "Max crosses reached" notice at the cap. Only
+ * the rows live inside the list; the marker, hint, and notice are siblings so it stays a clean
+ * list of crosses for assistive tech.
  */
 function renderOffspringGrid(trial: TrialState) {
   const fungusMarker = trial.fungusOn ? (
@@ -65,52 +67,46 @@ function renderOffspringGrid(trial: TrialState) {
     </div>
   ) : null;
 
-  if (trial.crosses.length === 0) {
-    return (
-      <>
-        {fungusMarker}
-        <p className="offspring-grid-placeholder">Each cross will produce 5–20 offspring.</p>
-      </>
-    );
-  }
-
   return (
     <>
       {fungusMarker}
-      {trial.crosses.map((plants, gi) => {
-        const healthy = plants.filter((p) => !p.infected).length;
-        const infected = plants.length - healthy;
-        return (
-          // biome-ignore lint/a11y/useSemanticElements: the list interleaves presentational markers, so native <li> can't be used
-          <div
-            // biome-ignore lint/suspicious/noArrayIndexKey: crosses are append-only, index is stable
-            key={gi}
-            className="offspring-row"
-            role="listitem"
-            aria-label={`Cross ${gi + 1}, ${plants.length} offspring, ${healthy} healthy, ${infected} infected`}
-          >
-            <div className="offspring-row-label">
-              <span className="offspring-row-name">{`A${gi + 1}`}</span>
-              <span className="offspring-row-count">{`(${plants.length})`}</span>
-            </div>
-            <div className="offspring-row-plants">
-              {plants.map((plant, pi) => (
-                <span
-                  // biome-ignore lint/suspicious/noArrayIndexKey: plants within a cross are positional and stable
-                  key={pi}
-                  className={clsx("offspring-plant", plant.infected && "infected")}
-                >
-                  {plant.infected ? (
-                    <BananaTreeInfectedIcon aria-hidden="true" />
-                  ) : (
-                    <BananaTreeIcon aria-hidden="true" />
-                  )}
-                </span>
-              ))}
-            </div>
-          </div>
-        );
-      })}
+      <ul className="offspring-list" aria-label="Crosses">
+        {trial.crosses.map((plants, gi) => {
+          const healthy = plants.filter((p) => !p.infected).length;
+          const infected = plants.length - healthy;
+          return (
+            <li
+              // biome-ignore lint/suspicious/noArrayIndexKey: crosses are append-only, index is stable
+              key={gi}
+              className="offspring-row"
+              aria-label={`Cross ${gi + 1}, ${plants.length} offspring, ${healthy} healthy, ${infected} infected`}
+            >
+              <div className="offspring-row-label">
+                <span className="offspring-row-name">{`A${gi + 1}`}</span>
+                <span className="offspring-row-count">{`(${plants.length})`}</span>
+              </div>
+              <div className="offspring-row-plants">
+                {plants.map((plant, pi) => (
+                  <span
+                    // biome-ignore lint/suspicious/noArrayIndexKey: plants within a cross are positional and stable
+                    key={pi}
+                    className={clsx("offspring-plant", plant.infected && "infected")}
+                  >
+                    {plant.infected ? (
+                      <BananaTreeInfectedIcon aria-hidden="true" />
+                    ) : (
+                      <BananaTreeIcon aria-hidden="true" />
+                    )}
+                  </span>
+                ))}
+              </div>
+            </li>
+          );
+        })}
+      </ul>
+      {trial.crosses.length === 0 ? (
+        <p className="offspring-grid-placeholder">Each cross will produce 5–20 offspring.</p>
+      ) : null}
       {trial.crosses.length >= MAX_CROSSES ? (
         <div className="offspring-grid-max" role="status" aria-live="polite">
           Max number of crosses reached
@@ -164,8 +160,7 @@ export function SimulationPanel({
         </div>
       ) : null}
 
-      {/* biome-ignore lint/a11y/useSemanticElements: list holds presentational markers + a status placeholder, native <ul> can't contain them */}
-      <section className="offspring-grid" role="list" aria-label="Crosses" ref={gridRef}>
+      <section className="offspring-grid" ref={gridRef}>
         {renderOffspringGrid(trial)}
       </section>
 

@@ -1,5 +1,5 @@
 import { seededRandom } from "@concord-consortium/mass-sims-shared";
-import { fireEvent, render, within } from "@testing-library/react";
+import { fireEvent, render } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // Mock the lara-interactive-api surface used across the App tree: `log` (control/switch/select
@@ -69,10 +69,8 @@ describe("Bananas App — simulation flow", () => {
   });
 
   it("shows the offspring-count hint in the stage area", () => {
-    const { getByRole } = render(<App />);
-    expect(getByRole("list", { name: /crosses/i })).toHaveTextContent(
-      /Each cross will produce 5–20 offspring\./i,
-    );
+    const { getByText } = render(<App />);
+    expect(getByText(/Each cross will produce 5–20 offspring\./i)).toBeInTheDocument();
   });
 
   it("shows the cross prompt pill once both parents are selected", () => {
@@ -279,10 +277,8 @@ describe("Bananas App — simulation flow", () => {
   });
 
   it("shows only the placeholder hint (no fungus marker) with zero crosses and fungus off", () => {
-    const { getByRole, queryByText } = render(<App />);
-    expect(getByRole("list", { name: /crosses/i })).toHaveTextContent(
-      "Each cross will produce 5–20 offspring.",
-    );
+    const { getByText, queryByText } = render(<App />);
+    expect(getByText("Each cross will produce 5–20 offspring.")).toBeInTheDocument();
     expect(queryByText("Fungus introduced")).not.toBeInTheDocument();
   });
 
@@ -290,9 +286,7 @@ describe("Bananas App — simulation flow", () => {
     const { getByRole, getByText } = render(<App />);
     selectBothParents(getByRole);
     fireEvent.click(getByRole("switch", { name: "Fungus" })); // on, no crosses yet
-    expect(getByRole("list", { name: /crosses/i })).toHaveTextContent(
-      "Each cross will produce 5–20 offspring.",
-    );
+    expect(getByText("Each cross will produce 5–20 offspring.")).toBeInTheDocument();
     expect(getByText("Fungus introduced")).toBeInTheDocument();
   });
 
@@ -330,12 +324,11 @@ describe("Bananas App — simulation flow", () => {
   });
 
   it("shows the max-crosses placeholder and disables Cross Plants + Fungus at the cap", () => {
-    const { getByRole, getAllByRole } = render(<App rng={seededRandom("t8-cap")} />);
+    const { getByRole, getAllByRole, getByText } = render(<App rng={seededRandom("t8-cap")} />);
     selectBothParents(getByRole);
     for (let i = 0; i < 6; i++) fireEvent.click(getByRole("button", { name: "Cross Plants" }));
     expect(getAllByRole("listitem")).toHaveLength(6);
-    const grid = getByRole("list", { name: /crosses/i });
-    expect(within(grid).getByRole("status")).toHaveTextContent("Max number of crosses reached");
+    expect(getByText("Max number of crosses reached")).toBeInTheDocument();
     expect(getByRole("button", { name: "Cross Plants" })).toBeDisabled();
     expect(getByRole("switch", { name: "Fungus" })).toBeDisabled();
   });

@@ -54,6 +54,15 @@
     padding: 23px 17px 7px;
   }
 
+  .offspring-list {
+    display: flex;
+    flex-direction: column;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    width: 100%;
+  }
+
   .offspring-grid-placeholder {
     color: tokens.$color-text;
     font-family: tokens.$font-family-base;
