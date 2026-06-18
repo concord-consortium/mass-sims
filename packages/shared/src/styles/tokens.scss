@@ -96,7 +96,8 @@ $space-8:                64px;
 // The four target widths and the single fixed height.
 $frame-height:                       562px;
 $frame-width-ap-full:                1044px;
-$frame-width-standalone:             1024px;
+$frame-width-standalone:             1024px;   // widest standalone content area (border adds 2px each side → 1028 outer)
+$frame-width-standalone-min:         768px;    // narrowest standalone content area (responsive floor; border adds 2px each side → 772 outer)
 $frame-width-ap-2col-hidden:         989px;
 $frame-width-ap-2col-shown:          767px;
 

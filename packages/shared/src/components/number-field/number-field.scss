@@ -15,7 +15,6 @@
   .react-aria-Group {
     border: tokens.$border-strong;
     border-radius: tokens.$radius-md;
-    box-sizing: border-box;
     display: flex;
     min-height: tokens.$touch-target-min;
     overflow: hidden;

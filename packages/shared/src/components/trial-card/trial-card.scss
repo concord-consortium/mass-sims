@@ -10,7 +10,6 @@
     background: tokens.$color-surface;
     border: tokens.$border-strong;
     border-radius: tokens.$radius-md;
-    box-sizing: border-box;
     cursor: pointer;
     font-family: tokens.$font-family-condensed;
     height: 100%;
@@ -113,7 +112,6 @@
   .reset-button-icon {
     background: tokens.$color-surface;
     border-radius: tokens.$radius-sm;
-    box-sizing: border-box;
     height: 28px;
     padding: 2px;
     width: 28px;

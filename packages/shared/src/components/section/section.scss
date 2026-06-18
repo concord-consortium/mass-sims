@@ -4,7 +4,6 @@
   background: tokens.$color-surface-muted;
   border: tokens.$border-strong;
   border-radius: tokens.$radius-lg;
-  box-sizing: border-box;
   display: flex;
   flex-direction: column;
   min-height: 0; // allow the content to scroll inside a grid track
@@ -15,7 +14,6 @@
     background: tokens.$color-surface-muted;
     border: tokens.$border-strong;
     border-radius: tokens.$radius-pill;
-    box-sizing: border-box;
     display: flex;
     flex-shrink: 0;
     height: tokens.$section-chip-height;

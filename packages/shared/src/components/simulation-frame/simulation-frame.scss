@@ -9,9 +9,14 @@ $titlebar-content-gap: (tokens.$section-chip-height - tokens.$border-strong-widt
 // section chips overlap onto.
 $titlebar-accent: 7px;
 
+// Spacing within the title-bar's right-hand cluster (dese logo, CC logo, About
+// button). A 15px base gap widened by small per-element adjustments.
+$titlebar-right-gap: 15px;
+$titlebar-logo-trailing-space: 3px;   // margin-right on the first (dese) logo → dese↔CC = 18px
+$titlebar-about-leading-space: 5px;   // margin-left on the About button → CC↔About = 20px
+
 .simulation-frame {
   background: tokens.$color-surface;
-  box-sizing: border-box;
   color: tokens.$color-text;
   display: grid;
   font-family: tokens.$font-family-base;
@@ -50,7 +55,7 @@ $titlebar-accent: 7px;
     margin: 0 (tokens.$body-padding * -1);
     // Right padding = the column inset, so the About button's right edge lines
     // up with the Data column's.
-    padding: 0 tokens.$body-padding 0 tokens.$space-4;
+    padding: 0 tokens.$body-padding 0 20px;
     position: relative; // containing block for the background-lip ::after
 
     // Bleed the title-bar color below the bar so the section chips overlap onto
@@ -76,7 +81,7 @@ $titlebar-accent: 7px;
   .title-bar-right {
     align-items: center;
     display: flex;
-    gap: tokens.$space-3;
+    gap: $titlebar-right-gap;
   }
 
   .sim-title {
@@ -100,6 +105,10 @@ $titlebar-accent: 7px;
 
   .partner-logo {
     display: block;
+
+    &:first-child {
+      margin-right: $titlebar-logo-trailing-space;
+    }
   }
 
   .info-button {
@@ -116,6 +125,7 @@ $titlebar-accent: 7px;
     gap: tokens.$space-1 + 2;
     height: 34px;               // visible height; expanded touch area via ::after
     line-height: tokens.$line-height-sm;
+    margin-left: $titlebar-about-leading-space;
     padding: 3px tokens.$space-3 3px tokens.$space-2;
     position: relative;
   }
@@ -166,7 +176,7 @@ $titlebar-accent: 7px;
 
     .content {
       overflow: hidden;
-      padding: tokens.$space-4 0;
+      padding: tokens.$space-3 0;
     }
   }
   .data-area {
@@ -183,8 +193,10 @@ $titlebar-accent: 7px;
   &.standalone {
     border: tokens.$border-strong;
     border-radius: tokens.$radius-frame-standalone;
+    height: tokens.$frame-height + tokens.$border-strong-width * 2;
     margin: 0 auto;
-    max-width: 1024px;
+    max-width: tokens.$frame-width-standalone + tokens.$border-strong-width * 2;
+    min-width: tokens.$frame-width-standalone-min + tokens.$border-strong-width * 2;
     overflow: hidden;
   }
 }
@@ -197,7 +209,6 @@ $titlebar-accent: 7px;
   border: tokens.$border-strong;
   border-radius: tokens.$radius-lg;
   box-shadow: 0 4px 16px rgba(tokens.$black, 0.25);
-  box-sizing: border-box;
   display: flex;
   flex-direction: column;
   max-height: tokens.$modal-info-max-height-pct;

@@ -38,7 +38,6 @@
 
   .controls {
     align-items: start;
-    box-sizing: border-box;
     column-gap: tokens.$space-6;
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -49,7 +48,6 @@
 
   .display-options {
     align-items: center;
-    box-sizing: border-box;
     column-gap: tokens.$space-5;
     display: flex;
     flex-wrap: wrap;
