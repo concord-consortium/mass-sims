@@ -1,4 +1,7 @@
 import { DataSubsection } from "@concord-consortium/mass-sims-shared";
+import { useMemo } from "react";
+import PillCloseIcon from "../../assets/icons/pill-close.svg?react";
+import { aggregateTotals, computeResistanceSeries } from "../../model/data-aggregations";
 import type { TrialState } from "../../model/trial";
 import {
   LEGEND_DASH,
@@ -13,8 +16,10 @@ import { ResistanceBarChart } from "./resistance-bar-chart";
 import "./data-panel.scss";
 
 export interface BananasDataPanelProps {
-  /** Reserved for MAS-12 data wiring; ignored in MAS-11. */
   trial: TrialState;
+  selectedCross: number | null;
+  onClearSelection: () => void;
+  onPillChipClick: () => void;
 }
 
 // Two-line bar-chart title whose break point shifts with the container width (see the .rt-break
@@ -30,17 +35,73 @@ const resistanceTitle = (
   </span>
 );
 
-export function BananasDataPanel({ trial }: BananasDataPanelProps) {
-  // The `trial` prop exists so MAS-12 can wire counts/series in without a signature change;
-  // intentionally unused here.
-  void trial;
+export function BananasDataPanel({
+  trial,
+  selectedCross,
+  onClearSelection,
+  onPillChipClick,
+}: BananasDataPanelProps) {
+  // Phenotype totals in scope: a single cross when one is selected, otherwise all crosses.
+  const totals = useMemo(() => {
+    if (trial.crosses.length === 0) return null;
+    const scope =
+      selectedCross !== null && selectedCross < trial.crosses.length
+        ? [trial.crosses[selectedCross]]
+        : trial.crosses;
+    return aggregateTotals(scope);
+  }, [trial.crosses, selectedCross]);
+
+  // Legend percentages, or `null` (→ en-dash placeholders) when there's no data.
+  const legendPcts = useMemo(() => {
+    if (!totals) return null;
+    const total = totals.healthy + totals.infected;
+    if (total === 0) return null;
+    const healthy = Math.round((totals.healthy / total) * 100);
+    return { healthy, infected: 100 - healthy };
+  }, [totals]);
+
+  const pillActive = selectedCross !== null && selectedCross < trial.crosses.length;
+  const selectedCrossLabel = pillActive ? `cross ${selectedCross + 1}` : "all crosses";
+
+  // Per-cross resistance percentages for the bar chart (always the full trial — selection only
+  // highlights a group, it doesn't filter the series like the pie's totals).
+  const series = useMemo(
+    () => (trial.crosses.length === 0 ? null : computeResistanceSeries(trial.crosses)),
+    [trial.crosses],
+  );
 
   return (
     <div className="bananas-data-panel">
       <DataSubsection title={PHENOTYPES_TITLE}>
-        <span className="phenotypes-pill">{PHENOTYPES_PILL_DEFAULT}</span>
+        {pillActive && selectedCross !== null ? (
+          // Active filter chip: two flat <button> siblings inside a non-interactive <span>.
+          // NOT nested (nesting a button in a button is invalid HTML) — the close X is a sibling
+          // of the chip body, so its clicks don't bubble through the chip.
+          <span className="phenotypes-pill phenotypes-pill--active">
+            <button
+              type="button"
+              className="pill-chip"
+              onClick={onPillChipClick}
+              aria-label={`Scroll to cross ${selectedCross + 1}`}
+            >
+              {/* The space before "(" is a non-breaking space (U+00A0) so the offspring count
+                  doesn't wrap away from the cross label at narrow widths. */}
+              {`A${selectedCross + 1} (${trial.crosses[selectedCross].length} offspring)`}
+            </button>
+            <button
+              type="button"
+              className="pill-close"
+              onClick={onClearSelection}
+              aria-label="Deselect cross, show all crosses"
+            >
+              <PillCloseIcon aria-hidden="true" />
+            </button>
+          </span>
+        ) : (
+          <span className="phenotypes-pill">{PHENOTYPES_PILL_DEFAULT}</span>
+        )}
         <div className="data-chart-body">
-          <PhenotypesPie totals={null} />
+          <PhenotypesPie totals={totals} selectedCrossLabel={selectedCrossLabel} />
         </div>
         <div className="data-legend phenotypes-legend">
           <span className="legend-item">
@@ -48,19 +109,27 @@ export function BananasDataPanel({ trial }: BananasDataPanelProps) {
               <span className="legend-swatch phenotypes-swatch--healthy" />
               {LEGEND_HEALTHY}
             </span>
-            <span className="legend-pct">{LEGEND_DASH}</span>
+            <span className="legend-pct">
+              {legendPcts ? `${legendPcts.healthy}%` : LEGEND_DASH}
+            </span>
           </span>
           <span className="legend-item">
             <span className="legend-label">
               <span className="legend-swatch phenotypes-swatch--infected" />
               {LEGEND_INFECTED}
             </span>
-            <span className="legend-pct">{LEGEND_DASH}</span>
+            <span className="legend-pct">
+              {legendPcts ? `${legendPcts.infected}%` : LEGEND_DASH}
+            </span>
           </span>
         </div>
       </DataSubsection>
       <DataSubsection title={resistanceTitle}>
-        <ResistanceBarChart series={null} />
+        <ResistanceBarChart
+          series={series}
+          fungusOn={trial.fungusOn}
+          selectedCross={selectedCross}
+        />
         <div className="data-legend resistance-legend">
           <span className="legend-item">
             <span className="legend-label">

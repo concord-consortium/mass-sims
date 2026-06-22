@@ -52,7 +52,7 @@ export function FungusSwitch({ isOn, isDisabled = false, onChange }: FungusSwitc
       </SwitchField>
       {/* aria-live without role="status" so toggles are announced without colliding with the
           status pill's own role="status". */}
-      <div className="fungus-switch-announcement" aria-live="polite">
+      <div className="sr-only" aria-live="polite">
         {announcement}
       </div>
     </>

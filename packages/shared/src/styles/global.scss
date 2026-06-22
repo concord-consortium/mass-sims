@@ -35,3 +35,22 @@
 body {
   letter-spacing: 0.02em;
 }
+
+// =============================================================================
+// UTILITIES
+// =============================================================================
+
+// Visually hidden but exposed to assistive tech. Use for screen-reader-only text
+// and visually-hidden live regions (pair with aria-live for announcements).
+.sr-only {
+  border: 0;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  height: 1px;
+  margin: -1px;
+  overflow: hidden;
+  padding: 0;
+  position: absolute;
+  white-space: nowrap;
+  width: 1px;
+}

@@ -1,4 +1,5 @@
 import { fireEvent, render } from "@testing-library/react";
+import type { RefObject } from "react";
 import { describe, expect, it, vi } from "vitest";
 
 // The shared Select/Button import useLogEvent internally, so mock the log() transport — the seam a
@@ -22,6 +23,9 @@ function trial(overrides: Partial<TrialState> = {}): TrialState {
 }
 function handlers() {
   return {
+    selectedCross: null,
+    onSelectCross: vi.fn(),
+    gridRef: { current: null } as RefObject<HTMLElement | null>,
     onSelectParent1: vi.fn(),
     onSelectParent2: vi.fn(),
     onCrossPlants: vi.fn(),
@@ -37,6 +41,19 @@ const LOCKED_ONE_CROSS = trial({
   locked: true,
   crosses: [[plant("Rr", true), plant("rr", false)]],
 });
+const TWO_CROSSES = trial({
+  p1: "wild-w1",
+  p2: "cavendish-c1",
+  locked: true,
+  crosses: [
+    [plant("Rr", true), plant("rr", false)],
+    [plant("Rr", true), plant("Rr", true)],
+  ],
+});
+
+// The cross-row buttons share the "Cross N, …" aria-label shape; this regex excludes the
+// "Cross Plants" control button so getAllByRole targets only the selectable rows.
+const ROW_NAME = /^Cross \d+,/;
 
 describe("SimulationPanel rendering", () => {
   it("renders selectors, the grid hint, and no pill for an empty trial", () => {
@@ -176,5 +193,51 @@ describe("SimulationPanel auto-scroll", () => {
     };
     rerender(<SimulationPanel trial={twoCrosses} {...handlers()} />);
     expect(grid.scrollTop).toBe(500);
+  });
+});
+
+describe("SimulationPanel cross selection", () => {
+  it("marks no row selected when selectedCross is null", () => {
+    const { container } = render(<SimulationPanel trial={TWO_CROSSES} {...handlers()} />);
+    expect(container.querySelectorAll(".offspring-row--selected")).toHaveLength(0);
+  });
+
+  it("calls onSelectCross with the clicked row's index", () => {
+    const h = handlers();
+    const { getAllByRole } = render(<SimulationPanel trial={TWO_CROSSES} {...h} />);
+    fireEvent.click(getAllByRole("button", { name: ROW_NAME })[0]);
+    expect(h.onSelectCross).toHaveBeenCalledWith(0);
+  });
+
+  it("calls onSelectCross(null) when the already-selected row is clicked (toggle)", () => {
+    const h = handlers();
+    const { getAllByRole } = render(
+      <SimulationPanel trial={TWO_CROSSES} {...h} selectedCross={0} />,
+    );
+    fireEvent.click(getAllByRole("button", { name: ROW_NAME })[0]);
+    expect(h.onSelectCross).toHaveBeenCalledWith(null);
+  });
+
+  it("selects a row on Enter", () => {
+    const h = handlers();
+    const { getAllByRole } = render(<SimulationPanel trial={TWO_CROSSES} {...h} />);
+    fireEvent.keyDown(getAllByRole("button", { name: ROW_NAME })[1], { key: "Enter" });
+    expect(h.onSelectCross).toHaveBeenCalledWith(1);
+  });
+
+  it("selects a row on Space", () => {
+    const h = handlers();
+    const { getAllByRole } = render(<SimulationPanel trial={TWO_CROSSES} {...h} />);
+    fireEvent.keyDown(getAllByRole("button", { name: ROW_NAME })[0], { key: " " });
+    expect(h.onSelectCross).toHaveBeenCalledWith(0);
+  });
+
+  it("sets aria-pressed only on the selected row", () => {
+    const { getAllByRole } = render(
+      <SimulationPanel trial={TWO_CROSSES} {...handlers()} selectedCross={1} />,
+    );
+    const rows = getAllByRole("button", { name: ROW_NAME });
+    expect(rows[0]).toHaveAttribute("aria-pressed", "false");
+    expect(rows[1]).toHaveAttribute("aria-pressed", "true");
   });
 });

@@ -368,7 +368,11 @@ describe("Bananas App — simulation flow", () => {
     const { getByRole, getAllByRole } = render(<App rng={seededRandom("t8-aria")} />);
     selectBothParents(getByRole);
     for (let i = 0; i < 2; i++) fireEvent.click(getByRole("button", { name: "Cross Plants" }));
-    for (const row of getAllByRole("listitem")) {
+    // The descriptive name lives on the interactive row button (the selection target); the
+    // /^Cross \d+,/ name filter excludes the "Cross Plants" control button.
+    const rows = getAllByRole("button", { name: /^Cross \d+,/ });
+    expect(rows).toHaveLength(2);
+    for (const row of rows) {
       expect(row.getAttribute("aria-label")).toMatch(
         /^Cross \d+, \d+ offspring, \d+ healthy, \d+ infected$/,
       );
@@ -384,6 +388,36 @@ describe("Bananas App — simulation flow", () => {
     grid.scrollTop = 0;
     fireEvent.click(getByRole("button", { name: "Cross Plants" }));
     expect(grid.scrollTop).toBe(500);
+  });
+
+  it("scrolls the offspring grid to the selected row when the pill chip is clicked", () => {
+    const { getByRole, getAllByRole, container } = render(
+      <App rng={seededRandom("chip-scroll")} />,
+    );
+    selectBothParents(getByRole);
+    fireEvent.click(getByRole("button", { name: "Cross Plants" }));
+    // Select row A1 → the Data panel's pill flips into the filter chip.
+    fireEvent.click(getAllByRole("button", { name: /^Cross \d+,/ })[0]);
+
+    const grid = container.querySelector(".offspring-grid") as HTMLElement;
+    const row = container.querySelector(".offspring-row") as HTMLElement;
+    // jsdom has no layout: give the scroller readable padding and force a "row below the
+    // viewport" geometry so scrollToCross takes its scroll branch.
+    grid.style.paddingTop = "0px";
+    grid.style.paddingBottom = "0px";
+    vi.spyOn(grid, "getBoundingClientRect").mockReturnValue({ top: 0, bottom: 100 } as DOMRect);
+    vi.spyOn(row, "getBoundingClientRect").mockReturnValue({ top: 200, bottom: 240 } as DOMRect);
+    // jsdom doesn't implement scrollBy; install a spy to capture the call shape.
+    const scrollBy = vi.fn();
+    Element.prototype.scrollBy = scrollBy as unknown as Element["scrollBy"];
+
+    fireEvent.click(container.querySelector(".pill-chip") as HTMLElement);
+
+    // The exact `top` depends on layout jsdom won't compute; assert the call shape, not the value.
+    expect(scrollBy).toHaveBeenCalledTimes(1);
+    expect(scrollBy).toHaveBeenCalledWith(
+      expect.objectContaining({ top: expect.any(Number), behavior: expect.any(String) }),
+    );
   });
 });
 
