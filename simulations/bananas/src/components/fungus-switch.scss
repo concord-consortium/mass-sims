@@ -1,0 +1,182 @@
+@use "@concord-consortium/mass-sims-shared/styles/tokens" as tokens;
+@use "../theme" as theme;
+
+// The RAC SwitchField renders the outer `.fungus-switch` div; SwitchButton renders the
+// `.fungus-switch-button` label wrapping the (visually hidden) switch input + our markup.
+
+// Narrow-panel stacked layout. @container (panel-based) is primary; the @media fallback
+// approximates it where container queries are unsupported. 535px = panel width; 1026px = the
+// viewport width at which the panel reaches 535px (keep in sync with control-bar.scss).
+@mixin stacked {
+  flex-wrap: wrap;
+  gap: 6px;
+  height: auto;
+  justify-content: center;
+  padding: 8px 10px;
+
+  .fungus-switch-button {
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .fungus-switch-hit {
+    justify-content: center;
+    min-height: auto;
+    width: 100%;
+  }
+}
+
+.fungus-switch {
+  align-items: center;
+  background: theme.$surface;
+  border: 2px solid theme.$border;
+  border-radius: 6px;
+  color: tokens.$color-text;
+  display: flex;
+  font-family: tokens.$font-family-base;
+  height: 44px;
+  padding: 8px 12px 8px 8px;
+
+  .fungus-switch-button {
+    align-items: center;
+    cursor: pointer;
+    display: flex;
+    gap: 6px;
+  }
+
+  .fungus-switch-icon {
+    color: theme.$heading;
+    display: block;
+    flex-shrink: 0;
+    height: 24px;
+    width: 24px;
+  }
+
+  .fungus-switch-label {
+    font-size: tokens.$font-size-base;
+    font-weight: bold;
+    line-height: tokens.$line-height-sm;
+    margin-right: 4px;
+  }
+
+  .fungus-switch-hit {
+    align-items: center;
+    display: flex;
+    gap: 6px;
+    min-height: 44px;
+    padding: 0 4px;
+  }
+
+  .fungus-switch-state {
+    font-size: tokens.$font-size-base;
+    font-weight: normal;
+    line-height: tokens.$line-height-sm;
+    text-align: center;
+    width: 25px;
+
+    &.active {
+      font-weight: bold;
+    }
+  }
+
+  .fungus-switch-track {
+    background: theme.$accent;
+    border-radius: 12px;
+    box-shadow: inset 0 0 0 2px theme.$border;
+    flex-shrink: 0;
+    height: 24px;
+    position: relative;
+    transition: background-color 0.2s ease;
+    width: 44px;
+
+    &.on {
+      background: theme.$fungus-marker-label-bg;
+      box-shadow: inset 0 0 0 2px theme.$fungus-active-text;
+    }
+  }
+
+  .fungus-switch-thumb {
+    background: theme.$surface;
+    border-radius: 50%;
+    box-shadow: 0 0 0 2px theme.$border;
+    height: 20px;
+    left: 2px;
+    position: absolute;
+    top: 2px;
+    transition: left 0.2s ease;
+    width: 20px;
+  }
+
+  .fungus-switch-track.on .fungus-switch-thumb {
+    box-shadow: 0 0 0 2px theme.$fungus-active-text;
+    left: 22px;
+  }
+
+  &:not(.disabled) .fungus-switch-hit:hover {
+    .fungus-switch-thumb {
+      background: theme.$accent;
+      box-shadow: 0 0 0 2px theme.$border, 0 2px 8px rgba(0, 0, 0, 0.15);
+    }
+
+    .fungus-switch-track.on .fungus-switch-thumb {
+      background: theme.$fungus-marker-label-bg;
+      box-shadow: 0 0 0 2px theme.$fungus-active-text, 0 2px 8px rgba(0, 0, 0, 0.15);
+    }
+  }
+
+  &:not(.disabled) .fungus-switch-hit:active {
+    .fungus-switch-thumb {
+      background: theme.$accent-strong;
+      box-shadow: 0 0 0 2px theme.$border, 0 2px 8px rgba(0, 0, 0, 0.15);
+    }
+
+    .fungus-switch-track.on .fungus-switch-thumb {
+      background: theme.$fungus-thumb-active;
+      box-shadow: 0 0 0 2px theme.$fungus-active-text, 0 2px 8px rgba(0, 0, 0, 0.15);
+    }
+  }
+
+  // Disabled (locked): RAC sets data-disabled on the field; we add `.disabled` too. Dims to
+  // match the shared <button>'s [data-disabled] treatment so the row reads as uniformly disabled.
+  &.disabled {
+    border-color: rgba(tokens.$color-border, 0.35);
+    color: rgba(tokens.$color-text, 0.35);
+
+    .fungus-switch-button,
+    .fungus-switch-hit {
+      cursor: default;
+    }
+
+    .fungus-switch-icon,
+    .fungus-switch-track {
+      opacity: 0.35;
+    }
+  }
+
+  // Narrow panel: the hit-area wraps below the icon+label; the control bar stretches its
+  // buttons to match (control-bar.scss).
+  @container bananas-sim-panel (max-width: 535px) {
+    @include stacked;
+  }
+
+  @supports not (container-type: inline-size) {
+    @media (max-width: 1026px) {
+      @include stacked;
+    }
+  }
+}
+
+// Visually-hidden live region for toggle announcements. position:absolute keeps it out of the
+// control-bar flex flow so it adds no layout.
+.fungus-switch-announcement {
+  border: 0;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  height: 1px;
+  margin: -1px;
+  overflow: hidden;
+  padding: 0;
+  position: absolute;
+  white-space: nowrap;
+  width: 1px;
+}

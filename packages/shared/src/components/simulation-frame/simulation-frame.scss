@@ -53,8 +53,6 @@ $titlebar-about-leading-space: 5px;   // margin-left on the About button â†’ CCâ
     // Cancel the frame's horizontal padding so the bar background reaches the
     // container's inner edges (clipped to the rounded corners when standalone).
     margin: 0 (tokens.$body-padding * -1);
-    // Right padding = the column inset, so the About button's right edge lines
-    // up with the Data column's.
     padding: 0 tokens.$body-padding 0 20px;
     position: relative; // containing block for the background-lip ::after
 

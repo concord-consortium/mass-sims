@@ -1,9 +1,15 @@
 @use "@concord-consortium/mass-sims-shared/styles/tokens" as tokens;
 @use "../theme" as theme;
 
-// 868px is the narrowest width where full-size (80px) circles still fit beside
-// the parent Selects; at/below this the row switches to compact sizing (smaller
-// circles + carets).
+// The circles, × separator, and dropdown carets scale smoothly with the panel width (the
+// `bananas-sim-panel` container) instead of jumping at a breakpoint. Each value is clamped
+// between its min and max. 1cqw = 1% of the panel width.
+$circle-size: clamp(56px, 20.41cqw - 31.6px, 80px);
+$cross-size: clamp(20px, 3.4cqw + 5.4px, 24px);
+$caret-size: clamp(18px, 5.1cqw - 3.9px, 24px);
+
+// Below this width, browsers without container-query units (cqw) fall back to the final
+// static sizes via the @media rules below.
 $compact-max-width: 867px;
 
 .parent-selectors {
@@ -16,15 +22,22 @@ $compact-max-width: 867px;
 
   .parent-select {
     flex: 1;
-    min-width: 0; // Allow the Select to shrink within the flex row at narrower widths.
+    min-width: 0; // Allow the Select to shrink within the flex row.
 
     .react-aria-Label {
       font-weight: 700;
       text-align: center;
     }
 
-    @media (max-width: $compact-max-width) {
-      .select-caret {
+    // Scale only where cqw is supported; non-cqw browsers keep the shared 24px default. The
+    // @media below supplies the 18px narrow-width fallback.
+    .select-caret {
+      @supports (width: 1cqw) {
+        height: $caret-size;
+        width: $caret-size;
+      }
+
+      @media (max-width: $compact-max-width) {
         height: 18px;
         width: 18px;
       }
@@ -35,6 +48,7 @@ $compact-max-width: 867px;
     align-items: center;
     background: theme.$surface;
     border-radius: 50%;
+    color: theme.$banana-healthy;
     display: flex;
     flex-shrink: 0;
     height: 80px;
@@ -42,10 +56,23 @@ $compact-max-width: 867px;
     overflow: hidden;
     width: 80px;
 
+    // @supports keeps the minifier from deduping the 80px fallback into the clamp (which non-cqw
+    // browsers drop, collapsing the circle). The @media supplies the 56px narrow-width fallback.
+    @supports (width: 1cqw) {
+      height: $circle-size;
+      width: $circle-size;
+    }
+
     @media (max-width: $compact-max-width) {
       height: 56px;
       width: 56px;
     }
+  }
+
+  .parent-circle-plant {
+    display: block;
+    height: 90%;
+    width: 90%;
   }
 
   .cross-symbol {
@@ -55,5 +82,58 @@ $compact-max-width: 867px;
     font-size: tokens.$font-size-xl;
     font-weight: 700;
     line-height: tokens.$line-height-lg;
+
+    // @supports keeps the minifier from deduping the font-size-xl fallback into the clamp (which
+    // non-cqw browsers drop). The @media supplies the 20px narrow-width fallback.
+    @supports (width: 1cqw) {
+      font-size: $cross-size;
+    }
+
+    @media (max-width: $compact-max-width) {
+      font-size: 20px;
+    }
+  }
+
+  .parent-chip {
+    display: flex;
+    flex: 1;
+    min-width: 0;
+  }
+
+  .parent-chip:first-child {
+    justify-content: flex-end;
+  }
+
+  .parent-chip:last-child {
+    justify-content: flex-start;
+  }
+
+  .parent-chip-inner {
+    align-items: center;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+  }
+
+  .parent-chip-label {
+    color: tokens.$color-text;
+    font-family: tokens.$font-family-base;
+    font-size: tokens.$font-size-base;
+    font-weight: 700;
+    line-height: tokens.$line-height-sm;
+    text-align: center;
+  }
+
+  .parent-chip-value {
+    background: theme.$surface;
+    border-radius: 999px;
+    color: tokens.$color-text;
+    font-family: tokens.$font-family-base;
+    font-size: tokens.$font-size-base;
+    font-weight: 700;
+    line-height: tokens.$line-height-sm;
+    padding: 6px 12px;
+    white-space: nowrap;
   }
 }
