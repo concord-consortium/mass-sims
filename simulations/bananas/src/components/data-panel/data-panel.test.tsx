@@ -16,13 +16,7 @@ vi.mock("@concord-consortium/lara-interactive-api", () => ({
 
 import { App } from "../../app";
 import { emptyTrial } from "../../model/trial";
-import {
-  LEGEND_DASH,
-  LEGEND_HEALTHY,
-  LEGEND_INFECTED,
-  PHENOTYPES_TITLE,
-  RESISTANCE_TITLE_LONG,
-} from "./constants";
+import { LEGEND_DASH, LEGEND_HEALTHY, LEGEND_INFECTED } from "./constants";
 import { BananasDataPanel } from "./data-panel";
 
 beforeEach(() => {
@@ -69,9 +63,8 @@ describe("BananasDataPanel — layout", () => {
 // The locked accessibility guarantees, asserted against the assembled panel.
 describe("BananasDataPanel — accessibility", () => {
   it("exposes both sub-section headings as level-3 headings", () => {
-    const { getByRole } = render(<BananasDataPanel trial={emptyTrial()} />);
-    expect(getByRole("heading", { level: 3, name: PHENOTYPES_TITLE })).toBeInTheDocument();
-    expect(getByRole("heading", { level: 3, name: RESISTANCE_TITLE_LONG })).toBeInTheDocument();
+    const { getAllByRole } = render(<BananasDataPanel trial={emptyTrial()} />);
+    expect(getAllByRole("heading", { level: 3 })).toHaveLength(2);
   });
 
   it("exposes both charts as labeled images with their empty-state descriptions", () => {

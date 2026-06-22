@@ -19,8 +19,7 @@ export interface BananasDataPanelProps {
 
 // Two-line bar-chart title whose break point shifts with the container width (see the .rt-break
 // rules in data-panel.scss). Each .rt-break injects a forced newline via its ::after when shown;
-// toggling which one shows moves the break without a <br>. The text content concatenates to the
-// unbroken RESISTANCE_TITLE_LONG.
+// toggling which one shows moves the break without a <br>.
 const resistanceTitle = (
   <span className="resistance-title">
     {"Fungus Resistance"}
