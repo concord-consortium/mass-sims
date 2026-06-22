@@ -23,6 +23,7 @@ import { BananasDataPanel } from "./data-panel";
 function plant(infected: boolean): OffspringPlant {
   return { genotype: infected ? "rr" : "Rr", isResistant: !infected, infected };
 }
+
 function trialWithCrosses(crosses: OffspringPlant[][]): TrialState {
   return { ...emptyTrial(), p1: "wild-w1", p2: "cavendish-c1", locked: true, crosses };
 }

@@ -41,15 +41,20 @@ export function BananasDataPanel({
   onClearSelection,
   onPillChipClick,
 }: BananasDataPanelProps) {
+  // A selection is active only when it points at a real cross. Guarding both bounds means a stale
+  // or corrupt index (negative, or past the end) falls back to the all-crosses view instead of
+  // indexing trial.crosses out of range.
+  const activeCross =
+    selectedCross !== null && selectedCross >= 0 && selectedCross < trial.crosses.length
+      ? selectedCross
+      : null;
+
   // Phenotype totals in scope: a single cross when one is selected, otherwise all crosses.
   const totals = useMemo(() => {
     if (trial.crosses.length === 0) return null;
-    const scope =
-      selectedCross !== null && selectedCross < trial.crosses.length
-        ? [trial.crosses[selectedCross]]
-        : trial.crosses;
+    const scope = activeCross !== null ? [trial.crosses[activeCross]] : trial.crosses;
     return aggregateTotals(scope);
-  }, [trial.crosses, selectedCross]);
+  }, [trial.crosses, activeCross]);
 
   // Legend percentages, or `null` (→ en-dash placeholders) when there's no data.
   const legendPcts = useMemo(() => {
@@ -60,8 +65,7 @@ export function BananasDataPanel({
     return { healthy, infected: 100 - healthy };
   }, [totals]);
 
-  const pillActive = selectedCross !== null && selectedCross < trial.crosses.length;
-  const selectedCrossLabel = pillActive ? `cross ${selectedCross + 1}` : "all crosses";
+  const selectedCrossLabel = activeCross !== null ? `cross ${activeCross + 1}` : "all crosses";
 
   // Per-cross resistance percentages for the bar chart (always the full trial — selection only
   // highlights a group, it doesn't filter the series like the pie's totals).
@@ -73,20 +77,19 @@ export function BananasDataPanel({
   return (
     <div className="bananas-data-panel">
       <DataSubsection title={PHENOTYPES_TITLE}>
-        {pillActive && selectedCross !== null ? (
+        {activeCross !== null ? (
           // Active filter chip: two flat <button> siblings inside a non-interactive <span>.
-          // NOT nested (nesting a button in a button is invalid HTML) — the close X is a sibling
-          // of the chip body, so its clicks don't bubble through the chip.
+          // Close X is a sibling of the chip body, so its clicks don't bubble through the chip.
           <span className="phenotypes-pill phenotypes-pill--active">
             <button
               type="button"
               className="pill-chip"
               onClick={onPillChipClick}
-              aria-label={`Scroll to cross ${selectedCross + 1}`}
+              aria-label={`Scroll to cross ${activeCross + 1}`}
             >
               {/* The space before "(" is a non-breaking space (U+00A0) so the offspring count
                   doesn't wrap away from the cross label at narrow widths. */}
-              {`A${selectedCross + 1} (${trial.crosses[selectedCross].length} offspring)`}
+              {`A${activeCross + 1} (${trial.crosses[activeCross].length} offspring)`}
             </button>
             <button
               type="button"

@@ -56,6 +56,10 @@
 
   .resistance-chart-wrap {
     flex-shrink: 0;
+    // We intentionally make the height shorter than the contained 158px SVG. Reserving only the
+    // chart's drawn height lets the legend below tuck up to match the design spec's spacing
+    // (verified by measurement). The SVG's few overflowing pixels land within the legend's top
+    // padding, below the x-axis labels, so they never visually overlap the legend content.
     height: 154px;
     overflow: visible;
     width: 100%;

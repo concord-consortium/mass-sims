@@ -81,11 +81,12 @@ export function App({ rng = Math.random }: AppProps = {}) {
   };
 
   // Out-of-bounds defensive guard: normalize a stale `selectedCross` back to `null` if it ever
-  // points past the end of `trial.crosses`. The locked handlers can't produce this, but a future
-  // refactor that reorders state updates (or a saved-state restore landing a stale index) could —
-  // and chart code indexes `trial.crosses[selectedCross]`, so quietly resetting beats crashing.
+  // falls outside `trial.crosses` (negative, or past the end). The locked handlers can't produce
+  // this, but a future refactor that reorders state updates (or a saved-state restore landing a
+  // stale index) could — and chart code indexes `trial.crosses[selectedCross]`, so quietly
+  // resetting beats crashing.
   useEffect(() => {
-    if (selectedCross !== null && selectedCross >= trial.crosses.length) {
+    if (selectedCross !== null && (selectedCross < 0 || selectedCross >= trial.crosses.length)) {
       setSelectedCross(null);
     }
   }, [selectedCross, trial.crosses.length]);

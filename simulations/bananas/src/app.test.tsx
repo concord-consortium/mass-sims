@@ -407,9 +407,10 @@ describe("Bananas App — simulation flow", () => {
     grid.style.paddingBottom = "0px";
     vi.spyOn(grid, "getBoundingClientRect").mockReturnValue({ top: 0, bottom: 100 } as DOMRect);
     vi.spyOn(row, "getBoundingClientRect").mockReturnValue({ top: 200, bottom: 240 } as DOMRect);
-    // jsdom doesn't implement scrollBy; install a spy to capture the call shape.
+    // jsdom doesn't implement scrollBy; install a spy on the specific grid element.
     const scrollBy = vi.fn();
-    Element.prototype.scrollBy = scrollBy as unknown as Element["scrollBy"];
+    (grid as unknown as { scrollBy: Element["scrollBy"] }).scrollBy =
+      scrollBy as unknown as Element["scrollBy"];
 
     fireEvent.click(container.querySelector(".pill-chip") as HTMLElement);
 

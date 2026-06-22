@@ -70,7 +70,9 @@ export function ResistanceBarChart({
   const hasData = series !== null && series.healthy.length > 0;
   const numCrosses = hasData ? series.healthy.length : 0;
   const groupW = hasData ? plotWidth / numCrosses : 0;
-  const barW = hasData ? (groupW - GROUP_GAP - BAR_GAP) / 2 : 0;
+  // Clamp at 0: at very narrow widths groupW shrinks below the fixed gaps, which would otherwise
+  // make barW negative and emit invalid `<rect width="-N">`.
+  const barW = hasData ? Math.max(0, (groupW - GROUP_GAP - BAR_GAP) / 2) : 0;
   const showHighlight =
     hasData && selectedCross !== null && selectedCross >= 0 && selectedCross < numCrosses;
 
