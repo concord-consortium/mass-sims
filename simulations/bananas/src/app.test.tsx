@@ -2,9 +2,10 @@ import { seededRandom } from "@concord-consortium/mass-sims-shared";
 import { fireEvent, render } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-// Mock the lara-interactive-api surface used across the App tree: `log` (control/switch/select
-// logging via useLogEvent) and the AP saved-state pair. vi.hoisted so the mocks exist when
-// vi.mock runs; defaults to standalone (useInitMessage → null), overridden per-case.
+// Mock the lara-interactive-api surface used across the App tree: `log` (the shared <Button>/
+// <Select> import useLogEvent internally, so the transport is the seam a sim test can reach) and
+// the AP saved-state pair. vi.hoisted so the mocks exist when vi.mock runs; defaults to standalone
+// (useInitMessage → null), overridden per-case.
 const { log, setInteractiveState, useInitMessage } = vi.hoisted(() => ({
   log: vi.fn(),
   setInteractiveState: vi.fn(),

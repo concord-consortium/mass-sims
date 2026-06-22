@@ -1,8 +1,9 @@
 import { fireEvent, render } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
-// The child Select/Button/FungusSwitch auto-emit via useLogEvent → lara-interactive-api's log().
-// Mock that transport. vi.hoisted so the mock exists when vi.mock runs.
+// The shared Select/Button import useLogEvent internally, so mock the log() transport — the seam a
+// sim test can reach — to silence child logging (these tests assert callbacks, not events).
+// vi.hoisted so the mock exists when vi.mock runs.
 const { log } = vi.hoisted(() => ({ log: vi.fn() }));
 vi.mock("@concord-consortium/lara-interactive-api", () => ({ log }));
 

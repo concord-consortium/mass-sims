@@ -1,8 +1,8 @@
 import { fireEvent, render } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
-// The shared <Select> auto-emits via useLogEvent → lara-interactive-api's log(action, data).
-// Mock that transport and assert selection emits. vi.hoisted so the mock exists when vi.mock runs.
+// The shared <Select> imports useLogEvent internally, so mock the log() transport — the seam a
+// sim test can reach — and assert selection emits. vi.hoisted so the mock exists when vi.mock runs.
 const { log } = vi.hoisted(() => ({ log: vi.fn() }));
 vi.mock("@concord-consortium/lara-interactive-api", () => ({ log }));
 

@@ -1,10 +1,13 @@
 import { fireEvent, render } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
-// The widget emits fungus_set via useLogEvent → lara-interactive-api's log(action, data).
-// Mock that transport. vi.hoisted so the mock exists when vi.mock runs.
-const { log } = vi.hoisted(() => ({ log: vi.fn() }));
-vi.mock("@concord-consortium/lara-interactive-api", () => ({ log }));
+// FungusSwitch consumes the shared useLogEvent hook directly, so mock the hook (the seam it
+// uses) and assert the emitted event. vi.hoisted so the spy exists when the vi.mock factory runs.
+const { logEvent } = vi.hoisted(() => ({ logEvent: vi.fn() }));
+vi.mock("@concord-consortium/mass-sims-shared", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@concord-consortium/mass-sims-shared")>()),
+  useLogEvent: () => logEvent,
+}));
 
 import { FungusSwitch } from "./fungus-switch";
 
@@ -44,9 +47,9 @@ describe("FungusSwitch", () => {
 
   it("emits fungus_set with the new boolean value on toggle", () => {
     const { getByRole } = render(<FungusSwitch isOn={false} onChange={noop} />);
-    log.mockReset();
+    logEvent.mockReset();
     fireEvent.click(getByRole("switch", { name: "Fungus" }));
-    expect(log).toHaveBeenCalledWith("fungus_set", expect.objectContaining({ value: true }));
+    expect(logEvent).toHaveBeenCalledWith("fungus_set", { value: true });
   });
 
   it("announces 'Fungus introduced.' in the live region when toggled on", () => {
