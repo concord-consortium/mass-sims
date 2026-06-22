@@ -20,8 +20,9 @@ export function ResistanceBarChart({ series = null }: ResistanceBarChartProps) {
   void series;
 
   // The chart fills the flexing Data column, so the gridlines' right edge and the centered "No
-  // data" depend on the laid-out width. Track it with a ResizeObserver and drive a 1:1 viewBox so
-  // the labels stay crisp (mirrors the shared LineChart).
+  // data" depend on the laid-out width. Track it with a ResizeObserver and drive a 1:1 viewBox whose
+  // width matches the rendered width so labels stay crisp (same viewBox pattern as the shared
+  // LineChart)
   const svgRef = useRef<SVGSVGElement>(null);
   const [width, setWidth] = useState(0);
   useEffect(() => {
