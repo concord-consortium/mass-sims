@@ -2,6 +2,7 @@ import { setInteractiveState, useInitMessage } from "@concord-consortium/lara-in
 import { SimulationFrame, useReloadWarning } from "@concord-consortium/mass-sims-shared";
 import { useEffect, useState } from "react";
 import { AboutContent } from "./components/about";
+import { BananasDataPanel } from "./components/data-panel/data-panel";
 import { SimulationPanel } from "./components/simulation-panel";
 import { MAX_CROSSES, makeCross, type ParentId } from "./model/genetics";
 import { emptyTrial, type SavedState, type TrialState } from "./model/trial";
@@ -67,7 +68,9 @@ export function App({ rng = Math.random }: AppProps = {}) {
           onResetTrial={onResetTrial}
         />
       </SimulationFrame.Simulation>
-      <SimulationFrame.Data />
+      <SimulationFrame.Data>
+        <BananasDataPanel trial={trial} />
+      </SimulationFrame.Data>
     </SimulationFrame>
   );
 }
