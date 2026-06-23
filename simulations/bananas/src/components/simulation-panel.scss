@@ -1,6 +1,24 @@
 @use "@concord-consortium/mass-sims-shared/styles/tokens" as tokens;
 @use "../theme" as theme;
 
+.active-trial-badge {
+  align-items: center;
+  background: tokens.$color-trial-badge-bg-selected;
+  border-radius: tokens.$radius-sm;
+  color: tokens.$color-surface;
+  display: flex;
+  font-family: tokens.$font-family-base;
+  font-size: tokens.$font-size-lg;
+  font-weight: 700;
+  height: 28px;
+  justify-content: center;
+  left: tokens.$space-1;
+  line-height: 1;
+  position: absolute;
+  top: tokens.$space-1;
+  width: 28px;
+}
+
 .bananas-simulation-panel {
   // Named query container so the Fungus switch + control bar respond to the *panel* width
   // (one pane of the layout), not the viewport.

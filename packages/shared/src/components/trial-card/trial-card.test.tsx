@@ -132,6 +132,70 @@ describe("TrialCard", () => {
     expect(wrapper?.contains(reset)).toBe(true);
   });
 
+  it("uses the ariaLabel prop as the accessible name, falling back to 'Trial X' when omitted", () => {
+    const enriched = "Trial A. W1 crossed with C1. 12 offspring, 9 healthy, 3 infected.";
+    const { getByRole, rerender } = render(
+      <TrialCard
+        index={0}
+        selected={false}
+        onSelect={() => {}}
+        onReset={() => {}}
+        ariaLabel={enriched}
+      >
+        body
+      </TrialCard>,
+    );
+    expect(getByRole("button", { name: enriched })).toBeInTheDocument();
+    // Omitting it restores the default label.
+    rerender(
+      <TrialCard index={0} selected={false} onSelect={() => {}} onReset={() => {}}>
+        body
+      </TrialCard>,
+    );
+    expect(getByRole("button", { name: "Trial A" })).toBeInTheDocument();
+  });
+
+  it("forwards the tabIndex prop to the card button (roving tabindex), defaulting to none", () => {
+    const { getByRole, rerender } = render(
+      <TrialCard index={0} selected={false} onSelect={() => {}} onReset={() => {}} tabIndex={-1}>
+        body
+      </TrialCard>,
+    );
+    expect(getByRole("button", { name: "Trial A" })).toHaveAttribute("tabindex", "-1");
+    // Omitting it leaves the button natively tabbable (no explicit tabindex attribute).
+    rerender(
+      <TrialCard index={0} selected={false} onSelect={() => {}} onReset={() => {}}>
+        body
+      </TrialCard>,
+    );
+    expect(getByRole("button", { name: "Trial A" })).not.toHaveAttribute("tabindex");
+  });
+
+  it("forwards role and aria-selected for tablist usage; omits them by default", () => {
+    const { getByRole, rerender } = render(
+      <TrialCard
+        index={0}
+        selected={true}
+        role="tab"
+        ariaSelected={true}
+        onSelect={() => {}}
+        onReset={() => {}}
+      >
+        body
+      </TrialCard>,
+    );
+    expect(getByRole("tab", { name: "Trial A" })).toHaveAttribute("aria-selected", "true");
+    // Default consumer (no role/ariaSelected): a native button with no aria-selected.
+    rerender(
+      <TrialCard index={0} selected={false} onSelect={() => {}} onReset={() => {}}>
+        body
+      </TrialCard>,
+    );
+    const button = getByRole("button", { name: "Trial A" });
+    expect(button).not.toHaveAttribute("role");
+    expect(button).not.toHaveAttribute("aria-selected");
+  });
+
   it("applies the selected class to the wrapper", () => {
     const { container } = render(
       <TrialCard index={0} selected={true} onSelect={() => {}} onReset={() => {}}>

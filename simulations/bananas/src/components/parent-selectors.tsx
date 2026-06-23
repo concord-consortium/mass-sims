@@ -51,7 +51,7 @@ function ParentSlot({ label, value, isLocked, onSelect, action }: ParentSlotProp
 }
 
 export const ParentSelectors = observer(function ParentSelectors() {
-  const { trial } = useStores();
+  const trial = useStores().activeTrial;
   // The model stores parents as `types.string`; they are semantically `ParentId`, so cast at the
   // boundary into the `ParentId`-typed slot props.
   const p1 = trial.p1 as ParentId | null;

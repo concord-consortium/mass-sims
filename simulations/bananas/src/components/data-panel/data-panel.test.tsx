@@ -28,7 +28,7 @@ function plant(infected: boolean): OffspringPlant {
 function storeWithCrosses(crosses: OffspringPlant[][], selectedCross: number | null = null) {
   return createTestStore({
     trial: { p1: "wild-w1", p2: "cavendish-c1", locked: true, crosses },
-    ui: { selectedCross },
+    ui: { selectedCrossByTrial: selectedCross == null ? {} : { A: selectedCross } },
   });
 }
 

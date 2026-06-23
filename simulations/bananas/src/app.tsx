@@ -7,8 +7,9 @@ import { useEffect, useRef, useState } from "react";
 import { AboutContent } from "./components/about";
 import { BananasDataPanel } from "./components/data-panel/data-panel";
 import { SimulationPanel } from "./components/simulation-panel";
+import { TrialsPanel } from "./components/trials-panel/trials-panel";
 import { createRootStore, RootStoreProvider } from "./stores/root-store";
-import type { SavedState } from "./stores/trial-model";
+import { type SavedState, toSavedState } from "./stores/saved-state";
 
 import "./app.scss";
 
@@ -27,32 +28,48 @@ export const App = observer(function App({ rng = Math.random }: AppProps = {}) {
   const gridRef = useRef<HTMLElement>(null);
 
   // Hydrate from LARA's saved state once it arrives. The AP-provided state is authoritative: it
-  // overwrites any trial edits made between mount and init landing.
+  // overwrites any edits made between mount and init landing. Applied to the whole root store so
+  // every saved trial (and the active letter) restores; UI-only cross-selection starts empty.
   useEffect(() => {
     if (initMsg && "interactiveState" in initMsg && initMsg.interactiveState) {
-      applySnapshot(rootStore.trial, initMsg.interactiveState);
+      const state = initMsg.interactiveState;
+      applySnapshot(rootStore, {
+        trials: state.trials,
+        ui: { selectedTrialLetter: state.selectedTrialLetter, selectedCrossByTrial: {} },
+      });
     }
   }, [initMsg, rootStore]);
 
-  // Persist trial snapshots to LARA. `onSnapshot` only fires on changes after setup, so the
-  // explicit initial call saves the starting trial on mount.
+  // Persist the whole store to LARA as the `{ trials, selectedTrialLetter }` projection — watching
+  // the entire rootStore (not just one trial) so adding or selecting a trial also triggers a save.
+  // `onSnapshot` only fires on changes after setup, so the explicit initial call saves the starting
+  // state on mount. UI-only state (`selectedCrossByTrial`) is excluded by `toSavedState`.
   useEffect(() => {
-    setInteractiveState<SavedState>(getSnapshot(rootStore.trial) as SavedState);
-    return onSnapshot(rootStore.trial, (snap) =>
-      setInteractiveState<SavedState>(snap as SavedState),
-    );
+    setInteractiveState<SavedState>(toSavedState(getSnapshot(rootStore)));
+    return onSnapshot(rootStore, (snap) => setInteractiveState<SavedState>(toSavedState(snap)));
   }, [rootStore]);
 
-  // Clear a now-out-of-range selectedCross whenever the cross count shrinks.
+  // Defensive normalization: if `selectedTrialLetter` ever points at a trial that doesn't exist,
+  // fall back to the first available letter (always "A" in practice). Can't happen via locked
+  // actions; belt-and-suspenders alongside the `activeTrial` view's own fallback.
   useEffect(() => {
     return reaction(
-      () => rootStore.trial.crosses.length,
-      () => rootStore.normalizeSelection(),
+      () => ({
+        letter: rootStore.ui.selectedTrialLetter,
+        exists: rootStore.trials.has(rootStore.ui.selectedTrialLetter),
+      }),
+      ({ exists }) => {
+        if (!exists) {
+          const first = Array.from(rootStore.trials.keys())[0];
+          if (first) rootStore.ui.selectTrial(first);
+        }
+      },
     );
   }, [rootStore]);
 
-  // Reload-warning: standalone only, gated on "has progress", now sourced from the trial view.
-  const hasProgress = rootStore.trial.canReset;
+  // Reload-warning: standalone only, fires if ANY trial has progress (not just the active one), so
+  // switching trials never changes whether the unload warning shows.
+  const hasProgress = rootStore.hasAnyProgress;
   useReloadWarning(!isEmbedded && hasProgress);
 
   // Scroll the offspring grid so the row for `idx` is visible. Only scrolls if the row is
@@ -92,7 +109,9 @@ export const App = observer(function App({ rng = Math.random }: AppProps = {}) {
         tagline="An interactive genetics simulation"
         infoModalContent={<AboutContent />}
       >
-        <SimulationFrame.Trials />
+        <SimulationFrame.Trials>
+          <TrialsPanel />
+        </SimulationFrame.Trials>
         <SimulationFrame.Simulation instruction="Select two parents to begin">
           <SimulationPanel gridRef={gridRef} />
         </SimulationFrame.Simulation>

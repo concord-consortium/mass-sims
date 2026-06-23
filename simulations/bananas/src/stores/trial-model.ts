@@ -2,8 +2,9 @@ import { getEnv, type Instance, type SnapshotOut, types } from "mobx-state-tree"
 import { MAX_CROSSES, makeCross, type OffspringPlant, type ParentId } from "../model/genetics";
 
 /**
- * Canonical declaration of trial state. `getSnapshot(trial)` is the `SavedState` wire format
- * exactly (no version field) — see `TrialState`/`SavedState` below.
+ * Canonical declaration of trial state. `getSnapshot(trial)` is the per-trial `TrialState` wire
+ * format exactly — see `TrialState` below. The persisted root shape that wraps these per-trial
+ * snapshots lives in `saved-state.ts`.
  *
  * RNG NOTE: `crossPlants` reads its RNG from the MST environment (`getEnv(self).rng`). The
  * environment is shared across the whole tree, so any model — including child models added later —
@@ -100,11 +101,3 @@ export type TrialState = Omit<SnapshotOut<typeof TrialModel>, "p1" | "p2"> & {
   p1: ParentId | null;
   p2: ParentId | null;
 };
-
-/**
- * The shape persisted to / restored from Activity Player's `interactiveState`. Identical to
- * `TrialState` — a snapshot of the current trial, JSON-serializable and round-trips verbatim.
- * Named distinctly because this is a wire format: changing its shape changes what restores from
- * saved sessions. (Versioning is a deliberate follow-up; no version field yet.)
- */
-export type SavedState = TrialState;

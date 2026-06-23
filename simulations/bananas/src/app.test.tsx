@@ -18,6 +18,7 @@ vi.mock("@concord-consortium/lara-interactive-api", () => ({
 }));
 
 import { App } from "./app";
+import type { SavedState } from "./stores/saved-state";
 import type { TrialState } from "./stores/trial-model";
 
 // Drives a parent <Select> the way a user would: open the trigger, click an option. The
@@ -423,8 +424,9 @@ describe("Bananas App — simulation flow", () => {
 });
 
 describe("Bananas App — AP saved state", () => {
-  // A locked trial: two parents chosen and one cross of two plants recorded.
-  const savedState: TrialState = {
+  // A locked trial: two parents chosen and one cross of two plants recorded — wrapped in the
+  // SavedState shape under trial "A".
+  const savedTrial: TrialState = {
     p1: "wild-w1",
     p2: "cavendish-c1",
     locked: true,
@@ -436,6 +438,7 @@ describe("Bananas App — AP saved state", () => {
       ],
     ],
   };
+  const savedState: SavedState = { trials: { A: savedTrial }, selectedTrialLetter: "A" };
 
   it("renders the default empty trial when no init message arrives (standalone)", () => {
     const { getByLabelText, queryByRole } = render(<App />);
@@ -469,8 +472,8 @@ describe("Bananas App — AP saved state", () => {
 
     selectParent(getByRole, /Parent 1/i, "Wild W1");
     expect(setInteractiveState).toHaveBeenCalled();
-    const lastArg = setInteractiveState.mock.calls.at(-1)?.[0] as TrialState;
-    expect(lastArg.p1).toBe("wild-w1");
+    const lastArg = setInteractiveState.mock.calls.at(-1)?.[0] as SavedState;
+    expect(lastArg.trials.A?.p1).toBe("wild-w1");
   });
 
   it("registers a beforeunload listener once there's progress (standalone)", () => {
@@ -496,7 +499,7 @@ describe("Bananas App — AP saved state", () => {
 // (the snapshots passed to setInteractiveState) rather than via rendered DOM, complementing the
 // behavior-driven tests above.
 describe("Bananas App — MST snapshot hydrate + reactive save", () => {
-  const restored: TrialState = {
+  const restoredTrial: TrialState = {
     p1: "wild-w1",
     p2: "cavendish-c1",
     locked: true,
@@ -508,23 +511,28 @@ describe("Bananas App — MST snapshot hydrate + reactive save", () => {
       ],
     ],
   };
+  const restored: SavedState = { trials: { A: restoredTrial }, selectedTrialLetter: "A" };
 
   it("starts from the empty trial snapshot and saves it on mount", () => {
     render(<App />);
-    // fireImmediately pushes the initial empty trial on mount.
+    // fireImmediately pushes the initial state on mount: the single empty trial "A", selected.
     const firstArg = setInteractiveState.mock.calls[0]?.[0];
-    expect(firstArg).toEqual({ p1: null, p2: null, locked: false, fungusOn: false, crosses: [] });
+    expect(firstArg).toEqual({
+      trials: { A: { p1: null, p2: null, locked: false, fungusOn: false, crosses: [] } },
+      selectedTrialLetter: "A",
+    });
   });
 
   it("hydrates the store from interactiveState and persists the hydrated snapshot", () => {
     useInitMessage.mockReturnValue({ mode: "runtime", interactiveState: restored });
     render(<App />);
-    // applySnapshot mutates the trial, which the save reaction observes and re-persists.
-    const lastArg = setInteractiveState.mock.calls.at(-1)?.[0] as TrialState;
-    expect(lastArg.p1).toBe("wild-w1");
-    expect(lastArg.p2).toBe("cavendish-c1");
-    expect(lastArg.locked).toBe(true);
-    expect(lastArg.crosses).toHaveLength(1);
+    // applySnapshot mutates the trial, which the save reaction observes and re-persists as the
+    // SavedState projection (trial "A" carrying the restored state).
+    const lastArg = setInteractiveState.mock.calls.at(-1)?.[0] as SavedState;
+    expect(lastArg.trials.A?.p1).toBe("wild-w1");
+    expect(lastArg.trials.A?.p2).toBe("cavendish-c1");
+    expect(lastArg.trials.A?.locked).toBe(true);
+    expect(lastArg.trials.A?.crosses).toHaveLength(1);
   });
 
   it("persists a snapshot whose crosses.length === 1 after a single cross", () => {
@@ -532,8 +540,8 @@ describe("Bananas App — MST snapshot hydrate + reactive save", () => {
     selectBothParents(getByRole);
     setInteractiveState.mockClear();
     fireEvent.click(getByRole("button", { name: "Cross Plants" }));
-    const lastArg = setInteractiveState.mock.calls.at(-1)?.[0] as TrialState;
-    expect(lastArg.crosses).toHaveLength(1);
-    expect(lastArg.crosses[0].length).toBeGreaterThan(0);
+    const lastArg = setInteractiveState.mock.calls.at(-1)?.[0] as SavedState;
+    expect(lastArg.trials.A?.crosses).toHaveLength(1);
+    expect(lastArg.trials.A?.crosses[0].length).toBeGreaterThan(0);
   });
 });

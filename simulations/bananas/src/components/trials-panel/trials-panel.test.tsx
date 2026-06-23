@@ -1,0 +1,207 @@
+import { act, fireEvent, render } from "@testing-library/react";
+import { describe, expect, it } from "vitest";
+import type { OffspringPlant } from "../../model/genetics";
+import { type RootStoreInstance, RootStoreProvider } from "../../stores/root-store";
+import { createTestStore } from "../../stores/test-helpers";
+import { TrialsPanel } from "./trials-panel";
+
+function plant(infected: boolean): OffspringPlant {
+  return { genotype: infected ? "rr" : "Rr", isResistant: !infected, infected };
+}
+
+function renderPanel(store: RootStoreInstance = createTestStore()) {
+  return {
+    store,
+    ...render(
+      <RootStoreProvider store={store}>
+        <TrialsPanel />
+      </RootStoreProvider>,
+    ),
+  };
+}
+
+const tenTrials = () =>
+  createTestStore({
+    trials: { A: {}, B: {}, C: {}, D: {}, E: {}, F: {}, G: {}, H: {}, I: {}, J: {} },
+  });
+
+const threeTrials = () => createTestStore({ trials: { A: {}, B: {}, C: {} } });
+
+describe("TrialsPanel — structure", () => {
+  it("renders the tablist with one card and a + New card initially, no max notice", () => {
+    const { container, getByRole, queryByRole } = renderPanel();
+    expect(getByRole("tablist", { name: "Trials" })).toBeInTheDocument();
+    expect(getByRole("tab", { name: /^Trial A/ })).toBeInTheDocument();
+    expect(getByRole("button", { name: "Add new trial" })).toBeInTheDocument();
+    expect(queryByRole("status")).not.toBeInTheDocument();
+    expect(container.querySelectorAll(".trial-card")).toHaveLength(1);
+  });
+});
+
+describe("TrialsPanel — add / select", () => {
+  it("clicking + New appends the next trial and selects it", () => {
+    const { store, getByRole } = renderPanel();
+    fireEvent.click(getByRole("button", { name: "Add new trial" }));
+    expect(store.trialLetters).toEqual(["A", "B"]);
+    expect(store.ui.selectedTrialLetter).toBe("B");
+  });
+
+  it("clicking a card selects that trial without clearing other trials' cross memory", () => {
+    const store = createTestStore({
+      trials: { A: { crosses: [[plant(false)]] }, B: {} },
+      ui: { selectedCrossByTrial: { A: 0 } },
+    });
+    const { getByRole } = renderPanel(store);
+    fireEvent.click(getByRole("tab", { name: /^Trial B/ }));
+    expect(store.ui.selectedTrialLetter).toBe("B");
+    // A's cross-selection memory survives the switch (Resolved decision #1).
+    expect(store.ui.selectedCrossByTrial.get("A")).toBe(0);
+  });
+});
+
+describe("TrialsPanel — max trials", () => {
+  it("hides + New and shows the status notice at the 10-trial cap", () => {
+    const { getByRole, queryByRole } = renderPanel(tenTrials());
+    expect(queryByRole("button", { name: "Add new trial" })).not.toBeInTheDocument();
+    expect(getByRole("status")).toHaveTextContent("Max number of trials reached");
+  });
+});
+
+describe("TrialsPanel — per-card reset", () => {
+  it("resets only the targeted trial when its reset button is clicked", () => {
+    const store = createTestStore({
+      trials: { A: { p1: "wild-w1", crosses: [[plant(false)]] }, B: { p1: "cavendish-c1" } },
+    });
+    // A is selected by default → its reset button is the visible one.
+    const { getByRole } = renderPanel(store);
+    fireEvent.click(getByRole("button", { name: "Reset trial A" }));
+    expect(store.trials.get("A")?.canReset).toBe(false);
+    expect(store.trials.get("B")?.p1).toBe("cavendish-c1"); // untouched
+  });
+});
+
+describe("TrialsPanel — roving tabindex", () => {
+  it("gives only the selected card tabIndex 0; the rest -1", () => {
+    const store = threeTrials();
+    store.ui.selectTrial("B");
+    const { container } = renderPanel(store);
+    const cards = container.querySelectorAll(".trial-card");
+    expect(cards[0]).toHaveAttribute("tabindex", "-1"); // A
+    expect(cards[1]).toHaveAttribute("tabindex", "0"); // B (selected)
+    expect(cards[2]).toHaveAttribute("tabindex", "-1"); // C
+  });
+});
+
+describe("TrialsPanel — aria-label enrichment + reactivity", () => {
+  it("enriches the card aria-label with parents and offspring counts", () => {
+    const store = createTestStore({
+      trials: {
+        A: {
+          p1: "wild-w1",
+          p2: "cavendish-c1",
+          locked: true,
+          crosses: [[plant(false), plant(false), plant(true)]],
+        },
+      },
+    });
+    const { getByRole } = renderPanel(store);
+    expect(getByRole("tab", { name: /^Trial A/ }).getAttribute("aria-label")).toBe(
+      "Trial A. W1 crossed with C1. 3 offspring, 2 healthy, 1 infected",
+    );
+  });
+
+  it("updates the aria-label reactively when the trial is crossed", () => {
+    const store = createTestStore({ trials: { A: { p1: "wild-w1", p2: "cavendish-c1" } } });
+    const { getByRole } = renderPanel(store);
+    expect(getByRole("tab", { name: /^Trial A/ }).getAttribute("aria-label")).toBe(
+      "Trial A. W1 crossed with C1",
+    );
+    act(() => {
+      store.trials.get("A")?.crossPlants();
+    });
+    expect(getByRole("tab", { name: /^Trial A/ }).getAttribute("aria-label")).toMatch(
+      /^Trial A\. W1 crossed with C1\. \d+ offspring, \d+ healthy, \d+ infected$/,
+    );
+  });
+});
+
+describe("TrialsPanel — keyboard navigation", () => {
+  it("ArrowDown moves selection to the next card (no wrap at the end)", () => {
+    const { store, container } = renderPanel(threeTrials());
+    const cards = container.querySelectorAll(".trial-card");
+    fireEvent.keyDown(cards[0], { key: "ArrowDown" });
+    expect(store.ui.selectedTrialLetter).toBe("B");
+    act(() => store.ui.selectTrial("C"));
+    fireEvent.keyDown(cards[2], { key: "ArrowDown" });
+    expect(store.ui.selectedTrialLetter).toBe("C"); // no wrap past the last card
+  });
+
+  it("ArrowUp moves to the previous card (no wrap at the top)", () => {
+    const store = threeTrials();
+    store.ui.selectTrial("B");
+    const { container } = renderPanel(store);
+    const cards = container.querySelectorAll(".trial-card");
+    fireEvent.keyDown(cards[1], { key: "ArrowUp" });
+    expect(store.ui.selectedTrialLetter).toBe("A");
+    fireEvent.keyDown(cards[0], { key: "ArrowUp" });
+    expect(store.ui.selectedTrialLetter).toBe("A"); // no wrap past the first card
+  });
+
+  it("Home / End jump to the first / last card", () => {
+    const store = threeTrials();
+    store.ui.selectTrial("B");
+    const { container } = renderPanel(store);
+    const cards = container.querySelectorAll(".trial-card");
+    fireEvent.keyDown(cards[1], { key: "End" });
+    expect(store.ui.selectedTrialLetter).toBe("C");
+    fireEvent.keyDown(cards[2], { key: "Home" });
+    expect(store.ui.selectedTrialLetter).toBe("A");
+  });
+
+  it("ignores arrow keys when focus is not on a trial card (e.g. the + New card)", () => {
+    const { store, getByRole } = renderPanel(threeTrials());
+    fireEvent.keyDown(getByRole("button", { name: "Add new trial" }), { key: "ArrowDown" });
+    expect(store.ui.selectedTrialLetter).toBe("A"); // unchanged
+  });
+});
+
+describe("TrialsPanel — accessibility audit (Task 5)", () => {
+  it("exposes a vertical tablist named Trials", () => {
+    const { getByRole } = renderPanel();
+    expect(getByRole("tablist", { name: /trials/i })).toHaveAttribute(
+      "aria-orientation",
+      "vertical",
+    );
+  });
+
+  it("renders each card as a tab with aria-selected reflecting selection", () => {
+    const store = createTestStore({ trials: { A: {}, B: {} } });
+    store.ui.selectTrial("B");
+    const { getAllByRole } = renderPanel(store);
+    const tabs = getAllByRole("tab");
+    expect(tabs).toHaveLength(2);
+    expect(tabs[0]).toHaveAttribute("aria-selected", "false"); // A
+    expect(tabs[1]).toHaveAttribute("aria-selected", "true"); // B (selected)
+  });
+
+  it("exposes the max-trials notice as a live status region", () => {
+    const { getByRole } = renderPanel(tenTrials());
+    expect(getByRole("status")).toHaveTextContent("Max number of trials reached");
+  });
+
+  it("reflects reset availability via aria-disabled on the selected card's reset button", () => {
+    // Selected empty trial A → reset present but disabled.
+    const empty = renderPanel();
+    expect(empty.getByRole("button", { name: "Reset trial A" })).toHaveAttribute(
+      "aria-disabled",
+      "true",
+    );
+    empty.unmount();
+    // Selected trial A with progress → reset enabled (the shared button omits aria-disabled rather
+    // than emitting "false"; absent === not-disabled to assistive tech).
+    const withProgress = renderPanel(createTestStore({ trial: { p1: "wild-w1" } }));
+    expect(withProgress.getByRole("button", { name: "Reset trial A" })).not.toHaveAttribute(
+      "aria-disabled",
+    );
+  });
+});

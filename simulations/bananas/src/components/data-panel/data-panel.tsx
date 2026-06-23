@@ -37,7 +37,7 @@ export const BananasDataPanel = observer(function BananasDataPanel({
   onPillChipClick,
 }: BananasDataPanelProps) {
   const rootStore = useStores();
-  const { trial } = rootStore;
+  const trial = rootStore.activeTrial;
   // `activeCross`, `phenotypeTotals`, and `resistanceSeries` are MST views — MobX memoizes them
   // with proper invalidation. `activeCross` is the bounds-checked selection (never the raw stored
   // selection index — see the Selection access contract).

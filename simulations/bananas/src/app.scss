@@ -62,6 +62,10 @@
       background: theme.$content;
     }
 
+    &.trials-area .content {
+      padding-top: tokens.$space-4 - 3px;
+    }
+
     .chip {
       background: theme.$tab;
       border-color: theme.$border;

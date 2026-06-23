@@ -65,7 +65,7 @@ describe("ControlBar", () => {
     expect(button).not.toBeDisabled();
     log.mockReset();
     fireEvent.click(button);
-    expect(store.trial.crosses).toHaveLength(1);
+    expect(store.activeTrial.crosses).toHaveLength(1);
     expect(log).toHaveBeenCalledWith("cross_plants_pressed", undefined);
   });
 
@@ -80,8 +80,8 @@ describe("ControlBar", () => {
     expect(button).not.toBeDisabled();
     log.mockReset();
     fireEvent.click(button);
-    expect(store.trial.crosses).toHaveLength(0);
-    expect(store.trial.canReset).toBe(false);
+    expect(store.activeTrial.crosses).toHaveLength(0);
+    expect(store.activeTrial.canReset).toBe(false);
     expect(log).toHaveBeenCalledWith("reset_trial_pressed", undefined);
   });
 
@@ -93,12 +93,12 @@ describe("ControlBar", () => {
 
     log.mockReset();
     fireEvent.click(switchEl);
-    expect(store.trial.fungusOn).toBe(true);
+    expect(store.activeTrial.fungusOn).toBe(true);
     expect(getByRole("switch", { name: "Fungus" })).toBeChecked();
     expect(log).toHaveBeenCalledWith("fungus_set", expect.objectContaining({ value: true }));
 
     fireEvent.click(getByRole("switch", { name: "Fungus" }));
-    expect(store.trial.fungusOn).toBe(false);
+    expect(store.activeTrial.fungusOn).toBe(false);
   });
 });
 
@@ -131,6 +131,6 @@ describe("ControlBar — concurrent clicks", () => {
     const button = getByRole("button", { name: "Cross Plants" });
     fireEvent.click(button);
     fireEvent.click(button);
-    expect(store.trial.crosses).toHaveLength(2);
+    expect(store.activeTrial.crosses).toHaveLength(2);
   });
 });

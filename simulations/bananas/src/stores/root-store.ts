@@ -12,59 +12,99 @@ import {
   type PhenotypeTotals,
   type ResistanceSeries,
 } from "../model/data-aggregations";
-import { emptyTrialSnapshot, TrialModel } from "./trial-model";
+import { MAX_TRIALS, TRIAL_LETTERS } from "../model/trials";
+import { emptyTrialSnapshot, TrialModel, type TrialModelInstance } from "./trial-model";
 import { UiStore } from "./ui-store";
 
 export const RootStore = types
   .model("Root", {
-    trial: TrialModel,
+    // Keyed by letter "A".."J"; initially { A: emptyTrialSnapshot() }. A Map (not an array) because
+    // the key IS the trial's identity, and Maps snapshot as plain Record<string, …> for LARA.
+    trials: types.map(TrialModel),
     ui: UiStore,
   })
   .actions((self) => ({
-    // Cross-store action: Reset clears both the trial and the selection.
-    resetTrial() {
-      self.trial.reset();
-      self.ui.clearSelection();
+    // Reset the named trial (defaults to active). Clears that trial's per-trial cross selection too
+    // — the only mutation that shrinks a trial's crosses, so the only one that can leave a stored
+    // cross-row index dangling. Other consumers (the activeCross view's bounds check) are
+    // belt-and-suspenders.
+    resetTrial(letter?: string) {
+      const target = letter ?? self.ui.selectedTrialLetter;
+      const trial = self.trials.get(target);
+      if (!trial) return; // Defensive: no-op if the letter is unknown. Shouldn't happen via locked actions.
+      trial.reset();
+      self.ui.clearSelectionForTrial(target);
     },
-    // Defensive normalizer for an out-of-range selectedCross: the index is invalid if it's
-    // negative OR past the end. Either case → clear back to `null` so chart code that indexes
-    // `trial.crosses[selectedCross]` can't crash. Driven by a reaction on `crosses.length`.
-    normalizeSelection() {
-      const sel = self.ui.selectedCross;
-      if (sel !== null && (sel < 0 || sel >= self.trial.crosses.length)) {
-        self.ui.clearSelection();
-      }
+    // Add a trial at the next-available letter (first one in TRIAL_LETTERS not already in the Map),
+    // up to MAX_TRIALS. Returns the new letter, or `null` if at cap — callers must gate on the
+    // return value. Find-first-missing (not `trials.size`) so this stays correct if a future story
+    // ever introduces gap-producing operations; today the two strategies are identical.
+    addTrial(): string | null {
+      const nextLetter = TRIAL_LETTERS.find((l) => !self.trials.has(l));
+      if (!nextLetter) return null;
+      self.trials.set(nextLetter, TrialModel.create(emptyTrialSnapshot()));
+      return nextLetter;
     },
   }))
   .views((self) => ({
     /**
-     * The currently-active cross index, or `null` when nothing valid is selected. "Active" means
-     * a non-null `ui.selectedCross` that's within the bounds of `trial.crosses`.
+     * The trial currently being displayed. NEVER throws on a dangling `selectedTrialLetter` — it
+     * falls back to the first trial in the Map (always "A" in practice, since A is seeded by
+     * `createRootStore` and no action removes trials). The App-level normalization reaction fixes up
+     * the letter on the next render cycle; this fallback is the read-side belt-and-suspenders so
+     * consumers can read `activeTrial` unconditionally and never crash mid-render.
+     */
+    get activeTrial(): TrialModelInstance {
+      const letter = self.ui.selectedTrialLetter;
+      const trial = self.trials.get(letter);
+      if (trial) return trial;
+      const first = self.trials.values().next().value;
+      if (!first) throw new Error("No trials in store — invariant violated");
+      return first;
+    },
+    get canAddTrial(): boolean {
+      return self.trials.size < MAX_TRIALS;
+    },
+    get trialLetters(): readonly string[] {
+      return Array.from(self.trials.keys());
+    },
+    /**
+     * True if any trial has progress (parents picked, fungus toggled, or crosses made). Drives the
+     * reload-warning hook — the user has unsaved work in *any* trial, not just the active one.
+     */
+    get hasAnyProgress(): boolean {
+      let any = false;
+      self.trials.forEach((trial) => {
+        if (trial.canReset) any = true;
+      });
+      return any;
+    },
+    /**
+     * The active trial's currently-active cross index, or `null` when nothing valid is selected.
+     * Sourced from the per-trial `selectedCrossByTrial` map and re-bounds-checked against the active
+     * trial's crosses on every read.
      *
-     * CONTRACT — required reading: no consumer outside this store may index `trial.crosses[...]`
-     * with `ui.selectedCross` directly. All such access goes through `activeCross`, which
-     * re-applies the bounds check on every read. Between the moment `crosses` shrinks (Reset) and
-     * the moment the `normalizeSelection` reaction fires, `ui.selectedCross` can be
-     * stale-but-out-of-range; reading it directly would crash. Consumers that gate on
-     * `activeCross !== null` are race-free by construction. The `normalizeSelection` reaction is
-     * the durable cleanup; this view is the defense-in-depth read-side guard — intentionally
-     * redundant, belt and suspenders.
+     * CONTRACT — required reading: no consumer outside this store may index `crosses[...]` with the
+     * raw stored selection directly. All such access goes through `activeCross`, which re-applies the
+     * bounds check on every read. Consumers that gate on `activeCross !== null` are race-free by
+     * construction.
      */
     get activeCross(): number | null {
-      const sel = self.ui.selectedCross;
-      const len = self.trial.crosses.length;
+      const sel = self.ui.selectedCrossByTrial.get(self.ui.selectedTrialLetter) ?? null;
+      const len = this.activeTrial.crosses.length;
       return sel !== null && sel >= 0 && sel < len ? sel : null;
     },
     /** Phenotype counts in the currently-selected scope. `null` when there are no crosses yet. */
     get phenotypeTotals(): PhenotypeTotals | null {
-      if (self.trial.crosses.length === 0) return null;
-      const scope =
-        this.activeCross !== null ? [self.trial.crosses[this.activeCross]] : self.trial.crosses;
+      const crosses = this.activeTrial.crosses;
+      if (crosses.length === 0) return null;
+      const scope = this.activeCross !== null ? [crosses[this.activeCross]] : crosses;
       return aggregateTotals(scope);
     },
     /** Per-cross resistance series. `null` when there are no crosses yet. */
     get resistanceSeries(): ResistanceSeries | null {
-      return self.trial.crosses.length === 0 ? null : computeResistanceSeries(self.trial.crosses);
+      const crosses = this.activeTrial.crosses;
+      return crosses.length === 0 ? null : computeResistanceSeries(crosses);
     },
   }));
 
@@ -78,7 +118,13 @@ export type RootStoreSnapshotIn = SnapshotIn<typeof RootStore>;
  * `Math.random`); tests pass a seeded PRNG for determinism.
  */
 export function createRootStore({ rng = Math.random }: { rng?: () => number } = {}) {
-  return RootStore.create({ trial: emptyTrialSnapshot(), ui: { selectedCross: null } }, { rng });
+  return RootStore.create(
+    {
+      trials: { A: emptyTrialSnapshot() },
+      ui: { selectedTrialLetter: "A", selectedCrossByTrial: {} },
+    },
+    { rng },
+  );
 }
 
 const RootStoreContext = createContext<RootStoreInstance | null>(null);
