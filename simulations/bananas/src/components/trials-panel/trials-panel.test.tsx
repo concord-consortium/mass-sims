@@ -1,5 +1,14 @@
 import { act, fireEvent, render } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
+
+// TrialsPanel consumes useLogEvent directly, so mock the hook (the seam it uses) while preserving
+// the real shared exports it also imports (TrialCard). vi.hoisted so the spy exists when vi.mock runs.
+const { logEvent } = vi.hoisted(() => ({ logEvent: vi.fn() }));
+vi.mock("@concord-consortium/mass-sims-shared", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@concord-consortium/mass-sims-shared")>()),
+  useLogEvent: () => logEvent,
+}));
+
 import type { OffspringPlant } from "../../model/genetics";
 import { type RootStoreInstance, RootStoreProvider } from "../../stores/root-store";
 import { createTestStore } from "../../stores/test-helpers";
@@ -56,6 +65,54 @@ describe("TrialsPanel — add / select", () => {
     expect(store.ui.selectedTrialLetter).toBe("B");
     // A's cross-selection memory survives the switch (Resolved decision #1).
     expect(store.ui.selectedCrossByTrial.get("A")).toBe(0);
+  });
+});
+
+describe("TrialsPanel — logging", () => {
+  it("logs trial_added then trial_selected (in that order) when + New is clicked", () => {
+    const { getByRole } = renderPanel();
+    logEvent.mockReset();
+    fireEvent.click(getByRole("button", { name: "Add new trial" }));
+    expect(logEvent).toHaveBeenNthCalledWith(1, "trial_added", { trial: "B" });
+    expect(logEvent).toHaveBeenNthCalledWith(2, "trial_selected", { trial: "B", previous: "A" });
+  });
+
+  it("logs trial_selected with the previous letter on card click", () => {
+    const { getByRole } = renderPanel(createTestStore({ trials: { A: {}, B: {} } }));
+    logEvent.mockReset();
+    fireEvent.click(getByRole("tab", { name: /^Trial B/ }));
+    expect(logEvent).toHaveBeenCalledWith("trial_selected", { trial: "B", previous: "A" });
+  });
+
+  it("emits nothing when the already-selected card is clicked (no-op skip)", () => {
+    const { getByRole } = renderPanel(createTestStore({ trials: { A: {}, B: {} } }));
+    logEvent.mockReset();
+    fireEvent.click(getByRole("tab", { name: /^Trial A/ })); // A is selected by default
+    expect(logEvent).not.toHaveBeenCalled();
+  });
+
+  it("logs trial_selected on keyboard navigation", () => {
+    const { container } = renderPanel(createTestStore({ trials: { A: {}, B: {}, C: {} } }));
+    const cards = container.querySelectorAll(".trial-card");
+    logEvent.mockReset();
+    fireEvent.keyDown(cards[0], { key: "ArrowDown" });
+    expect(logEvent).toHaveBeenCalledWith("trial_selected", { trial: "B", previous: "A" });
+  });
+
+  it("emits nothing when keyboard nav is a no-op at the boundary", () => {
+    const { container } = renderPanel(createTestStore({ trials: { A: {}, B: {} } }));
+    const cards = container.querySelectorAll(".trial-card");
+    logEvent.mockReset();
+    fireEvent.keyDown(cards[0], { key: "ArrowUp" }); // already at the top → target stays A
+    expect(logEvent).not.toHaveBeenCalled();
+  });
+
+  it("logs trial_reset with the iteration letter on the per-card reset overhang", () => {
+    const store = createTestStore({ trials: { A: { p1: "wild-w1", crosses: [[plant(false)]] } } });
+    const { getByRole } = renderPanel(store); // A selected by default → its reset is visible
+    logEvent.mockReset();
+    fireEvent.click(getByRole("button", { name: "Reset trial A" }));
+    expect(logEvent).toHaveBeenCalledWith("trial_reset", { trial: "A" });
   });
 });
 

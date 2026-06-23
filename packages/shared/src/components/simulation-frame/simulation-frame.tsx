@@ -18,6 +18,7 @@ import "./simulation-frame.scss";
 export interface SimulationFrameProps {
   children?: ReactNode;
   infoModalContent?: ReactNode;
+  onInfoOpenChange?: (open: boolean) => void;
   simTitle: string;
   standalone?: boolean;
   tagline: string;
@@ -73,6 +74,7 @@ export function SimulationFrame({
   simTitle,
   tagline,
   infoModalContent,
+  onInfoOpenChange,
   children,
   standalone,
 }: SimulationFrameProps) {
@@ -82,6 +84,7 @@ export function SimulationFrame({
   const triggerRef = useRef<HTMLButtonElement>(null);
   const closeRef = useRef<HTMLButtonElement>(null);
   const wasOpenRef = useRef(false);
+  const lastNotifiedOpenRef = useRef(infoOpen);
   const titleId = useId();
 
   // Focus management: move focus to the close button on open, and return it to the info
@@ -99,6 +102,17 @@ export function SimulationFrame({
       triggerRef.current?.focus();
     }
   }, [infoOpen]);
+
+  // Notify the consumer on every real open↔close transition, never on the initial render
+  // (lastNotifiedOpenRef starts equal to infoOpen, so the first run is a no-op). One effect covers
+  // all three close paths (About-button toggle, Escape, close button) and is safe under
+  // StrictMode/parent re-renders: the ref guard suppresses any run where infoOpen hasn't changed.
+  useEffect(() => {
+    if (infoOpen !== lastNotifiedOpenRef.current) {
+      lastNotifiedOpenRef.current = infoOpen;
+      onInfoOpenChange?.(infoOpen);
+    }
+  }, [infoOpen, onInfoOpenChange]);
 
   // The About panel is a draggable, non-modal side panel anchored top-right of the frame.
   // Its position is a transform offset from that CSS anchor.

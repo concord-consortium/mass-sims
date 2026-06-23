@@ -19,13 +19,14 @@ interface ParentSlotProps {
   isLocked: boolean;
   onSelect: (id: ParentId) => void;
   action: string;
+  actionParams?: Record<string, unknown>;
 }
 
 /**
  * One parent control: an interactive `<Select>` before the first cross, swapped for a static
  * chip once the trial locks, and back to the `<Select>` on Reset (when `isLocked` goes false).
  */
-function ParentSlot({ label, value, isLocked, onSelect, action }: ParentSlotProps) {
+function ParentSlot({ label, value, isLocked, onSelect, action, actionParams }: ParentSlotProps) {
   if (isLocked && value) {
     return (
       <div className="parent-chip">
@@ -46,24 +47,28 @@ function ParentSlot({ label, value, isLocked, onSelect, action }: ParentSlotProp
       isDisabled={isLocked}
       onSelectionChange={onSelect}
       action={action}
+      actionParams={actionParams}
     />
   );
 }
 
 export const ParentSelectors = observer(function ParentSelectors() {
-  const trial = useStores().activeTrial;
+  const { activeTrial, ui } = useStores();
+  // The trial letter targeted by this action, read at emit time from the active selection.
+  const trial = ui.selectedTrialLetter;
   // The model stores parents as `types.string`; they are semantically `ParentId`, so cast at the
   // boundary into the `ParentId`-typed slot props.
-  const p1 = trial.p1 as ParentId | null;
-  const p2 = trial.p2 as ParentId | null;
+  const p1 = activeTrial.p1 as ParentId | null;
+  const p2 = activeTrial.p2 as ParentId | null;
   return (
     <div className="parent-selectors">
       <ParentSlot
         label="Parent 1"
         value={p1}
-        isLocked={trial.locked}
-        onSelect={(id) => trial.setP1(id)}
+        isLocked={activeTrial.locked}
+        onSelect={(id) => activeTrial.setP1(id)}
         action="parent_1_set"
+        actionParams={{ trial }}
       />
       <div className="parent-circle" aria-hidden="true">
         {p1 ? <BananaTreeIcon className="parent-circle-plant" /> : null}
@@ -77,9 +82,10 @@ export const ParentSelectors = observer(function ParentSelectors() {
       <ParentSlot
         label="Parent 2"
         value={p2}
-        isLocked={trial.locked}
-        onSelect={(id) => trial.setP2(id)}
+        isLocked={activeTrial.locked}
+        onSelect={(id) => activeTrial.setP2(id)}
         action="parent_2_set"
+        actionParams={{ trial }}
       />
     </div>
   );

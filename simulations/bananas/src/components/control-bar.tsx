@@ -1,4 +1,4 @@
-import { Button } from "@concord-consortium/mass-sims-shared";
+import { Button, useLogEvent } from "@concord-consortium/mass-sims-shared";
 import { observer } from "mobx-react-lite";
 import type { FunctionComponent, SVGProps } from "react";
 
@@ -14,13 +14,11 @@ interface ControlButtonProps {
   Icon: FunctionComponent<SVGProps<SVGSVGElement>>;
   isDisabled: boolean;
   onPress: () => void;
-  /** Log-event name emitted on press by the shared <Button>. */
-  action: string;
 }
 
-function ControlButton({ label, Icon, isDisabled, onPress, action }: ControlButtonProps) {
+function ControlButton({ label, Icon, isDisabled, onPress }: ControlButtonProps) {
   return (
-    <Button isDisabled={isDisabled} onPress={onPress} action={action} className="control-button">
+    <Button isDisabled={isDisabled} onPress={onPress} className="control-button">
       <Icon className="control-button-icon" aria-hidden="true" />
       <span>{label}</span>
     </Button>
@@ -28,28 +26,56 @@ function ControlButton({ label, Icon, isDisabled, onPress, action }: ControlButt
 }
 
 export const ControlBar = observer(function ControlBar() {
-  const rootStore = useStores();
-  const trial = rootStore.activeTrial;
+  const { activeTrial, resetTrial, ui } = useStores();
+  const logEvent = useLogEvent();
+
+  const handleCross = () => {
+    const beforeLen = activeTrial.crosses.length;
+    activeTrial.crossPlants();
+    // Defensive: the button is gated on canCross, so a no-op cross is unreachable today.
+    // The guard prevents a phantom plants_crossed event if that invariant ever changes.
+    if (activeTrial.crosses.length === beforeLen) return;
+    const generation = activeTrial.crosses.length;
+    // Counts read from the cross just appended. Assumes crossPlants() appends exactly one cross;
+    // the `?? 0` fallbacks can't fire after the length-change guard, but TS narrowing can't see that.
+    const lastCross = activeTrial.crosses.at(-1);
+    const offspring = lastCross?.length ?? 0;
+    const healthy = lastCross?.filter((p) => !p.infected).length ?? 0;
+    const infected = offspring - healthy;
+    logEvent("plants_crossed", {
+      trial: ui.selectedTrialLetter,
+      generation,
+      offspring,
+      healthy,
+      infected,
+    });
+  };
+
+  const handleReset = () => {
+    const trial = ui.selectedTrialLetter;
+    logEvent("trial_reset", { trial });
+    resetTrial();
+  };
+
   return (
     <div className="control-bar">
       <FungusSwitch
-        isOn={trial.fungusOn}
-        isDisabled={trial.isFungusLocked}
-        onChange={(value) => trial.setFungus(value)}
+        isOn={activeTrial.fungusOn}
+        isDisabled={activeTrial.isFungusLocked}
+        onChange={(value) => activeTrial.setFungus(value)}
+        trial={ui.selectedTrialLetter}
       />
       <ControlButton
         label="Cross Plants"
         Icon={CrossIcon}
-        isDisabled={!trial.canCross}
-        onPress={() => trial.crossPlants()}
-        action="cross_plants_pressed"
+        isDisabled={!activeTrial.canCross}
+        onPress={handleCross}
       />
       <ControlButton
         label="Reset Trial"
         Icon={ResetIcon}
-        isDisabled={!trial.canReset}
-        onPress={() => rootStore.resetTrial()}
-        action="reset_trial_pressed"
+        isDisabled={!activeTrial.canReset}
+        onPress={handleReset}
       />
     </div>
   );

@@ -1,4 +1,4 @@
-import { TrialCard } from "@concord-consortium/mass-sims-shared";
+import { TrialCard, useLogEvent } from "@concord-consortium/mass-sims-shared";
 import { observer } from "mobx-react-lite";
 import type { KeyboardEvent } from "react";
 import { TRIAL_LETTERS, type TrialLetter } from "../../model/trials";
@@ -36,13 +36,28 @@ function MaxTrialsNotice() {
  */
 export const TrialsPanel = observer(function TrialsPanel() {
   const store = useStores();
+  const logEvent = useLogEvent();
   const selectedLetter = store.ui.selectedTrialLetter;
+
+  // Single funnel for every trial-selection change (card click, keyboard nav, post-add auto-select)
+  // so the no-op skip and the `trial_selected` emit live in exactly one place. `selectTrial` itself
+  // stays pure (hydration + quiet add-then-select callers depend on that).
+  const navigateTo = (newLetter: string) => {
+    const prev = store.ui.selectedTrialLetter;
+    if (newLetter === prev) return;
+    logEvent("trial_selected", { trial: newLetter, previous: prev });
+    store.ui.selectTrial(newLetter);
+  };
 
   const handleAdd = () => {
     // Guard on the return value: defensive against clicking `+ New` as the cap flips (the visual
     // card is also gated on `canAddTrial`, so this normally never returns null).
     const newLetter = store.addTrial();
-    if (newLetter) store.ui.selectTrial(newLetter);
+    if (!newLetter) return;
+    // `trial_added` before `trial_selected`: a trial was created AND is now being viewed (two
+    // distinct actions). `addTrial` doesn't change the selection, so navigateTo's emit fires here.
+    logEvent("trial_added", { trial: newLetter });
+    navigateTo(newLetter);
   };
 
   // Roving-tabindex keyboard navigation, delegated to the tablist. Up/Down move focus AND selection
@@ -72,7 +87,7 @@ export const TrialsPanel = observer(function TrialsPanel() {
     }
     e.preventDefault();
     const newLetter = letters[target];
-    if (newLetter && newLetter !== selectedLetter) store.ui.selectTrial(newLetter);
+    if (newLetter) navigateTo(newLetter);
     // Move focus to the target card's button (focus() works regardless of tabIndex).
     const buttons = e.currentTarget.querySelectorAll<HTMLButtonElement>(".trial-card");
     buttons[target]?.focus();
@@ -98,8 +113,13 @@ export const TrialsPanel = observer(function TrialsPanel() {
             role="tab"
             ariaSelected={selected}
             ariaLabel={trialAriaLabel(letter, trial)}
-            onSelect={() => store.ui.selectTrial(letter)}
-            onReset={() => store.resetTrial(letter)}
+            onSelect={() => navigateTo(letter)}
+            onReset={() => {
+              // Uses the iteration `letter` (the acted-on card), not the active letter — Resolved
+              // decision #2. Emit before the reset so the payload reads the trial being reset.
+              logEvent("trial_reset", { trial: letter });
+              store.resetTrial(letter);
+            }}
           >
             <TrialCardBody trial={trial} />
           </TrialCard>

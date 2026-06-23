@@ -376,6 +376,50 @@ describe("SimulationFrame", () => {
     expect(queryByRole("dialog")).not.toBeInTheDocument();
   });
 
+  it("calls onInfoOpenChange(true) on open and (false) on close, but never on initial render", () => {
+    const onInfoOpenChange = vi.fn();
+    const { getByRole } = render(
+      <SimulationFrame
+        simTitle="S"
+        tagline="t"
+        infoModalContent={<p>about</p>}
+        onInfoOpenChange={onInfoOpenChange}
+      >
+        <SimulationFrame.Trials>a</SimulationFrame.Trials>
+        <SimulationFrame.Simulation>b</SimulationFrame.Simulation>
+        <SimulationFrame.Data>c</SimulationFrame.Data>
+      </SimulationFrame>,
+    );
+    // The initial closed state is not a transition — the guard ref suppresses a mount-time call.
+    expect(onInfoOpenChange).not.toHaveBeenCalled();
+
+    fireEvent.click(getByRole("button", { name: /about/i }));
+    expect(onInfoOpenChange).toHaveBeenNthCalledWith(1, true);
+
+    fireEvent.click(getByRole("button", { name: /close/i }));
+    expect(onInfoOpenChange).toHaveBeenNthCalledWith(2, false);
+    expect(onInfoOpenChange).toHaveBeenCalledTimes(2);
+  });
+
+  it("calls onInfoOpenChange(false) when the modal is closed via Escape", () => {
+    const onInfoOpenChange = vi.fn();
+    const { getByRole } = render(
+      <SimulationFrame
+        simTitle="S"
+        tagline="t"
+        infoModalContent={<p>about</p>}
+        onInfoOpenChange={onInfoOpenChange}
+      >
+        <SimulationFrame.Trials>a</SimulationFrame.Trials>
+        <SimulationFrame.Simulation>b</SimulationFrame.Simulation>
+        <SimulationFrame.Data>c</SimulationFrame.Data>
+      </SimulationFrame>,
+    );
+    fireEvent.click(getByRole("button", { name: /about/i }));
+    fireEvent.keyDown(getByRole("button", { name: /close/i }), { key: "Escape" });
+    expect(onInfoOpenChange).toHaveBeenLastCalledWith(false);
+  });
+
   it("does not render an About button when no infoModalContent prop is given", () => {
     const { queryByRole } = render(
       <SimulationFrame simTitle="S" tagline="t">

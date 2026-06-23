@@ -1,9 +1,13 @@
 import { setInteractiveState, useInitMessage } from "@concord-consortium/lara-interactive-api";
-import { SimulationFrame, useReloadWarning } from "@concord-consortium/mass-sims-shared";
+import {
+  SimulationFrame,
+  useLogEvent,
+  useReloadWarning,
+} from "@concord-consortium/mass-sims-shared";
 import { reaction } from "mobx";
 import { observer } from "mobx-react-lite";
 import { applySnapshot, getSnapshot, onSnapshot } from "mobx-state-tree";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { AboutContent } from "./components/about";
 import { BananasDataPanel } from "./components/data-panel/data-panel";
 import { SimulationPanel } from "./components/simulation-panel";
@@ -23,6 +27,14 @@ export const App = observer(function App({ rng = Math.random }: AppProps = {}) {
   const [rootStore] = useState(() => createRootStore({ rng }));
   const initMsg = useInitMessage<SavedState>();
   const isEmbedded = initMsg !== null;
+
+  // About / info modal open & close logging. Memoized so the SimulationFrame's notification effect
+  // isn't re-subscribed on every App re-render (logEvent itself is a stable callback).
+  const logEvent = useLogEvent();
+  const handleInfoOpenChange = useCallback(
+    (open: boolean) => logEvent(open ? "info_modal_opened" : "info_modal_closed"),
+    [logEvent],
+  );
 
   // Ref to the Sim panel's offspring-grid scroller. App-owned so the Data panel's pill chip
   // can scroll the Sim's grid into view without either panel knowing about the other.
@@ -123,6 +135,7 @@ export const App = observer(function App({ rng = Math.random }: AppProps = {}) {
         simTitle="Bananas"
         tagline="An interactive genetics simulation"
         infoModalContent={<AboutContent />}
+        onInfoOpenChange={handleInfoOpenChange}
       >
         <SimulationFrame.Trials>
           <TrialsPanel />
