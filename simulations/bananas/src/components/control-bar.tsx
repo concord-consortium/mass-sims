@@ -1,8 +1,10 @@
 import { Button } from "@concord-consortium/mass-sims-shared";
+import { observer } from "mobx-react-lite";
 import type { FunctionComponent, SVGProps } from "react";
 
 import CrossIcon from "../assets/icons/cross.svg?react";
 import ResetIcon from "../assets/icons/reset.svg?react";
+import { useStores } from "../stores/root-store";
 import { FungusSwitch } from "./fungus-switch";
 
 import "./control-bar.scss";
@@ -25,42 +27,30 @@ function ControlButton({ label, Icon, isDisabled, onPress, action }: ControlButt
   );
 }
 
-export interface ControlBarProps {
-  canCross: boolean;
-  fungusOn: boolean;
-  isFungusLocked: boolean;
-  canReset: boolean;
-  onCrossPlants: () => void;
-  onSetFungus: (value: boolean) => void;
-  onResetTrial: () => void;
-}
-
-export function ControlBar({
-  canCross,
-  fungusOn,
-  isFungusLocked,
-  canReset,
-  onCrossPlants,
-  onSetFungus,
-  onResetTrial,
-}: ControlBarProps) {
+export const ControlBar = observer(function ControlBar() {
+  const rootStore = useStores();
+  const { trial } = rootStore;
   return (
     <div className="control-bar">
-      <FungusSwitch isOn={fungusOn} isDisabled={isFungusLocked} onChange={onSetFungus} />
+      <FungusSwitch
+        isOn={trial.fungusOn}
+        isDisabled={trial.isFungusLocked}
+        onChange={(value) => trial.setFungus(value)}
+      />
       <ControlButton
         label="Cross Plants"
         Icon={CrossIcon}
-        isDisabled={!canCross}
-        onPress={onCrossPlants}
+        isDisabled={!trial.canCross}
+        onPress={() => trial.crossPlants()}
         action="cross_plants_pressed"
       />
       <ControlButton
         label="Reset Trial"
         Icon={ResetIcon}
-        isDisabled={!canReset}
-        onPress={onResetTrial}
+        isDisabled={!trial.canReset}
+        onPress={() => rootStore.resetTrial()}
         action="reset_trial_pressed"
       />
     </div>
   );
-}
+});

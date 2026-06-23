@@ -17,6 +17,9 @@
   },
   "dependencies": {
     "@concord-consortium/mass-sims-shared": "0.0.1",
+    "mobx": "^6.16.1",
+    "mobx-react-lite": "^4.1.1",
+    "mobx-state-tree": "^7.2.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0"
   },

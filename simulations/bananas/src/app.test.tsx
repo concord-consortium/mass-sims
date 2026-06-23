@@ -18,7 +18,7 @@ vi.mock("@concord-consortium/lara-interactive-api", () => ({
 }));
 
 import { App } from "./app";
-import type { TrialState } from "./model/trial";
+import type { TrialState } from "./stores/trial-model";
 
 // Drives a parent <Select> the way a user would: open the trigger, click an option. The
 // trigger's accessible name includes its label ("Parent 1" / "Parent 2"), so the two dropdowns
@@ -489,5 +489,51 @@ describe("Bananas App — AP saved state", () => {
     selectParent(getByRole, /Parent 1/i, "Wild W1");
     expect(addSpy).not.toHaveBeenCalledWith("beforeunload", expect.any(Function));
     addSpy.mockRestore();
+  });
+});
+
+// MST-specific coverage of the snapshot hydrate/save plumbing — asserts at the wire-format level
+// (the snapshots passed to setInteractiveState) rather than via rendered DOM, complementing the
+// behavior-driven tests above.
+describe("Bananas App — MST snapshot hydrate + reactive save", () => {
+  const restored: TrialState = {
+    p1: "wild-w1",
+    p2: "cavendish-c1",
+    locked: true,
+    fungusOn: false,
+    crosses: [
+      [
+        { genotype: "Rr", isResistant: true, infected: false },
+        { genotype: "rr", isResistant: false, infected: false },
+      ],
+    ],
+  };
+
+  it("starts from the empty trial snapshot and saves it on mount", () => {
+    render(<App />);
+    // fireImmediately pushes the initial empty trial on mount.
+    const firstArg = setInteractiveState.mock.calls[0]?.[0];
+    expect(firstArg).toEqual({ p1: null, p2: null, locked: false, fungusOn: false, crosses: [] });
+  });
+
+  it("hydrates the store from interactiveState and persists the hydrated snapshot", () => {
+    useInitMessage.mockReturnValue({ mode: "runtime", interactiveState: restored });
+    render(<App />);
+    // applySnapshot mutates the trial, which the save reaction observes and re-persists.
+    const lastArg = setInteractiveState.mock.calls.at(-1)?.[0] as TrialState;
+    expect(lastArg.p1).toBe("wild-w1");
+    expect(lastArg.p2).toBe("cavendish-c1");
+    expect(lastArg.locked).toBe(true);
+    expect(lastArg.crosses).toHaveLength(1);
+  });
+
+  it("persists a snapshot whose crosses.length === 1 after a single cross", () => {
+    const { getByRole } = render(<App rng={seededRandom("mst-save")} />);
+    selectBothParents(getByRole);
+    setInteractiveState.mockClear();
+    fireEvent.click(getByRole("button", { name: "Cross Plants" }));
+    const lastArg = setInteractiveState.mock.calls.at(-1)?.[0] as TrialState;
+    expect(lastArg.crosses).toHaveLength(1);
+    expect(lastArg.crosses[0].length).toBeGreaterThan(0);
   });
 });

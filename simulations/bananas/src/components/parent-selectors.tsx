@@ -1,6 +1,8 @@
 import { Select } from "@concord-consortium/mass-sims-shared";
+import { observer } from "mobx-react-lite";
 import BananaTreeIcon from "../assets/icons/banana-tree.svg?react";
 import { PARENT_GENOTYPES, PARENT_LABELS, type ParentId } from "../model/genetics";
+import { useStores } from "../stores/root-store";
 
 import "./parent-selectors.scss";
 
@@ -48,28 +50,19 @@ function ParentSlot({ label, value, isLocked, onSelect, action }: ParentSlotProp
   );
 }
 
-export interface ParentSelectorsProps {
-  p1: ParentId | null;
-  p2: ParentId | null;
-  isLocked: boolean;
-  onSelectParent1: (id: ParentId) => void;
-  onSelectParent2: (id: ParentId) => void;
-}
-
-export function ParentSelectors({
-  p1,
-  p2,
-  isLocked,
-  onSelectParent1,
-  onSelectParent2,
-}: ParentSelectorsProps) {
+export const ParentSelectors = observer(function ParentSelectors() {
+  const { trial } = useStores();
+  // The model stores parents as `types.string`; they are semantically `ParentId`, so cast at the
+  // boundary into the `ParentId`-typed slot props.
+  const p1 = trial.p1 as ParentId | null;
+  const p2 = trial.p2 as ParentId | null;
   return (
     <div className="parent-selectors">
       <ParentSlot
         label="Parent 1"
         value={p1}
-        isLocked={isLocked}
-        onSelect={onSelectParent1}
+        isLocked={trial.locked}
+        onSelect={(id) => trial.setP1(id)}
         action="parent_1_set"
       />
       <div className="parent-circle" aria-hidden="true">
@@ -84,10 +77,10 @@ export function ParentSelectors({
       <ParentSlot
         label="Parent 2"
         value={p2}
-        isLocked={isLocked}
-        onSelect={onSelectParent2}
+        isLocked={trial.locked}
+        onSelect={(id) => trial.setP2(id)}
         action="parent_2_set"
       />
     </div>
   );
-}
+});

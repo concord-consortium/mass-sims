@@ -6,25 +6,27 @@ import { describe, expect, it, vi } from "vitest";
 const { log } = vi.hoisted(() => ({ log: vi.fn() }));
 vi.mock("@concord-consortium/lara-interactive-api", () => ({ log }));
 
-import { ParentSelectors, type ParentSelectorsProps } from "./parent-selectors";
+import { type RootStoreInstance, RootStoreProvider } from "../stores/root-store";
+import { createTestStore } from "../stores/test-helpers";
+import { ParentSelectors } from "./parent-selectors";
 
-const baseProps: ParentSelectorsProps = {
-  p1: null,
-  p2: null,
-  isLocked: false,
-  onSelectParent1: () => {},
-  onSelectParent2: () => {},
-};
+function renderSelectors(store: RootStoreInstance = createTestStore()) {
+  return render(
+    <RootStoreProvider store={store}>
+      <ParentSelectors />
+    </RootStoreProvider>,
+  );
+}
 
 describe("ParentSelectors", () => {
   it("renders two Select dropdowns labelled Parent 1 and Parent 2", () => {
-    const { getByLabelText } = render(<ParentSelectors {...baseProps} />);
+    const { getByLabelText } = renderSelectors();
     expect(getByLabelText("Parent 1")).toBeInTheDocument();
     expect(getByLabelText("Parent 2")).toBeInTheDocument();
   });
 
   it("renders the × separator and two decorative thumbnail circles", () => {
-    const { container } = render(<ParentSelectors {...baseProps} />);
+    const { container } = renderSelectors();
     const separator = container.querySelector(".cross-symbol");
     expect(separator).toHaveTextContent("×");
     expect(separator).toHaveAttribute("aria-hidden", "true");
@@ -32,7 +34,7 @@ describe("ParentSelectors", () => {
   });
 
   it("renders each Select with the five parent options", () => {
-    const { getByRole, getAllByRole } = render(<ParentSelectors {...baseProps} />);
+    const { getByRole, getAllByRole } = renderSelectors();
     fireEvent.click(getByRole("button", { name: /Parent 1/i }));
     expect(getAllByRole("option")).toHaveLength(5);
     for (const label of ["Wild W1", "Wild W2", "Wild W3", "Cavendish C1", "Cavendish C2"]) {
@@ -40,19 +42,25 @@ describe("ParentSelectors", () => {
     }
   });
 
-  it("invokes onSelectParent1 with the chosen id when Parent 1 changes", () => {
-    const onSelectParent1 = vi.fn();
-    const { getByRole } = render(
-      <ParentSelectors {...baseProps} onSelectParent1={onSelectParent1} />,
-    );
+  it("sets trial.p1 to the chosen ParentId on Parent 1 change", () => {
+    const store = createTestStore();
+    const { getByRole } = renderSelectors(store);
     fireEvent.click(getByRole("button", { name: /Parent 1/i }));
     fireEvent.click(getByRole("option", { name: "Wild W1" }));
-    expect(onSelectParent1).toHaveBeenCalledWith("wild-w1");
+    expect(store.trial.p1).toBe("wild-w1");
   });
 
-  it("replaces the selects with static parent chips when isLocked is true", () => {
-    const { queryByRole, getByText } = render(
-      <ParentSelectors {...baseProps} p1="wild-w1" p2="cavendish-c1" isLocked />,
+  it("sets trial.p2 to the chosen ParentId on Parent 2 change", () => {
+    const store = createTestStore();
+    const { getByRole } = renderSelectors(store);
+    fireEvent.click(getByRole("button", { name: /Parent 2/i }));
+    fireEvent.click(getByRole("option", { name: "Cavendish C1" }));
+    expect(store.trial.p2).toBe("cavendish-c1");
+  });
+
+  it("replaces the selects with static parent chips when the trial is locked", () => {
+    const { queryByRole, getByText } = renderSelectors(
+      createTestStore({ trial: { p1: "wild-w1", p2: "cavendish-c1", locked: true } }),
     );
     expect(queryByRole("button", { name: /Parent 1/i })).not.toBeInTheDocument();
     expect(queryByRole("button", { name: /Parent 2/i })).not.toBeInTheDocument();
@@ -61,13 +69,15 @@ describe("ParentSelectors", () => {
   });
 
   it("reflects the selected parents back in the trigger labels", () => {
-    const { getByRole } = render(<ParentSelectors {...baseProps} p1="wild-w1" p2="cavendish-c1" />);
+    const { getByRole } = renderSelectors(
+      createTestStore({ trial: { p1: "wild-w1", p2: "cavendish-c1" } }),
+    );
     expect(getByRole("button", { name: /Parent 1/i })).toHaveTextContent("Wild W1");
     expect(getByRole("button", { name: /Parent 2/i })).toHaveTextContent("Cavendish C1");
   });
 
   it("emits parent_1_set with the selected value on Parent 1 change", () => {
-    const { getByRole } = render(<ParentSelectors {...baseProps} />);
+    const { getByRole } = renderSelectors();
     log.mockReset();
     fireEvent.click(getByRole("button", { name: /Parent 1/i }));
     fireEvent.click(getByRole("option", { name: "Wild W1" }));
@@ -75,7 +85,7 @@ describe("ParentSelectors", () => {
   });
 
   it("emits parent_2_set with the selected value on Parent 2 change", () => {
-    const { getByRole } = render(<ParentSelectors {...baseProps} />);
+    const { getByRole } = renderSelectors();
     log.mockReset();
     fireEvent.click(getByRole("button", { name: /Parent 2/i }));
     fireEvent.click(getByRole("option", { name: "Cavendish C1" }));

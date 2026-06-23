@@ -1,7 +1,7 @@
 import { fireEvent, render } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-// BananasDataPanel itself is pure, but the region test renders the whole <App />, which pulls in
+// BananasDataPanel reads the store, but the region test renders the whole <App />, which pulls in
 // lara-interactive-api. Mock that surface; standalone by default.
 const { log, setInteractiveState, useInitMessage } = vi.hoisted(() => ({
   log: vi.fn(),
@@ -16,7 +16,8 @@ vi.mock("@concord-consortium/lara-interactive-api", () => ({
 
 import { App } from "../../app";
 import type { OffspringPlant } from "../../model/genetics";
-import { emptyTrial, type TrialState } from "../../model/trial";
+import { type RootStoreInstance, RootStoreProvider } from "../../stores/root-store";
+import { createTestStore } from "../../stores/test-helpers";
 import { LEGEND_DASH, LEGEND_HEALTHY, LEGEND_INFECTED } from "./constants";
 import { BananasDataPanel } from "./data-panel";
 
@@ -24,8 +25,22 @@ function plant(infected: boolean): OffspringPlant {
   return { genotype: infected ? "rr" : "Rr", isResistant: !infected, infected };
 }
 
-function trialWithCrosses(crosses: OffspringPlant[][]): TrialState {
-  return { ...emptyTrial(), p1: "wild-w1", p2: "cavendish-c1", locked: true, crosses };
+function storeWithCrosses(crosses: OffspringPlant[][], selectedCross: number | null = null) {
+  return createTestStore({
+    trial: { p1: "wild-w1", p2: "cavendish-c1", locked: true, crosses },
+    ui: { selectedCross },
+  });
+}
+
+function renderPanel(
+  store: RootStoreInstance = createTestStore(),
+  onPillChipClick: () => void = vi.fn(),
+) {
+  return render(
+    <RootStoreProvider store={store}>
+      <BananasDataPanel onPillChipClick={onPillChipClick} />
+    </RootStoreProvider>,
+  );
 }
 
 beforeEach(() => {
@@ -33,18 +48,6 @@ beforeEach(() => {
   log.mockReset();
   setInteractiveState.mockReset();
 });
-
-// Default props for direct BananasDataPanel renders. The selection-specific props are stubbed
-// here; the selection tests override them.
-function dataPanelProps(overrides: Partial<Parameters<typeof BananasDataPanel>[0]> = {}) {
-  return {
-    trial: emptyTrial(),
-    selectedCross: null,
-    onClearSelection: vi.fn(),
-    onPillChipClick: vi.fn(),
-    ...overrides,
-  };
-}
 
 describe("BananasDataPanel — layout", () => {
   it("renders inside the Data slot region when mounted in the App", () => {
@@ -54,7 +57,7 @@ describe("BananasDataPanel — layout", () => {
   });
 
   it("renders both phenotype legend items with labels and en-dash placeholders", () => {
-    const { container } = render(<BananasDataPanel {...dataPanelProps()} />);
+    const { container } = renderPanel();
     // Scope to the first legend — a second (resistance) legend also reads "Healthy"/"Infected",
     // so an unscoped getByText would match multiple elements.
     const [phenotypesLegend] = container.querySelectorAll(".data-legend");
@@ -67,7 +70,7 @@ describe("BananasDataPanel — layout", () => {
   });
 
   it("renders the resistance legend with Healthy + Infected but no percentage placeholders", () => {
-    const { container, getAllByText } = render(<BananasDataPanel {...dataPanelProps()} />);
+    const { container, getAllByText } = renderPanel();
     const legends = container.querySelectorAll(".data-legend");
     expect(legends).toHaveLength(2);
     const resistanceLegend = legends[1];
@@ -84,12 +87,12 @@ describe("BananasDataPanel — layout", () => {
 // The locked accessibility guarantees, asserted against the assembled panel.
 describe("BananasDataPanel — accessibility", () => {
   it("exposes both sub-section headings as level-3 headings", () => {
-    const { getAllByRole } = render(<BananasDataPanel {...dataPanelProps()} />);
+    const { getAllByRole } = renderPanel();
     expect(getAllByRole("heading", { level: 3 })).toHaveLength(2);
   });
 
   it("exposes both charts as labeled images with their empty-state descriptions", () => {
-    const { getByRole } = render(<BananasDataPanel {...dataPanelProps()} />);
+    const { getByRole } = renderPanel();
     expect(getByRole("img", { name: "Offspring phenotypes: no data" })).toBeInTheDocument();
     expect(
       getByRole("img", { name: "Fungus resistance over crosses: no data" }),
@@ -97,7 +100,7 @@ describe("BananasDataPanel — accessibility", () => {
   });
 
   it("orders every legend Healthy → Infected in the DOM (reading-order convention)", () => {
-    const { getAllByText } = render(<BananasDataPanel {...dataPanelProps()} />);
+    const { getAllByText } = renderPanel();
     const healthy = getAllByText(LEGEND_HEALTHY);
     const infected = getAllByText(LEGEND_INFECTED);
     expect(healthy).toHaveLength(2);
@@ -111,7 +114,7 @@ describe("BananasDataPanel — accessibility", () => {
   });
 
   it("gives every legend swatch a semantic color modifier class (not color-only encoding)", () => {
-    const { container } = render(<BananasDataPanel {...dataPanelProps()} />);
+    const { container } = renderPanel();
     for (const cls of [
       ".phenotypes-swatch--healthy",
       ".phenotypes-swatch--infected",
@@ -125,17 +128,17 @@ describe("BananasDataPanel — accessibility", () => {
 
 describe("BananasDataPanel — pie + legend wiring (MAS-12)", () => {
   it("shows en-dash legend placeholders with no crosses", () => {
-    const { container } = render(<BananasDataPanel {...dataPanelProps()} />);
+    const { container } = renderPanel();
     const pcts = container.querySelectorAll(".phenotypes-legend .legend-pct");
     expect(pcts).toHaveLength(2);
     for (const pct of pcts) expect(pct.textContent).toBe(LEGEND_DASH);
   });
 
   it("fills the legend percentages from the aggregated totals", () => {
-    const trial = trialWithCrosses([
+    const store = storeWithCrosses([
       [...Array.from({ length: 8 }, () => plant(false)), plant(true), plant(true)], // 8 H, 2 I
     ]);
-    const { container } = render(<BananasDataPanel {...dataPanelProps({ trial })} />);
+    const { container } = renderPanel(store);
     const pcts = container.querySelectorAll(".phenotypes-legend .legend-pct");
     expect(pcts[0].textContent).toBe("80%");
     expect(pcts[1].textContent).toBe("20%");
@@ -143,13 +146,14 @@ describe("BananasDataPanel — pie + legend wiring (MAS-12)", () => {
 
   it("scopes the pie to a single cross when one is selected", () => {
     // Cross 1 is all healthy, cross 2 all infected — selecting cross 1 should show 100% healthy.
-    const trial = trialWithCrosses([
-      [plant(false), plant(false)],
-      [plant(true), plant(true)],
-    ]);
-    const { getByRole } = render(
-      <BananasDataPanel {...dataPanelProps({ trial, selectedCross: 0 })} />,
+    const store = storeWithCrosses(
+      [
+        [plant(false), plant(false)],
+        [plant(true), plant(true)],
+      ],
+      0,
     );
+    const { getByRole } = renderPanel(store);
     expect(
       getByRole("img", { name: "Offspring phenotypes for cross 1: 100% healthy, 0% infected" }),
     ).toBeInTheDocument();
@@ -158,48 +162,46 @@ describe("BananasDataPanel — pie + legend wiring (MAS-12)", () => {
 
 describe("BananasDataPanel — filter chip pill (MAS-12)", () => {
   // 3 crosses; the third has 7 plants so the chip reads "A3 (7 offspring)".
-  const threeCrosses = trialWithCrosses([
-    [plant(false)],
-    [plant(false)],
-    Array.from({ length: 7 }, () => plant(false)),
-  ]);
+  const threeCrosses = (selectedCross: number | null = null) =>
+    storeWithCrosses(
+      [[plant(false)], [plant(false)], Array.from({ length: 7 }, () => plant(false))],
+      selectedCross,
+    );
 
   it("renders the plain 'All Crosses' span with no chip buttons when nothing is selected", () => {
-    const { container, getByText } = render(<BananasDataPanel {...dataPanelProps()} />);
+    const { container, getByText } = renderPanel(threeCrosses());
     expect(getByText("All Crosses")).toBeInTheDocument();
     expect(container.querySelector(".pill-chip")).not.toBeInTheDocument();
     expect(container.querySelector(".pill-close")).not.toBeInTheDocument();
   });
 
   it("renders the chip body and close button for a selected cross", () => {
-    const { container, getByRole } = render(
-      <BananasDataPanel {...dataPanelProps({ trial: threeCrosses, selectedCross: 2 })} />,
-    );
+    const { container, getByRole } = renderPanel(threeCrosses(2));
     expect(getByRole("button", { name: "Scroll to cross 3" })).toBeInTheDocument();
     expect(container.querySelector(".pill-chip")).toHaveTextContent("A3 (7 offspring)");
     expect(container.querySelector(".pill-close")).toBeInTheDocument();
   });
 
-  it("calls onPillChipClick (only) when the chip body is clicked", () => {
-    const props = dataPanelProps({ trial: threeCrosses, selectedCross: 2 });
-    const { container } = render(<BananasDataPanel {...props} />);
+  it("calls onPillChipClick (only) when the chip body is clicked, leaving the selection intact", () => {
+    const store = threeCrosses(2);
+    const onPillChipClick = vi.fn();
+    const { container } = renderPanel(store, onPillChipClick);
     fireEvent.click(container.querySelector(".pill-chip") as HTMLElement);
-    expect(props.onPillChipClick).toHaveBeenCalledTimes(1);
-    expect(props.onClearSelection).not.toHaveBeenCalled();
+    expect(onPillChipClick).toHaveBeenCalledTimes(1);
+    expect(store.activeCross).toBe(2); // selection unchanged (not cleared)
   });
 
-  it("calls onClearSelection (only) when the close button is clicked", () => {
-    const props = dataPanelProps({ trial: threeCrosses, selectedCross: 2 });
-    const { container } = render(<BananasDataPanel {...props} />);
+  it("clears the selection (only) when the close button is clicked", () => {
+    const store = threeCrosses(2);
+    const onPillChipClick = vi.fn();
+    const { container } = renderPanel(store, onPillChipClick);
     fireEvent.click(container.querySelector(".pill-close") as HTMLElement);
-    expect(props.onClearSelection).toHaveBeenCalledTimes(1);
-    expect(props.onPillChipClick).not.toHaveBeenCalled();
+    expect(store.activeCross).toBeNull(); // selection cleared
+    expect(onPillChipClick).not.toHaveBeenCalled();
   });
 
   it("labels the close button for screen readers", () => {
-    const { getByRole } = render(
-      <BananasDataPanel {...dataPanelProps({ trial: threeCrosses, selectedCross: 2 })} />,
-    );
+    const { getByRole } = renderPanel(threeCrosses(2));
     expect(getByRole("button", { name: "Deselect cross, show all crosses" })).toBeInTheDocument();
   });
 });
