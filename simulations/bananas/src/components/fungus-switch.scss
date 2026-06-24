@@ -165,18 +165,3 @@
     }
   }
 }
-
-// Visually-hidden live region for toggle announcements. position:absolute keeps it out of the
-// control-bar flex flow so it adds no layout.
-.fungus-switch-announcement {
-  border: 0;
-  clip: rect(0 0 0 0);
-  clip-path: inset(50%);
-  height: 1px;
-  margin: -1px;
-  overflow: hidden;
-  padding: 0;
-  position: absolute;
-  white-space: nowrap;
-  width: 1px;
-}

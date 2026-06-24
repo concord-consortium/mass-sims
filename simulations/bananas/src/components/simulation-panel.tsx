@@ -1,5 +1,5 @@
 import clsx from "clsx";
-import { useEffect, useRef } from "react";
+import { type RefObject, useEffect } from "react";
 import BananaTreeIcon from "../assets/icons/banana-tree.svg?react";
 import BananaTreeInfectedIcon from "../assets/icons/banana-tree-infected.svg?react";
 import FungusAddedIcon from "../assets/icons/fungus-added.svg?react";
@@ -12,6 +12,9 @@ import "./simulation-panel.scss";
 
 export interface SimulationPanelProps {
   trial: TrialState;
+  selectedCross: number | null;
+  onSelectCross: (idx: number | null) => void;
+  gridRef: RefObject<HTMLElement | null>;
   onSelectParent1: (id: ParentId) => void;
   onSelectParent2: (id: ParentId) => void;
   onCrossPlants: () => void;
@@ -57,7 +60,11 @@ function renderStatusPill(trial: TrialState) {
  * the rows live inside the list; the marker, hint, and notice are siblings so it stays a clean
  * list of crosses for assistive tech.
  */
-function renderOffspringGrid(trial: TrialState) {
+function renderOffspringGrid(
+  trial: TrialState,
+  selectedCross: number | null,
+  onSelectCross: (idx: number | null) => void,
+) {
   const fungusMarker = trial.fungusOn ? (
     <div className="fungus-marker" role="presentation">
       <span className="fungus-marker-label">
@@ -74,32 +81,48 @@ function renderOffspringGrid(trial: TrialState) {
         {trial.crosses.map((plants, gi) => {
           const healthy = plants.filter((p) => !p.infected).length;
           const infected = plants.length - healthy;
+          const selected = selectedCross === gi;
+          const toggle = () => onSelectCross(selected ? null : gi);
+
           return (
             <li
               // biome-ignore lint/suspicious/noArrayIndexKey: crosses are append-only, index is stable
               key={gi}
-              className="offspring-row"
-              aria-label={`Cross ${gi + 1}, ${plants.length} offspring, ${healthy} healthy, ${infected} infected`}
+              className={clsx("offspring-row", selected && "offspring-row--selected")}
             >
-              <div className="offspring-row-label">
-                <span className="offspring-row-name">{`A${gi + 1}`}</span>
-                <span className="offspring-row-count">{`(${plants.length})`}</span>
-              </div>
-              <div className="offspring-row-plants">
-                {plants.map((plant, pi) => (
-                  <span
-                    // biome-ignore lint/suspicious/noArrayIndexKey: plants within a cross are positional and stable
-                    key={pi}
-                    className={clsx("offspring-plant", plant.infected && "infected")}
-                  >
-                    {plant.infected ? (
-                      <BananaTreeInfectedIcon aria-hidden="true" />
-                    ) : (
-                      <BananaTreeIcon aria-hidden="true" />
-                    )}
-                  </span>
-                ))}
-              </div>
+              <button
+                aria-label={`Cross ${gi + 1}, ${plants.length} offspring, ${healthy} healthy, ${infected} infected`}
+                aria-pressed={selected}
+                className="offspring-row-button"
+                type="button"
+                onClick={toggle}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    toggle();
+                  }
+                }}
+              >
+                <div className="offspring-row-label">
+                  <span className="offspring-row-name">{`A${gi + 1}`}</span>
+                  <span className="offspring-row-count">{`(${plants.length})`}</span>
+                </div>
+                <div className="offspring-row-plants">
+                  {plants.map((plant, pi) => (
+                    <span
+                      // biome-ignore lint/suspicious/noArrayIndexKey: plants within a cross are positional and stable
+                      key={pi}
+                      className={clsx("offspring-plant", plant.infected && "infected")}
+                    >
+                      {plant.infected ? (
+                        <BananaTreeInfectedIcon aria-hidden="true" />
+                      ) : (
+                        <BananaTreeIcon aria-hidden="true" />
+                      )}
+                    </span>
+                  ))}
+                </div>
+              </button>
             </li>
           );
         })}
@@ -118,6 +141,9 @@ function renderOffspringGrid(trial: TrialState) {
 
 export function SimulationPanel({
   trial,
+  selectedCross,
+  onSelectCross,
+  gridRef,
   onSelectParent1,
   onSelectParent2,
   onCrossPlants,
@@ -133,9 +159,9 @@ export function SimulationPanel({
   const pillContent = renderStatusPill(trial);
 
   // After each cross, scroll the grid to the newest row (no-op when it already fits). Gated on
-  // a non-empty grid so it doesn't run on mount/reset.
-  const gridRef = useRef<HTMLElement>(null);
+  // a non-empty grid so it doesn't run on mount/reset. Reads the App-passed `gridRef`.
   const crossCount = trial.crosses.length;
+  // biome-ignore lint/correctness/useExhaustiveDependencies: gridRef is a stable ref passed from App; only crossCount should retrigger the scroll (refs aren't reactive deps).
   useEffect(() => {
     if (crossCount === 0) return;
     const el = gridRef.current;
@@ -160,8 +186,14 @@ export function SimulationPanel({
         </div>
       ) : null}
 
+      {/*
+        This element is the scroller for App#scrollToCross. Two invariants must hold for
+        scrollToCross to work: (1) this is the element whose scrollTop moves when the user
+        scrolls the offspring list; (2) every cross row inside it carries the class
+        `.offspring-row` and appears in cross-index order (row 0 is A1, row 1 is A2, …).
+      */}
       <section className="offspring-grid" ref={gridRef}>
-        {renderOffspringGrid(trial)}
+        {renderOffspringGrid(trial, selectedCross, onSelectCross)}
       </section>
 
       <ControlBar

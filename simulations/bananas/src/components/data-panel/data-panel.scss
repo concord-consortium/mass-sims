@@ -26,6 +26,7 @@
 
   > .data-subsection:nth-child(2) > .body {
     align-items: stretch;
+    justify-content: flex-start;
   }
 
   > .data-subsection + .data-subsection {
@@ -53,10 +54,18 @@
     width: auto;
   }
 
-  .resistance-bar-chart {
-    display: block;
+  .resistance-chart-wrap {
     flex-shrink: 0;
+    // We intentionally make the height shorter than the contained 158px SVG. Reserving only the
+    // chart's drawn height lets the legend below tuck up to match the design spec's spacing
+    // (verified by measurement). The SVG's few overflowing pixels land within the legend's top
+    // padding, below the x-axis labels, so they never visually overlap the legend content.
+    height: 154px;
+    overflow: visible;
     width: 100%;
+  }
+  .resistance-bar-chart {
+    display: block; // avoid the inline-SVG baseline gap; sizing comes from the wrap
   }
   .bar-chart-gridline {
     stroke: theme.$chart-gridline;
@@ -67,9 +76,40 @@
     font-family: tokens.$font-family-condensed;
     font-size: tokens.$font-size-base;
   }
+  .bar-chart-x-label {
+    fill: tokens.$color-text;
+    font-family: tokens.$font-family-condensed;
+    font-size: tokens.$font-size-base;
+  }
   .bar-chart-empty-label {
     fill: tokens.$color-text;
     font-family: tokens.$font-family-base;
+    font-size: tokens.$font-size-base;
+  }
+  .bar-chart-bar--healthy {
+    fill: theme.$banana-healthy-legend; // darker green — matches the legend swatch
+  }
+  .bar-chart-bar--infected {
+    fill: theme.$banana-infected;
+  }
+  .bar-chart-highlight {
+    fill: theme.$banana-cross-selected-highlight;
+    fill-opacity: 0.8;
+  }
+  .fungus-flag-line {
+    stroke: theme.$fungus-marker-color;
+    stroke-dasharray: 5 4;
+    stroke-width: 2;
+  }
+  .fungus-flag-bg {
+    fill: theme.$fungus-marker-label-bg;
+  }
+  .fungus-flag-icon {
+    color: theme.$fungus-marker-color;
+  }
+  .fungus-flag-label {
+    fill: theme.$fungus-marker-color;
+    font-family: tokens.$font-family-condensed;
     font-size: tokens.$font-size-base;
   }
 
@@ -124,6 +164,61 @@
     white-space: nowrap;
   }
 
+  .phenotypes-pill--active {
+    background: theme.$banana-cross-selected-bg;
+    padding-right: 4px;
+  }
+
+  .pill-chip {
+    appearance: none;
+    background: transparent;
+    border: 0;
+    color: inherit;
+    cursor: pointer;
+    font: inherit;
+    padding: 0;
+
+    &:focus-visible {
+      outline: tokens.$focus-outline;
+      outline-offset: tokens.$focus-outline-offset;
+    }
+  }
+
+  .pill-close {
+    align-items: center;
+    background: tokens.$color-surface;
+    border: 0;
+    border-radius: 50%;
+    box-sizing: border-box;
+    color: theme.$heading;
+    cursor: pointer;
+    display: inline-flex;
+    flex-shrink: 0;
+    height: 24px;
+    justify-content: center;
+    margin-left: 6px;
+    padding: 2px;
+    width: 24px;
+
+    svg {
+      display: block;
+      height: 100%;
+      width: 100%;
+    }
+
+    &:hover,
+    &:focus-visible {
+      background: tokens.$color-surface-hover;
+    }
+    &:active {
+      background: tokens.$color-surface-active;
+    }
+    &:focus-visible {
+      outline: tokens.$focus-outline;
+      outline-offset: tokens.$focus-outline-offset;
+    }
+  }
+
   // Pie empty state — circle fills with the title-bar background ($accent, what app.scss's
   // .title-bar uses); "No data" label is the standard text color.
   .phenotypes-pie__circle {
@@ -133,6 +228,25 @@
     fill: tokens.$color-text;
     font-family: tokens.$font-family-base;
     font-size: tokens.$font-size-base;
+  }
+
+  // Pie slices. Healthy uses the *lighter* $banana-healthy, intentionally NOT the darker legend/bar green.
+  .phenotypes-pie__slice--healthy {
+    fill: theme.$banana-healthy;
+  }
+  .phenotypes-pie__slice--infected {
+    fill: theme.$banana-infected;
+  }
+  .phenotypes-pie__slice-label {
+    font-family: tokens.$font-family-base;
+    font-size: tokens.$font-size-base;
+    font-weight: 700;
+  }
+  .phenotypes-pie__slice-label--healthy {
+    fill: tokens.$black;
+  }
+  .phenotypes-pie__slice-label--infected {
+    fill: tokens.$white;
   }
 
   // Legend — demo's .data-chart-legend / .data-legend-item / -label / -swatch / -pct (renamed).

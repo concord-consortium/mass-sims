@@ -55,17 +55,13 @@ describe("FungusSwitch", () => {
   it("announces 'Fungus introduced.' in the live region when toggled on", () => {
     const { getByRole, container } = render(<FungusSwitch isOn={false} onChange={noop} />);
     fireEvent.click(getByRole("switch", { name: "Fungus" }));
-    expect(container.querySelector(".fungus-switch-announcement")).toHaveTextContent(
-      "Fungus introduced.",
-    );
+    expect(container.querySelector(".sr-only")).toHaveTextContent("Fungus introduced.");
   });
 
   it("announces 'Fungus removed.' in the live region when toggled off", () => {
     const { getByRole, container } = render(<FungusSwitch isOn={true} onChange={noop} />);
     fireEvent.click(getByRole("switch", { name: "Fungus" }));
-    expect(container.querySelector(".fungus-switch-announcement")).toHaveTextContent(
-      "Fungus removed.",
-    );
+    expect(container.querySelector(".sr-only")).toHaveTextContent("Fungus removed.");
   });
 
   it("renders the switch disabled when isDisabled is true", () => {
