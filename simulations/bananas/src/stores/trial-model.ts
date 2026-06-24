@@ -5,9 +5,11 @@ import { MAX_CROSSES, makeCross, type OffspringPlant, type ParentId } from "../m
  * Canonical declaration of trial state. `getSnapshot(trial)` is the `SavedState` wire format
  * exactly (no version field) — see `TrialState`/`SavedState` below.
  *
- * RNG NOTE: `crossPlants` reads its RNG from the MST environment (`getEnv(self).rng`), never from
- * a model property. The environment lives outside the tracked tree, so `getSnapshot` stays a
- * plain serializable object and LARA's `interactiveState` never carries a function reference.
+ * RNG NOTE: `crossPlants` reads its RNG from the MST environment (`getEnv(self).rng`). The
+ * environment is shared across the whole tree, so any model — including child models added later —
+ * can reach the rng via `getEnv` without it being threaded in explicitly. It also stays out of
+ * snapshots, so LARA's `interactiveState` never carries a function reference. (`types.volatile`
+ * state is excluded from snapshots too, but only the environment gives that tree-wide access.)
  */
 export const TrialModel = types
   .model("Trial", {

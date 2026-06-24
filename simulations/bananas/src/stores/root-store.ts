@@ -72,10 +72,10 @@ export type RootStoreInstance = Instance<typeof RootStore>;
 export type RootStoreSnapshotIn = SnapshotIn<typeof RootStore>;
 
 /**
- * Create a root store. The `rng` is passed as MST's *environment* (the second `create` argument),
- * NOT as a model property — it lives outside the tracked tree, so `getSnapshot` never serializes
- * it and LARA's `interactiveState` stays a plain JSON object. Actions read it via `getEnv(self)`.
- * Production omits `rng` (defaults to `Math.random`); tests pass a seeded PRNG for determinism.
+ * Create a root store. The `rng` is passed as MST's *environment* (the second `create` argument)
+ * rather than a stored property; actions read it via `getEnv(self)`. See the RNG NOTE on
+ * `TrialModel` for why the environment is the right home. Production omits `rng` (defaults to
+ * `Math.random`); tests pass a seeded PRNG for determinism.
  */
 export function createRootStore({ rng = Math.random }: { rng?: () => number } = {}) {
   return RootStore.create({ trial: emptyTrialSnapshot(), ui: { selectedCross: null } }, { rng });

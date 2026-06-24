@@ -2,8 +2,8 @@ import { setInteractiveState, useInitMessage } from "@concord-consortium/lara-in
 import { SimulationFrame, useReloadWarning } from "@concord-consortium/mass-sims-shared";
 import { reaction } from "mobx";
 import { observer } from "mobx-react-lite";
-import { applySnapshot, getSnapshot } from "mobx-state-tree";
-import { useEffect, useMemo, useRef } from "react";
+import { applySnapshot, getSnapshot, onSnapshot } from "mobx-state-tree";
+import { useEffect, useRef, useState } from "react";
 import { AboutContent } from "./components/about";
 import { BananasDataPanel } from "./components/data-panel/data-panel";
 import { SimulationPanel } from "./components/simulation-panel";
@@ -18,7 +18,7 @@ interface AppProps {
 }
 
 export const App = observer(function App({ rng = Math.random }: AppProps = {}) {
-  const rootStore = useMemo(() => createRootStore({ rng }), [rng]);
+  const [rootStore] = useState(() => createRootStore({ rng }));
   const initMsg = useInitMessage<SavedState>();
   const isEmbedded = initMsg !== null;
 
@@ -34,13 +34,12 @@ export const App = observer(function App({ rng = Math.random }: AppProps = {}) {
     }
   }, [initMsg, rootStore]);
 
-  // Persist trial snapshots back to LARA. `fireImmediately` saves the initial empty trial on
-  // mount, not only on subsequent changes.
+  // Persist trial snapshots to LARA. `onSnapshot` only fires on changes after setup, so the
+  // explicit initial call saves the starting trial on mount.
   useEffect(() => {
-    return reaction(
-      () => getSnapshot(rootStore.trial),
-      (snap) => setInteractiveState<SavedState>(snap as SavedState),
-      { fireImmediately: true },
+    setInteractiveState<SavedState>(getSnapshot(rootStore.trial) as SavedState);
+    return onSnapshot(rootStore.trial, (snap) =>
+      setInteractiveState<SavedState>(snap as SavedState),
     );
   }, [rootStore]);
 
