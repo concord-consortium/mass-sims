@@ -7,28 +7,43 @@ import { describe, expect, it, vi } from "vitest";
 const { log } = vi.hoisted(() => ({ log: vi.fn() }));
 vi.mock("@concord-consortium/lara-interactive-api", () => ({ log }));
 
-import { ControlBar, type ControlBarProps } from "./control-bar";
+import type { OffspringPlant } from "../model/genetics";
+import { type RootStoreInstance, RootStoreProvider } from "../stores/root-store";
+import { createTestStore } from "../stores/test-helpers";
+import { ControlBar } from "./control-bar";
 
-const baseProps: ControlBarProps = {
-  canCross: false,
-  fungusOn: false,
-  isFungusLocked: false,
-  canReset: false,
-  onCrossPlants: () => {},
-  onSetFungus: () => {},
-  onResetTrial: () => {},
-};
+function plant(infected = false): OffspringPlant {
+  return { genotype: infected ? "rr" : "Rr", isResistant: !infected, infected };
+}
+
+function renderBar(store: RootStoreInstance = createTestStore()) {
+  return render(
+    <RootStoreProvider store={store}>
+      <ControlBar />
+    </RootStoreProvider>,
+  );
+}
+
+// Canonical trial states for the control-enable matrix.
+const empty = () => createTestStore(); // State 0: no parents, no crosses
+const bothParents = () => createTestStore({ trial: { p1: "wild-w1", p2: "cavendish-c1" } }); // State 1
+const bothParentsFungus = () =>
+  createTestStore({ trial: { p1: "wild-w1", p2: "cavendish-c1", fungusOn: true } }); // State 1f
+const lockedWithCross = () =>
+  createTestStore({
+    trial: { p1: "wild-w1", p2: "cavendish-c1", locked: true, crosses: [[plant()]] },
+  }); // State 2
 
 describe("ControlBar", () => {
   it("renders the Fungus switch plus Cross Plants and Reset Trial buttons", () => {
-    const { getByRole } = render(<ControlBar {...baseProps} />);
+    const { getByRole } = renderBar();
     expect(getByRole("switch", { name: "Fungus" })).toBeInTheDocument();
     expect(getByRole("button", { name: "Cross Plants" })).toBeInTheDocument();
     expect(getByRole("button", { name: "Reset Trial" })).toBeInTheDocument();
   });
 
   it("renders the controls left-to-right as Fungus, Cross Plants, Reset Trial", () => {
-    const { getByRole } = render(<ControlBar {...baseProps} />);
+    const { getByRole } = renderBar();
     const fungus = getByRole("switch", { name: "Fungus" });
     const cross = getByRole("button", { name: "Cross Plants" });
     const reset = getByRole("button", { name: "Reset Trial" });
@@ -37,59 +52,85 @@ describe("ControlBar", () => {
     expect(cross.compareDocumentPosition(reset) & FOLLOWING).toBeTruthy();
   });
 
-  it("disables Cross Plants when canCross is false, enables it when true, presses, and logs", () => {
-    const onCrossPlants = vi.fn();
-    const { getByRole, rerender } = render(
-      <ControlBar {...baseProps} canCross={false} onCrossPlants={onCrossPlants} />,
-    );
-    expect(getByRole("button", { name: "Cross Plants" })).toBeDisabled();
+  it("disables Cross Plants when canCross is false and crosses into the store + logs when pressed", () => {
+    // Disabled with only one parent (canCross false).
+    const onePanel = renderBar(createTestStore({ trial: { p1: "wild-w1" } }));
+    expect(onePanel.getByRole("button", { name: "Cross Plants" })).toBeDisabled();
+    onePanel.unmount();
 
-    rerender(<ControlBar {...baseProps} canCross={true} onCrossPlants={onCrossPlants} />);
+    // Enabled with both parents; pressing drives trial.crossPlants and logs.
+    const store = bothParents();
+    const { getByRole } = renderBar(store);
     const button = getByRole("button", { name: "Cross Plants" });
     expect(button).not.toBeDisabled();
     log.mockReset();
     fireEvent.click(button);
-    expect(onCrossPlants).toHaveBeenCalledTimes(1);
+    expect(store.trial.crosses).toHaveLength(1);
     expect(log).toHaveBeenCalledWith("cross_plants_pressed", undefined);
   });
 
-  it("disables Reset Trial when canReset is false, enables it when true, presses, and logs", () => {
-    const onResetTrial = vi.fn();
-    const { getByRole, rerender } = render(
-      <ControlBar {...baseProps} canReset={false} onResetTrial={onResetTrial} />,
-    );
-    expect(getByRole("button", { name: "Reset Trial" })).toBeDisabled();
+  it("disables Reset Trial when canReset is false and resets the store + logs when pressed", () => {
+    const emptyPanel = renderBar(empty());
+    expect(emptyPanel.getByRole("button", { name: "Reset Trial" })).toBeDisabled();
+    emptyPanel.unmount();
 
-    rerender(<ControlBar {...baseProps} canReset={true} onResetTrial={onResetTrial} />);
+    const store = lockedWithCross();
+    const { getByRole } = renderBar(store);
     const button = getByRole("button", { name: "Reset Trial" });
     expect(button).not.toBeDisabled();
     log.mockReset();
     fireEvent.click(button);
-    expect(onResetTrial).toHaveBeenCalledTimes(1);
+    expect(store.trial.crosses).toHaveLength(0);
+    expect(store.trial.canReset).toBe(false);
     expect(log).toHaveBeenCalledWith("reset_trial_pressed", undefined);
   });
 
-  it("reflects fungusOn on the switch and calls onSetFungus + logs fungus_set on toggle", () => {
-    const onSetFungus = vi.fn();
-    const { getByRole, rerender } = render(
-      <ControlBar {...baseProps} fungusOn={false} onSetFungus={onSetFungus} />,
-    );
+  it("reflects fungusOn on the switch and drives trial.setFungus + logs on toggle", () => {
+    const store = bothParents();
+    const { getByRole } = renderBar(store);
     const switchEl = getByRole("switch", { name: "Fungus" });
     expect(switchEl).not.toBeChecked();
 
     log.mockReset();
     fireEvent.click(switchEl);
-    expect(onSetFungus).toHaveBeenCalledWith(true);
+    expect(store.trial.fungusOn).toBe(true);
+    expect(getByRole("switch", { name: "Fungus" })).toBeChecked();
     expect(log).toHaveBeenCalledWith("fungus_set", expect.objectContaining({ value: true }));
 
-    rerender(<ControlBar {...baseProps} fungusOn={true} onSetFungus={onSetFungus} />);
-    expect(getByRole("switch", { name: "Fungus" })).toBeChecked();
     fireEvent.click(getByRole("switch", { name: "Fungus" }));
-    expect(onSetFungus).toHaveBeenCalledWith(false);
+    expect(store.trial.fungusOn).toBe(false);
+  });
+});
+
+// The Fungus switch's disabled state must equal `trial.isFungusLocked` across the four canonical
+// states.
+describe("ControlBar — Fungus enable/disable matrix", () => {
+  it("State 0 (no parents, no crosses): disabled", () => {
+    expect(renderBar(empty()).getByRole("switch", { name: "Fungus" })).toBeDisabled();
   });
 
-  it("renders the Fungus switch disabled when isFungusLocked is true", () => {
-    const { getByRole } = render(<ControlBar {...baseProps} isFungusLocked />);
-    expect(getByRole("switch", { name: "Fungus" })).toBeDisabled();
+  it("State 1 (both parents, no crosses, fungus off): enabled", () => {
+    expect(renderBar(bothParents()).getByRole("switch", { name: "Fungus" })).not.toBeDisabled();
+  });
+
+  it("State 1f (both parents, no crosses, fungus on): enabled", () => {
+    expect(
+      renderBar(bothParentsFungus()).getByRole("switch", { name: "Fungus" }),
+    ).not.toBeDisabled();
+  });
+
+  it("State 2 (both parents, ≥ 1 cross): disabled", () => {
+    expect(renderBar(lockedWithCross()).getByRole("switch", { name: "Fungus" })).toBeDisabled();
+  });
+});
+
+describe("ControlBar — concurrent clicks", () => {
+  it("produces exactly two crosses when Cross Plants is clicked twice in succession", () => {
+    const store = bothParents();
+    const { getByRole } = renderBar(store);
+    const button = getByRole("button", { name: "Cross Plants" });
+    fireEvent.click(button);
+    fireEvent.click(button);
+    expect(store.trial.crosses).toHaveLength(2);
   });
 });

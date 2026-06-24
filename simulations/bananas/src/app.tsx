@@ -1,11 +1,14 @@
 import { setInteractiveState, useInitMessage } from "@concord-consortium/lara-interactive-api";
 import { SimulationFrame, useReloadWarning } from "@concord-consortium/mass-sims-shared";
+import { reaction } from "mobx";
+import { observer } from "mobx-react-lite";
+import { applySnapshot, getSnapshot, onSnapshot } from "mobx-state-tree";
 import { useEffect, useRef, useState } from "react";
 import { AboutContent } from "./components/about";
 import { BananasDataPanel } from "./components/data-panel/data-panel";
 import { SimulationPanel } from "./components/simulation-panel";
-import { MAX_CROSSES, makeCross, type ParentId } from "./model/genetics";
-import { emptyTrial, type SavedState, type TrialState } from "./model/trial";
+import { createRootStore, RootStoreProvider } from "./stores/root-store";
+import type { SavedState } from "./stores/trial-model";
 
 import "./app.scss";
 
@@ -14,9 +17,8 @@ interface AppProps {
   rng?: () => number;
 }
 
-export function App({ rng = Math.random }: AppProps = {}) {
-  const [trial, setTrial] = useState<TrialState>(emptyTrial);
-  const [selectedCross, setSelectedCross] = useState<number | null>(null);
+export const App = observer(function App({ rng = Math.random }: AppProps = {}) {
+  const [rootStore] = useState(() => createRootStore({ rng }));
   const initMsg = useInitMessage<SavedState>();
   const isEmbedded = initMsg !== null;
 
@@ -24,11 +26,37 @@ export function App({ rng = Math.random }: AppProps = {}) {
   // can scroll the Sim's grid into view without either panel knowing about the other.
   const gridRef = useRef<HTMLElement>(null);
 
-  const onSelectCross = (idx: number | null) => setSelectedCross(idx);
-  const onClearSelection = () => setSelectedCross(null);
+  // Hydrate from LARA's saved state once it arrives. The AP-provided state is authoritative: it
+  // overwrites any trial edits made between mount and init landing.
+  useEffect(() => {
+    if (initMsg && "interactiveState" in initMsg && initMsg.interactiveState) {
+      applySnapshot(rootStore.trial, initMsg.interactiveState);
+    }
+  }, [initMsg, rootStore]);
+
+  // Persist trial snapshots to LARA. `onSnapshot` only fires on changes after setup, so the
+  // explicit initial call saves the starting trial on mount.
+  useEffect(() => {
+    setInteractiveState<SavedState>(getSnapshot(rootStore.trial) as SavedState);
+    return onSnapshot(rootStore.trial, (snap) =>
+      setInteractiveState<SavedState>(snap as SavedState),
+    );
+  }, [rootStore]);
+
+  // Clear a now-out-of-range selectedCross whenever the cross count shrinks.
+  useEffect(() => {
+    return reaction(
+      () => rootStore.trial.crosses.length,
+      () => rootStore.normalizeSelection(),
+    );
+  }, [rootStore]);
+
+  // Reload-warning: standalone only, gated on "has progress", now sourced from the trial view.
+  const hasProgress = rootStore.trial.canReset;
+  useReloadWarning(!isEmbedded && hasProgress);
 
   // Scroll the offspring grid so the row for `idx` is visible. Only scrolls if the row is
-  // above or below the current viewport). Respects prefers-reduced-motion.
+  // above or below the current viewport. Respects prefers-reduced-motion.
   const scrollToCross = (idx: number) => {
     const grid = gridRef.current;
     if (!grid) return;
@@ -49,86 +77,29 @@ export function App({ rng = Math.random }: AppProps = {}) {
     }
   };
 
-  // Data-panel chip click handler — scrolls the selected row into view. Defensive `null` check
-  // (the chip only renders when a selection exists, but kept for safety).
+  // Data-panel chip click handler — scrolls the selected row into view. Reads the bounds-checked
+  // `activeCross` (never the raw stored selection index — see the Selection access contract); the DOM
+  // coordination (gridRef) lives at App level, so App bridges the two.
   const onPillChipClick = () => {
-    if (selectedCross !== null) scrollToCross(selectedCross);
+    const idx = rootStore.activeCross;
+    if (idx !== null) scrollToCross(idx);
   };
-
-  // Warn before unload once the trial has any progress — standalone only. (When embedded, AP
-  // persists every change.)
-  const hasProgress = !!(trial.p1 || trial.p2 || trial.fungusOn || trial.crosses.length > 0);
-  useReloadWarning(!isEmbedded && hasProgress);
-
-  const onSelectParent1 = (id: ParentId) => setTrial((t) => (t.locked ? t : { ...t, p1: id }));
-  const onSelectParent2 = (id: ParentId) => setTrial((t) => (t.locked ? t : { ...t, p2: id }));
-
-  const onCrossPlants = () =>
-    setTrial((t) => {
-      if (!t.p1 || !t.p2 || t.crosses.length >= MAX_CROSSES) return t;
-      const plants = makeCross(t.p1, t.p2, t.fungusOn, rng);
-      return { ...t, locked: true, crosses: [...t.crosses, plants] };
-    });
-
-  // Defensive guard: ignore writes the UI shouldn't have allowed (no parents, or crossing
-  // started). The switch already enforces isFungusLocked; this is the last line of defense.
-  const onSetFungus = (value: boolean) =>
-    setTrial((t) => (!t.p1 || !t.p2 || t.crosses.length > 0 ? t : { ...t, fungusOn: value }));
-
-  const onResetTrial = () => {
-    setTrial(emptyTrial());
-    setSelectedCross(null);
-  };
-
-  // Out-of-bounds defensive guard: normalize a stale `selectedCross` back to `null` if it ever
-  // falls outside `trial.crosses` (negative, or past the end). The locked handlers can't produce
-  // this, but a future refactor that reorders state updates (or a saved-state restore landing a
-  // stale index) could — and chart code indexes `trial.crosses[selectedCross]`, so quietly
-  // resetting beats crashing.
-  useEffect(() => {
-    if (selectedCross !== null && (selectedCross < 0 || selectedCross >= trial.crosses.length)) {
-      setSelectedCross(null);
-    }
-  }, [selectedCross, trial.crosses.length]);
-
-  useEffect(() => {
-    if (initMsg && "interactiveState" in initMsg && initMsg.interactiveState) {
-      setTrial(initMsg.interactiveState);
-    }
-  }, [initMsg]);
-
-  useEffect(() => {
-    setInteractiveState<SavedState>(trial);
-  }, [trial]);
 
   return (
-    <SimulationFrame
-      simTitle="Bananas"
-      tagline="An interactive genetics simulation"
-      infoModalContent={<AboutContent />}
-    >
-      <SimulationFrame.Trials />
-      <SimulationFrame.Simulation instruction="Select two parents to begin">
-        <SimulationPanel
-          trial={trial}
-          selectedCross={selectedCross}
-          onSelectCross={onSelectCross}
-          gridRef={gridRef}
-          onSelectParent1={onSelectParent1}
-          onSelectParent2={onSelectParent2}
-          onCrossPlants={onCrossPlants}
-          onSetFungus={onSetFungus}
-          onResetTrial={onResetTrial}
-        />
-      </SimulationFrame.Simulation>
-      <SimulationFrame.Data>
-        <BananasDataPanel
-          trial={trial}
-          selectedCross={selectedCross}
-          onClearSelection={onClearSelection}
-          onPillChipClick={onPillChipClick}
-        />
-      </SimulationFrame.Data>
-    </SimulationFrame>
+    <RootStoreProvider store={rootStore}>
+      <SimulationFrame
+        simTitle="Bananas"
+        tagline="An interactive genetics simulation"
+        infoModalContent={<AboutContent />}
+      >
+        <SimulationFrame.Trials />
+        <SimulationFrame.Simulation instruction="Select two parents to begin">
+          <SimulationPanel gridRef={gridRef} />
+        </SimulationFrame.Simulation>
+        <SimulationFrame.Data>
+          <BananasDataPanel onPillChipClick={onPillChipClick} />
+        </SimulationFrame.Data>
+      </SimulationFrame>
+    </RootStoreProvider>
   );
-}
+});

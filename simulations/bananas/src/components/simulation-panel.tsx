@@ -1,29 +1,23 @@
 import clsx from "clsx";
+import { observer } from "mobx-react-lite";
 import { type RefObject, useEffect } from "react";
 import BananaTreeIcon from "../assets/icons/banana-tree.svg?react";
 import BananaTreeInfectedIcon from "../assets/icons/banana-tree-infected.svg?react";
 import FungusAddedIcon from "../assets/icons/fungus-added.svg?react";
-import { MAX_CROSSES, type ParentId } from "../model/genetics";
-import type { TrialState } from "../model/trial";
+import { MAX_CROSSES } from "../model/genetics";
+import { useStores } from "../stores/root-store";
+import type { TrialModelInstance } from "../stores/trial-model";
 import { ControlBar } from "./control-bar";
 import { ParentSelectors } from "./parent-selectors";
 
 import "./simulation-panel.scss";
 
 export interface SimulationPanelProps {
-  trial: TrialState;
-  selectedCross: number | null;
-  onSelectCross: (idx: number | null) => void;
   gridRef: RefObject<HTMLElement | null>;
-  onSelectParent1: (id: ParentId) => void;
-  onSelectParent2: (id: ParentId) => void;
-  onCrossPlants: () => void;
-  onSetFungus: (value: boolean) => void;
-  onResetTrial: () => void;
 }
 
 /** Builds the status pill content, or `null` when both parents aren't selected yet (no pill). */
-function renderStatusPill(trial: TrialState) {
+function renderStatusPill(trial: TrialModelInstance) {
   const both = !!(trial.p1 && trial.p2);
   if (!both) return null; // No pill until both parents are selected.
 
@@ -59,11 +53,14 @@ function renderStatusPill(trial: TrialState) {
  * the first cross), the empty-state hint, and the "Max crosses reached" notice at the cap. Only
  * the rows live inside the list; the marker, hint, and notice are siblings so it stays a clean
  * list of crosses for assistive tech.
+ *
+ * `activeCross` is the store's bounds-checked selection (the `RootStore.activeCross` view), never
+ * the raw stored selection index — see the Selection access contract.
  */
 function renderOffspringGrid(
-  trial: TrialState,
-  selectedCross: number | null,
-  onSelectCross: (idx: number | null) => void,
+  trial: TrialModelInstance,
+  activeCross: number | null,
+  selectCross: (idx: number | null) => void,
 ) {
   const fungusMarker = trial.fungusOn ? (
     <div className="fungus-marker" role="presentation">
@@ -81,8 +78,8 @@ function renderOffspringGrid(
         {trial.crosses.map((plants, gi) => {
           const healthy = plants.filter((p) => !p.infected).length;
           const infected = plants.length - healthy;
-          const selected = selectedCross === gi;
-          const toggle = () => onSelectCross(selected ? null : gi);
+          const selected = activeCross === gi;
+          const toggle = () => selectCross(selected ? null : gi);
 
           return (
             <li
@@ -139,27 +136,18 @@ function renderOffspringGrid(
   );
 }
 
-export function SimulationPanel({
-  trial,
-  selectedCross,
-  onSelectCross,
+export const SimulationPanel = observer(function SimulationPanel({
   gridRef,
-  onSelectParent1,
-  onSelectParent2,
-  onCrossPlants,
-  onSetFungus,
-  onResetTrial,
 }: SimulationPanelProps) {
-  const bothParentsSelected = !!(trial.p1 && trial.p2);
-  const atCrossCap = trial.crosses.length >= MAX_CROSSES;
-  const canCross = bothParentsSelected && !atCrossCap;
-  const isFungusLocked = !bothParentsSelected || trial.crosses.length > 0;
-  const canReset = !!(trial.p1 || trial.p2 || trial.fungusOn || trial.crosses.length > 0);
+  const rootStore = useStores();
+  const { trial } = rootStore;
+  const activeCross = rootStore.activeCross;
 
   const pillContent = renderStatusPill(trial);
 
   // After each cross, scroll the grid to the newest row (no-op when it already fits). Gated on
-  // a non-empty grid so it doesn't run on mount/reset. Reads the App-passed `gridRef`.
+  // a non-empty grid so it doesn't run on mount/reset. `observer` re-runs render when the length
+  // changes, so `crossCount` retriggers the effect. Reads the App-passed `gridRef`.
   const crossCount = trial.crosses.length;
   // biome-ignore lint/correctness/useExhaustiveDependencies: gridRef is a stable ref passed from App; only crossCount should retrigger the scroll (refs aren't reactive deps).
   useEffect(() => {
@@ -170,13 +158,7 @@ export function SimulationPanel({
 
   return (
     <div className="bananas-simulation-panel">
-      <ParentSelectors
-        p1={trial.p1}
-        p2={trial.p2}
-        isLocked={trial.locked}
-        onSelectParent1={onSelectParent1}
-        onSelectParent2={onSelectParent2}
-      />
+      <ParentSelectors />
 
       {pillContent ? (
         <div className="status-pill-wrap">
@@ -193,18 +175,10 @@ export function SimulationPanel({
         `.offspring-row` and appears in cross-index order (row 0 is A1, row 1 is A2, …).
       */}
       <section className="offspring-grid" ref={gridRef}>
-        {renderOffspringGrid(trial, selectedCross, onSelectCross)}
+        {renderOffspringGrid(trial, activeCross, (idx) => rootStore.ui.selectCross(idx))}
       </section>
 
-      <ControlBar
-        canCross={canCross}
-        fungusOn={trial.fungusOn}
-        isFungusLocked={isFungusLocked}
-        canReset={canReset}
-        onCrossPlants={onCrossPlants}
-        onSetFungus={onSetFungus}
-        onResetTrial={onResetTrial}
-      />
+      <ControlBar />
     </div>
   );
-}
+});

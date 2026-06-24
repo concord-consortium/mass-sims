@@ -1,8 +1,8 @@
 import { DataSubsection } from "@concord-consortium/mass-sims-shared";
+import { observer } from "mobx-react-lite";
 import { useMemo } from "react";
 import PillCloseIcon from "../../assets/icons/pill-close.svg?react";
-import { aggregateTotals, computeResistanceSeries } from "../../model/data-aggregations";
-import type { TrialState } from "../../model/trial";
+import { useStores } from "../../stores/root-store";
 import {
   LEGEND_DASH,
   LEGEND_HEALTHY,
@@ -16,9 +16,7 @@ import { ResistanceBarChart } from "./resistance-bar-chart";
 import "./data-panel.scss";
 
 export interface BananasDataPanelProps {
-  trial: TrialState;
-  selectedCross: number | null;
-  onClearSelection: () => void;
+  /** App-bridged DOM scroll: scrolls the Sim grid to the selected cross (needs App's gridRef). */
   onPillChipClick: () => void;
 }
 
@@ -35,28 +33,20 @@ const resistanceTitle = (
   </span>
 );
 
-export function BananasDataPanel({
-  trial,
-  selectedCross,
-  onClearSelection,
+export const BananasDataPanel = observer(function BananasDataPanel({
   onPillChipClick,
 }: BananasDataPanelProps) {
-  // A selection is active only when it points at a real cross. Guarding both bounds means a stale
-  // or corrupt index (negative, or past the end) falls back to the all-crosses view instead of
-  // indexing trial.crosses out of range.
-  const activeCross =
-    selectedCross !== null && selectedCross >= 0 && selectedCross < trial.crosses.length
-      ? selectedCross
-      : null;
+  const rootStore = useStores();
+  const { trial } = rootStore;
+  // `activeCross`, `phenotypeTotals`, and `resistanceSeries` are MST views — MobX memoizes them
+  // with proper invalidation. `activeCross` is the bounds-checked selection (never the raw stored
+  // selection index — see the Selection access contract).
+  const activeCross = rootStore.activeCross;
+  const totals = rootStore.phenotypeTotals;
+  const series = rootStore.resistanceSeries;
 
-  // Phenotype totals in scope: a single cross when one is selected, otherwise all crosses.
-  const totals = useMemo(() => {
-    if (trial.crosses.length === 0) return null;
-    const scope = activeCross !== null ? [trial.crosses[activeCross]] : trial.crosses;
-    return aggregateTotals(scope);
-  }, [trial.crosses, activeCross]);
-
-  // Legend percentages, or `null` (→ en-dash placeholders) when there's no data.
+  // Legend percentages, or `null` (→ en-dash placeholders) when there's no data. Derived from the
+  // memoized `phenotypeTotals` view.
   const legendPcts = useMemo(() => {
     if (!totals) return null;
     const total = totals.healthy + totals.infected;
@@ -66,13 +56,6 @@ export function BananasDataPanel({
   }, [totals]);
 
   const selectedCrossLabel = activeCross !== null ? `cross ${activeCross + 1}` : "all crosses";
-
-  // Per-cross resistance percentages for the bar chart (always the full trial — selection only
-  // highlights a group, it doesn't filter the series like the pie's totals).
-  const series = useMemo(
-    () => (trial.crosses.length === 0 ? null : computeResistanceSeries(trial.crosses)),
-    [trial.crosses],
-  );
 
   return (
     <div className="bananas-data-panel">
@@ -87,14 +70,12 @@ export function BananasDataPanel({
               onClick={onPillChipClick}
               aria-label={`Scroll to cross ${activeCross + 1}`}
             >
-              {/* The space before "(" is a non-breaking space (U+00A0) so the offspring count
-                  doesn't wrap away from the cross label at narrow widths. */}
-              {`A${activeCross + 1} (${trial.crosses[activeCross].length} offspring)`}
+              {`A${activeCross + 1} (${trial.crosses[activeCross].length} offspring)`}
             </button>
             <button
               type="button"
               className="pill-close"
-              onClick={onClearSelection}
+              onClick={() => rootStore.ui.clearSelection()}
               aria-label="Deselect cross, show all crosses"
             >
               <PillCloseIcon aria-hidden="true" />
@@ -128,11 +109,7 @@ export function BananasDataPanel({
         </div>
       </DataSubsection>
       <DataSubsection title={resistanceTitle}>
-        <ResistanceBarChart
-          series={series}
-          fungusOn={trial.fungusOn}
-          selectedCross={selectedCross}
-        />
+        <ResistanceBarChart series={series} fungusOn={trial.fungusOn} selectedCross={activeCross} />
         <div className="data-legend resistance-legend">
           <span className="legend-item">
             <span className="legend-label">
@@ -150,4 +127,4 @@ export function BananasDataPanel({
       </DataSubsection>
     </div>
   );
-}
+});
