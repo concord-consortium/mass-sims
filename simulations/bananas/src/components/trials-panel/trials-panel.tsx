@@ -1,6 +1,7 @@
 import { TrialCard, useLogEvent } from "@concord-consortium/mass-sims-shared";
 import { observer } from "mobx-react-lite";
 import type { KeyboardEvent } from "react";
+import AddIcon from "../../assets/icons/add.svg?react";
 import { TRIAL_LETTERS, type TrialLetter } from "../../model/trials";
 import { useStores } from "../../stores/root-store";
 import { TrialCardBody, trialAriaLabel } from "./trial-card-body";
@@ -11,9 +12,7 @@ import "./trials-panel.scss";
 function NewTrialCard({ onAdd }: { onAdd: () => void }) {
   return (
     <button type="button" className="new-trial-card" aria-label="Add new trial" onClick={onAdd}>
-      <span className="new-trial-card-plus" aria-hidden="true">
-        +
-      </span>
+      <AddIcon className="new-trial-card-icon" aria-hidden="true" />
       <span className="new-trial-card-text">New</span>
     </button>
   );

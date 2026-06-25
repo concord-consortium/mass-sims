@@ -1,5 +1,6 @@
 import { observer } from "mobx-react-lite";
 import type { ReactNode } from "react";
+import FungusAddedIcon from "../../assets/icons/fungus-added.svg?react";
 import { aggregateTotals } from "../../model/data-aggregations";
 import { PARENT_LABELS, type ParentId } from "../../model/genetics";
 import type { TrialModelInstance } from "../../stores/trial-model";
@@ -82,6 +83,14 @@ export const TrialCardBody = observer(function TrialCardBody({
       ) : null}
       {offspringRow}
       {phenotypeRow}
+      {trial.fungusOn ? (
+        <span className="trial-card-fungus">
+          <span className="trial-card-fungus-badge">
+            <FungusAddedIcon className="trial-card-fungus-icon" aria-hidden="true" />
+          </span>
+          Fungus
+        </span>
+      ) : null}
     </div>
   );
 });
