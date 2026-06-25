@@ -16,13 +16,14 @@ function plant(infected: boolean): OffspringPlant {
 const CROSS = [plant(false), plant(false), plant(true)];
 
 describe("toSavedState", () => {
-  it("projects { trials, selectedTrialLetter } and excludes selectedCrossByTrial", () => {
+  it("stamps a version on { trials, selectedTrialLetter }, excluding selectedCrossByTrial", () => {
     const store = createTestStore({
       trials: { A: { p1: W1, p2: C1, locked: true, crosses: [CROSS] }, B: {} },
       ui: { selectedTrialLetter: "B", selectedCrossByTrial: { A: 0 } },
     });
     const saved = toSavedState(getSnapshot(store));
-    expect(Object.keys(saved).sort()).toEqual(["selectedTrialLetter", "trials"]);
+    expect(Object.keys(saved).sort()).toEqual(["selectedTrialLetter", "trials", "version"]);
+    expect(saved.version).toBe(1);
     expect(saved.selectedTrialLetter).toBe("B");
     expect(Object.keys(saved.trials).sort()).toEqual(["A", "B"]);
     // Transient UI selection is not part of the wire format.
@@ -82,7 +83,7 @@ describe("hydrate from a SavedState", () => {
       fungusOn: true,
       crosses: [CROSS],
     };
-    const store = hydrate({ trials: { A: trialA }, selectedTrialLetter: "A" });
+    const store = hydrate({ version: 1, trials: { A: trialA }, selectedTrialLetter: "A" });
     expect(store.trialLetters).toEqual(["A"]);
     expect(store.activeTrial.p1).toBe(W1);
     expect(store.activeTrial.p2).toBe(C1);
@@ -92,7 +93,7 @@ describe("hydrate from a SavedState", () => {
 
   it("restores a present-but-empty trial 'A' without error (navigated-but-never-interacted)", () => {
     const empty: TrialState = { p1: null, p2: null, locked: false, fungusOn: false, crosses: [] };
-    const store = hydrate({ trials: { A: empty }, selectedTrialLetter: "A" });
+    const store = hydrate({ version: 1, trials: { A: empty }, selectedTrialLetter: "A" });
     expect(store.trialLetters).toEqual(["A"]);
     expect(store.activeTrial.canReset).toBe(false);
   });
@@ -100,7 +101,11 @@ describe("hydrate from a SavedState", () => {
   it("restores ≥ 2 trials with the saved active letter", () => {
     const trialA: TrialState = { p1: W1, p2: C1, locked: true, fungusOn: false, crosses: [CROSS] };
     const trialB: TrialState = { p1: C1, p2: null, locked: false, fungusOn: false, crosses: [] };
-    const store = hydrate({ trials: { A: trialA, B: trialB }, selectedTrialLetter: "B" });
+    const store = hydrate({
+      version: 1,
+      trials: { A: trialA, B: trialB },
+      selectedTrialLetter: "B",
+    });
     expect(store.trialLetters).toEqual(["A", "B"]);
     expect(store.ui.selectedTrialLetter).toBe("B");
     expect(store.activeTrial.p1).toBe(C1); // B is active

@@ -438,7 +438,11 @@ describe("Bananas App — AP saved state", () => {
       ],
     ],
   };
-  const savedState: SavedState = { trials: { A: savedTrial }, selectedTrialLetter: "A" };
+  const savedState: SavedState = {
+    version: 1,
+    trials: { A: savedTrial },
+    selectedTrialLetter: "A",
+  };
 
   it("renders the default empty trial when no init message arrives (standalone)", () => {
     const { getByLabelText, queryByRole } = render(<App />);
@@ -511,13 +515,18 @@ describe("Bananas App — MST snapshot hydrate + reactive save", () => {
       ],
     ],
   };
-  const restored: SavedState = { trials: { A: restoredTrial }, selectedTrialLetter: "A" };
+  const restored: SavedState = {
+    version: 1,
+    trials: { A: restoredTrial },
+    selectedTrialLetter: "A",
+  };
 
   it("starts from the empty trial snapshot and saves it on mount", () => {
     render(<App />);
     // fireImmediately pushes the initial state on mount: the single empty trial "A", selected.
     const firstArg = setInteractiveState.mock.calls[0]?.[0];
     expect(firstArg).toEqual({
+      version: 1,
       trials: { A: { p1: null, p2: null, locked: false, fungusOn: false, crosses: [] } },
       selectedTrialLetter: "A",
     });
