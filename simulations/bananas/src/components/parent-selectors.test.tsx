@@ -76,22 +76,25 @@ describe("ParentSelectors", () => {
     expect(getByRole("button", { name: /Parent 2/i })).toHaveTextContent("Cavendish C1");
   });
 
-  it("emits parent_1_set with the selected value on Parent 1 change", () => {
+  it("emits parent_1_set with the selected value and trial on Parent 1 change", () => {
     const { getByRole } = renderSelectors();
     log.mockReset();
     fireEvent.click(getByRole("button", { name: /Parent 1/i }));
     fireEvent.click(getByRole("option", { name: "Wild W1" }));
-    expect(log).toHaveBeenCalledWith("parent_1_set", expect.objectContaining({ value: "wild-w1" }));
+    expect(log).toHaveBeenCalledWith(
+      "parent_1_set",
+      expect.objectContaining({ value: "wild-w1", trial: "A" }),
+    );
   });
 
-  it("emits parent_2_set with the selected value on Parent 2 change", () => {
+  it("emits parent_2_set with the selected value and trial on Parent 2 change", () => {
     const { getByRole } = renderSelectors();
     log.mockReset();
     fireEvent.click(getByRole("button", { name: /Parent 2/i }));
     fireEvent.click(getByRole("option", { name: "Cavendish C1" }));
     expect(log).toHaveBeenCalledWith(
       "parent_2_set",
-      expect.objectContaining({ value: "cavendish-c1" }),
+      expect.objectContaining({ value: "cavendish-c1", trial: "A" }),
     );
   });
 });

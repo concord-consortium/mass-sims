@@ -10,6 +10,8 @@ export interface FungusSwitchProps {
   isOn: boolean;
   isDisabled?: boolean;
   onChange: (value: boolean) => void;
+  /** Trial letter targeted by this toggle, threaded in from <ControlBar> to keep this leaf pure. */
+  trial: string;
 }
 
 /**
@@ -19,7 +21,7 @@ export interface FungusSwitchProps {
  * value comes from the switch role's checked state. A visually-hidden live region announces
  * "Fungus introduced." / "Fungus removed." on toggle.
  */
-export function FungusSwitch({ isOn, isDisabled = false, onChange }: FungusSwitchProps) {
+export function FungusSwitch({ isOn, isDisabled = false, onChange, trial }: FungusSwitchProps) {
   const logEvent = useLogEvent();
   const [announcement, setAnnouncement] = useState("");
   return (
@@ -29,7 +31,7 @@ export function FungusSwitch({ isOn, isDisabled = false, onChange }: FungusSwitc
         isSelected={isOn}
         isDisabled={isDisabled}
         onChange={(value) => {
-          logEvent("fungus_set", { value });
+          logEvent("fungus_set", { value, trial });
           setAnnouncement(value ? "Fungus introduced." : "Fungus removed.");
           onChange(value);
         }}

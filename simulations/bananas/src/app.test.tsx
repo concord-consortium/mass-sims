@@ -60,6 +60,23 @@ describe("Bananas App — frame", () => {
   });
 });
 
+describe("Bananas App — info modal logging", () => {
+  it("does not log an info_modal event on initial render", () => {
+    render(<App />);
+    expect(log).not.toHaveBeenCalledWith("info_modal_opened", undefined);
+    expect(log).not.toHaveBeenCalledWith("info_modal_closed", undefined);
+  });
+
+  it("logs info_modal_opened on open and info_modal_closed on close", () => {
+    const { getByRole } = render(<App />);
+    log.mockReset();
+    fireEvent.click(getByRole("button", { name: /about/i }));
+    expect(log).toHaveBeenCalledWith("info_modal_opened", undefined);
+    fireEvent.click(getByRole("button", { name: /close/i }));
+    expect(log).toHaveBeenCalledWith("info_modal_closed", undefined);
+  });
+});
+
 describe("Bananas App — simulation flow", () => {
   it("renders the selectors, offspring grid, and controls with NO status pill", () => {
     const { getByLabelText, getByRole, queryByRole } = render(<App />);
@@ -268,7 +285,7 @@ describe("Bananas App — simulation flow", () => {
 
     log.mockReset();
     fireEvent.click(reset);
-    expect(log).not.toHaveBeenCalledWith("reset_trial_pressed", expect.anything());
+    expect(log).not.toHaveBeenCalledWith("trial_reset", expect.anything());
   });
 
   // ---- Offspring grid ----
