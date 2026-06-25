@@ -1,47 +1,51 @@
 @use "@concord-consortium/mass-sims-shared/styles/tokens" as tokens;
 @use "../theme" as theme;
 
-// The circles, × separator, and dropdown carets scale smoothly with the panel width (the
-// `bananas-sim-panel` container) instead of jumping at a breakpoint. Each value is clamped
-// between its min and max. 1cqw = 1% of the panel width.
-$circle-size: clamp(56px, 20.41cqw - 31.6px, 80px);
-$cross-size: clamp(20px, 3.4cqw + 5.4px, 24px);
-$caret-size: clamp(18px, 5.1cqw - 3.9px, 24px);
-
-// Below this width, browsers without container-query units (cqw) fall back to the final
-// static sizes via the @media rules below.
-$compact-max-width: 867px;
+// The parent row's responsive sizing is driven from parent-selectors.tsx: a ResizeObserver measures
+// the rendered option widths and writes the resulting sizes as custom properties on
+// `.parent-selectors` whenever the panel resizes, and this file only *applies* them. The sizing
+// arithmetic lives in JS because it depends on text metrics CSS can't read (see the component for
+// the two-phase logic). The var() fallbacks are the widest-state values, so first paint — before
+// the effect runs — shows the full-size layout.
 
 .parent-selectors {
   align-items: center;
   display: flex;
   flex-shrink: 0;
-  gap: 10px;
+  gap: var(--parent-row-gap, 10px);
   justify-content: center;
-  padding: 2px 10px 30px;
+  padding: 2px 10px 10px;
+
+  &.has-status-pill {
+    padding-bottom: 30px;
+  }
 
   .parent-select {
-    flex: 1;
-    min-width: 0; // Allow the Select to shrink within the flex row.
+    align-items: center; // Center the fixed-width trigger within the (Phase 1) flex:1 group.
+    flex: var(--parent-group-flex, 1);
+    min-width: 0;
 
     .react-aria-Label {
       font-weight: 700;
       text-align: center;
     }
 
-    // Scale only where cqw is supported; non-cqw browsers keep the shared 24px default. The
-    // @media below supplies the 18px narrow-width fallback.
-    .select-caret {
-      @supports (width: 1cqw) {
-        height: $caret-size;
-        width: $caret-size;
-      }
-
-      @media (max-width: $compact-max-width) {
-        height: 18px;
-        width: 18px;
-      }
+    .react-aria-Button {
+      gap: var(--parent-dd-gap, 6px);
+      padding: tokens.$space-2 var(--parent-dd-pad-right, 10px) tokens.$space-2
+        var(--parent-dd-pad-left, 10px);
+      width: var(--parent-trigger-width, 160px);
     }
+
+    .select-caret {
+      height: var(--parent-caret-size, 24px);
+      width: var(--parent-caret-size, 24px);
+    }
+  }
+
+  // Phase 2: the JS sets data-condensed on the row when the triggers switch to Roboto Condensed.
+  &[data-condensed] .react-aria-SelectValue {
+    font-family: tokens.$font-family-condensed;
   }
 
   .parent-circle {
@@ -51,22 +55,10 @@ $compact-max-width: 867px;
     color: theme.$banana-healthy;
     display: flex;
     flex-shrink: 0;
-    height: 80px;
+    height: var(--parent-circle-size, 80px);
     justify-content: center;
     overflow: hidden;
-    width: 80px;
-
-    // @supports keeps the minifier from deduping the 80px fallback into the clamp (which non-cqw
-    // browsers drop, collapsing the circle). The @media supplies the 56px narrow-width fallback.
-    @supports (width: 1cqw) {
-      height: $circle-size;
-      width: $circle-size;
-    }
-
-    @media (max-width: $compact-max-width) {
-      height: 56px;
-      width: 56px;
-    }
+    width: var(--parent-circle-size, 80px);
   }
 
   .parent-circle-plant {
@@ -79,19 +71,9 @@ $compact-max-width: 867px;
     color: tokens.$color-text;
     flex-shrink: 0;
     font-family: tokens.$font-family-base;
-    font-size: tokens.$font-size-xl;
+    font-size: var(--parent-cross-size, #{tokens.$font-size-xl});
     font-weight: 700;
     line-height: tokens.$line-height-lg;
-
-    // @supports keeps the minifier from deduping the font-size-xl fallback into the clamp (which
-    // non-cqw browsers drop). The @media supplies the 20px narrow-width fallback.
-    @supports (width: 1cqw) {
-      font-size: $cross-size;
-    }
-
-    @media (max-width: $compact-max-width) {
-      font-size: 20px;
-    }
   }
 
   .parent-chip {

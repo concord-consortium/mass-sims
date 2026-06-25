@@ -145,3 +145,10 @@
     }
   }
 }
+
+// Condense the popover list in lockstep with the parent-dropdown triggers. The popover is portaled
+// to <body>, outside `.parent-selectors`, so it can't see the row's own `data-condensed`; the
+// parent-row scaling effect (parent-selectors.tsx) mirrors that state onto :root for it instead.
+:root[data-parent-condensed] .select-popover .react-aria-ListBoxItem {
+  font-family: tokens.$font-family-condensed;
+}
