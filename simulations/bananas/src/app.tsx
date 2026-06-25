@@ -8,7 +8,8 @@ import { AboutContent } from "./components/about";
 import { BananasDataPanel } from "./components/data-panel/data-panel";
 import { SimulationPanel } from "./components/simulation-panel";
 import { TrialsPanel } from "./components/trials-panel/trials-panel";
-import { createRootStore, RootStoreProvider } from "./stores/root-store";
+import { TRIAL_LETTERS } from "./model/trials";
+import { createRootStore, RootStoreProvider, type RootStoreSnapshotOut } from "./stores/root-store";
 import { type SavedState, toSavedState } from "./stores/saved-state";
 
 import "./app.scss";
@@ -40,13 +41,22 @@ export const App = observer(function App({ rng = Math.random }: AppProps = {}) {
     }
   }, [initMsg, rootStore]);
 
-  // Persist the whole store to LARA as the `{ trials, selectedTrialLetter }` projection — watching
-  // the entire rootStore (not just one trial) so adding or selecting a trial also triggers a save.
-  // `onSnapshot` only fires on changes after setup, so the explicit initial call saves the starting
-  // state on mount. UI-only state (`selectedCrossByTrial`) is excluded by `toSavedState`.
+  // Persist the whole store to LARA as the `{ trials, selectedTrialLetter }` projection. We watch
+  // the entire rootStore so adding or selecting a trial triggers a save, but skip redundant writes:
+  // transient UI-only changes (e.g. selecting a cross row, which `toSavedState` drops) would
+  // otherwise re-emit an identical payload on every click. `onSnapshot` fires only on changes after
+  // setup, so the explicit initial call saves the starting state on mount.
   useEffect(() => {
-    setInteractiveState<SavedState>(toSavedState(getSnapshot(rootStore)));
-    return onSnapshot(rootStore, (snap) => setInteractiveState<SavedState>(toSavedState(snap)));
+    let lastSaved = "";
+    const save = (snap: RootStoreSnapshotOut) => {
+      const state = toSavedState(snap);
+      const serialized = JSON.stringify(state);
+      if (serialized === lastSaved) return;
+      lastSaved = serialized;
+      setInteractiveState<SavedState>(state);
+    };
+    save(getSnapshot(rootStore));
+    return onSnapshot(rootStore, save);
   }, [rootStore]);
 
   // Defensive normalization: if `selectedTrialLetter` ever points at a trial that doesn't exist,
@@ -60,7 +70,12 @@ export const App = observer(function App({ rng = Math.random }: AppProps = {}) {
       }),
       ({ exists }) => {
         if (!exists) {
-          const first = Array.from(rootStore.trials.keys())[0];
+          // Pick the first *valid* letter (A–J). Via locked actions every key is already a letter,
+          // so this equals keys()[0]; the guard only matters if a malformed hydrate left a non-A–J
+          // key, which `selectTrial` (an enumeration write) would otherwise throw on.
+          const first = rootStore.trialLetters.find((l) =>
+            (TRIAL_LETTERS as readonly string[]).includes(l),
+          );
           if (first) rootStore.ui.selectTrial(first);
         }
       },
