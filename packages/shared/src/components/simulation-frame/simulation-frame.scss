@@ -162,6 +162,21 @@ $titlebar-about-leading-space: 5px;   // margin-left on the About button â†’ CCâ
   .trials-area {
     grid-area: trials;
 
+    // Overlay the section chip (take it out of flow) so the card list fills the full panel
+    // height: the scrollbar spans the entire panel and cards scroll up behind the chip.
+    .chip {
+      left: 50%;
+      margin-top: 0;
+      position: absolute;
+      top: calc((#{tokens.$section-chip-height} + #{tokens.$border-strong-width}) / -2);
+      transform: translateX(-50%);
+    }
+
+    .content {
+      // Top padding holds the first card below the overlaid chip at rest; cards scroll behind it.
+      padding-top: 31px;
+    }
+
     .trials-list {
       align-items: flex-start;
       display: flex;
