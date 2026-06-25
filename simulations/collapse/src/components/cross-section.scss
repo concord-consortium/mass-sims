@@ -1,0 +1,64 @@
+.cross-section {
+  width: 100%;
+  height: auto;
+  display: block;
+  border: 2px solid #555;
+  border-radius: 8px;
+  background: #cfe8f5;
+
+  .layer-label {
+    font-family: "Lato", system-ui, sans-serif;
+    font-size: 13px;
+    fill: #5b4a2f;
+    font-weight: 700;
+    opacity: 0.7;
+  }
+
+  // Indicative rainstorm animation (placeholder for a designed animation).
+  .rain-streak {
+    animation: rain-fall 0.7s linear infinite;
+  }
+  .percolation-line {
+    animation: percolate 1.6s linear infinite;
+  }
+  .runoff {
+    animation: runoff-flow 1s linear infinite;
+  }
+}
+
+@keyframes rain-fall {
+  from {
+    transform: translateY(-24px);
+    opacity: 0.2;
+  }
+  to {
+    transform: translateY(150px);
+    opacity: 0.9;
+  }
+}
+
+@keyframes percolate {
+  from {
+    stroke-dashoffset: 0;
+  }
+  to {
+    stroke-dashoffset: -18;
+  }
+}
+
+@keyframes runoff-flow {
+  from {
+    stroke-dashoffset: 0;
+  }
+  to {
+    stroke-dashoffset: -28;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cross-section .rain-streak,
+  .cross-section .percolation-line,
+  .cross-section .runoff {
+    animation: none;
+  }
+}

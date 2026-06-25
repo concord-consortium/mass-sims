@@ -1,0 +1,48 @@
+.empty {
+  color: #555;
+  font-family: "Lato", system-ui, sans-serif;
+  font-size: 14px;
+}
+
+// Fill the Data region's height so the vertical meters can stretch.
+.collapse-data-panel {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 100%;
+
+  // DataSubsection's .body centers its single child; let our content fill it.
+  .data-subsection .body {
+    align-items: stretch;
+  }
+}
+
+.erosion-content {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 100%;
+}
+
+.erosion-meters {
+  display: flex;
+  flex: 1;
+  flex-direction: row;
+  gap: 20px;
+  justify-content: center;
+  align-items: stretch;
+  min-height: 0;
+  padding: 4px 4px 0;
+}
+
+.outcome {
+  flex-shrink: 0;
+  margin: 10px 0 0;
+  font-size: 14px;
+  color: #333;
+  text-align: center;
+}
+.outcome-collapsed {
+  color: #b23b3b;
+  font-weight: 700;
+}
