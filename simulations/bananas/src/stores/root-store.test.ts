@@ -17,51 +17,109 @@ const CROSS_A = [plant(false), plant(false), plant(true)];
 const CROSS_B = [plant(false), plant(true)];
 
 describe("RootStore.resetTrial", () => {
-  it("clears both the trial and the selection", () => {
-    const store = createTestStore({ trial: { crosses: [CROSS_A] }, ui: { selectedCross: 0 } });
+  it("clears both the active trial and its selection", () => {
+    const store = createTestStore({
+      trial: { crosses: [CROSS_A] },
+      ui: { selectedCrossByTrial: { A: 0 } },
+    });
     store.resetTrial();
-    expect(getSnapshot(store.trial)).toEqual({
+    expect(getSnapshot(store.activeTrial)).toEqual({
       p1: null,
       p2: null,
       locked: false,
       fungusOn: false,
       crosses: [],
     });
-    expect(store.ui.selectedCross).toBeNull();
+    expect(store.ui.selectedCrossByTrial.has("A")).toBe(false);
+  });
+
+  it("resets the named trial without touching others, clearing only its selection", () => {
+    const store = createTestStore({
+      trials: {
+        A: { p1: W1, crosses: [CROSS_A] },
+        B: { p1: C1, crosses: [CROSS_B] },
+      },
+      ui: { selectedCrossByTrial: { A: 0, B: 0 } },
+    });
+    store.resetTrial("B");
+    // B is wiped…
+    expect(store.trials.get("B")?.canReset).toBe(false);
+    expect(store.ui.selectedCrossByTrial.has("B")).toBe(false);
+    // …A is untouched, including its selection.
+    expect(store.trials.get("A")?.p1).toBe(W1);
+    expect(store.trials.get("A")?.crosses).toHaveLength(1);
+    expect(store.ui.selectedCrossByTrial.get("A")).toBe(0);
   });
 });
 
-describe("RootStore.normalizeSelection", () => {
-  it("clears selectedCross when it is negative", () => {
-    const store = createTestStore({ trial: { crosses: [CROSS_A] }, ui: { selectedCross: -1 } });
-    store.normalizeSelection();
-    expect(store.ui.selectedCross).toBeNull();
+describe("RootStore.addTrial", () => {
+  it("appends the next letter from the initial single-trial state", () => {
+    const store = createTestStore();
+    expect(store.addTrial()).toBe("B");
+    expect(store.trialLetters).toEqual(["A", "B"]);
   });
 
-  it("clears selectedCross when it is >= crosses.length", () => {
-    const store = createTestStore({ trial: { crosses: [CROSS_A] }, ui: { selectedCross: 5 } });
-    store.normalizeSelection();
-    expect(store.ui.selectedCross).toBeNull();
-  });
-
-  it("leaves a valid selectedCross untouched", () => {
+  it("yields 'J' when adding the 10th trial", () => {
     const store = createTestStore({
-      trial: { crosses: [CROSS_A, CROSS_B] },
-      ui: { selectedCross: 1 },
+      trials: { A: {}, B: {}, C: {}, D: {}, E: {}, F: {}, G: {}, H: {}, I: {} },
     });
-    store.normalizeSelection();
-    expect(store.ui.selectedCross).toBe(1);
+    expect(store.addTrial()).toBe("J");
+    expect(store.trials.size).toBe(10);
+  });
+
+  it("returns null and does not mutate when at the 10-trial cap", () => {
+    const store = createTestStore({
+      trials: { A: {}, B: {}, C: {}, D: {}, E: {}, F: {}, G: {}, H: {}, I: {}, J: {} },
+    });
+    expect(store.canAddTrial).toBe(false);
+    expect(store.addTrial()).toBeNull();
+    expect(store.trials.size).toBe(10);
+  });
+});
+
+describe("RootStore per-trial selection memory", () => {
+  it("round-trips selectedCross across ≥ 3 trials and repeated switches", () => {
+    // A has 2 crosses, B has 1, C has 3 — enough that each remembered index is in range.
+    const store = createTestStore({
+      trials: {
+        A: { crosses: [CROSS_A, CROSS_B] },
+        B: { crosses: [CROSS_A] },
+        C: { crosses: [CROSS_A, CROSS_B, CROSS_A] },
+      },
+    });
+
+    store.ui.selectCross(1); // active A
+    store.ui.selectTrial("B");
+    store.ui.selectCross(0); // active B
+    store.ui.selectTrial("C");
+    store.ui.selectCross(2); // active C
+
+    // Now cycle and confirm each trial remembers its own selection.
+    store.ui.selectTrial("A");
+    expect(store.activeCross).toBe(1);
+    store.ui.selectTrial("B");
+    expect(store.activeCross).toBe(0);
+    store.ui.selectTrial("C");
+    expect(store.activeCross).toBe(2);
+    store.ui.selectTrial("A");
+    expect(store.activeCross).toBe(1);
   });
 });
 
 describe("RootStore.activeCross", () => {
   it("returns the raw selectedCross when in range", () => {
-    const store = createTestStore({ trial: { crosses: [CROSS_A] }, ui: { selectedCross: 0 } });
+    const store = createTestStore({
+      trial: { crosses: [CROSS_A] },
+      ui: { selectedCrossByTrial: { A: 0 } },
+    });
     expect(store.activeCross).toBe(0);
   });
 
   it("returns null when selectedCross is out of range (defense-in-depth read guard)", () => {
-    const store = createTestStore({ trial: { crosses: [CROSS_A] }, ui: { selectedCross: 3 } });
+    const store = createTestStore({
+      trial: { crosses: [CROSS_A] },
+      ui: { selectedCrossByTrial: { A: 3 } },
+    });
     expect(store.activeCross).toBeNull();
   });
 
@@ -85,7 +143,7 @@ describe("RootStore.phenotypeTotals", () => {
   it("scopes to the selected cross", () => {
     const store = createTestStore({
       trial: { crosses: [CROSS_A, CROSS_B] },
-      ui: { selectedCross: 0 },
+      ui: { selectedCrossByTrial: { A: 0 } },
     });
     expect(store.phenotypeTotals).toEqual({ healthy: 2, infected: 1 });
   });
@@ -100,21 +158,34 @@ describe("RootStore.resistanceSeries", () => {
   it("returns per-cross percentages (always all crosses, regardless of selection)", () => {
     const store = createTestStore({
       trial: { crosses: [CROSS_A, CROSS_B] },
-      ui: { selectedCross: 0 },
+      ui: { selectedCrossByTrial: { A: 0 } },
     });
     // Cross A: 2/3 healthy → 67%. Cross B: 1/2 healthy → 50%.
     expect(store.resistanceSeries).toEqual({ healthy: [67, 50], infected: [33, 50] });
   });
 });
 
+describe("RootStore.hasAnyProgress", () => {
+  it("is false when every trial is empty", () => {
+    const store = createTestStore({ trials: { A: {}, B: {} } });
+    expect(store.hasAnyProgress).toBe(false);
+  });
+
+  it("is true when a non-active trial has progress", () => {
+    const store = createTestStore({ trials: { A: {}, B: { p1: W1 } } });
+    expect(store.activeTrial.canReset).toBe(false); // active trial A is empty…
+    expect(store.hasAnyProgress).toBe(true); // …but B has progress.
+  });
+});
+
 describe("RootStore snapshot cleanliness (RNG isolation)", () => {
   it("never serializes the injected rng onto the trial snapshot", () => {
     const store = createRootStore({ rng: () => 0.5 });
-    store.trial.setP1(W1);
-    store.trial.setP2(C1);
-    store.trial.crossPlants();
-    store.trial.crossPlants();
-    const json = JSON.stringify(getSnapshot(store.trial));
+    store.activeTrial.setP1(W1);
+    store.activeTrial.setP2(C1);
+    store.activeTrial.crossPlants();
+    store.activeTrial.crossPlants();
+    const json = JSON.stringify(getSnapshot(store.activeTrial));
     expect(json).not.toContain("rng");
     expect(json).not.toContain("function");
   });

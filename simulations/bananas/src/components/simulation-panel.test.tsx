@@ -42,8 +42,9 @@ const lockedOneCross = () =>
       crosses: [[plant("Rr", true), plant("rr", false)]],
     },
   });
-const twoCrosses = (overrides?: { selectedCross?: number | null }) =>
-  createTestStore({
+const twoCrosses = (overrides?: { selectedCross?: number | null }) => {
+  const sel = overrides?.selectedCross;
+  return createTestStore({
     trial: {
       p1: "wild-w1",
       p2: "cavendish-c1",
@@ -53,8 +54,9 @@ const twoCrosses = (overrides?: { selectedCross?: number | null }) =>
         [plant("Rr", true), plant("Rr", true)],
       ],
     },
-    ui: { selectedCross: overrides?.selectedCross ?? null },
+    ui: { selectedCrossByTrial: sel == null ? {} : { A: sel } },
   });
+};
 
 // The cross-row buttons share the "Cross N, …" aria-label shape; this regex excludes the
 // "Cross Plants" control button so getAllByRole targets only the selectable rows.
@@ -131,6 +133,18 @@ describe("SimulationPanel rendering", () => {
   });
 });
 
+describe("SimulationPanel active-trial badge", () => {
+  it("renders the active-trial letter and updates when the active trial changes", () => {
+    const store = createTestStore();
+    const { container } = renderPanel(store);
+    expect(container.querySelector(".active-trial-badge")).toHaveTextContent("A");
+    act(() => {
+      store.ui.selectTrial("B");
+    });
+    expect(container.querySelector(".active-trial-badge")).toHaveTextContent("B");
+  });
+});
+
 describe("SimulationPanel derived control states", () => {
   it("disables Cross Plants and Fungus until both parents are selected", () => {
     const { getByRole } = renderPanel(createTestStore({ trial: { p1: "wild-w1" } }));
@@ -158,7 +172,7 @@ describe("SimulationPanel store integration", () => {
     const store = bothParents();
     const { getByRole } = renderPanel(store);
     fireEvent.click(getByRole("button", { name: "Cross Plants" }));
-    expect(store.trial.crosses).toHaveLength(1);
+    expect(store.activeTrial.crosses).toHaveLength(1);
   });
 
   it("sets a parent on the store when chosen from the Select", () => {
@@ -166,15 +180,15 @@ describe("SimulationPanel store integration", () => {
     const { getByRole } = renderPanel(store);
     fireEvent.click(getByRole("button", { name: /Parent 1/i }));
     fireEvent.click(getByRole("option", { name: "Wild W1" }));
-    expect(store.trial.p1).toBe("wild-w1");
+    expect(store.activeTrial.p1).toBe("wild-w1");
   });
 
   it("resets the store when Reset Trial is pressed", () => {
     const store = lockedOneCross();
     const { getByRole } = renderPanel(store);
     fireEvent.click(getByRole("button", { name: "Reset Trial" }));
-    expect(store.trial.crosses).toHaveLength(0);
-    expect(store.trial.canReset).toBe(false);
+    expect(store.activeTrial.crosses).toHaveLength(0);
+    expect(store.activeTrial.canReset).toBe(false);
   });
 });
 
@@ -188,7 +202,7 @@ describe("SimulationPanel auto-scroll", () => {
     grid.scrollTop = 0;
     // Append a cross via the store; observer re-renders the panel, retriggering the scroll effect.
     act(() => {
-      store.trial.crossPlants();
+      store.activeTrial.crossPlants();
     });
     expect(grid.scrollTop).toBe(500);
   });

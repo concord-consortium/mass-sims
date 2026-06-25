@@ -13,6 +13,14 @@ export interface TrialCardProps {
   resetDisabled?: boolean;
   onSelect: () => void;
   onReset: () => void;
+  /** Overrides the default `"Trial X"` accessible name — e.g. to enrich it with trial state. */
+  ariaLabel?: string;
+  /** Roving-tabindex control for the card button. Omitted → native (always tabbable). */
+  tabIndex?: number;
+  /** ARIA role for the card button — e.g. `"tab"` when used inside a tablist. Omitted → native button. */
+  role?: string;
+  /** `aria-selected` state, for tablist usage. Omitted when `undefined` (non-tab consumers). */
+  ariaSelected?: boolean;
 }
 
 /**
@@ -32,15 +40,24 @@ export function TrialCard({
   resetDisabled = false,
   onSelect,
   onReset,
+  ariaLabel,
+  tabIndex,
+  role,
+  ariaSelected,
 }: TrialCardProps) {
   const letter = LETTERS[index] ?? "?";
+  // Tab semantics are opt-in: only attach `role` + `aria-selected` when a role is supplied, so a
+  // plain-button consumer never receives an `aria-selected` its role wouldn't support.
+  const tabProps = role ? { role, "aria-selected": ariaSelected } : {};
   return (
     <div className={clsx("trial-card-wrapper", { selected })}>
       <button
         type="button"
         className="trial-card"
-        aria-label={`Trial ${letter}`}
+        aria-label={ariaLabel ?? `Trial ${letter}`}
+        tabIndex={tabIndex}
         onClick={onSelect}
+        {...tabProps}
       >
         <span className="letter-badge" aria-hidden="true">
           {letter}

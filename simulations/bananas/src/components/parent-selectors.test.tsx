@@ -47,7 +47,7 @@ describe("ParentSelectors", () => {
     const { getByRole } = renderSelectors(store);
     fireEvent.click(getByRole("button", { name: /Parent 1/i }));
     fireEvent.click(getByRole("option", { name: "Wild W1" }));
-    expect(store.trial.p1).toBe("wild-w1");
+    expect(store.activeTrial.p1).toBe("wild-w1");
   });
 
   it("sets trial.p2 to the chosen ParentId on Parent 2 change", () => {
@@ -55,7 +55,7 @@ describe("ParentSelectors", () => {
     const { getByRole } = renderSelectors(store);
     fireEvent.click(getByRole("button", { name: /Parent 2/i }));
     fireEvent.click(getByRole("option", { name: "Cavendish C1" }));
-    expect(store.trial.p2).toBe("cavendish-c1");
+    expect(store.activeTrial.p2).toBe("cavendish-c1");
   });
 
   it("replaces the selects with static parent chips when the trial is locked", () => {

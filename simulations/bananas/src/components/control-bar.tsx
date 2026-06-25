@@ -29,7 +29,7 @@ function ControlButton({ label, Icon, isDisabled, onPress, action }: ControlButt
 
 export const ControlBar = observer(function ControlBar() {
   const rootStore = useStores();
-  const { trial } = rootStore;
+  const trial = rootStore.activeTrial;
   return (
     <div className="control-bar">
       <FungusSwitch

@@ -155,7 +155,7 @@ describe("TrialModel.reset", () => {
 });
 
 describe("TrialModel snapshot shape", () => {
-  it("matches the SavedState wire format field-for-field", () => {
+  it("matches the TrialState wire format field-for-field", () => {
     const trial = makeTrial();
     trial.setP1(W1);
     trial.setP2(C1);

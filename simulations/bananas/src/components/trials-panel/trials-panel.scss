@@ -1,0 +1,166 @@
+@use "@concord-consortium/mass-sims-shared/styles/tokens" as tokens;
+@use "../../theme" as theme;
+
+.bananas-trials-panel {
+  align-items: flex-start;
+  display: flex;
+  flex-direction: column;
+  gap: tokens.$column-gap;
+  width: 100%;
+
+  .trial-card-wrapper {
+    .trial-card {
+      background: theme.$surface;
+      border-color: theme.$border;
+
+      &:hover,
+      &:focus-visible {
+        background: theme.$accent;
+      }
+
+      &:active {
+        background: theme.$accent-strong;
+      }
+    }
+
+    .letter-badge {
+      background: theme.$accent;
+    }
+
+    &.selected .trial-card {
+      background: theme.$accent;
+      border-color: theme.$heading;
+      box-shadow: inset 0 0 0 1px theme.$heading;
+    }
+
+    &.selected .letter-badge {
+      background: theme.$heading;
+      color: theme.$accent;
+    }
+
+    .reset-button-icon {
+      background: theme.$surface;
+    }
+
+    .reset-button:hover:not([aria-disabled="true"]) .reset-button-icon,
+    .reset-button:focus-visible:not([aria-disabled="true"]) .reset-button-icon {
+      background: theme.$accent;
+    }
+
+    .reset-button:active:not([aria-disabled="true"]) .reset-button-icon {
+      background: theme.$accent-strong;
+    }
+  }
+}
+
+// ---- `+ New` card ----
+.new-trial-card {
+  align-items: center;
+  background: theme.$surface;
+  border: tokens.$border-strong;
+  border-color: theme.$border;
+  border-radius: tokens.$radius-md;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  gap: 2px;
+  height: 136px;
+  justify-content: center;
+  width: 120px;
+
+  &:hover,
+  &:focus-visible {
+    background: theme.$accent;
+  }
+
+  &:focus-visible {
+    outline: tokens.$focus-outline;
+    outline-offset: tokens.$focus-outline-offset;
+  }
+
+  &:active {
+    background: theme.$accent-strong;
+  }
+}
+
+.new-trial-card-plus {
+  color: tokens.$color-text;
+  font-family: tokens.$font-family-base;
+  font-size: 28px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.new-trial-card-text {
+  color: tokens.$color-text;
+  font-family: tokens.$font-family-base;
+  font-size: tokens.$font-size-base;
+  font-weight: 700;
+}
+
+// ---- "Max number of trials reached" notice ----
+.max-trials-notice {
+  color: tokens.$color-text;
+  font-family: tokens.$font-family-base;
+  font-size: tokens.$font-size-base;
+  font-style: italic;
+  text-align: center;
+  width: 100%;
+}
+
+// ---- Trial card body (rendered as the shared <TrialCard>'s children, inside its `.body`) ----
+// `.body` already provides the absolute placement + column flow; this wrapper just stacks the rows.
+.trial-card-body {
+  align-items: center;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  width: 100%;
+}
+
+// Parents row: `×` always centered, parent abbreviations flanking it.
+.trial-card-parents {
+  align-items: center;
+  display: flex;
+  font-weight: 500;
+  gap: 4px;
+  justify-content: center;
+  width: 100%;
+}
+
+.trial-card-parent {
+  flex: 1;
+}
+
+.trial-card-parent--left {
+  text-align: right;
+}
+
+.trial-card-parent--right {
+  text-align: left;
+}
+
+// Healthy / Infected percentage row.
+.trial-card-phenotypes {
+  align-items: center;
+  display: flex;
+  gap: 4px;
+  justify-content: center;
+}
+
+.trial-card-swatch {
+  border: 1px solid tokens.$color-text;
+  border-radius: 2px;
+  flex-shrink: 0;
+  height: 14px;
+  width: 14px;
+}
+
+.trial-card-swatch--healthy {
+  background: theme.$banana-healthy-legend;
+}
+
+.trial-card-swatch--infected {
+  background: theme.$banana-infected;
+}

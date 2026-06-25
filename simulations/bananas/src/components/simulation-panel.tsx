@@ -140,7 +140,7 @@ export const SimulationPanel = observer(function SimulationPanel({
   gridRef,
 }: SimulationPanelProps) {
   const rootStore = useStores();
-  const { trial } = rootStore;
+  const trial = rootStore.activeTrial;
   const activeCross = rootStore.activeCross;
 
   const pillContent = renderStatusPill(trial);
@@ -157,28 +157,33 @@ export const SimulationPanel = observer(function SimulationPanel({
   }, [crossCount]);
 
   return (
-    <div className="bananas-simulation-panel">
-      <ParentSelectors />
+    <>
+      <span className="active-trial-badge" aria-hidden="true">
+        {rootStore.ui.selectedTrialLetter}
+      </span>
+      <div className="bananas-simulation-panel">
+        <ParentSelectors />
 
-      {pillContent ? (
-        <div className="status-pill-wrap">
-          <div className="status-pill" role="status" aria-live="polite">
-            {pillContent}
+        {pillContent ? (
+          <div className="status-pill-wrap">
+            <div className="status-pill" role="status" aria-live="polite">
+              {pillContent}
+            </div>
           </div>
-        </div>
-      ) : null}
+        ) : null}
 
-      {/*
+        {/*
         This element is the scroller for App#scrollToCross. Two invariants must hold for
         scrollToCross to work: (1) this is the element whose scrollTop moves when the user
         scrolls the offspring list; (2) every cross row inside it carries the class
         `.offspring-row` and appears in cross-index order (row 0 is A1, row 1 is A2, …).
       */}
-      <section className="offspring-grid" ref={gridRef}>
-        {renderOffspringGrid(trial, activeCross, (idx) => rootStore.ui.selectCross(idx))}
-      </section>
+        <section className="offspring-grid" ref={gridRef}>
+          {renderOffspringGrid(trial, activeCross, (idx) => rootStore.ui.selectCross(idx))}
+        </section>
 
-      <ControlBar />
-    </div>
+        <ControlBar />
+      </div>
+    </>
   );
 });
