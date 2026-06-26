@@ -15,6 +15,11 @@ top-test/
 # Test / coverage
 coverage/
 
+# Playwright artifacts (reports, traces, browser cache)
+playwright/test-results/
+playwright/playwright-report/
+playwright/.cache/
+
 # Logs
 *.log
 npm-debug.log*

@@ -27,6 +27,73 @@ jobs:
       - run: yarn gen-index --check
       - run: yarn gen-workflows --check
 
+  # End-to-end tests (Playwright). Runs after `checks`, in parallel with the deploy jobs. Builds
+  # every sim, then runs the suite against the built artifacts via `vite preview` (the webServer
+  # config never builds — see the build contract in docs/playwright.md). A failure here does NOT
+  # block branch deploys, matching the FOSS/DESE Cypress posture; the tagged-release gate is a
+  # tracked follow-up (plan §11).
+  playwright:
+    name: Run Playwright Tests
+    needs: checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      id-token: write
+      contents: read
+      pull-requests: write
+    env:
+      AWS_REGION: us-east-1
+      S3_BUCKET: models-resources
+      PROJECT_PREFIX: mass-sims
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "yarn"
+      - run: yarn install --frozen-lockfile
+      - run: yarn typecheck:playwright
+      - run: yarn build
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+      - run: yarn test:playwright
+
+      # Publish the HTML report to S3 so every run (pass or fail) has a persistent, linkable report.
+      # Deploy path mirrors the sim deploys: branch/<name> on a branch, version/<tag> on a tag.
+      - name: Determine report path
+        if: ${{ !cancelled() }}
+        id: report_path
+        run: |
+          if [[ "${GITHUB_REF}" == refs/tags/* ]]; then
+            echo "path=version/${GITHUB_REF_NAME}" >> "$GITHUB_OUTPUT"
+          else
+            echo "path=branch/${GITHUB_REF_NAME}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Configure AWS credentials (OIDC)
+        if: ${{ !cancelled() }}
+        uses: aws-actions/configure-aws-credentials@v6.1.3
+        with:
+          role-to-assume: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Upload Playwright report to S3
+        if: ${{ !cancelled() }}
+        env:
+          REPORT_PATH: ${{ steps.report_path.outputs.path }}
+        run: |
+          aws s3 sync ./playwright/playwright-report \
+            "s3://${S3_BUCKET}/${PROJECT_PREFIX}/playwright-report/${REPORT_PATH}" \
+            --delete \
+            --cache-control "no-cache, max-age=0"
+
+      - name: Post report summary
+        if: ${{ !cancelled() }}
+        uses: daun/playwright-report-summary@v4
+        with:
+          report-file: playwright/test-results/results.json
+          report-url: https://${{ env.S3_BUCKET }}.concord.org/${{ env.PROJECT_PREFIX }}/playwright-report/${{ steps.report_path.outputs.path }}/
+
   # Deploy split: per-sim sim-<name>.yml workflows handle incremental branch deploys (path-filtered
   # to the changed sim). The two jobs below cover what those can't — deploy_root always ships the
   # cross-cutting root index, and deploy_all_sims rebuilds EVERY sim on a release tag (see its note).
