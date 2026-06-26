@@ -155,7 +155,7 @@ export function ResistanceBarChart({
                 dominantBaseline="central"
                 textAnchor="start"
                 x={MARGIN.left + 1 + FLAG_PAD_L + FLAG_ICON + FLAG_ICON_GAP}
-                y={FLAG_TOP + FLAG_H / 2 + 1.5}
+                y={FLAG_TOP + FLAG_H / 2}
               >
                 Fungus
               </text>
