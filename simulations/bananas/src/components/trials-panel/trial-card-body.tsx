@@ -1,5 +1,6 @@
 import { observer } from "mobx-react-lite";
 import type { ReactNode } from "react";
+import FungusAddedIcon from "../../assets/icons/fungus-added.svg?react";
 import { aggregateTotals } from "../../model/data-aggregations";
 import { PARENT_LABELS, type ParentId } from "../../model/genetics";
 import type { TrialModelInstance } from "../../stores/trial-model";
@@ -18,9 +19,10 @@ function abbrevParent(id: string | null): string | null {
 
 /**
  * The enriched screen-reader label for a trial card: "Trial A. W1 crossed with C1. 12 offspring, 9
- * healthy, 3 infected." Built inline from live trial state (NOT memoized) so the orchestrator —
- * which is `observer`-wrapped — recomputes it whenever the trial mutates. Passed to the shared
- * `<TrialCard>` via its `ariaLabel` prop.
+ * healthy, 3 infected. Fungus active." Built inline from live trial state (NOT memoized) so the
+ * orchestrator — which is `observer`-wrapped — recomputes it whenever the trial mutates. Passed to
+ * the shared `<TrialCard>` via its `ariaLabel` prop, mirroring the visible (aria-hidden) body —
+ * including the Fungus row.
  */
 export function trialAriaLabel(letter: string, trial: TrialModelInstance): string {
   const p1 = abbrevParent(trial.p1);
@@ -33,6 +35,7 @@ export function trialAriaLabel(letter: string, trial: TrialModelInstance): strin
     const { healthy, infected } = aggregateTotals(trial.crosses);
     parts.push(`${healthy + infected} offspring, ${healthy} healthy, ${infected} infected`);
   }
+  if (trial.fungusOn) parts.push("Fungus active");
   return parts.join(". ");
 }
 
@@ -82,6 +85,24 @@ export const TrialCardBody = observer(function TrialCardBody({
       ) : null}
       {offspringRow}
       {phenotypeRow}
+      {trial.fungusOn ? (
+        <>
+          {/* Before any cross, two empty rows stand in for the offspring + percentage rows so the
+              Fungus label always lands at the bottom of the card. */}
+          {trial.crosses.length === 0 ? (
+            <>
+              <span className="trial-card-row-spacer">{" "}</span>
+              <span className="trial-card-row-spacer">{" "}</span>
+            </>
+          ) : null}
+          <span className="trial-card-fungus">
+            <span className="trial-card-fungus-badge">
+              <FungusAddedIcon className="trial-card-fungus-icon" aria-hidden="true" />
+            </span>
+            Fungus
+          </span>
+        </>
+      ) : null}
     </div>
   );
 });

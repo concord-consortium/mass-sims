@@ -3,9 +3,9 @@
 
 .active-trial-badge {
   align-items: center;
-  background: tokens.$color-trial-badge-bg-selected;
+  background: theme.$heading;
   border-radius: tokens.$radius-sm;
-  color: tokens.$color-surface;
+  color: theme.$accent;
   display: flex;
   font-family: tokens.$font-family-base;
   font-size: tokens.$font-size-lg;

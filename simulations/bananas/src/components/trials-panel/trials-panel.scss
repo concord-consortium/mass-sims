@@ -6,6 +6,9 @@
   display: flex;
   flex-direction: column;
   gap: tokens.$column-gap;
+  // Nudge the cards 1px left so the card's right edge clears the vertical scrollbar
+  // when it's shown (the 120px card otherwise sits flush against the scrollbar gutter).
+  margin-left: -1px;
   width: 100%;
 
   .trial-card-wrapper {
@@ -40,6 +43,7 @@
 
     .reset-button-icon {
       background: theme.$surface;
+      color: theme.$heading;
     }
 
     .reset-button:hover:not([aria-disabled="true"]) .reset-button-icon,
@@ -84,12 +88,10 @@
   }
 }
 
-.new-trial-card-plus {
-  color: tokens.$color-text;
-  font-family: tokens.$font-family-base;
-  font-size: 28px;
-  font-weight: 700;
-  line-height: 1;
+.new-trial-card-icon {
+  color: theme.$heading;
+  height: 24px;
+  width: 24px;
 }
 
 .new-trial-card-text {
@@ -163,4 +165,34 @@
 
 .trial-card-swatch--infected {
   background: theme.$banana-infected;
+}
+
+// Empty stand-ins for the offspring + percentage rows, sized to one text line each so the
+// Fungus label keeps the same bottom slot before and after the first cross.
+.trial-card-row-spacer {
+  height: 1.3em;
+}
+
+.trial-card-fungus {
+  align-items: center;
+  color: tokens.$color-text;
+  display: inline-flex;
+  gap: 2px;
+}
+
+.trial-card-fungus-badge {
+  align-items: center;
+  background: theme.$fungus-marker-label-bg;
+  border-radius: 50%;
+  display: inline-flex;
+  flex-shrink: 0;
+  height: 20px;
+  justify-content: center;
+  width: 20px;
+}
+
+.trial-card-fungus-icon {
+  color: theme.$fungus-marker-color;
+  height: 20px;
+  width: 20px;
 }

@@ -1,7 +1,7 @@
 import clsx from "clsx";
 import type { ReactNode } from "react";
 
-import resetIcon from "../../assets/reset-icon.svg";
+import ResetIcon from "../../assets/reset-icon.svg?react";
 import "./trial-card.scss";
 
 const LETTERS = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J"] as const;
@@ -74,7 +74,7 @@ export function TrialCard({
             if (!resetDisabled) onReset();
           }}
         >
-          <img src={resetIcon} alt="" aria-hidden="true" className="reset-button-icon" />
+          <ResetIcon aria-hidden="true" className="reset-button-icon" />
         </button>
       ) : null}
     </div>
