@@ -13,7 +13,9 @@
       "!**/node_modules",
       "!**/coverage",
       "!**/.vite",
-      "!**/top-test"
+      "!**/top-test",
+      "!**/playwright/test-results",
+      "!**/playwright/playwright-report"
     ]
   },
   "formatter": {

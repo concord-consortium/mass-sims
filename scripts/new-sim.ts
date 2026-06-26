@@ -11,8 +11,11 @@
 // What it does:
 //   1. Validates the name.
 //   2. Copies packages/starter/ to simulations/<name>/ (skipping node_modules,
-//      dist, coverage, .vite, and *.tsbuildinfo files).
-//   3. Substitutes the name + title placeholders.
+//      dist, coverage, .vite, and *.tsbuildinfo files) and substitutes name + title.
+//   3. Wires up Playwright e2e coverage for the new sim:
+//        a. appends a { name, port } entry to playwright/sims.ts (next free port),
+//        b. copies playwright/pages/starter-page.ts → playwright/pages/<name>-page.ts,
+//        c. copies playwright/tests/smoke/starter.test.ts → playwright/tests/smoke/<name>.test.ts.
 //   4. Prints next-step reminders.
 //
 // Note: the root package.json `workspaces` array uses globs (`simulations/*`), so a
@@ -41,10 +44,17 @@ export function isValidSimName(name: string): boolean {
   return true;
 }
 
+/** kebab-case → PascalCase, e.g. "photo-synth" → "PhotoSynth". */
+export function kebabToPascal(name: string): string {
+  return name
+    .split("-")
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join("");
+}
+
 /**
- * Apply name/title substitutions. The substitution rules are file-specific so we
- * don't accidentally rewrite documentation prose that happens to contain the word
- * "starter".
+ * Apply name/title substitutions to the copied SIM SOURCE. The rules are file-specific so we
+ * don't accidentally rewrite documentation prose that happens to contain the word "starter".
  */
 export function substituteInFile(
   content: string,
@@ -61,33 +71,82 @@ export function substituteInFile(
   return content;
 }
 
-function main() {
-  const name = process.argv[2];
-  if (!name) {
-    console.error("Usage: yarn new-sim <name>");
-    process.exit(1);
+/** The next free preview port = max registered port + 1. */
+export function nextSimPort(simsContent: string): number {
+  const ports = [...simsContent.matchAll(/port:\s*(\d+)/g)].map((m) => Number(m[1]));
+  if (ports.length === 0) {
+    throw new Error("No ports found in playwright/sims.ts — cannot assign the next port.");
   }
+  return Math.max(...ports) + 1;
+}
+
+/** Append a `{ name, port }` entry to the SIMS array in playwright/sims.ts. */
+export function appendSimToRegistry(simsContent: string, name: string, port: number): string {
+  const entry = `  { name: "${name}", port: ${port} },\n`;
+  const updated = simsContent.replace(
+    /(export const SIMS: SimEntry\[\] = \[\n[\s\S]*?)(\];)/,
+    (_match, body: string, tail: string) => `${body}${entry}${tail}`,
+  );
+  if (updated === simsContent) {
+    throw new Error("Could not locate the SIMS array in playwright/sims.ts.");
+  }
+  return updated;
+}
+
+/**
+ * Transform the canonical starter page object into a new sim's page object: substitute the class
+ * name and the registry key its `goto()` reads, and prepend a "edit me" header. The Starter-specific
+ * locators/actions are intentionally left in place as a working starting point.
+ */
+export function scaffoldPageObject(starterContent: string, name: string): string {
+  const pascal = kebabToPascal(name);
+  const header =
+    `// Page object for the \`${name}\` sim, scaffolded from starter-page.ts by \`yarn new-sim\`.\n` +
+    `// The locators and actions below are Starter's — replace them with this sim's own controls.\n` +
+    `// The shared chrome (header, About modal, three slots) is inherited from SimulationFramePage.\n`;
+  const body = starterContent
+    .replaceAll("StarterPage", `${pascal}Page`)
+    .replaceAll(`getSimUrl("starter")`, `getSimUrl("${name}")`);
+  return header + body;
+}
+
+/**
+ * Transform the canonical starter smoke spec into a new sim's smoke spec: substitute the page-object
+ * class name and its import path, plus the asserted sim title (the scaffolded app.tsx renders the
+ * "<NEW SIM TITLE>" placeholder, so the copied spec must assert the same placeholder to stay green
+ * until the author customizes both).
+ */
+export function scaffoldSmokeTest(starterContent: string, name: string): string {
+  const pascal = kebabToPascal(name);
+  return starterContent
+    .replaceAll("StarterPage", `${pascal}Page`)
+    .replaceAll("starter-page", `${name}-page`)
+    .replaceAll(`"Random Walk"`, `"<NEW SIM TITLE>"`);
+}
+
+/**
+ * Scaffold a new sim end-to-end (source + Playwright coverage). Throws on any invalid input or
+ * pre-existing target so callers (the CLI and the integration test) can react. Returns the
+ * assigned preview port. Performs no logging — the CLI's main() owns user-facing output.
+ */
+export function scaffoldSim(name: string): { port: number } {
   if (!isValidSimName(name)) {
-    console.error(
-      `Invalid sim name "${name}". Use kebab-case (lowercase, digits, hyphens; starting with a letter). ` +
-        `Reserved: shared, starter, sim-frame-preview, mass-sims.`,
+    throw new Error(
+      `Invalid sim name "${name}". Use kebab-case (lowercase, digits, hyphens; starting with a ` +
+        `letter). Reserved: shared, starter, sim-frame-preview, mass-sims.`,
     );
-    process.exit(1);
   }
+
   const targetDir = join(REPO_ROOT, "simulations", name);
-  if (existsSync(targetDir)) {
-    console.error(`Refusing to overwrite existing directory: ${targetDir}`);
-    process.exit(1);
+  const pageTarget = join(REPO_ROOT, "playwright", "pages", `${name}-page.ts`);
+  const smokeTarget = join(REPO_ROOT, "playwright", "tests", "smoke", `${name}.test.ts`);
+  for (const path of [targetDir, pageTarget, smokeTarget]) {
+    if (existsSync(path)) throw new Error(`Refusing to overwrite existing path: ${path}`);
   }
 
+  // 1. Copy + substitute the sim source.
   const sourceDir = join(REPO_ROOT, "packages", "starter");
-  console.log(`Copying ${sourceDir} → ${targetDir}`);
-  cpSync(sourceDir, targetDir, {
-    recursive: true,
-    filter: (src) => !shouldSkipCopy(src),
-  });
-
-  // Walk the copied tree and substitute.
+  cpSync(sourceDir, targetDir, { recursive: true, filter: (src) => !shouldSkipCopy(src) });
   walk(targetDir, (filePath) => {
     // Normalize to forward slashes so substituteInFile's path checks (e.g. "src/app.tsx") work on
     // Windows, where filePath uses backslash separators.
@@ -100,12 +159,55 @@ function main() {
     if (next !== content) writeFileSync(filePath, next);
   });
 
-  console.log(`\n✓ Scaffolded simulations/${name}`);
+  // 2. Append the new sim to the Playwright sims registry (next free port).
+  const simsPath = join(REPO_ROOT, "playwright", "sims.ts");
+  const simsContent = readFileSync(simsPath, "utf8");
+  const port = nextSimPort(simsContent);
+  writeFileSync(simsPath, appendSimToRegistry(simsContent, name, port));
+
+  // 3. Scaffold the page object from the Starter template.
+  const starterPage = readFileSync(
+    join(REPO_ROOT, "playwright", "pages", "starter-page.ts"),
+    "utf8",
+  );
+  writeFileSync(pageTarget, scaffoldPageObject(starterPage, name));
+
+  // 4. Scaffold the smoke spec from the Starter template.
+  const starterSmoke = readFileSync(
+    join(REPO_ROOT, "playwright", "tests", "smoke", "starter.test.ts"),
+    "utf8",
+  );
+  writeFileSync(smokeTarget, scaffoldSmokeTest(starterSmoke, name));
+
+  return { port };
+}
+
+function main() {
+  const name = process.argv[2];
+  if (!name) {
+    console.error("Usage: yarn new-sim <name>");
+    process.exit(1);
+  }
+
+  let port: number;
+  try {
+    ({ port } = scaffoldSim(name));
+  } catch (err) {
+    console.error(err instanceof Error ? err.message : String(err));
+    process.exit(1);
+  }
+
+  console.log(`✓ Scaffolded simulations/${name}`);
+  console.log(`  + playwright/pages/${name}-page.ts`);
+  console.log(`  + playwright/tests/smoke/${name}.test.ts`);
+  console.log(`  + playwright/sims.ts entry (preview port ${port})`);
   console.log("\nNext steps:");
   console.log("  1. yarn install            # link the new workspace");
   console.log("  2. yarn gen-index          # refresh the root index.html");
   console.log("  3. yarn gen-workflows      # generate the per-sim CI workflow");
   console.log(`  4. Edit simulations/${name}/src/app.tsx — fill in simTitle and tagline`);
+  console.log(`  5. Update the "<NEW SIM TITLE>" assertion in the new smoke spec to match`);
+  console.log(`  6. yarn test:playwright:build playwright/tests/smoke/${name}.test.ts`);
 }
 
 function walk(dir: string, visit: (filePath: string) => void) {

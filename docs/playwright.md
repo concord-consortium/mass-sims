@@ -1,0 +1,138 @@
+# Playwright end-to-end tests
+
+The `playwright/` suite drives the **built** sims in a real browser across the four canonical
+viewport widths. It complements the per-workspace Vitest unit tests: Vitest covers model/reducer/
+view logic in isolation; Playwright covers the assembled app — shared chrome, controls, cross-panel
+behavior — against the same static artifacts users get.
+
+- **Config:** [`playwright.config.ts`](../playwright.config.ts) at the **repo root**.
+- **Suite:** [`playwright/`](../playwright/) — `sims.ts` (registry), `pages/` (page objects),
+  `testdata/`, `tests/smoke/`, `tests/functional/`.
+- **Browser:** Chromium only.
+
+## Running locally
+
+| Command | What it does |
+| --- | --- |
+| `yarn test:playwright:build` | **Full cycle** — builds every sim, then runs the suite. Use this most of the time. |
+| `yarn test:playwright` | Runs the suite **assuming `dist/` already exists** (it does NOT build). Fast iteration after a build. |
+| `yarn test:playwright:open` | Playwright UI mode (watch + time-travel debugging). |
+| `yarn test:playwright --project=chromium-1044` | One viewport only (fastest iteration). |
+| `yarn test:playwright playwright/tests/smoke` | One tier (smoke / functional). |
+| `yarn playwright:install` | Install the Chromium binary (once per machine / after a Playwright bump). |
+| `yarn typecheck:playwright` | Type-check the suite (`tsc -p playwright/tsconfig.json`). |
+
+First-time setup: `yarn playwright:install`.
+
+## The build contract
+
+`yarn test:playwright` **never builds.** The `webServer` config only runs `vite preview` against
+each sim's pre-built `dist/`. So either:
+
+- run `yarn test:playwright:build` (builds then runs), or
+- run `yarn build && yarn test:playwright`, or
+- in CI, the `playwright` job runs `yarn build` as an explicit step before `yarn test:playwright`.
+
+Testing the **built artifacts** (not the dev server) is deliberate: `vite dev` and `vite preview`
+are different code paths, and the e2e suite is where preview-only bugs surface.
+
+`reuseExistingServer: false` everywhere — Playwright always launches its own preview servers and
+never reuses one already on the port. This means **you must stop any `vite dev`/`preview` server
+on ports 8080–8081 before running e2e** (a stray server makes Playwright fail loudly with
+"port already in use" rather than silently testing the wrong app).
+
+## Architecture
+
+- **Config at the repo root** so `playwright test` discovers it with no `--config=` flag. Only
+  tests / page objects / testdata / the registry live under `playwright/`.
+- **The sims registry is the single source of truth.** [`playwright/sims.ts`](../playwright/sims.ts)
+  maps each sim to a preview port; the URL is *derived* (`getSimUrl(name)`), never stored, so a
+  port and its URL can't drift. Both `playwright.config.ts` (for `webServer`) and every page
+  object's `goto()` read from it.
+
+  | Sim | Port |
+  | --- | --- |
+  | starter | 8080 |
+  | bananas | 8081 |
+  | _(new sims)_ | next free port, assigned automatically by `yarn new-sim` |
+
+- **No `baseURL`.** Different specs target different sims at different ports; a single `baseURL`
+  would silently route one sim's tests at another the moment a page object forgot to be explicit.
+  Every page object navigates explicitly via `getSimUrl(name)`.
+- **Page objects are classes.** [`SimulationFramePage`](../playwright/pages/simulation-frame-page.ts)
+  is the shared-chrome base (header, About modal, three slots); each sim subclasses it
+  (`StarterPage`, `BananasPage`) with its own controls **and its own `goto()`** (the base has no
+  canonical URL, so it has no `goto()`).
+- **Test data re-exports from the sim, never duplicates it.**
+  [`playwright/testdata/bananas-testdata.ts`](../playwright/testdata/bananas-testdata.ts) re-exports
+  the constants Bananas already defines (parent ids/labels, trial letters, `MAX_CROSSES`,
+  `MAX_TRIALS`) and adds e2e conveniences. Catalogs grow with the sim, so specs pick up new entries
+  for free. The only modules imported from sim source are **pure** (no React / vite-svg / scss),
+  which is why importing them into the Playwright-run suite is safe. Behavior-defining cap values
+  are imported **and** asserted against literals in the smoke spec (e.g. `expect(MAX_CROSSES).toBe(6)`)
+  so an accidental change surfaces immediately.
+- **Locator strategy:** prefer accessible queries (`getByRole` / `getByLabel` / `getByText`); fall
+  back to CSS class selectors only for elements with no good accessible name (e.g. the active-trial
+  badge, the status pill, the visually-hidden fungus `<input>`). Each test is isolated — a fresh
+  `goto()` per `test.beforeEach`, no shared state (standalone mode has no persistence, so a fresh
+  load is a clean slate).
+
+## The four-width matrix
+
+The suite runs once per Chromium project at **1044 / 1024 / 989 / 767** (all × 562 height) — the AP
+allocation widths. The same specs run four times; Playwright reports per-project pass/fail. This
+catches width-responsive layout regressions ("this control doesn't fit at 767") cheaply. A test that
+passes at 1044 but fails at 767 is usually a **real product bug**, not a test-scope problem.
+
+**Standalone-mode caveat:** standalone rendering adds a 2 px / 10 px-radius outer container, so the
+sim content area is a few pixels narrower than the raw viewport. This is fine for behavioral
+coverage (a few pixels doesn't change which controls fit), but these tests are **not** AP-pixel-
+perfect — visual/pixel-precise coverage is deferred (see below).
+
+## The reload-warning pattern
+
+Standalone sims arm a "leave site?" warning by registering a `beforeunload` handler that calls
+`preventDefault()` (the shared `useReloadWarning` hook). The base-class helper
+`assertReloadWarning(expected)` detects this by dispatching a **synthetic cancelable `beforeunload`
+event in-page** and reading `defaultPrevented`.
+
+We do **not** use `page.close({ runBeforeUnload: true })` + a `dialog` listener: under Playwright
+tracing (UI mode / `--trace on`) the instrumented close surfaces a spurious `beforeunload` dialog
+even on a clean page, giving the negative case a false positive. The synthetic-dispatch approach is
+deterministic and mode-independent because it never closes the page or depends on a dialog.
+
+For **Starter** specifically, the warning is gated on a trial running to **completion**
+(`output !== null`), not merely starting — so the positive test drives a trial to completion first
+via `completeOneTrial()` (shorten the run via the on-page NumberField, then Step to the end).
+
+## Adding a new sim
+
+`yarn new-sim <name>` wires up e2e coverage automatically (no manual steps): it appends a
+`{ name, port }` entry to `playwright/sims.ts` with the next free port, copies the Starter page
+object to `playwright/pages/<name>-page.ts` (class name + registry key substituted), and copies the
+Starter smoke spec to `playwright/tests/smoke/<name>.test.ts` (class name + import path + the
+`"<NEW SIM TITLE>"` placeholder substituted). The new sim's `webServer` entry materializes from the
+registry append, so the spec runs with zero extra config.
+
+After scaffolding, customize the page object's locators and update the `"<NEW SIM TITLE>"` assertion
+in the smoke spec to your real title, then `yarn test:playwright:build playwright/tests/smoke/<name>.test.ts`
+(note: `:build` — a brand-new sim has no `dist/` until it's built).
+
+## CI
+
+The `playwright` job in [`.github/workflows/ci.yml`](../.github/workflows/ci.yml) runs after
+`checks`: it type-checks the suite, builds every sim, installs Chromium, runs `yarn test:playwright`,
+and publishes the HTML report to S3 (`…/mass-sims/playwright-report/<branch-or-tag>/`) with a run
+summary on every push (pass or fail). A failing e2e run does **not** block branch deploys — those
+are separate jobs gated only on `checks`.
+
+## Troubleshooting
+
+- **"port 8080/8081 already in use"** — a `vite dev`/`preview` server (or an interrupted prior e2e
+  run) is holding the port. Stop it: `lsof -ti:8080 -ti:8081 | xargs kill`. This is `reuseExistingServer:
+  false` working as intended — it refuses to silently test against the wrong server.
+- **Reload-warning test flaky** — it shouldn't be (the synthetic-dispatch detection is
+  deterministic). If it ever is, the unit-level `useReloadWarning` coverage is the source of truth;
+  mark the e2e test `test.fixme()` and rely on that.
+- **A test passes at 1044 but fails at a narrower width** — treat it as a real responsive-layout bug
+  to investigate, not something to paper over with a per-project `test.skip()`.

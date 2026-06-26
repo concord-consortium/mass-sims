@@ -167,6 +167,24 @@ Deployment is automatic via the generated `sim-<name>.yml` workflow:
 The per-sim workflow's path filters trigger it only when the sim's own directory,
 `packages/shared/**`, or its workflow file changes.
 
+## 9. End-to-end tests
+
+`yarn new-sim` already scaffolded your sim's Playwright coverage: a smoke spec
+(`playwright/tests/smoke/<name>.test.ts`), a page object (`playwright/pages/<name>-page.ts`), and a
+`playwright/sims.ts` registry entry. The smoke spec is copied from Starter's — it's the canonical
+template — so it starts green against the freshly scaffolded sim and is meant to be **edited as you
+build**:
+
+- Update the `"<NEW SIM TITLE>"` title assertion to your real title.
+- Replace the Starter-specific locators/actions in the page object with your sim's controls; the
+  shared chrome (header, About modal, three slots) is inherited and usually needs no changes.
+- Run it with `yarn test:playwright:build playwright/tests/smoke/<name>.test.ts` (use `:build` —
+  a brand-new sim has no `dist/` until it's built).
+
+See [`docs/playwright.md`](./playwright.md) for the full conventions (page-object pattern, the
+test-data re-export convention, the four-width matrix, the build contract, the reload-warning
+pattern, and how CI runs the suite).
+
 ## Quick checklist
 
 - [ ] `yarn new-sim <name>` then `yarn install`
@@ -176,3 +194,4 @@ The per-sim workflow's path filters trigger it only when the sim's own directory
 - [ ] Define `SavedState` and wire the restore/push effects + standalone-gated reload warning
 - [ ] Give interactive controls snake_case `action` names
 - [ ] `yarn workspace <name> typecheck && yarn workspace <name> test && yarn workspace <name> build`
+- [ ] Update the scaffolded smoke spec's title assertion + page-object locators; run `yarn test:playwright:build playwright/tests/smoke/<name>.test.ts` (see [`docs/playwright.md`](./playwright.md))
