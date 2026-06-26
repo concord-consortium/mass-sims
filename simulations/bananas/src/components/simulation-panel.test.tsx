@@ -63,17 +63,19 @@ const twoCrosses = (overrides?: { selectedCross?: number | null }) => {
 const ROW_NAME = /^Cross \d+,/;
 
 describe("SimulationPanel rendering", () => {
-  it("renders selectors, the grid hint, and no pill for an empty trial", () => {
-    const { getByLabelText, getByText, queryByRole } = renderPanel(createTestStore());
+  it("renders selectors but no pill or grid hint for an empty trial", () => {
+    const { getByLabelText, queryByText, queryByRole } = renderPanel(createTestStore());
     expect(getByLabelText("Parent 1")).toBeInTheDocument();
     expect(getByLabelText("Parent 2")).toBeInTheDocument();
-    expect(getByText(/Each cross will produce 5–20 offspring\./i)).toBeInTheDocument();
+    // The offspring hint and the status pill both appear only once both parents are selected.
+    expect(queryByText(/Each cross will produce 5–20 offspring\./i)).not.toBeInTheDocument();
     expect(queryByRole("status")).not.toBeInTheDocument();
   });
 
-  it("shows the cross-prompt pill once both parents are set", () => {
-    const { getByRole } = renderPanel(bothParents());
+  it("shows the cross-prompt pill and grid hint once both parents are set", () => {
+    const { getByRole, getByText } = renderPanel(bothParents());
     expect(getByRole("status")).toHaveTextContent("Click Cross Plants to see their offspring");
+    expect(getByText(/Each cross will produce 5–20 offspring\./i)).toBeInTheDocument();
   });
 
   it("shows the fungus-active prompt and 'Fungus introduced' marker when fungus is on", () => {
