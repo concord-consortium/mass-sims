@@ -18,8 +18,8 @@ export interface SimulationPanelProps {
 
 /** Builds the status pill content, or `null` when both parents aren't selected yet (no pill). */
 function renderStatusPill(trial: TrialModelInstance) {
-  const both = !!(trial.p1 && trial.p2);
-  if (!both) return null; // No pill until both parents are selected.
+  const bothParentsSelected = !!(trial.p1 && trial.p2);
+  if (!bothParentsSelected) return null;
 
   if (trial.crosses.length === 0) {
     return trial.fungusOn ? (
@@ -62,6 +62,7 @@ function renderOffspringGrid(
   activeCross: number | null,
   selectCross: (idx: number | null) => void,
 ) {
+  const bothParentsSelected = !!(trial.p1 && trial.p2);
   const fungusMarker = trial.fungusOn ? (
     <div className="fungus-marker" role="presentation">
       <span className="fungus-marker-label">
@@ -124,7 +125,7 @@ function renderOffspringGrid(
           );
         })}
       </ul>
-      {trial.crosses.length === 0 ? (
+      {bothParentsSelected && trial.crosses.length === 0 ? (
         <p className="offspring-grid-placeholder">Each cross will produce 5–20 offspring.</p>
       ) : null}
       {trial.crosses.length >= MAX_CROSSES ? (
@@ -144,6 +145,7 @@ export const SimulationPanel = observer(function SimulationPanel({
   const activeCross = rootStore.activeCross;
 
   const pillContent = renderStatusPill(trial);
+  const pillCondensable = trial.fungusOn && trial.crosses.length === 0;
 
   // After each cross, scroll the grid to the newest row (no-op when it already fits). Gated on
   // a non-empty grid so it doesn't run on mount/reset. `observer` re-runs render when the length
@@ -166,7 +168,11 @@ export const SimulationPanel = observer(function SimulationPanel({
 
         {pillContent ? (
           <div className="status-pill-wrap">
-            <div className="status-pill" role="status" aria-live="polite">
+            <div
+              className={clsx("status-pill", pillCondensable && "status-pill--condensable")}
+              role="status"
+              aria-live="polite"
+            >
               {pillContent}
             </div>
           </div>

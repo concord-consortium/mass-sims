@@ -87,8 +87,9 @@ describe("Bananas App — simulation flow", () => {
     expect(queryByRole("status")).not.toBeInTheDocument();
   });
 
-  it("shows the offspring-count hint in the stage area", () => {
-    const { getByText } = render(<App />);
+  it("shows the offspring-count hint in the stage area once both parents are selected", () => {
+    const { getByText, getByRole } = render(<App />);
+    selectBothParents(getByRole);
     expect(getByText(/Each cross will produce 5–20 offspring\./i)).toBeInTheDocument();
   });
 
@@ -296,7 +297,8 @@ describe("Bananas App — simulation flow", () => {
   });
 
   it("shows only the placeholder hint (no fungus marker) with zero crosses and fungus off", () => {
-    const { getByText, queryByText } = render(<App />);
+    const { getByText, queryByText, getByRole } = render(<App />);
+    selectBothParents(getByRole);
     expect(getByText("Each cross will produce 5–20 offspring.")).toBeInTheDocument();
     expect(queryByText("Fungus introduced")).not.toBeInTheDocument();
   });
