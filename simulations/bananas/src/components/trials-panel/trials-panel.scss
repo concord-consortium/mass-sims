@@ -167,6 +167,12 @@
   background: theme.$banana-infected;
 }
 
+// Empty stand-ins for the offspring + percentage rows, sized to one text line each so the
+// Fungus label keeps the same bottom slot before and after the first cross.
+.trial-card-row-spacer {
+  height: 1.3em;
+}
+
 .trial-card-fungus {
   align-items: center;
   color: tokens.$color-text;

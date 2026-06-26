@@ -84,12 +84,22 @@ export const TrialCardBody = observer(function TrialCardBody({
       {offspringRow}
       {phenotypeRow}
       {trial.fungusOn ? (
-        <span className="trial-card-fungus">
-          <span className="trial-card-fungus-badge">
-            <FungusAddedIcon className="trial-card-fungus-icon" aria-hidden="true" />
+        <>
+          {/* Before any cross, two empty rows stand in for the offspring + percentage rows so the
+              Fungus label always lands at the bottom of the card. */}
+          {trial.crosses.length === 0 ? (
+            <>
+              <span className="trial-card-row-spacer">{" "}</span>
+              <span className="trial-card-row-spacer">{" "}</span>
+            </>
+          ) : null}
+          <span className="trial-card-fungus">
+            <span className="trial-card-fungus-badge">
+              <FungusAddedIcon className="trial-card-fungus-icon" aria-hidden="true" />
+            </span>
+            Fungus
           </span>
-          Fungus
-        </span>
+        </>
       ) : null}
     </div>
   );
