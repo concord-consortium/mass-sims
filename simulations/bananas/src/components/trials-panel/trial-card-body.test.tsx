@@ -75,6 +75,30 @@ describe("TrialCardBody", () => {
     const { container } = render(<TrialCardBody trial={trialWith({ p1: "wild-w1" })} />);
     expect(container.querySelector(".trial-card-body")).toHaveAttribute("aria-hidden", "true");
   });
+
+  it("renders the Fungus row above two spacer rows before a cross (so it sits at the bottom)", () => {
+    const { container } = render(
+      <TrialCardBody trial={trialWith({ p1: "wild-w1", p2: "cavendish-c1", fungusOn: true })} />,
+    );
+    expect(container.querySelector(".trial-card-fungus")).toHaveTextContent("Fungus");
+    expect(container.querySelectorAll(".trial-card-row-spacer")).toHaveLength(2);
+  });
+
+  it("renders the Fungus row without spacers once crossed (offspring/percentage rows fill the slot)", () => {
+    const { container } = render(
+      <TrialCardBody
+        trial={trialWith({
+          p1: "wild-w1",
+          p2: "cavendish-c1",
+          fungusOn: true,
+          locked: true,
+          crosses: [CROSS],
+        })}
+      />,
+    );
+    expect(container.querySelector(".trial-card-fungus")).toBeInTheDocument();
+    expect(container.querySelectorAll(".trial-card-row-spacer")).toHaveLength(0);
+  });
 });
 
 describe("trialAriaLabel", () => {
@@ -98,6 +122,24 @@ describe("trialAriaLabel", () => {
     const trial = trialWith({ p1: "wild-w1", p2: "cavendish-c1", locked: true, crosses: [CROSS] });
     expect(trialAriaLabel("A", trial)).toBe(
       "Trial A. W1 crossed with C1. 3 offspring, 2 healthy, 1 infected",
+    );
+  });
+
+  it("appends 'Fungus active' when fungus is on (before any cross)", () => {
+    const trial = trialWith({ p1: "wild-w1", p2: "cavendish-c1", fungusOn: true });
+    expect(trialAriaLabel("A", trial)).toBe("Trial A. W1 crossed with C1. Fungus active");
+  });
+
+  it("appends 'Fungus active' after the offspring summary once crossed", () => {
+    const trial = trialWith({
+      p1: "wild-w1",
+      p2: "cavendish-c1",
+      fungusOn: true,
+      locked: true,
+      crosses: [CROSS],
+    });
+    expect(trialAriaLabel("A", trial)).toBe(
+      "Trial A. W1 crossed with C1. 3 offspring, 2 healthy, 1 infected. Fungus active",
     );
   });
 });

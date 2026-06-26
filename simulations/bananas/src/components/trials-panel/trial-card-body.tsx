@@ -19,9 +19,10 @@ function abbrevParent(id: string | null): string | null {
 
 /**
  * The enriched screen-reader label for a trial card: "Trial A. W1 crossed with C1. 12 offspring, 9
- * healthy, 3 infected." Built inline from live trial state (NOT memoized) so the orchestrator —
- * which is `observer`-wrapped — recomputes it whenever the trial mutates. Passed to the shared
- * `<TrialCard>` via its `ariaLabel` prop.
+ * healthy, 3 infected. Fungus active." Built inline from live trial state (NOT memoized) so the
+ * orchestrator — which is `observer`-wrapped — recomputes it whenever the trial mutates. Passed to
+ * the shared `<TrialCard>` via its `ariaLabel` prop, mirroring the visible (aria-hidden) body —
+ * including the Fungus row.
  */
 export function trialAriaLabel(letter: string, trial: TrialModelInstance): string {
   const p1 = abbrevParent(trial.p1);
@@ -34,6 +35,7 @@ export function trialAriaLabel(letter: string, trial: TrialModelInstance): strin
     const { healthy, infected } = aggregateTotals(trial.crosses);
     parts.push(`${healthy + infected} offspring, ${healthy} healthy, ${infected} infected`);
   }
+  if (trial.fungusOn) parts.push("Fungus active");
   return parts.join(". ");
 }
 

@@ -173,8 +173,11 @@ $titlebar-about-leading-space: 5px;   // margin-left on the About button â†’ CCâ
     }
 
     .content {
-      // Top padding holds the first card below the overlaid chip at rest; cards scroll behind it.
-      padding-top: 31px;
+      // Hold the first card below the overlaid chip at rest (cards scroll behind it). Derived from
+      // tokens so it tracks chip/spacing changes: clear the chip's overhang into the panel
+      // ($titlebar-content-gap) then add the standard content top padding ($space-4, less the 3px
+      // the trials column trims).
+      padding-top: $titlebar-content-gap + tokens.$space-4 - 3px;
     }
 
     .trials-list {
