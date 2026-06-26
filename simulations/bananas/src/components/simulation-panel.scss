@@ -109,7 +109,12 @@
     width: 100%;
   }
 
-  .offspring-row--selected {
+  .offspring-row:hover {
+    background: theme.$accent;
+  }
+
+  .offspring-row--selected,
+  .offspring-row--selected:hover {
     background: theme.$banana-cross-selected-bg;
     border-color: theme.$banana-cross-selected-border;
     box-shadow: inset 0 0 0 1px theme.$banana-cross-selected-border;

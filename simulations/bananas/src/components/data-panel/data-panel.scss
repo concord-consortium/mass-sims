@@ -197,6 +197,11 @@
     height: 24px;
     justify-content: center;
     margin-left: 6px;
+    // The close button is 24px tall but the pill's text line is only 20px. Without these
+    // negative margins the taller button grows the active pill by 4px, nudging the content
+    // below it down a pixel or two when the chip swaps in for "All Crosses".
+    margin-top: -2px;
+    margin-bottom: -2px;
     padding: 2px;
     width: 24px;
 
@@ -208,10 +213,10 @@
 
     &:hover,
     &:focus-visible {
-      background: tokens.$color-surface-hover;
+      background: theme.$accent;
     }
     &:active {
-      background: tokens.$color-surface-active;
+      background: theme.$accent-strong;
     }
     &:focus-visible {
       outline: tokens.$focus-outline;
