@@ -65,8 +65,9 @@ function measureTriggerWidths(labels: readonly string[]) {
 function setCondensed(row: HTMLElement, condensed: boolean) {
   row.toggleAttribute("data-condensed", condensed);
   // The Select popover is portaled to <body>, outside the row, so its list keys off :root instead
-  // (app.scss). This keeps the list font in lockstep with the trigger font.
-  document.documentElement.toggleAttribute("data-parent-condensed", condensed);
+  // (app.scss); the status pill (a sibling of the row) keys off it too. Sim-scoped name since it
+  // lives on the global <html>. This keeps both fonts in lockstep with the trigger font.
+  document.documentElement.toggleAttribute("data-bananas-parent-condensed", condensed);
 }
 
 function applyParentRowScaling(row: HTMLElement) {
@@ -138,7 +139,7 @@ function useParentRowScaling(rowRef: React.RefObject<HTMLDivElement | null>) {
     return () => {
       active = false;
       observer?.disconnect();
-      document.documentElement.removeAttribute("data-parent-condensed");
+      document.documentElement.removeAttribute("data-bananas-parent-condensed");
     };
   }, [rowRef]);
 }

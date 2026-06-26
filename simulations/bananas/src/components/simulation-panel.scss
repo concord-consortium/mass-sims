@@ -54,10 +54,10 @@
     top: -18px;
     white-space: nowrap;
 
-    // Condense in step with the parent dropdowns (parent-selectors.tsx sets data-parent-condensed on
-    // :root when they switch), but only for the pre-cross fungus-active pill (--condensable marks
-    // the one pill state long enough to need it).
-    :root[data-parent-condensed] &.status-pill--condensable {
+    // Condense in step with the parent dropdowns (parent-selectors.tsx sets
+    // data-bananas-parent-condensed on :root when they switch), but only for the pre-cross
+    // fungus-active pill (--condensable marks the one pill state long enough to need it).
+    :root[data-bananas-parent-condensed] &.status-pill--condensable {
       font-family: tokens.$font-family-condensed;
     }
   }
