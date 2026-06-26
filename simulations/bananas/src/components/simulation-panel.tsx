@@ -144,6 +144,7 @@ export const SimulationPanel = observer(function SimulationPanel({
   const activeCross = rootStore.activeCross;
 
   const pillContent = renderStatusPill(trial);
+  const pillCondensable = trial.fungusOn && trial.crosses.length === 0;
 
   // After each cross, scroll the grid to the newest row (no-op when it already fits). Gated on
   // a non-empty grid so it doesn't run on mount/reset. `observer` re-runs render when the length
@@ -166,7 +167,11 @@ export const SimulationPanel = observer(function SimulationPanel({
 
         {pillContent ? (
           <div className="status-pill-wrap">
-            <div className="status-pill" role="status" aria-live="polite">
+            <div
+              className={clsx("status-pill", pillCondensable && "status-pill--condensable")}
+              role="status"
+              aria-live="polite"
+            >
               {pillContent}
             </div>
           </div>
