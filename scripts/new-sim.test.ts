@@ -170,7 +170,7 @@ describe("scaffoldSim integration", () => {
     // The generated Playwright TS files must type-check (catches a broken class-name or
     // import-path substitution immediately).
     expect(() =>
-      execSync("npx tsc --noEmit -p playwright/tsconfig.json", {
+      execSync("yarn typecheck:playwright", {
         cwd: REPO_ROOT,
         stdio: "pipe",
       }),
