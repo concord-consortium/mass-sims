@@ -111,6 +111,7 @@ describe("scaffoldSim integration", () => {
   const TEST_SIM_CLASS = `${kebabToPascal(TEST_SIM)}Page`;
   const simDir = join(REPO_ROOT, "simulations", TEST_SIM);
   const pageFile = join(REPO_ROOT, "playwright", "pages", `${TEST_SIM}-page.ts`);
+  const testdataFile = join(REPO_ROOT, "playwright", "testdata", `${TEST_SIM}-testdata.ts`);
   const smokeFile = join(REPO_ROOT, "playwright", "tests", "smoke", `${TEST_SIM}.test.ts`);
   const simsPath = join(REPO_ROOT, "playwright", "sims.ts");
   // Matches a stray registry entry for TEST_SIM left behind by a prior aborted run.
@@ -122,6 +123,7 @@ describe("scaffoldSim integration", () => {
   function removeArtifacts() {
     rmSync(simDir, { recursive: true, force: true });
     rmSync(pageFile, { force: true });
+    rmSync(testdataFile, { force: true });
     rmSync(smokeFile, { force: true });
   }
 
@@ -161,11 +163,17 @@ describe("scaffoldSim integration", () => {
     expect(page).toContain(`getSimUrl("${TEST_SIM}")`);
     expect(page).not.toContain("StarterPage");
 
-    // Smoke spec: import path + class substitution, no leftover StarterPage references.
+    // Testdata: scaffolded as its own per-sim module re-exporting the shared constants.
+    expect(existsSync(testdataFile)).toBe(true);
+    expect(readFileSync(testdataFile, "utf8")).toContain("packages/shared/src/trials/constants");
+
+    // Smoke spec: import paths + class substitution, no leftover Starter references.
     const smoke = readFileSync(smokeFile, "utf8");
     expect(smoke).toContain(`from "../../pages/${TEST_SIM}-page"`);
+    expect(smoke).toContain(`from "../../testdata/${TEST_SIM}-testdata"`);
     expect(smoke).toContain(TEST_SIM_CLASS);
     expect(smoke).not.toContain("StarterPage");
+    expect(smoke).not.toContain("starter-testdata");
 
     // The generated Playwright TS files must type-check (catches a broken class-name or
     // import-path substitution immediately).

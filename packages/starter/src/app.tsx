@@ -1,56 +1,37 @@
 import { setInteractiveState, useInitMessage } from "@concord-consortium/lara-interactive-api";
-import { SimulationFrame, TrialCard, useReloadWarning } from "@concord-consortium/mass-sims-shared";
-import { useCallback, useEffect, useState } from "react";
+import { SimulationFrame, useReloadWarning } from "@concord-consortium/mass-sims-shared";
+import { reaction } from "mobx";
+import { observer } from "mobx-react-lite";
+import { applySnapshot, getSnapshot, onAction, onSnapshot } from "mobx-state-tree";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { DataPanel } from "./components/data-panel";
 import { SimulationView } from "./components/simulation-view";
-import type { SavedState } from "./model/saved-state";
-import type { RecordedTrial, SimInput, SimOutput, SimTransient } from "./model/types";
+import { TrialsPanel } from "./components/trials-panel/trials-panel";
+import { createRootStore, RootStoreProvider, type RootStoreSnapshotOut } from "./stores/root-store";
+import { migrateSavedState, type SavedState, toSavedState } from "./stores/saved-state";
 
 import "./app.scss";
 
-const TRIAL_LIMIT = 10; // Matches TrialCard's A–J letter cap.
-const DEFAULT_PARAMS = { walkerCount: 50, stepSize: 1, framesPerTrial: 200 } as const;
-
-// Plain Math.random is fine — ids/seeds aren't security-sensitive. Each trial keeps its seed for
-// life, so re-running reproduces it exactly while different trials vary.
-function makeTrialId(): string {
-  return Math.random().toString(36).slice(2, 10);
-}
-function makeSeed(): string {
-  return `trial-${Math.random().toString(36).slice(2, 10)}`;
-}
-function makeEmptyTrial(): RecordedTrial {
-  return {
-    id: makeTrialId(),
-    input: { ...DEFAULT_PARAMS, seed: makeSeed() },
-    output: null,
-    finalTransient: null,
-  };
-}
-
 /**
- * Starter simulation — a random-walk model and the template for new sims. App owns the trial list
- * that both the Trials and Data slots read from. There is always at least one trial: running fills
- * the selected trial; "New" adds an empty one; Reset clears a trial back to empty (never deletes).
+ * Starter simulation — a random-walk model and the template for new sims.
  *
- * Live data flow: `SimulationView`'s `useModelState` holds the in-progress `transient` locally
- * for per-frame perf, but the Data panel's chart needs to see the avg-distance series as it grows.
- * App hoists just that one slice via the `onProgress` callback into `liveSeries` state and forwards
- * it to `DataPanel`. The Data panel prefers the live series while it's set; once a trial completes
- * (or the selection / reset / new-trial path fires) `liveSeries` is cleared and the panel falls
- * back to the trial's recorded `output.avgDistanceSeries`.
+ * TWO-LAYER STATE MODEL: MST owns the trial LIST — what trials exist, which is selected, each trial's
+ * recorded input/output. The per-frame transient run state (live walker positions, frame counter)
+ * stays in `<SimulationView>`'s `useModelState` / `useSimulationRunner`, NOT in MST. MST did not
+ * replace those hooks; the two layers do different jobs.
+ *
+ * Live data flow: `SimulationView`'s `useModelState` holds the in-progress `transient` locally for
+ * per-frame perf, but the Data panel's chart needs the avg-distance series as it grows. App hoists
+ * just that slice via `onProgress` into `liveSeries` state (React state, NOT MST — it's per-frame
+ * transient) and forwards it to `DataPanel`. The panel prefers the live series while set; once a trial
+ * completes (or selection / reset fires) `liveSeries` is cleared (see the three subscriptions below)
+ * and the panel falls back to the trial's recorded `output.avgDistanceSeries`.
  */
-export function App() {
-  // Trials + selected id live in one state object so they update atomically — adding a trial
-  // appends it AND selects it in a single update, so the selection can never point at a trial the
-  // A–J cap rejected.
-  const [{ trials, selectedId }, setState] = useState(() => {
-    const first = makeEmptyTrial();
-    return { trials: [first], selectedId: first.id };
-  });
+export const App = observer(function App() {
+  const rootStore = useMemo(() => createRootStore({ rng: Math.random }), []);
   // Most-recent in-progress avg-distance series from the running trial, or null when no run is
-  // active. Cleared on every trial-list-mutating boundary (select, reset, add, complete) so the
-  // Data panel never shows a stale series belonging to a different trial.
+  // active. Cleared on every trial-list-mutating boundary so the Data panel never shows a stale
+  // series belonging to a different (or cancelled) run — see the three subscriptions below.
   const [liveSeries, setLiveSeries] = useState<number[] | null>(null);
 
   // AP saved-state sync: restore on init, push on change. Standalone-safe — outside AP,
@@ -58,139 +39,125 @@ export function App() {
   const initMsg = useInitMessage<SavedState>();
   // Embedded once the AP handshake has delivered an init message; null in standalone.
   const isEmbedded = initMsg !== null;
+
+  // Hydrate from LARA's saved state once it arrives. Construct the MST snapshot shape explicitly —
+  // the wire format (`{ version, trials, selectedTrialLetter }`) is NOT the store snapshot
+  // (`{ trials, ui: {...} }`), so we project from one to the other.
   useEffect(() => {
-    // `"interactiveState" in initMsg` narrows the union to the runtime/report variants;
-    // the truthy check skips the first-session null.
     if (initMsg && "interactiveState" in initMsg && initMsg.interactiveState) {
-      setState(initMsg.interactiveState);
+      const state = migrateSavedState(initMsg.interactiveState);
+      if (state) {
+        applySnapshot(rootStore, {
+          trials: state.trials,
+          ui: { selectedTrialLetter: state.selectedTrialLetter },
+        });
+      }
     }
-  }, [initMsg]);
+  }, [initMsg, rootStore]);
+
+  // Persist the store to LARA as the `{ version, trials, selectedTrialLetter }` projection. Watch the
+  // whole store via `onSnapshot` (fires on the actual snapshot-emit boundary), with an explicit
+  // initial save on mount and a serialized-payload dedup so identical payloads aren't re-emitted.
   useEffect(() => {
-    // Trials/selectedId change on user actions, not per-frame, so the push rate stays low.
-    setInteractiveState<SavedState>({ trials, selectedId });
-  }, [trials, selectedId]);
+    let lastSaved = "";
+    const save = (snap: RootStoreSnapshotOut) => {
+      const state = toSavedState(snap);
+      const serialized = JSON.stringify(state);
+      if (serialized === lastSaved) return;
+      lastSaved = serialized;
+      setInteractiveState<SavedState>(state);
+    };
+    save(getSnapshot(rootStore)); // initial save on mount
+    return onSnapshot(rootStore, save);
+  }, [rootStore]);
 
-  const selected = trials.find((t) => t.id === selectedId) ?? trials[0];
-  // Selected trial's letter (0→A, 1→B, …).
-  const selectedLetter = String.fromCharCode(65 + Math.max(0, trials.indexOf(selected)));
+  // THREE subscriptions clear `liveSeries`. The mutations now happen inside <TrialsPanel> and
+  // TrialModel, so App bridges them via store subscriptions rather than callbacks:
 
-  // Warn before unload once a trial has been run — standalone only. When embedded, AP persists
-  // every change, so the prompt would be wrong and would fire during AP's own navigation.
-  useReloadWarning(!isEmbedded && trials.some((t) => t.output !== null));
-
-  // New trials are built outside the updater (makeEmptyTrial is impure) so the updater stays pure.
-  const addTrial = useCallback(() => {
-    const trial = makeEmptyTrial();
-    setLiveSeries(null);
-    setState((prev) =>
-      prev.trials.length >= TRIAL_LIMIT // refuse past the A–J cap
-        ? prev
-        : { trials: [...prev.trials, trial], selectedId: trial.id },
-    );
-  }, []);
-  const selectTrial = useCallback((id: string) => {
-    setLiveSeries(null);
-    setState((prev) => (prev.selectedId === id ? prev : { ...prev, selectedId: id }));
-  }, []);
-  const resetTrial = useCallback((id: string) => {
-    setLiveSeries(null);
-    setState((prev) => ({
-      ...prev,
-      trials: prev.trials.map((t) =>
-        t.id === id ? { ...t, output: null, finalTransient: null } : t,
+  // 1. selection change — covers select-from-card, keyboard nav, AND the post-add auto-select.
+  useEffect(
+    () =>
+      reaction(
+        () => rootStore.ui.selectedTrialLetter,
+        () => setLiveSeries(null),
       ),
-    }));
-  }, []);
-  const updateInput = useCallback((id: string, input: SimInput) => {
-    setState((prev) => ({
-      ...prev,
-      trials: prev.trials.map((t) => (t.id === id ? { ...t, input } : t)),
-    }));
-  }, []);
-  const completeTrial = useCallback(
-    (id: string, output: SimOutput, finalTransient: SimTransient) => {
-      // Clear live series — output.avgDistanceSeries (now committed) takes over as the source
-      // the Data panel reads from.
-      setLiveSeries(null);
-      setState((prev) => ({
-        ...prev,
-        trials: prev.trials.map((t) => (t.id === id ? { ...t, output, finalTransient } : t)),
-      }));
-    },
-    [],
+    [rootStore],
   );
+  // 2. active trial's output transitions — covers complete (null → output) AND resetting a
+  //    COMPLETED trial (output → null).
+  useEffect(
+    () =>
+      reaction(
+        () => rootStore.activeTrial.output,
+        () => setLiveSeries(null),
+      ),
+    [rootStore],
+  );
+
+  // 3. resetTrial action invocation — catches resetting a trial MID-RUN, where `output` was
+  //    already null and stays null, so reaction #2 never fires. `onAction` fires on the action
+  //    call regardless of any state diff; filter to `resetTrial` so other actions don't clear.
+  useEffect(
+    () =>
+      onAction(rootStore, (call) => {
+        if (call.name === "resetTrial") setLiveSeries(null);
+      }),
+    [rootStore],
+  );
+
+  // Warn before unload once any trial has been run — standalone only. When embedded, AP persists
+  // every change, so the prompt would be wrong and would fire during AP's own navigation.
+  useReloadWarning(!isEmbedded && rootStore.hasAnyProgress);
+
   const handleProgress = useCallback((series: readonly number[]) => {
     // The runner emits a fresh array per sample; copy defensively to keep the state value
     // immutable from this side of the callback boundary.
     setLiveSeries([...series]);
   }, []);
 
+  const activeTrial = rootStore.activeTrial;
+  const selectedLetter = rootStore.ui.selectedTrialLetter;
+
   return (
-    <SimulationFrame
-      simTitle="Random Walk"
-      tagline="An interactive starter simulation"
-      infoModalContent={
-        <p>
-          This is the Mass Sims starter simulation — a small random-walk model that serves as the
-          template for new sims. Adjust the parameters, run trials, and observe how the population
-          disperses over time.
-        </p>
-      }
-    >
-      <SimulationFrame.Trials>
-        {trials.map((trial, i) => (
-          <TrialCard
-            key={trial.id}
-            index={i}
-            selected={trial.id === selectedId}
-            onSelect={() => selectTrial(trial.id)}
-            onReset={() => resetTrial(trial.id)}
-            resetDisabled={trial.output === null}
-          >
-            {trial.output ? (
-              <>
-                <span>avg {trial.output.avgDistance.toFixed(1)}</span>
-                <span>σ {trial.output.stdDevDistance.toFixed(1)}</span>
-              </>
-            ) : null}
-          </TrialCard>
-        ))}
-        {trials.length < TRIAL_LIMIT ? (
-          <button
-            type="button"
-            className="new-trial-card"
-            aria-label="New trial"
-            onClick={addTrial}
-          >
-            <span className="new-trial-icon" aria-hidden="true">
-              +
-            </span>
-            New
-          </button>
-        ) : null}
-      </SimulationFrame.Trials>
+    <RootStoreProvider store={rootStore}>
+      <SimulationFrame
+        simTitle="Random Walk"
+        tagline="An interactive starter simulation"
+        infoModalContent={
+          <p>
+            This is the Mass Sims starter simulation — a small random-walk model that serves as the
+            template for new sims. Adjust the parameters, run trials, and observe how the population
+            disperses over time.
+          </p>
+        }
+      >
+        <SimulationFrame.Trials>
+          <TrialsPanel />
+        </SimulationFrame.Trials>
 
-      <SimulationFrame.Simulation instruction="Choose parameters, then press Play">
-        <SimulationView
-          key={`${selected.id}:${selected.output ? "done" : "empty"}`}
-          trial={selected}
-          trialLabel={selectedLetter}
-          onInputChange={(input) => updateInput(selected.id, input)}
-          onComplete={(output, finalTransient) =>
-            completeTrial(selected.id, output, finalTransient)
-          }
-          onReset={() => resetTrial(selected.id)}
-          onProgress={handleProgress}
-        />
-      </SimulationFrame.Simulation>
+        <SimulationFrame.Simulation instruction="Choose parameters, then press Play">
+          {/*
+            The `key` forces <SimulationView> to remount whenever the selected trial changes OR the
+            active trial's output transitions between empty and done. This matters because
+            <SimulationView>'s `useModelState` only consumes initial input values on MOUNT — without
+            the remount, switching trials or resetting would leave stale per-frame transient state.
+            Sourcing the key from store reads is fine; dropping it is a stale-input bug.
+          */}
+          <SimulationView
+            key={`${selectedLetter}:${activeTrial.output ? "done" : "empty"}`}
+            trial={activeTrial}
+            trialLabel={selectedLetter}
+            onInputChange={(input) => activeTrial.setInput(input)}
+            onComplete={(output, finalTransient) => activeTrial.setOutput(output, finalTransient)}
+            onReset={() => rootStore.resetTrial()}
+            onProgress={handleProgress}
+          />
+        </SimulationFrame.Simulation>
 
-      <SimulationFrame.Data>
-        <DataPanel
-          trials={trials}
-          selectedIndex={trials.indexOf(selected)}
-          liveSeries={liveSeries}
-        />
-      </SimulationFrame.Data>
-    </SimulationFrame>
+        <SimulationFrame.Data>
+          <DataPanel trial={activeTrial} liveSeries={liveSeries} />
+        </SimulationFrame.Data>
+      </SimulationFrame>
+    </RootStoreProvider>
   );
-}
+});

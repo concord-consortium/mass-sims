@@ -36,6 +36,8 @@
   },
   "peerDependencies": {
     "@vitejs/plugin-react": "^6.0.2",
+    "mobx": "^6.16.1",
+    "mobx-state-tree": "^7.2.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "vite": "^8.0.0",
@@ -51,6 +53,8 @@
     "@types/seedrandom": "^3.0.8",
     "@vitejs/plugin-react": "^6.0.2",
     "jsdom": "^25.0.0",
+    "mobx": "^6.16.1",
+    "mobx-state-tree": "^7.2.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "typescript": "^6.0.0",

@@ -1,6 +1,7 @@
 import { setInteractiveState, useInitMessage } from "@concord-consortium/lara-interactive-api";
 import {
   SimulationFrame,
+  TRIAL_LETTERS_DEFAULT as TRIAL_LETTERS,
   useLogEvent,
   useReloadWarning,
 } from "@concord-consortium/mass-sims-shared";
@@ -12,9 +13,8 @@ import { AboutContent } from "./components/about";
 import { BananasDataPanel } from "./components/data-panel/data-panel";
 import { SimulationPanel } from "./components/simulation-panel";
 import { TrialsPanel } from "./components/trials-panel/trials-panel";
-import { TRIAL_LETTERS } from "./model/trials";
 import { createRootStore, RootStoreProvider, type RootStoreSnapshotOut } from "./stores/root-store";
-import { type SavedState, toSavedState } from "./stores/saved-state";
+import { migrateSavedState, type SavedState, toSavedState } from "./stores/saved-state";
 
 import "./app.scss";
 
@@ -45,11 +45,15 @@ export const App = observer(function App({ rng = Math.random }: AppProps = {}) {
   // every saved trial (and the active letter) restores; UI-only cross-selection starts empty.
   useEffect(() => {
     if (initMsg && "interactiveState" in initMsg && initMsg.interactiveState) {
-      const state = initMsg.interactiveState;
-      applySnapshot(rootStore, {
-        trials: state.trials,
-        ui: { selectedTrialLetter: state.selectedTrialLetter, selectedCrossByTrial: {} },
-      });
+      // Validate before applying — a malformed/corrupt payload would otherwise throw inside
+      // applySnapshot (bad letter → enumeration; bad trial → model). null → keep the seeded store.
+      const state = migrateSavedState(initMsg.interactiveState);
+      if (state) {
+        applySnapshot(rootStore, {
+          trials: state.trials,
+          ui: { selectedTrialLetter: state.selectedTrialLetter, selectedCrossByTrial: {} },
+        });
+      }
     }
   }, [initMsg, rootStore]);
 

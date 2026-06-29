@@ -37,12 +37,12 @@ export interface SimTransient {
 }
 
 /**
- * A trial in the Trials column — created empty, becomes "recorded" once it has been run. Reset
- * clears a trial back to empty; trials are never deleted.
+ * A trial's recorded data — created empty, becomes "recorded" once it has been run. Reset clears a
+ * trial back to empty; trials are never deleted. This is the per-trial data shape; it mirrors the
+ * MST `TrialModel`'s snapshot (`stores/trial-model.ts`, `TrialState`). There is no `id` — a trial's
+ * identity is its letter (the key in the RootStore's `trials` map).
  */
 export interface RecordedTrial {
-  /** Stable id (random; not the letter — the letter is derived from list index). */
-  id: string;
   /** The inputs this trial runs with, including its own fixed seed (deterministic re-runs). */
   input: SimInput;
   /** The outputs the trial produced, or `null` until it has been run. */

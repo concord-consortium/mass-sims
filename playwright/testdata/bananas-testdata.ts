@@ -18,6 +18,11 @@
 import { PARENT_GENOTYPES, type ParentId } from "../../simulations/bananas/src/model/genetics";
 
 export {
+  MAX_TRIALS_DEFAULT as MAX_TRIALS,
+  TRIAL_LETTERS_DEFAULT as TRIAL_LETTERS,
+  type TrialLetter,
+} from "../../packages/shared/src/trials/constants";
+export {
   MAX_CROSSES,
   OFFSPRING_MAX,
   OFFSPRING_MIN,
@@ -25,11 +30,6 @@ export {
   PARENT_LABELS,
   type ParentId,
 } from "../../simulations/bananas/src/model/genetics";
-export {
-  MAX_TRIALS,
-  TRIAL_LETTERS,
-  type TrialLetter,
-} from "../../simulations/bananas/src/model/trials";
 
 /** All parent ids, derived from the genetics catalog so new varieties appear automatically. */
 export const PARENT_IDS = Object.keys(PARENT_GENOTYPES) as ParentId[];
