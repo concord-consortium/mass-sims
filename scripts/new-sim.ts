@@ -82,6 +82,9 @@ export function nextSimPort(simsContent: string): number {
 
 /** Append a `{ name, port }` entry to the SIMS array in playwright/sims.ts. */
 export function appendSimToRegistry(simsContent: string, name: string, port: number): string {
+  if (simsContent.includes(`name: "${name}"`)) {
+    throw new Error(`Sim "${name}" is already registered in playwright/sims.ts.`);
+  }
   const entry = `  { name: "${name}", port: ${port} },\n`;
   const updated = simsContent.replace(
     /(export const SIMS: SimEntry\[\] = \[\n[\s\S]*?)(\];)/,
@@ -144,9 +147,14 @@ export function scaffoldSim(name: string): { port: number } {
     if (existsSync(path)) throw new Error(`Refusing to overwrite existing path: ${path}`);
   }
 
+  const simsPath = join(REPO_ROOT, "playwright", "sims.ts");
+  const simsContent = readFileSync(simsPath, "utf8");
+  const port = nextSimPort(simsContent);
+  const updatedSims = appendSimToRegistry(simsContent, name, port);
+
   // 1. Copy + substitute the sim source.
   const sourceDir = join(REPO_ROOT, "packages", "starter");
-  cpSync(sourceDir, targetDir, { recursive: true, filter: (src) => !shouldSkipCopy(src) });
+  cpSync(sourceDir, targetDir, { recursive: true, filter: (src: string) => !shouldSkipCopy(src) });
   walk(targetDir, (filePath) => {
     // Normalize to forward slashes so substituteInFile's path checks (e.g. "src/app.tsx") work on
     // Windows, where filePath uses backslash separators.
@@ -159,11 +167,8 @@ export function scaffoldSim(name: string): { port: number } {
     if (next !== content) writeFileSync(filePath, next);
   });
 
-  // 2. Append the new sim to the Playwright sims registry (next free port).
-  const simsPath = join(REPO_ROOT, "playwright", "sims.ts");
-  const simsContent = readFileSync(simsPath, "utf8");
-  const port = nextSimPort(simsContent);
-  writeFileSync(simsPath, appendSimToRegistry(simsContent, name, port));
+  // 2. Write the updated sims registry (computed above).
+  writeFileSync(simsPath, updatedSims);
 
   // 3. Scaffold the page object from the Starter template.
   const starterPage = readFileSync(

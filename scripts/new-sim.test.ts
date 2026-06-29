@@ -92,6 +92,10 @@ describe("appendSimToRegistry", () => {
   it("throws when the SIMS array can't be found", () => {
     expect(() => appendSimToRegistry("no array here", "x", 1)).toThrow();
   });
+
+  it("throws when the sim name is already registered", () => {
+    expect(() => appendSimToRegistry(REGISTRY, "bananas", 9999)).toThrow(/already registered/);
+  });
 });
 
 // Full-chain integration check: run the scaffolder against a throwaway sim name, assert the file
