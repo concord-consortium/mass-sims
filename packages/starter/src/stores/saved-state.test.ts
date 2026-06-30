@@ -40,10 +40,9 @@ describe("migrateSavedState — rejects payloads that can't hydrate cleanly", ()
     ).toBeNull();
   });
 
-  it("rejects when the selected letter names no present trial", () => {
-    expect(
-      migrateSavedState({ version: 1, trials: { A: trial }, selectedTrialLetter: "B" }),
-    ).toBeNull();
+  it("accepts a valid-but-absent selected letter (App's reaction re-selects; trials preserved)", () => {
+    const state = { version: 1, trials: { A: trial }, selectedTrialLetter: "B" };
+    expect(migrateSavedState(state)).toEqual(state);
   });
 
   it("rejects a trial keyed by a non-letter", () => {
@@ -67,6 +66,66 @@ describe("migrateSavedState — rejects payloads that can't hydrate cleanly", ()
       migrateSavedState({
         version: 1,
         trials: { A: { input: INPUT, output: "garbage" } },
+        selectedTrialLetter: "A",
+      }),
+    ).toBeNull();
+  });
+
+  it("rejects a trial whose input fields are missing or wrong-typed", () => {
+    const cases = [
+      {}, // empty input
+      { walkerCount: 50, stepSize: 1, framesPerTrial: 200 }, // missing seed
+      { walkerCount: "50", stepSize: 1, framesPerTrial: 200, seed: "x" }, // wrong type
+    ];
+    for (const input of cases) {
+      expect(
+        migrateSavedState({ version: 1, trials: { A: { input } }, selectedTrialLetter: "A" }),
+      ).toBeNull();
+    }
+  });
+
+  it("rejects non-positive run parameters (zero walkers / a run that never completes)", () => {
+    const zeroWalkers = { walkerCount: 0, stepSize: 1, framesPerTrial: 200, seed: "x" };
+    const zeroFrames = { walkerCount: 50, stepSize: 1, framesPerTrial: 0, seed: "x" };
+    expect(
+      migrateSavedState({
+        version: 1,
+        trials: { A: { input: zeroWalkers } },
+        selectedTrialLetter: "A",
+      }),
+    ).toBeNull();
+    expect(
+      migrateSavedState({
+        version: 1,
+        trials: { A: { input: zeroFrames } },
+        selectedTrialLetter: "A",
+      }),
+    ).toBeNull();
+  });
+
+  it("rejects malformed output / finalTransient inner shapes", () => {
+    expect(
+      migrateSavedState({
+        version: 1,
+        trials: {
+          A: {
+            input: INPUT,
+            output: { avgDistance: "x", stdDevDistance: 1, avgDistanceSeries: [] },
+          },
+        },
+        selectedTrialLetter: "A",
+      }),
+    ).toBeNull();
+    expect(
+      migrateSavedState({
+        version: 1,
+        // walker missing `y`
+        trials: {
+          A: {
+            input: INPUT,
+            finalTransient: { frame: 1, walkers: [{ x: 1 }], avgDistanceSeries: [] },
+          },
+        },
         selectedTrialLetter: "A",
       }),
     ).toBeNull();

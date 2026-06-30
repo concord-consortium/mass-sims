@@ -10,17 +10,62 @@ export const SAVED_STATE_VERSION = 1;
 
 const VALID_LETTERS = new Set<string>(TRIAL_LETTERS_DEFAULT);
 
+function isObject(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+function isFiniteNumber(value: unknown): value is number {
+  return typeof value === "number" && Number.isFinite(value);
+}
+function isFiniteNumberArray(value: unknown): boolean {
+  return Array.isArray(value) && value.every(isFiniteNumber);
+}
+
+/** A `SimInput` with usable run parameters — positive counts plus a seed string. */
+function isSimInput(value: unknown): boolean {
+  return (
+    isObject(value) &&
+    isFiniteNumber(value.walkerCount) &&
+    value.walkerCount > 0 &&
+    isFiniteNumber(value.stepSize) &&
+    value.stepSize > 0 &&
+    isFiniteNumber(value.framesPerTrial) &&
+    value.framesPerTrial > 0 &&
+    typeof value.seed === "string"
+  );
+}
+/** A `SimOutput` — the recorded avg / σ plus the sampled series. */
+function isSimOutput(value: unknown): boolean {
+  return (
+    isObject(value) &&
+    isFiniteNumber(value.avgDistance) &&
+    isFiniteNumber(value.stdDevDistance) &&
+    isFiniteNumberArray(value.avgDistanceSeries)
+  );
+}
+/** A `SimTransient` final-frame snapshot — frame, walker positions, sampled series. */
+function isSimTransient(value: unknown): boolean {
+  return (
+    isObject(value) &&
+    isFiniteNumber(value.frame) &&
+    Array.isArray(value.walkers) &&
+    value.walkers.every((w) => isObject(w) && isFiniteNumber(w.x) && isFiniteNumber(w.y)) &&
+    isFiniteNumberArray(value.avgDistanceSeries)
+  );
+}
+
 /**
- * Whether a persisted trial value can hydrate into a `TrialModel`. `input` is required (the views
- * read its fields), while `output` / `finalTransient` are nullable. A non-object or input-less value
- * would throw inside `applySnapshot`, so it's rejected upstream.
+ * Whether a persisted trial value can hydrate into a *runnable* `TrialModel`. `input` / `output` /
+ * `finalTransient` are stored as `types.frozen`, so MST does NOT validate their inner shape — an
+ * `{ input: {} }` would otherwise hydrate a broken trial (zero walkers, a run that never completes)
+ * rather than falling back to the seeded store. So the field shapes are checked explicitly here.
+ * `input` is required; `output` / `finalTransient` are nullable but must match their shape when set.
  */
 function isHydratableTrial(value: unknown): boolean {
-  if (!value || typeof value !== "object") return false;
-  const { input, output, finalTransient } = value as Record<string, unknown>;
-  if (!input || typeof input !== "object") return false;
-  if (output != null && typeof output !== "object") return false;
-  if (finalTransient != null && typeof finalTransient !== "object") return false;
+  if (!isObject(value)) return false;
+  const { input, output, finalTransient } = value;
+  if (!isSimInput(input)) return false;
+  if (output != null && !isSimOutput(output)) return false;
+  if (finalTransient != null && !isSimTransient(finalTransient)) return false;
   return true;
 }
 
@@ -58,10 +103,10 @@ export function migrateSavedState(raw: unknown): SavedState | null {
   if (!trials || typeof trials !== "object" || Array.isArray(trials)) return null;
   const entries = Object.entries(trials);
   if (entries.length === 0) return null;
-  // The selected letter must name a present trial, every key must be a valid A–J letter, and every
-  // value must be a hydratable trial — otherwise `applySnapshot` would throw mid-hydrate. Reject so
-  // the caller falls back to the seeded store rather than crashing on corrupt interactiveState.
-  if (!(selectedTrialLetter in trials)) return null;
+  // Every key must be a valid A–J letter and every value a hydratable trial, else `applySnapshot`
+  // would throw mid-hydrate. A valid-but-absent `selectedTrialLetter` is NOT rejected — App's
+  // normalization reaction re-selects the first trial, so the persisted trials are kept rather than
+  // discarded (parity with Bananas).
   for (const [letter, trial] of entries) {
     if (!VALID_LETTERS.has(letter) || !isHydratableTrial(trial)) return null;
   }

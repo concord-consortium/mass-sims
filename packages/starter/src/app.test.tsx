@@ -134,6 +134,25 @@ describe("Starter App — AP saved state", () => {
     expect(view.getByText(/avg 3/i)).toBeInTheDocument();
   });
 
+  it("keeps persisted trials and re-selects the first when the saved letter is absent", () => {
+    // A corrupt/dangling selectedTrialLetter ("C") that names no present trial must NOT discard the
+    // student's trials — the normalization reaction re-selects the first present trial instead.
+    const trialA = {
+      input: { walkerCount: 50, stepSize: 1, framesPerTrial: 200, seed: "saved-A" },
+      output: { avgDistance: 9.9, stdDevDistance: 0.5, avgDistanceSeries: [1, 2, 3] },
+      finalTransient: null,
+    };
+    useInitMessageMock.mockReturnValue({
+      mode: "runtime",
+      interactiveState: { version: 1, trials: { A: trialA }, selectedTrialLetter: "C" },
+    });
+    const view = render(<App />);
+    // Trial A is preserved (not discarded to a fresh seed)…
+    expect(view.getByText(/avg 9/i)).toBeInTheDocument();
+    // …and selection self-heals to A.
+    expect(view.getByRole("tab", { name: /^Trial A/ })).toHaveAttribute("aria-selected", "true");
+  });
+
   it("does NOT restore when the init message has interactiveState: null (first session)", () => {
     useInitMessageMock.mockReturnValue({ mode: "runtime", interactiveState: null });
     const view = render(<App />);

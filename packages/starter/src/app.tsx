@@ -1,5 +1,9 @@
 import { setInteractiveState, useInitMessage } from "@concord-consortium/lara-interactive-api";
-import { SimulationFrame, useReloadWarning } from "@concord-consortium/mass-sims-shared";
+import {
+  SimulationFrame,
+  TRIAL_LETTERS_DEFAULT,
+  useReloadWarning,
+} from "@concord-consortium/mass-sims-shared";
 import { reaction } from "mobx";
 import { observer } from "mobx-react-lite";
 import { applySnapshot, getSnapshot, onAction, onSnapshot } from "mobx-state-tree";
@@ -39,6 +43,28 @@ export const App = observer(function App() {
   const initMsg = useInitMessage<SavedState>();
   // Embedded once the AP handshake has delivered an init message; null in standalone.
   const isEmbedded = initMsg !== null;
+
+  // Defensive normalization: if `selectedTrialLetter` ever names a trial that doesn't exist (e.g. a
+  // restored saved state whose active letter wasn't among its trials), re-select the first available
+  // letter. Set up BEFORE the hydrate effect so the reaction is already observing when applySnapshot
+  // writes the restored letter. `activeTrial` falls back on the read side too; this fixes the stored
+  // letter so the matching card shows selected.
+  useEffect(() => {
+    return reaction(
+      () => ({
+        letter: rootStore.ui.selectedTrialLetter,
+        exists: rootStore.trials.has(rootStore.ui.selectedTrialLetter),
+      }),
+      ({ exists }) => {
+        if (!exists) {
+          const first = rootStore.trialLetters.find((l) =>
+            (TRIAL_LETTERS_DEFAULT as readonly string[]).includes(l),
+          );
+          if (first) rootStore.ui.selectTrial(first);
+        }
+      },
+    );
+  }, [rootStore]);
 
   // Hydrate from LARA's saved state once it arrives. Construct the MST snapshot shape explicitly —
   // the wire format (`{ version, trials, selectedTrialLetter }`) is NOT the store snapshot
