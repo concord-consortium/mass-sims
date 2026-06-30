@@ -2,9 +2,10 @@
 
 This is the step-by-step for scaffolding a new Mass Sims simulation from the Starter
 template. The Starter is a working random-walk sim wired with everything a new sim needs:
-the `<SimulationFrame>` layout, the shared `<Button>`, action logging via `useLogEvent`,
-and Activity Player saved-state sync. You replace the model and the panels; the
-infrastructure comes for free.
+the `<SimulationFrame>` layout, **MST state management** (a `RootStore` built on the shared
+trial-list infrastructure), the shared `<Button>`, action logging via `useLogEvent`, and
+Activity Player saved-state sync. You replace the model, the stores' per-trial shape, and the
+panels; the infrastructure comes for free.
 
 For the full shared-library API surface, see [infrastructure-plan.md §3](./infrastructure-plan.md).
 
@@ -46,21 +47,51 @@ In `simulations/<name>/src/app.tsx`, set the `<SimulationFrame>` props:
 >
 ```
 
-## 4. Replace the model
+## 4. Replace the model and stores
 
-The random-walk model lives in `src/model/`:
+**Model** (`src/model/`):
 
 - `types.ts` — `SimInput` (user-controlled parameters), `SimOutput` (per-trial recorded
-  result), `SimTransient` (per-frame state), and `RecordedTrial` (one trial's input +
-  output + final snapshot).
+  result), `SimTransient` (per-frame state), and `RecordedTrial` (one trial's recorded data:
+  input + output + final snapshot; mirrors the MST `TrialModel`'s snapshot).
 - `random-walk.ts` — the step function and trial finalization.
 
-Replace these with your own model's types and stepping logic, then update
-`src/components/simulation-view.tsx` (the runner + canvas/visualization) and
-`src/components/data-panel.tsx` (the recorded-results view) to match. The shared hooks
-`useModelState` and `useSimulationRunner` (from `@concord-consortium/mass-sims-shared`)
-handle the input/output/transient state split and the play/pause/step loop — keep using
-them.
+**Stores** (`src/stores/`) — the trial list is managed with **MST** (mobx-state-tree). The
+universal trial-list infrastructure lives in `@concord-consortium/mass-sims-shared`
+(`packages/shared/src/trials/`): the `TRIAL_LETTERS_DEFAULT` / `MAX_TRIALS_DEFAULT` constants, a
+`UiStore` base (holds the active trial letter), the multi-trial logic (`activeTrial`, `canAddTrial`,
+`trialLetters`, `hasAnyProgress`, `addTrial`), and the saved-state envelope helper. Each sim
+provides:
+
+- `stores/trial-model.ts` — your sim's `TrialModel` (its `input` / `output` / `finalTransient`
+  shapes are sim-specific). A trial's identity is its letter (the map key) — there is no `id`.
+- `stores/root-store.ts` — a `RootStore` holding `trials: types.map(TrialModel)` + `ui: UiStore`,
+  which consumes the shared multi-trial helpers and exposes `createRootStore({ rng })`,
+  `RootStoreProvider`, and `useStores`. Write your own `resetTrial` here (its cleanup side-effects
+  are sim-specific). The `rng` is injected via the MST environment so tests pass a seeded PRNG.
+
+Copy Starter's `stores/` as your template. Components that read store state are wrapped in `observer`
+and call `useStores()`. If your sim needs UI state beyond the active trial letter, compose your own
+UiStore on top of the shared base via `types.compose` (Bananas's per-trial cross selection is the
+reference).
+
+Replace the model types and stepping logic, then update `src/components/simulation-view.tsx` (the
+runner + canvas/visualization) and `src/components/data-panel.tsx` (the recorded-results view) to
+match. The shared hooks `useModelState` and `useSimulationRunner` handle the running trial's
+per-frame state and the play/pause/step loop — these **stay** alongside MST: MST owns the trial LIST
+(what trials exist, which is selected, each trial's recorded result); `useModelState` owns the
+per-frame transient state of the trial currently running.
+
+**Trials column.** `src/components/trials-panel/` renders the trial selector as a "tab-like" control
+(a `role="tablist"` of `role="tab"` cards with roving-tabindex keyboard nav, a `+ New` card, and a
+max-trials notice) — a pragmatic pattern, *not* strict WAI-ARIA tabs (see
+[docs/playwright.md](./playwright.md)). Reuse Starter's `<TrialsPanel>` as the reference and swap in
+your sim's per-card body and enriched aria-label.
+
+> **This ARIA shape is under review.** Using `role="tab"` without a real
+> `aria-controls`/`tabpanel` relationship is a known, deliberate trade-off (there's one shared
+> Simulation panel for all trials, so the strict tabs pattern doesn't fit cleanly). A planned
+> accessibility follow-up will likely move existing sims to **listbox/option** semantics.
 
 For parameter inputs and data visualization, use the **shared controls and charts** from
 `@concord-consortium/mass-sims-shared` rather than native HTML elements — the Starter's
@@ -74,56 +105,89 @@ and **auto-emit a log event when given an `action="…"` prop** (snake_case). Se
 ## 5. Wire Activity Player saved state
 
 Sims import lara-interactive-api's state-sync API **directly** — there is no shared wrapper
-hook (see [infrastructure-plan.md §3 "AP state sync"](./infrastructure-plan.md)). The
-pattern is two independent effects: restore on init, push on change. Define the persisted
-shape, then wire it in `app.tsx`:
+hook (see [infrastructure-plan.md §3 "AP state sync"](./infrastructure-plan.md)). The persisted
+shape is a **flat versioned envelope** — `{ version, trials, selectedTrialLetter }` — projected from
+the MST snapshot via the shared envelope helper. Define it in `stores/saved-state.ts`:
 
 ```tsx
-// src/model/saved-state.ts
-import type { RecordedTrial } from "./types";
+// src/stores/saved-state.ts
+import { type TrialLetter, toVersionedSavedState } from "@concord-consortium/mass-sims-shared";
+import type { RootStoreSnapshotOut } from "./root-store";
+import type { TrialState } from "./trial-model";
 
-// Only plain JSON-serializable values. Per-frame transient state (live positions, frame
-// counter) is intentionally NOT persisted — students restart trials on return.
+export const SAVED_STATE_VERSION = 1;
+
+// Only plain JSON-serializable values; transient UI state is left out. Per-frame transient state
+// (live positions, frame counter) is also NOT persisted — students restart trials on return.
 export interface SavedState {
-  trials: RecordedTrial[];
-  selectedId: string;
+  version: typeof SAVED_STATE_VERSION;
+  trials: Partial<Record<TrialLetter, TrialState>>;
+  selectedTrialLetter: TrialLetter;
+}
+
+export function toSavedState(snap: RootStoreSnapshotOut): SavedState {
+  return toVersionedSavedState(SAVED_STATE_VERSION, snap) as SavedState;
+}
+
+// Validate a restored state into the current shape, or null if unrecognized. The `version` field is
+// the forward-migration hook for any future shape change.
+export function migrateSavedState(raw: unknown): SavedState | null {
+  /* …validate version + trials + selectedTrialLetter… */
 }
 ```
+
+Then wire two effects in `app.tsx` — restore on init, push on change:
 
 ```tsx
 // app.tsx
 import { setInteractiveState, useInitMessage } from "@concord-consortium/lara-interactive-api";
 import { useReloadWarning } from "@concord-consortium/mass-sims-shared";
+import { applySnapshot, getSnapshot, onSnapshot } from "mobx-state-tree";
 import { useEffect } from "react";
-import type { SavedState } from "./model/saved-state";
+import type { RootStoreSnapshotOut } from "./stores/root-store";
+import { migrateSavedState, type SavedState, toSavedState } from "./stores/saved-state";
 
 const initMsg = useInitMessage<SavedState>();
-// Embedded once the AP handshake delivers an init message; null in standalone.
-const isEmbedded = initMsg !== null;
+const isEmbedded = initMsg !== null; // embedded once the AP handshake delivers an init message
 
-// Restore on init. `"interactiveState" in initMsg` narrows the discriminated union to the
-// runtime/report variants; the truthy check skips the first-session null.
+// Hydrate: migrate the wire format, then project it into the MST snapshot shape and apply. NOTE the
+// explicit { trials, ui: {...} } construction — the wire format is NOT the store snapshot.
 useEffect(() => {
   if (initMsg && "interactiveState" in initMsg && initMsg.interactiveState) {
-    setState(initMsg.interactiveState);
+    const state = migrateSavedState(initMsg.interactiveState);
+    if (state) {
+      applySnapshot(rootStore, {
+        trials: state.trials,
+        ui: { selectedTrialLetter: state.selectedTrialLetter },
+      });
+    }
   }
-}, [initMsg]);
+}, [initMsg, rootStore]);
 
-// Push on every trial-list / selection change (user actions, not per-frame — low rate).
+// Persist via onSnapshot (fires on the snapshot-emit boundary), with an initial save on mount and a
+// serialized-payload dedup so identical payloads aren't re-emitted.
 useEffect(() => {
-  setInteractiveState<SavedState>({ trials, selectedId });
-}, [trials, selectedId]);
+  let lastSaved = "";
+  const save = (snap: RootStoreSnapshotOut) => {
+    const state = toSavedState(snap);
+    const serialized = JSON.stringify(state);
+    if (serialized === lastSaved) return;
+    lastSaved = serialized;
+    setInteractiveState<SavedState>(state);
+  };
+  save(getSnapshot(rootStore));
+  return onSnapshot(rootStore, save);
+}, [rootStore]);
 
-// Warn before unload ONLY in standalone — when embedded, AP persists every change, so
-// the data isn't at risk on reload and the prompt would fire during AP's own navigation.
-useReloadWarning(!isEmbedded && trials.some((t) => t.output !== null));
+// Warn before unload ONLY in standalone — when embedded, AP persists every change, so the data isn't
+// at risk on reload and the prompt would fire during AP's own navigation.
+useReloadWarning(!isEmbedded && rootStore.hasAnyProgress);
 ```
 
-The library handles standalone-vs-embedded internally: outside AP, `useInitMessage()`
-stays `null` and `setInteractiveState()` is a no-op, so no `inIframe()` guards are needed.
-The Starter keeps its trial list in its own React state and pushes via `setInteractiveState`
-rather than using lara-interactive-api's combined `useInteractiveState` hook, because that
-composes more cleanly with the existing trial-list state.
+The library handles standalone-vs-embedded internally: outside AP, `useInitMessage()` stays `null`
+and `setInteractiveState()` is a no-op, so no `inIframe()` guards are needed. The Starter pushes via
+`setInteractiveState` rather than lara-interactive-api's combined `useInteractiveState` hook because
+that composes more cleanly with the MST snapshot flow.
 
 > **Chrome when embedded.** `<SimulationFrame>` accepts `standalone?: boolean` to toggle
 > its outer container (defaults to `true`, overridable via a `?standalone=false` URL
@@ -190,8 +254,8 @@ pattern, and how CI runs the suite).
 - [ ] `yarn new-sim <name>` then `yarn install`
 - [ ] `yarn gen-index && yarn gen-workflows`, commit the regenerated output
 - [ ] Set `simTitle` / `tagline` / About content in `app.tsx`
-- [ ] Replace `src/model/` and the two panel components with your model
-- [ ] Define `SavedState` and wire the restore/push effects + standalone-gated reload warning
+- [ ] Replace `src/model/` + `src/stores/trial-model.ts` (your `TrialModel`) and the panel components
+- [ ] Define the versioned `SavedState` and wire the hydrate (`applySnapshot`) / persist (`onSnapshot`) effects + standalone-gated reload warning (`hasAnyProgress`)
 - [ ] Give interactive controls snake_case `action` names
 - [ ] `yarn workspace <name> typecheck && yarn workspace <name> test && yarn workspace <name> build`
 - [ ] Update the scaffolded smoke spec's title assertion + page-object locators; run `yarn test:playwright:build playwright/tests/smoke/<name>.test.ts` (see [`docs/playwright.md`](./playwright.md))

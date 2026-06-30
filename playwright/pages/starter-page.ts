@@ -54,14 +54,44 @@ export class StarterPage extends SimulationFramePage {
     return this.page.getByRole("slider", { name: /walker count/i });
   }
 
-  /** A trial card by its letter, e.g. trialCard("A"). */
-  trialCard(letter: string): Locator {
-    return this.page.getByRole("button", { name: `Trial ${letter}`, exact: true });
+  // --- Trials panel -------------------------------------------------------
+  // A "tab-like" selector: role="tablist" container, cards as role="tab" with roving tabindex and
+  // enriched accessible names.
+
+  /** The trial-selector tablist (vertical, labeled "Trials"). */
+  get trialsTablist(): Locator {
+    return this.page.getByRole("tablist", { name: "Trials" });
   }
 
-  /** The "New trial" card. */
+  /**
+   * A trial tab by its letter, e.g. trialTab("A"). Cards are role="tab" with an enriched accessible
+   * name ("Trial A. Walker count 50, step size 1…"), so match on the leading "Trial X".
+   */
+  trialTab(letter: string): Locator {
+    return this.page.getByRole("tab", { name: new RegExp(`^Trial ${letter}\\b`) });
+  }
+
+  /** The "+ New" card that appends a trial. Replaced by the max-trials notice at MAX_TRIALS. */
   get newTrialCard(): Locator {
-    return this.page.getByRole("button", { name: "New trial" });
+    return this.page.getByRole("button", { name: "Add new trial" });
+  }
+
+  /** The "Max number of trials reached" status notice that replaces "+ New" at the cap. */
+  get maxTrialsNotice(): Locator {
+    return this.page.getByText("Max number of trials reached");
+  }
+
+  async addTrial(): Promise<void> {
+    await this.newTrialCard.click();
+  }
+
+  async selectTrial(letter: string): Promise<void> {
+    await this.trialTab(letter).click();
+  }
+
+  /** The aria-label of the currently focused element (for roving-tabindex keyboard-nav asserts). */
+  async focusedAriaLabel(): Promise<string | null> {
+    return this.page.evaluate(() => document.activeElement?.getAttribute("aria-label") ?? null);
   }
 
   /**

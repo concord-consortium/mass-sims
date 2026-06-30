@@ -69,14 +69,19 @@ on ports 8080–8081 before running e2e** (a stray server makes Playwright fail 
   is the shared-chrome base (header, About modal, three slots); each sim subclasses it
   (`StarterPage`, `BananasPage`) with its own controls **and its own `goto()`** (the base has no
   canonical URL, so it has no `goto()`).
-- **Test data re-exports from the sim, never duplicates it.**
-  [`playwright/testdata/bananas-testdata.ts`](../playwright/testdata/bananas-testdata.ts) re-exports
-  the constants Bananas already defines (parent ids/labels, trial letters, `MAX_CROSSES`,
-  `MAX_TRIALS`) and adds e2e conveniences. Catalogs grow with the sim, so specs pick up new entries
-  for free. The only modules imported from sim source are **pure** (no React / vite-svg / scss),
-  which is why importing them into the Playwright-run suite is safe. Behavior-defining cap values
-  are imported **and** asserted against literals in the smoke spec (e.g. `expect(MAX_CROSSES).toBe(6)`)
-  so an accidental change surfaces immediately.
+- **Test data re-exports the source constants, never duplicates them.** Each sim has a
+  `<sim>-testdata.ts`. The trial-list constants (`TRIAL_LETTERS`, `MAX_TRIALS`) live in the
+  **shared package** that all sims build on, so for example,
+  [`starter-testdata.ts`](../playwright/testdata/starter-testdata.ts) and
+  [`bananas-testdata.ts`](../playwright/testdata/bananas-testdata.ts) both re-export them from
+  `packages/shared/src/trials/constants`; Bananas additionally re-exports its own catalogs (parent
+  ids/labels, `MAX_CROSSES`). Catalogs grow with the sim, so specs pick up new entries for free.
+  Every imported module is **pure** (no React / vite-svg / scss), which is why importing into the
+  Playwright-run suite is safe. Note the shared constants are imported via a **direct path to the
+  pure `constants` module**, not the package barrel (the barrel pulls in component scss/svg
+  side-effects the Playwright tsconfig can't resolve). Behavior-defining caps are imported **and**
+  asserted against literals in the smoke spec (`expect(MAX_TRIALS).toBe(10)`,
+  `expect(MAX_CROSSES).toBe(6)`) so an accidental change surfaces immediately.
 - **Locator strategy:** prefer accessible queries (`getByRole` / `getByLabel` / `getByText`); fall
   back to CSS class selectors only for elements with no good accessible name (e.g. the active-trial
   badge, the status pill, the visually-hidden fungus `<input>`). Each test is isolated — a fresh
@@ -136,6 +141,28 @@ deterministic and mode-independent because it never closes the page or depends o
 For **Starter** specifically, the warning is gated on a trial running to **completion**
 (`output !== null`), not merely starting — so the positive test drives a trial to completion first
 via `completeOneTrial()` (shorten the run via the on-page NumberField, then Step to the end).
+
+## The trial-selector pattern
+
+All sims render their Trials column as a **tab-like selector** — a pragmatic convention, *not*
+strict WAI-ARIA tabs: a `role="tablist"` container (`aria-orientation="vertical"`,
+`aria-label="Trials"`) holds the trial cards as `role="tab"` elements, alongside the `+ New` card /
+max-trials notice. Cards carry `aria-selected`, roving tabindex (only the selected card is tabbable),
+and an enriched accessible name (e.g. Starter's "Trial A. Walker count 50, step size 1"). It's
+"tab-like" because the cards have no `aria-controls`/tabpanel link — the Simulation panel is the
+implicit panel the active card controls.
+
+Page objects expose this via `trialsTablist`, `trialTab(letter)` (matched on the leading "Trial X",
+since the accessible name is enriched), `newTrialCard` (accessible name **"Add new trial"**),
+`maxTrialsNotice`, and `focusedAriaLabel()` for roving-tabindex keyboard-nav asserts. Keyboard
+contract: Up/Down move focus **and** selection to the adjacent card (no wrap); Home/End jump to
+first/last; Left/Right are ignored (vertical orientation). At the cap, `+ New` is replaced by a
+`role="status"` `aria-live="polite"` notice.
+
+Each sim also emits `trial_added` / `trial_selected` / `trial_reset` log events on these mutations.
+The e2e suite doesn't assert log payloads (that's unit-test territory) — it covers the visible/ARIA
+behavior, and the trial-selector locators above are the page-object surface a new sim inherits from
+Starter.
 
 ## Adding a new sim
 

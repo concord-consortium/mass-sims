@@ -52,6 +52,23 @@ export {
   useStateWithCallbackLazy,
 } from "./hooks/use-state-with-callback";
 
+// Trial-list infrastructure
+export {
+  activeTrial,
+  addTrial,
+  canAddTrial,
+  hasAnyProgress,
+  MAX_TRIALS_DEFAULT,
+  TRIAL_LETTERS_DEFAULT,
+  type TrialLetter,
+  type TrialsMap,
+  toVersionedSavedState,
+  trialLetters,
+  UiStore,
+  type UiStoreInstance,
+  type VersionedSavedState,
+} from "./trials";
+
 // Utils
 export {
   resetAll,

@@ -7,9 +7,8 @@ const TS_H = 130; // time-series chart height
 const HIST_H = 160; // histogram height (a little taller for its axis titles)
 
 export interface DataPanelProps {
-  trials: readonly RecordedTrial[];
-  /** Index of the selected trial, or null. Its data drives both charts. */
-  selectedIndex: number | null;
+  /** The active trial whose data drives both charts, or null when there is none. */
+  trial: RecordedTrial | null;
   /**
    * In-progress avg-distance series from the currently-running trial, or null/undefined when
    * no run is active. When set, the time-series chart prefers this over the selected trial's
@@ -20,11 +19,8 @@ export interface DataPanelProps {
   liveSeries?: readonly number[] | null;
 }
 
-export function DataPanel({ trials, selectedIndex, liveSeries }: DataPanelProps) {
-  const selected =
-    selectedIndex !== null && selectedIndex >= 0 && selectedIndex < trials.length
-      ? trials[selectedIndex]
-      : null;
+export function DataPanel({ trial, liveSeries }: DataPanelProps) {
+  const selected = trial;
   // Prefer the in-progress live series while it's set; otherwise fall back to the trial's
   // committed output series (post-completion) or an empty series (empty trial).
   const selectedSeries = liveSeries ?? selected?.output?.avgDistanceSeries ?? [];

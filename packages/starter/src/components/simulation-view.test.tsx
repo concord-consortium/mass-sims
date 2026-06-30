@@ -11,7 +11,6 @@ vi.mock("@concord-consortium/lara-interactive-api", () => ({ log }));
 import { SimulationView } from "./simulation-view";
 
 const emptyTrial = (overrides: Partial<RecordedTrial["input"]> = {}): RecordedTrial => ({
-  id: "t1",
   input: { walkerCount: 50, stepSize: 1, framesPerTrial: 200, seed: "test-seed", ...overrides },
   output: null,
   finalTransient: null,
@@ -149,7 +148,6 @@ describe("SimulationView", () => {
 
   it("disables Play for an already-completed trial (must Reset first)", () => {
     const completed: RecordedTrial = {
-      id: "t1",
       input: { walkerCount: 3, stepSize: 1, framesPerTrial: 2, seed: "s" },
       output: { avgDistance: 1, stdDevDistance: 0.5, avgDistanceSeries: [1] },
       finalTransient: {

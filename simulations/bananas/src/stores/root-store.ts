@@ -1,4 +1,11 @@
 import {
+  addTrial as addTrialToMap,
+  hasAnyProgress as anyTrialHasProgress,
+  canAddTrial as computeCanAddTrial,
+  trialLetters as listTrialLetters,
+  activeTrial as resolveActiveTrial,
+} from "@concord-consortium/mass-sims-shared";
+import {
   getSnapshot,
   type Instance,
   type SnapshotIn,
@@ -12,7 +19,6 @@ import {
   type PhenotypeTotals,
   type ResistanceSeries,
 } from "../model/data-aggregations";
-import { MAX_TRIALS, TRIAL_LETTERS } from "../model/trials";
 import { emptyTrialSnapshot, TrialModel, type TrialModelInstance } from "./trial-model";
 import { UiStore } from "./ui-store";
 
@@ -35,15 +41,10 @@ export const RootStore = types
       trial.reset();
       self.ui.clearSelectionForTrial(target);
     },
-    // Add a trial at the next-available letter (first one in TRIAL_LETTERS not already in the Map),
-    // up to MAX_TRIALS. Returns the new letter, or `null` if at cap — callers must gate on the
-    // return value. Find-first-missing (not `trials.size`) so this stays correct if a future story
-    // ever introduces gap-producing operations; today the two strategies are identical.
+    // Add a trial at the next-available letter, up to the cap. Returns the new letter, or `null` if
+    // at cap — callers must gate on the return value.
     addTrial(): string | null {
-      const nextLetter = TRIAL_LETTERS.find((l) => !self.trials.has(l));
-      if (!nextLetter) return null;
-      self.trials.set(nextLetter, TrialModel.create(emptyTrialSnapshot()));
-      return nextLetter;
+      return addTrialToMap(self.trials, () => TrialModel.create(emptyTrialSnapshot()));
     },
   }))
   .views((self) => ({
@@ -55,29 +56,20 @@ export const RootStore = types
      * consumers can read `activeTrial` unconditionally and never crash mid-render.
      */
     get activeTrial(): TrialModelInstance {
-      const letter = self.ui.selectedTrialLetter;
-      const trial = self.trials.get(letter);
-      if (trial) return trial;
-      const first = self.trials.values().next().value;
-      if (!first) throw new Error("No trials in store — invariant violated");
-      return first;
+      return resolveActiveTrial(self.trials, self.ui.selectedTrialLetter);
     },
     get canAddTrial(): boolean {
-      return self.trials.size < MAX_TRIALS;
+      return computeCanAddTrial(self.trials);
     },
     get trialLetters(): readonly string[] {
-      return Array.from(self.trials.keys());
+      return listTrialLetters(self.trials);
     },
     /**
      * True if any trial has progress (parents picked, fungus toggled, or crosses made). Drives the
      * reload-warning hook — the user has unsaved work in *any* trial, not just the active one.
      */
     get hasAnyProgress(): boolean {
-      let any = false;
-      self.trials.forEach((trial) => {
-        if (trial.canReset) any = true;
-      });
-      return any;
+      return anyTrialHasProgress(self.trials, (trial) => trial.canReset);
     },
     /**
      * The active trial's currently-active cross index, or `null` when nothing valid is selected.

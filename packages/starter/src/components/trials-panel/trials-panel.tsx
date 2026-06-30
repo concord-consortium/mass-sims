@@ -1,5 +1,5 @@
 import {
-  TRIAL_LETTERS_DEFAULT as TRIAL_LETTERS,
+  TRIAL_LETTERS_DEFAULT,
   TrialCard,
   type TrialLetter,
   useLogEvent,
@@ -32,13 +32,16 @@ function MaxTrialsNotice() {
 }
 
 /**
- * The Trials column orchestrator: one shared `<TrialCard>` per trial (with a Bananas-local body),
- * plus a `+ New` card or a "max reached" notice. Selecting a card loads that trial into the
- * Simulation + Data panels. `observer`-wrapped so the card list, selection, and per-card aria-labels
- * track store mutations.
+ * The Trials column orchestrator: one shared `<TrialCard>` per trial, plus a `+ New` card or a
+ * "max reached" notice. Selecting a card loads that trial into the Simulation + Data panels.
+ * `observer`-wrapped so the card list, selection, per-card stats, and aria-labels track store
+ * mutations.
  *
- * Under review: the `role="tab"`/`role="tablist"` selector here (tab-like, not strict WAI-ARIA tabs)
- * will likely move to listbox/option semantics in a planned a11y follow-up.
+ * This is a "tab-like" selector, not strict WAI-ARIA tabs: the `role="tablist"` container also holds
+ * the `+ New` card / notice, and the cards use `role="tab"` without an `aria-controls`/tabpanel link
+ * (the Simulation panel is the implicit panel the active card controls).
+ *
+ * Under review: a planned accessibility follow-up will likely move this to listbox/option semantics.
  */
 export const TrialsPanel = observer(function TrialsPanel() {
   const store = useStores();
@@ -57,19 +60,20 @@ export const TrialsPanel = observer(function TrialsPanel() {
 
   const handleAdd = () => {
     // Guard on the return value: defensive against clicking `+ New` as the cap flips (the visual
-    // card is also gated on `canAddTrial`, so this normally never returns null).
+    // card is also gated on `canAddTrial`, so this normally never returns null). `addTrial` doesn't
+    // change the selection, so navigateTo's emit fires here.
     const newLetter = store.addTrial();
     if (!newLetter) return;
     // `trial_added` before `trial_selected`: a trial was created AND is now being viewed (two
-    // distinct actions). `addTrial` doesn't change the selection, so navigateTo's emit fires here.
+    // distinct actions).
     logEvent("trial_added", { trial: newLetter });
     navigateTo(newLetter);
   };
 
   // Roving-tabindex keyboard navigation, delegated to the tablist. Up/Down move focus AND selection
-  // to the adjacent card (no wrap); Home/End jump to the first/last. Left/Right are intentionally
-  // ignored (vertical orientation, per WAI-ARIA). Acts only when a trial card is focused — not the
-  // `+ New` card (its own native button handles Enter/Space).
+  // to the adjacent card (no wrap); Home/End jump to first/last. Left/Right are intentionally ignored
+  // (vertical orientation, per WAI-ARIA). Acts only when a trial card is focused — not the `+ New`
+  // card (its own native button handles Enter/Space).
   const onKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
     if (!(e.target as HTMLElement).closest(".trial-card")) return;
     const letters = store.trialLetters;
@@ -101,7 +105,7 @@ export const TrialsPanel = observer(function TrialsPanel() {
 
   return (
     <div
-      className="bananas-trials-panel"
+      className="starter-trials-panel"
       role="tablist"
       aria-orientation="vertical"
       aria-label="Trials"
@@ -112,17 +116,17 @@ export const TrialsPanel = observer(function TrialsPanel() {
         return (
           <TrialCard
             key={letter}
-            index={TRIAL_LETTERS.indexOf(letter as TrialLetter)}
+            index={TRIAL_LETTERS_DEFAULT.indexOf(letter as TrialLetter)}
             selected={selected}
-            resetDisabled={!trial.canReset}
+            resetDisabled={trial.output === null}
             tabIndex={selected ? 0 : -1}
             role="tab"
             ariaSelected={selected}
             ariaLabel={trialAriaLabel(letter, trial)}
             onSelect={() => navigateTo(letter)}
             onReset={() => {
-              // Uses the iteration `letter` (the acted-on card), not the active letter — Resolved
-              // decision #2. Emit before the reset so the payload reads the trial being reset.
+              // Uses the iteration `letter` (the acted-on card), not the active letter. Emit before
+              // the reset so the payload reads the trial being reset.
               logEvent("trial_reset", { trial: letter });
               store.resetTrial(letter);
             }}

@@ -2,7 +2,7 @@ import { applySnapshot, getSnapshot } from "mobx-state-tree";
 import { describe, expect, it } from "vitest";
 import type { OffspringPlant, ParentId } from "../model/genetics";
 import { createRootStore } from "./root-store";
-import { type SavedState, toSavedState } from "./saved-state";
+import { migrateSavedState, type SavedState, toSavedState } from "./saved-state";
 import { createTestStore } from "./test-helpers";
 import type { TrialState } from "./trial-model";
 
@@ -61,6 +61,60 @@ describe("SavedState round-trip", () => {
     expect(target.trials.get("C")?.crosses).toHaveLength(2);
     // UI selection is not restored.
     expect(target.ui.selectedCrossByTrial.size).toBe(0);
+  });
+});
+
+describe("migrateSavedState", () => {
+  const validTrial: TrialState = {
+    p1: null,
+    p2: null,
+    locked: false,
+    fungusOn: false,
+    crosses: [],
+  };
+
+  it("passes a valid versioned state through unchanged", () => {
+    const state: SavedState = { version: 1, trials: { A: validTrial }, selectedTrialLetter: "A" };
+    expect(migrateSavedState(state)).toEqual(state);
+  });
+
+  it("accepts a valid-but-absent selected letter (App's normalization reaction re-selects)", () => {
+    const state = { version: 1, trials: { A: validTrial }, selectedTrialLetter: "B" };
+    expect(migrateSavedState(state)).toEqual(state);
+  });
+
+  it("rejects a selected letter outside A–J (would throw the enumeration on hydrate)", () => {
+    expect(
+      migrateSavedState({ version: 1, trials: { A: validTrial }, selectedTrialLetter: "Z" }),
+    ).toBeNull();
+  });
+
+  it("rejects a trial keyed by a non-letter", () => {
+    expect(
+      migrateSavedState({
+        version: 1,
+        trials: { A: validTrial, foo: validTrial },
+        selectedTrialLetter: "A",
+      }),
+    ).toBeNull();
+  });
+
+  it("rejects a trial that isn't a hydratable TrialModel snapshot", () => {
+    expect(
+      migrateSavedState({ version: 1, trials: { A: {} }, selectedTrialLetter: "A" }),
+    ).toBeNull();
+  });
+
+  it.each([
+    null,
+    undefined,
+    42,
+    "nope",
+    {},
+    { version: 2 },
+    { version: 1, trials: {}, selectedTrialLetter: "A" },
+  ])("returns null for malformed input %o", (raw) => {
+    expect(migrateSavedState(raw)).toBeNull();
   });
 });
 

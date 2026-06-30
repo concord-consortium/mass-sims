@@ -1,10 +1,8 @@
 import clsx from "clsx";
 import type { ReactNode } from "react";
-
 import ResetIcon from "../../assets/reset-icon.svg?react";
+import { TRIAL_LETTERS_DEFAULT as LETTERS } from "../../trials/constants";
 import "./trial-card.scss";
-
-const LETTERS = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J"] as const;
 
 export interface TrialCardProps {
   children?: ReactNode;

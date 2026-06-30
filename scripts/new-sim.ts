@@ -15,7 +15,8 @@
 //   3. Wires up Playwright e2e coverage for the new sim:
 //        a. appends a { name, port } entry to playwright/sims.ts (next free port),
 //        b. copies playwright/pages/starter-page.ts → playwright/pages/<name>-page.ts,
-//        c. copies playwright/tests/smoke/starter.test.ts → playwright/tests/smoke/<name>.test.ts.
+//        c. copies playwright/testdata/starter-testdata.ts → playwright/testdata/<name>-testdata.ts,
+//        d. copies playwright/tests/smoke/starter.test.ts → playwright/tests/smoke/<name>.test.ts.
 //   4. Prints next-step reminders.
 //
 // Note: the root package.json `workspaces` array uses globs (`simulations/*`), so a
@@ -124,7 +125,26 @@ export function scaffoldSmokeTest(starterContent: string, name: string): string 
   return starterContent
     .replaceAll("StarterPage", `${pascal}Page`)
     .replaceAll("starter-page", `${name}-page`)
+    .replaceAll("starter-testdata", `${name}-testdata`)
     .replaceAll(`"Random Walk"`, `"<NEW SIM TITLE>"`);
+}
+
+/**
+ * Transform the canonical starter testdata into a new sim's testdata: REPLACE the Starter-specific
+ * header with an "edit me" header for the new sim, keeping the code body (the shared trial-list
+ * re-export, whose relative path is the same from any testdata file). Sim-specific catalogs/fixtures
+ * are the author's to add. The leading-comment strip (rather than slicing from the first `export`)
+ * keeps any future imports the source file might gain.
+ */
+export function scaffoldTestdata(starterContent: string, name: string): string {
+  const header =
+    `// Test data for the \`${name}\` sim, scaffolded from starter-testdata.ts by \`yarn new-sim\`.\n` +
+    `// It re-exports the shared trial-list constants every sim builds on; add this sim's own\n` +
+    `// catalogs/fixtures as it grows (keep any imported sim modules pure — no React / vite-svg / scss).\n\n`;
+  // Drop the source's leading (Starter-specific) comment block so the generated file describes the
+  // new sim, not Starter; keep everything from the first line of code onward.
+  const body = starterContent.replace(/^(?:[ \t]*\/\/.*\r?\n|[ \t]*\r?\n)*/, "");
+  return header + body;
 }
 
 /**
@@ -143,7 +163,8 @@ export function scaffoldSim(name: string): { port: number } {
   const targetDir = join(REPO_ROOT, "simulations", name);
   const pageTarget = join(REPO_ROOT, "playwright", "pages", `${name}-page.ts`);
   const smokeTarget = join(REPO_ROOT, "playwright", "tests", "smoke", `${name}.test.ts`);
-  for (const path of [targetDir, pageTarget, smokeTarget]) {
+  const testdataTarget = join(REPO_ROOT, "playwright", "testdata", `${name}-testdata.ts`);
+  for (const path of [targetDir, pageTarget, smokeTarget, testdataTarget]) {
     if (existsSync(path)) throw new Error(`Refusing to overwrite existing path: ${path}`);
   }
 
@@ -177,7 +198,14 @@ export function scaffoldSim(name: string): { port: number } {
   );
   writeFileSync(pageTarget, scaffoldPageObject(starterPage, name));
 
-  // 4. Scaffold the smoke spec from the Starter template.
+  // 4. Scaffold the testdata module from the Starter template (the smoke spec imports it).
+  const starterTestdata = readFileSync(
+    join(REPO_ROOT, "playwright", "testdata", "starter-testdata.ts"),
+    "utf8",
+  );
+  writeFileSync(testdataTarget, scaffoldTestdata(starterTestdata, name));
+
+  // 5. Scaffold the smoke spec from the Starter template.
   const starterSmoke = readFileSync(
     join(REPO_ROOT, "playwright", "tests", "smoke", "starter.test.ts"),
     "utf8",
@@ -204,6 +232,7 @@ function main() {
 
   console.log(`✓ Scaffolded simulations/${name}`);
   console.log(`  + playwright/pages/${name}-page.ts`);
+  console.log(`  + playwright/testdata/${name}-testdata.ts`);
   console.log(`  + playwright/tests/smoke/${name}.test.ts`);
   console.log(`  + playwright/sims.ts entry (preview port ${port})`);
   console.log("\nNext steps:");
