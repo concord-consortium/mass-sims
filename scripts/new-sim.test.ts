@@ -163,9 +163,13 @@ describe("scaffoldSim integration", () => {
     expect(page).toContain(`getSimUrl("${TEST_SIM}")`);
     expect(page).not.toContain("StarterPage");
 
-    // Testdata: scaffolded as its own per-sim module re-exporting the shared constants.
+    // Testdata: scaffolded as its own per-sim module re-exporting the shared constants, with the
+    // Starter-specific header stripped so the generated file describes the new sim, not Starter.
     expect(existsSync(testdataFile)).toBe(true);
-    expect(readFileSync(testdataFile, "utf8")).toContain("packages/shared/src/trials/constants");
+    const testdata = readFileSync(testdataFile, "utf8");
+    expect(testdata).toContain("packages/shared/src/trials/constants");
+    expect(testdata).toContain(`for the \`${TEST_SIM}\` sim`);
+    expect(testdata).not.toContain("for the Starter e2e suite");
 
     // Smoke spec: import paths + class substitution, no leftover Starter references.
     const smoke = readFileSync(smokeFile, "utf8");

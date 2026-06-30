@@ -130,16 +130,21 @@ export function scaffoldSmokeTest(starterContent: string, name: string): string 
 }
 
 /**
- * Transform the canonical starter testdata into a new sim's testdata: prepend an "edit me" header
- * and keep the body (the shared trial-list re-export, whose relative path is the same from any
- * testdata file). Sim-specific catalogs/fixtures are the author's to add.
+ * Transform the canonical starter testdata into a new sim's testdata: REPLACE the Starter-specific
+ * header with an "edit me" header for the new sim, keeping the code body (the shared trial-list
+ * re-export, whose relative path is the same from any testdata file). Sim-specific catalogs/fixtures
+ * are the author's to add. The leading-comment strip (rather than slicing from the first `export`)
+ * keeps any future imports the source file might gain.
  */
 export function scaffoldTestdata(starterContent: string, name: string): string {
   const header =
     `// Test data for the \`${name}\` sim, scaffolded from starter-testdata.ts by \`yarn new-sim\`.\n` +
     `// It re-exports the shared trial-list constants every sim builds on; add this sim's own\n` +
     `// catalogs/fixtures as it grows (keep any imported sim modules pure — no React / vite-svg / scss).\n\n`;
-  return header + starterContent;
+  // Drop the source's leading (Starter-specific) comment block so the generated file describes the
+  // new sim, not Starter; keep everything from the first line of code onward.
+  const body = starterContent.replace(/^(?:[ \t]*\/\/.*\r?\n|[ \t]*\r?\n)*/, "");
+  return header + body;
 }
 
 /**

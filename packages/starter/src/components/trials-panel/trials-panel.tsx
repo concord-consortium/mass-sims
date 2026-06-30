@@ -41,8 +41,7 @@ function MaxTrialsNotice() {
  * the `+ New` card / notice, and the cards use `role="tab"` without an `aria-controls`/tabpanel link
  * (the Simulation panel is the implicit panel the active card controls).
  *
- * Under review: a planned accessibility follow-up will likely move this to listbox/option semantics —
- * see docs/trial-selector-a11y-followup.md.
+ * Under review: a planned accessibility follow-up will likely move this to listbox/option semantics.
  */
 export const TrialsPanel = observer(function TrialsPanel() {
   const store = useStores();

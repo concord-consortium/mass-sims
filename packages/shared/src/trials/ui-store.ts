@@ -2,12 +2,13 @@ import { type Instance, types } from "mobx-state-tree";
 import { TRIAL_LETTERS_DEFAULT, type TrialLetter } from "./constants";
 
 /**
- * The shared base for a sim's transient, per-session UI state. Holds only the universal piece —
- * which trial letter is active — so it is the actual common subset across sims. Sims that need more
- * per-trial UI state (e.g. Bananas's per-trial cross-row selection) compose ON TOP of this base via
+ * The shared base for a sim's per-session UI state. Holds only the universal piece — which trial
+ * letter is active — so it is the actual common subset across sims. Sims that need more per-trial UI
+ * state (e.g. Bananas's per-trial cross-row selection) compose ON TOP of this base via
  * `types.compose` rather than duplicating `selectedTrialLetter`.
  *
- * NOT serialized to LARA — only the `trials` map is persisted; UI state resets across reloads.
+ * `selectedTrialLetter` is typically persisted as part of a sim's saved state; any additional UI
+ * state composed on top of this base is transient and resets across reloads.
  */
 export const UiStore = types
   .model("Ui", {

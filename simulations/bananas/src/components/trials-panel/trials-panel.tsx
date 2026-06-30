@@ -38,8 +38,7 @@ function MaxTrialsNotice() {
  * track store mutations.
  *
  * Under review: the `role="tab"`/`role="tablist"` selector here (tab-like, not strict WAI-ARIA tabs)
- * will likely move to listbox/option semantics in a planned a11y follow-up — see
- * docs/trial-selector-a11y-followup.md.
+ * will likely move to listbox/option semantics in a planned a11y follow-up.
  */
 export const TrialsPanel = observer(function TrialsPanel() {
   const store = useStores();
