@@ -27,7 +27,7 @@ Phase 0 (repo bootstrap). The scaffold exists; the first hello-world deploy is t
 # Install dependencies (and install lefthook hooks via postinstall)
 yarn install
 
-# Run the starter sim locally
+# Run the starter sim locally (Vite dev server, port 8080 — see the port note below)
 yarn workspace starter dev
 
 # Build everything
@@ -38,7 +38,15 @@ yarn lint
 
 # Typecheck everything
 yarn typecheck
+
+# Run the Playwright end-to-end suite (builds the sims first)
+yarn test:playwright:build
 ```
+
+> **Local ports.** Each sim's dev server (`yarn workspace <sim> dev`) and the Playwright preview
+> server both default to port 8080, so a running dev server collides with the e2e suite. Stop the
+> dev server before running e2e, or start it on another port (`yarn workspace <sim> dev --port 8100`).
+> See [`docs/playwright.md`](docs/playwright.md) for the full conventions.
 
 ## Repository layout
 

@@ -59,6 +59,12 @@ on ports 8080–8081 before running e2e** (a stray server makes Playwright fail 
 - **No `baseURL`.** Different specs target different sims at different ports; a single `baseURL`
   would silently route one sim's tests at another the moment a page object forgot to be explicit.
   Every page object navigates explicitly via `getSimUrl(name)`.
+
+  > ⚠️ **Don't add a `baseURL` to make a relative `page.goto('/')` work.** A relative goto failing
+  > ("Cannot navigate to invalid URL") is *expected* — the fix is to navigate via the page object's
+  > `goto()` (which resolves the sim's URL from the registry), **not** to add a `baseURL`. A
+  > `baseURL` would make a forgotten/relative navigation silently hit whichever sim it points at,
+  > which is the exact cross-sim routing hazard this design avoids.
 - **Page objects are classes.** [`SimulationFramePage`](../playwright/pages/simulation-frame-page.ts)
   is the shared-chrome base (header, About modal, three slots); each sim subclasses it
   (`StarterPage`, `BananasPage`) with its own controls **and its own `goto()`** (the base has no
@@ -76,6 +82,32 @@ on ports 8080–8081 before running e2e** (a stray server makes Playwright fail 
   badge, the status pill, the visually-hidden fungus `<input>`). Each test is isolated — a fresh
   `goto()` per `test.beforeEach`, no shared state (standalone mode has no persistence, so a fresh
   load is a clean slate).
+
+## Ports: preview vs dev server
+
+There are **two separate ports per sim**, configured in **two different places**, and they can
+collide:
+
+| Port | Used by | Configured in |
+| --- | --- | --- |
+| **Preview port** | Playwright's `webServer` (`vite preview`) | [`playwright/sims.ts`](../playwright/sims.ts) — starter 8080, bananas 8081 |
+| **Dev-server port** | `yarn workspace <sim> dev` (`vite`) | each sim's `vite.config.ts` (`createSimViteConfig({ port: … })`) — currently **8080 for every sim** |
+
+Today both default to 8080 for Starter, so **`yarn workspace starter dev` and the e2e suite's
+Starter preview both want 8080** — they can't run at the same time. (The two sims' dev servers also
+both default to 8080, so only one dev server can run at a time regardless of e2e.)
+
+Because `reuseExistingServer: false`, Playwright launches its own preview servers and won't reuse a
+stray one — a collision fails loudly ("port already in use") rather than silently testing the wrong
+app. So before running `yarn test:playwright`, either:
+
+- **stop your dev server(s)** on 8080–8081, or
+- **run the dev server on a different port** so it doesn't overlap the preview range:
+  `yarn workspace <sim> dev --port 8100`.
+
+> A fully zero-config fix (Playwright discovering a randomly-chosen preview port, so ports never
+> need coordinating) is a tracked follow-up — it needs server-discovery infrastructure Vite doesn't
+> provide out of the box. For now, the two rules above are the contract.
 
 ## The four-width matrix
 
