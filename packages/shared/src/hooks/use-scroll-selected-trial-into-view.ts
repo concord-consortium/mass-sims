@@ -6,7 +6,7 @@ import { type RefObject, useEffect, useRef } from "react";
  * rendered by the shared TrialCard) is smoothly scrolled fully into view. `block: "nearest"` is a
  * no-op when the card is already visible and confines scrolling to the nearest scrollable ancestor,
  * so a partially-clipped card slides just enough to show fully without jumping fully-visible cards.
- * The scroll container's `scroll-padding` keeps the card clear of the floating section title.
+ * The card's `scroll-margin` (set on `.trial-card-wrapper`) keeps it clear of the floating section title.
  */
 export function useScrollSelectedTrialIntoView<T extends HTMLElement = HTMLDivElement>(
   selectedLetter: string,
