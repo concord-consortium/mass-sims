@@ -26,6 +26,7 @@
     gap: 6px;
     min-height: tokens.$touch-target-min;
     padding: tokens.$space-2 10px;
+    transition: background-color 0.15s ease, border-color 0.15s ease;
     white-space: nowrap;
 
     &[data-hovered],
@@ -73,6 +74,15 @@
   }
 }
 
+@keyframes select-popover-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
 // The Popover is portaled to document.body, so it lives under its own root class. With
 // offset={0} it sits flush below the trigger; border-top:none + the trigger's own bottom
 // border form the divider, matching the designer's attached-list look. `--trigger-width`
@@ -85,6 +95,10 @@
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
   overflow: hidden;
   width: var(--trigger-width);
+
+  &[data-entering] {
+    animation: select-popover-fade-in 0.15s ease;
+  }
 
   .react-aria-ListBox {
     display: flex;
@@ -103,6 +117,7 @@
     min-height: tokens.$touch-target-min;
     outline: none;
     padding: 10px;
+    transition: background-color 0.15s ease, border-color 0.15s ease;
     white-space: nowrap;
 
     &[data-hovered],
@@ -122,5 +137,11 @@
       color: tokens.$color-text-muted;
       cursor: not-allowed;
     }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .select-popover[data-entering] {
+    animation: none;
   }
 }

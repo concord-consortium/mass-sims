@@ -18,6 +18,7 @@
   min-height: tokens.$touch-target-min;
   min-width: 60px;
   padding: tokens.$space-2 tokens.$space-3;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
   user-select: none;
 
   // Optional leading icon (sims pass an <img> / <svg> before the label).

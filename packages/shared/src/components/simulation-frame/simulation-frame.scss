@@ -42,6 +42,7 @@ $titlebar-about-leading-space: 5px;   // margin-left on the About button â†’ CCâ
   // horizontal padding with a negative margin to span edge-to-edge.
   padding: 0 tokens.$body-padding tokens.$body-padding;
   position: relative; // positioning context for the absolutely-anchored About panel
+  user-select: none; // sim text isn't selectable â†’ default cursor, not I-beam
   width: 100%;
 
   .title-bar {
@@ -126,6 +127,7 @@ $titlebar-about-leading-space: 5px;   // margin-left on the About button â†’ CCâ
     margin-left: $titlebar-about-leading-space;
     padding: 3px tokens.$space-3 3px tokens.$space-2;
     position: relative;
+    transition: background-color 0.15s ease, border-color 0.15s ease;
   }
 
   // Expanded touch target â€” extends 7 px above and below to reach 48 px effective.
@@ -180,6 +182,16 @@ $titlebar-about-leading-space: 5px;   // margin-left on the About button â†’ CCâ
       padding-top: $titlebar-content-gap + tokens.$space-4 - 3px;
     }
 
+    // Land a card scrolled into view (useScrollSelectedTrialIntoView) the same distance below the
+    // overlaid chip as the resting layout, rather than flush behind it. The offset lives on the
+    // card as scroll-margin (NOT the scroller's scroll-padding, which scrollIntoView's "nearest"
+    // alignment ignores in Chromium); the top value mirrors the .content padding-top above so the
+    // two can't drift, and the bottom matches the standard content bottom padding.
+    .trial-card-wrapper {
+      scroll-margin-bottom: tokens.$space-4;
+      scroll-margin-top: $titlebar-content-gap + tokens.$space-4 - 3px;
+    }
+
     .trials-list {
       align-items: flex-start;
       display: flex;
@@ -217,10 +229,16 @@ $titlebar-about-leading-space: 5px;   // margin-left on the About button â†’ CCâ
   }
 }
 
+@keyframes info-modal-fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
 // About panel â€” a draggable, non-modal side panel anchored to the frame's top-right corner.
 // No backdrop scrim: the sim content behind it stays interactive. Position is a transform
 // offset from this CSS anchor (set inline during drag, reset to 0,0 on each open).
 .simulation-frame-info-modal {
+  animation: info-modal-fade-in 0.15s ease;
   background: tokens.$color-surface;
   border: tokens.$border-strong;
   border-radius: tokens.$radius-lg;
@@ -278,6 +296,7 @@ $titlebar-about-leading-space: 5px;   // margin-left on the About button â†’ CCâ
     height: tokens.$touch-target-min;
     justify-content: center;
     padding: 0;
+    transition: background-color 0.15s ease, border-color 0.15s ease;
     width: tokens.$touch-target-min;
   }
 
@@ -334,5 +353,11 @@ $titlebar-about-leading-space: 5px;   // margin-left on the About button â†’ CCâ
     li {
       margin-bottom: tokens.$space-1;
     }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .simulation-frame-info-modal {
+    animation: none;
   }
 }

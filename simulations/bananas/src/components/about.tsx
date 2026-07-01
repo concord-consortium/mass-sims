@@ -29,38 +29,24 @@ export function AboutContent() {
           different parents.
         </li>
         <li>
-          <strong>Cross plants:</strong> Each cross produces 5–20 offspring. A maximum of 10 crosses
-          are allowed per trial.
+          <strong>Cross plants:</strong> Each cross produces 5–20 offspring. A maximum of 6 crosses
+          are allowed per trial. Offspring are organized by cross (A1, A2, A3…) in the grid, making
+          it easy to compare with the data charts.
         </li>
         <li>
-          <strong>Introduce fungus:</strong> Fungus can be introduced at any time, even before the
-          first cross. Plants that are not resistant will wilt and turn brown.
+          <strong>Introduce fungus:</strong> Toggle the Fungus switch on before crossing. Once the
+          first cross is made, the fungus setting is locked for the rest of the trial. Plants that
+          are not resistant will wilt and turn brown.
         </li>
         <li>
-          <strong>Continue crossing:</strong> Keep crossing after the fungus is introduced to
-          observe how resistance changes across crosses.
+          <strong>Continue crossing:</strong> Keep crossing to observe how resistance appears across
+          crosses.
         </li>
         <li>
           <strong>Analyze data:</strong> Use the Data panel to compare healthy and infected plants
           across crosses.
         </li>
       </ol>
-
-      <h3>Keep in Mind</h3>
-      <ul>
-        <li>
-          <strong>Irreversible fungus:</strong> Once introduced, the fungus cannot be removed within
-          a trial — just like in real life.
-        </li>
-        <li>
-          <strong>Cross rows:</strong> Offspring are organized by cross (C1, C2, C3…) in the grid,
-          making it easy to compare with the data charts.
-        </li>
-        <li>
-          <strong>Dual markers:</strong> Notice that a blue dashed line appears in both the
-          offspring grid and the bar chart at the cross when fungus is introduced.
-        </li>
-      </ul>
     </>
   );
 }

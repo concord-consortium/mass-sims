@@ -108,6 +108,7 @@
   }
 
   .fungus-switch-track.on .fungus-switch-thumb {
+    background: theme.$fungus-thumb-on;
     box-shadow: 0 0 0 2px theme.$fungus-active-text;
     left: 22px;
   }
@@ -139,7 +140,7 @@
   // Disabled (locked): RAC sets data-disabled on the field; we add `.disabled` too. Dims to
   // match the shared <button>'s [data-disabled] treatment so the row reads as uniformly disabled.
   &.disabled {
-    border-color: rgba(tokens.$color-border, 0.35);
+    border-color: theme.$border-faint;
     color: rgba(tokens.$color-text, 0.35);
 
     .fungus-switch-button,

@@ -41,6 +41,7 @@ export {
   useModelState,
 } from "./hooks/use-model-state";
 export { useReloadWarning } from "./hooks/use-reload-warning";
+export { useScrollSelectedTrialIntoView } from "./hooks/use-scroll-selected-trial-into-view";
 export {
   type UseSimulationRunnerOptions,
   type UseSimulationRunnerReturn,

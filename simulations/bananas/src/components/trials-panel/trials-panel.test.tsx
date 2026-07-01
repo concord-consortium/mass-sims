@@ -116,6 +116,21 @@ describe("TrialsPanel — logging", () => {
   });
 });
 
+describe("TrialsPanel — scroll selected into view", () => {
+  it("scrolls the newly selected trial card into view on click", () => {
+    // jsdom doesn't implement scrollIntoView, so define it before spying.
+    HTMLElement.prototype.scrollIntoView = () => {};
+    const scrollSpy = vi
+      .spyOn(HTMLElement.prototype, "scrollIntoView")
+      .mockImplementation(() => {});
+    const { getByRole } = renderPanel(createTestStore({ trials: { A: {}, B: {} } }));
+    scrollSpy.mockClear();
+    fireEvent.click(getByRole("tab", { name: /^Trial B/ }));
+    expect(scrollSpy).toHaveBeenCalledWith({ block: "nearest", behavior: "smooth" });
+    scrollSpy.mockRestore();
+  });
+});
+
 describe("TrialsPanel — max trials", () => {
   it("hides + New and shows the status notice at the 10-trial cap", () => {
     const { getByRole, queryByRole } = renderPanel(tenTrials());

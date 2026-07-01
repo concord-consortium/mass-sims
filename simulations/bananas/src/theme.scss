@@ -13,6 +13,8 @@ $fungus-active-text: #1a3c8f;
 $fungus-marker-color: #1a3c8f;
 $fungus-marker-label-bg: #c8d8fc;
 $fungus-thumb-active: #96b8e8;
+// Switch thumb fill when the toggle is ON (idle, not in active or hover state).
+$fungus-thumb-on: #f0f4ff;
 
 // Offspring plant colors (icons inherit via currentColor).
 $banana-healthy: #45a54a;

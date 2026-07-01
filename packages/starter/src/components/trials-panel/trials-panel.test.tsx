@@ -152,6 +152,21 @@ describe("TrialsPanel — trial-list logging", () => {
   });
 });
 
+describe("TrialsPanel — scroll selected into view", () => {
+  it("scrolls the newly selected trial card into view on click", () => {
+    // jsdom doesn't implement scrollIntoView, so define it before spying.
+    HTMLElement.prototype.scrollIntoView = () => {};
+    const scrollSpy = vi
+      .spyOn(HTMLElement.prototype, "scrollIntoView")
+      .mockImplementation(() => {});
+    const { getAllByRole } = renderPanel(storeWith(2));
+    scrollSpy.mockClear();
+    fireEvent.click(getAllByRole("tab")[1]);
+    expect(scrollSpy).toHaveBeenCalledWith({ block: "nearest", behavior: "smooth" });
+    scrollSpy.mockRestore();
+  });
+});
+
 describe("TrialsPanel — roving-tabindex keyboard navigation", () => {
   it("ArrowDown moves focus AND selection to the next card (no wrap at the end)", () => {
     const store = storeWith(3);

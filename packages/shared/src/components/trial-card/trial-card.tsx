@@ -47,6 +47,7 @@ export function TrialCard({
   // Tab semantics are opt-in: only attach `role` + `aria-selected` when a role is supplied, so a
   // plain-button consumer never receives an `aria-selected` its role wouldn't support.
   const tabProps = role ? { role, "aria-selected": ariaSelected } : {};
+
   return (
     <div className={clsx("trial-card-wrapper", { selected })}>
       <button

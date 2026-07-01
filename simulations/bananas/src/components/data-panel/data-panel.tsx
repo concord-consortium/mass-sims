@@ -38,6 +38,7 @@ export const BananasDataPanel = observer(function BananasDataPanel({
 }: BananasDataPanelProps) {
   const rootStore = useStores();
   const trial = rootStore.activeTrial;
+  const trialLetter = rootStore.ui.selectedTrialLetter;
   // `activeCross`, `phenotypeTotals`, and `resistanceSeries` are MST views — MobX memoizes them
   // with proper invalidation. `activeCross` is the bounds-checked selection (never the raw stored
   // selection index — see the Selection access contract).
@@ -68,9 +69,10 @@ export const BananasDataPanel = observer(function BananasDataPanel({
               type="button"
               className="pill-chip"
               onClick={onPillChipClick}
-              aria-label={`Scroll to cross ${activeCross + 1}`}
+              aria-label={`Scroll to cross ${trialLetter}${activeCross + 1}`}
             >
-              {`A${activeCross + 1} (${trial.crosses[activeCross].length} offspring)`}
+              {`${trialLetter}${activeCross + 1}`}{" "}
+              <span className="pill-chip-count">{`(${trial.crosses[activeCross].length} offspring)`}</span>
             </button>
             <button
               type="button"
@@ -109,7 +111,12 @@ export const BananasDataPanel = observer(function BananasDataPanel({
         </div>
       </DataSubsection>
       <DataSubsection title={resistanceTitle}>
-        <ResistanceBarChart series={series} fungusOn={trial.fungusOn} selectedCross={activeCross} />
+        <ResistanceBarChart
+          series={series}
+          fungusOn={trial.fungusOn}
+          selectedCross={activeCross}
+          trialLetter={trialLetter}
+        />
         <div className="data-legend resistance-legend">
           <span className="legend-item">
             <span className="legend-label">

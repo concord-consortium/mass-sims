@@ -89,6 +89,17 @@
       background: theme.$accent-strong;
     }
 
+    // While open, the attached list + rotated caret already signal "active"; keep the trigger
+    // itself in its default (unselected) color rather than the hover/pressed accent.
+    &[aria-expanded="true"],
+    &[aria-expanded="true"][data-hovered] {
+      background: theme.$surface;
+    }
+
+    .select-caret {
+      fill: theme.$heading;
+    }
+
     // After a mouse selection react-aria restores focus to the trigger with a
     // plain .focus(). Since the click landed on the option (not the trigger), the
     // browser applies native :focus-visible and shows its default focus ring.
@@ -147,4 +158,7 @@
 // parent-row scaling effect (parent-selectors.tsx) mirrors that state onto :root for it instead.
 :root[data-bananas-parent-condensed] .select-popover .react-aria-ListBoxItem {
   font-family: tokens.$font-family-condensed;
+}
+:root[data-bananas-parent-condensed] .select-popover .react-aria-ListBoxItem[data-selected] {
+  font-weight: 500;
 }
