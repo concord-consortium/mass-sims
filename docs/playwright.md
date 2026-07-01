@@ -164,6 +164,24 @@ The e2e suite doesn't assert log payloads (that's unit-test territory) — it co
 behavior, and the trial-selector locators above are the page-object surface a new sim inherits from
 Starter.
 
+### Keyboard focus & scrollable regions
+
+Scrollable regions (the Trials list, the About modal body, and a sim's own scrollers such as Bananas'
+offspring grid) become keyboard-operable only while they actually overflow: the shared
+`useScrollFocusRing` hook adds `tabindex="0"` when `scrollHeight > clientHeight` and removes it
+otherwise, and a sibling `.scroll-focus-ring` draws an inset ring on `:focus-visible`. A shared
+`Section` opts in via its `scrollFocusRing` prop (already set on the Trials column, so every sim
+inherits it). The base `SimulationFramePage` exposes `trialsScrollRegion`, `modalBody`, and
+`overflows(locator)` (the in-page `scrollHeight > clientHeight` check) so a focus test asserts the
+overflow precondition rather than assuming layout. To assert a `:focus-visible` ring or react-aria's
+`data-focus-visible` in a real browser, establish keyboard modality with the `focus()` →
+`Shift+Tab` → `Tab` round-trip (programmatic `.focus()` alone does not set focus-visible).
+
+Custom toggles should activate on **both** Space and Enter. react-aria's Switch handles Space
+(native checkbox) but not Enter; Bananas' Fungus switch adds an Enter-only `onKeyDown` (Space stays
+with react-aria to avoid a double toggle). The exactly-once property is testable without observing
+outlines: one keypress must flip the `role="switch"` checked state (a double toggle nets to a no-op).
+
 ## Adding a new sim
 
 `yarn new-sim <name>` wires up e2e coverage automatically (no manual steps): it appends a

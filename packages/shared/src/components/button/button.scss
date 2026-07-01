@@ -29,12 +29,12 @@
     width: 24px;
   }
 
-  &[data-hovered],
-  &:focus-visible {
+  &[data-hovered]:not([aria-disabled="true"]),
+  &:focus-visible:not([aria-disabled="true"]) {
     background: tokens.$color-surface-hover;
   }
 
-  &[data-pressed] {
+  &[data-pressed]:not([aria-disabled="true"]) {
     background: tokens.$color-surface-active;
   }
 
@@ -43,7 +43,7 @@
     outline-offset: tokens.$focus-outline-offset;
   }
 
-  &[data-disabled] {
+  &[aria-disabled="true"] {
     border-color: rgba(tokens.$color-border, 0.35);
     color: rgba(tokens.$color-text, 0.35);
     cursor: default;

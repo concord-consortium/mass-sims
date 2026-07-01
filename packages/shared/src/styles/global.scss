@@ -56,3 +56,32 @@ body {
   white-space: nowrap;
   width: 1px;
 }
+
+// Keyboard-scrollable regions. A `.scroll-region` element (made focusable only while it
+// overflows, via useScrollFocusRing) shows an inset focus ring drawn by an adjacent
+// `.scroll-focus-ring` sibling — only under :focus-visible, never on mouse focus. The region's
+// own outline is suppressed so the inset ring is the sole indicator. Mirrors the demo/spec.
+// Each region must place `.scroll-focus-ring` as a following sibling inside a
+// `position: relative` wrapper; per-region border-radius is overridden at the call site.
+.scroll-region {
+  &:focus {
+    outline: none;
+  }
+}
+
+.scroll-focus-ring {
+  border-radius: tokens.$radius-lg;
+  bottom: 0;
+  box-shadow: inset 0 0 0 1px #fff, inset 0 0 0 3px tokens.$color-focus-outline;
+  display: none;
+  left: 0;
+  pointer-events: none;
+  position: absolute;
+  right: 0;
+  top: 0;
+  z-index: 10;
+}
+
+.scroll-region:focus-visible ~ .scroll-focus-ring {
+  display: block;
+}

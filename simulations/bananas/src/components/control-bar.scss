@@ -29,12 +29,12 @@
     padding: 8px 12px 8px 8px;
     white-space: nowrap;
 
-    &[data-hovered],
-    &:focus-visible {
+    &[data-hovered]:not([aria-disabled="true"]),
+    &:focus-visible:not([aria-disabled="true"]) {
       background: theme.$accent;
     }
 
-    &[data-pressed] {
+    &[data-pressed]:not([aria-disabled="true"]) {
       background: theme.$accent-strong;
     }
   }
@@ -47,7 +47,7 @@
     width: 24px;
   }
 
-  .control-button[data-disabled] {
+  .control-button[aria-disabled="true"] {
     border-color: theme.$border-faint;
   }
 

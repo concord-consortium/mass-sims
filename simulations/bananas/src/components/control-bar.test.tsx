@@ -56,7 +56,10 @@ describe("ControlBar", () => {
   it("disables Cross Plants when canCross is false and crosses into the store + logs plants_crossed with the post-action generation/offspring when pressed", () => {
     // Disabled with only one parent (canCross false).
     const onePanel = renderBar(createTestStore({ trial: { p1: "wild-w1" } }));
-    expect(onePanel.getByRole("button", { name: "Cross Plants" })).toBeDisabled();
+    expect(onePanel.getByRole("button", { name: "Cross Plants" })).toHaveAttribute(
+      "aria-disabled",
+      "true",
+    );
     onePanel.unmount();
 
     // Enabled with both parents; pressing drives trial.crossPlants then logs plants_crossed with
@@ -64,7 +67,7 @@ describe("ControlBar", () => {
     const store = bothParents();
     const { getByRole } = renderBar(store);
     const button = getByRole("button", { name: "Cross Plants" });
-    expect(button).not.toBeDisabled();
+    expect(button).not.toHaveAttribute("aria-disabled");
     log.mockReset();
 
     fireEvent.click(button);
@@ -116,13 +119,16 @@ describe("ControlBar", () => {
 
   it("disables Reset Trial when canReset is false and resets the store + logs trial_reset when pressed", () => {
     const emptyPanel = renderBar(empty());
-    expect(emptyPanel.getByRole("button", { name: "Reset Trial" })).toBeDisabled();
+    expect(emptyPanel.getByRole("button", { name: "Reset Trial" })).toHaveAttribute(
+      "aria-disabled",
+      "true",
+    );
     emptyPanel.unmount();
 
     const store = lockedWithCross();
     const { getByRole } = renderBar(store);
     const button = getByRole("button", { name: "Reset Trial" });
-    expect(button).not.toBeDisabled();
+    expect(button).not.toHaveAttribute("aria-disabled");
     log.mockReset();
     fireEvent.click(button);
     expect(store.activeTrial.crosses).toHaveLength(0);
@@ -151,21 +157,29 @@ describe("ControlBar", () => {
 // states.
 describe("ControlBar — Fungus enable/disable matrix", () => {
   it("State 0 (no parents, no crosses): disabled", () => {
-    expect(renderBar(empty()).getByRole("switch", { name: "Fungus" })).toBeDisabled();
+    expect(renderBar(empty()).getByRole("switch", { name: "Fungus" })).toHaveAttribute(
+      "aria-disabled",
+      "true",
+    );
   });
 
   it("State 1 (both parents, no crosses, fungus off): enabled", () => {
-    expect(renderBar(bothParents()).getByRole("switch", { name: "Fungus" })).not.toBeDisabled();
+    expect(renderBar(bothParents()).getByRole("switch", { name: "Fungus" })).not.toHaveAttribute(
+      "aria-disabled",
+    );
   });
 
   it("State 1f (both parents, no crosses, fungus on): enabled", () => {
     expect(
       renderBar(bothParentsFungus()).getByRole("switch", { name: "Fungus" }),
-    ).not.toBeDisabled();
+    ).not.toHaveAttribute("aria-disabled");
   });
 
   it("State 2 (both parents, ≥ 1 cross): disabled", () => {
-    expect(renderBar(lockedWithCross()).getByRole("switch", { name: "Fungus" })).toBeDisabled();
+    expect(renderBar(lockedWithCross()).getByRole("switch", { name: "Fungus" })).toHaveAttribute(
+      "aria-disabled",
+      "true",
+    );
   });
 });
 

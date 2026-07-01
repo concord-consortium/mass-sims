@@ -60,6 +60,27 @@ export class BananasPage extends SimulationFramePage {
     await this.page.locator(".fungus-switch-button").click();
   }
 
+  /** The visual switch container (`.fungus-switch`); the keyboard focus ring is drawn here. */
+  get fungusSwitchContainer(): Locator {
+    return this.page.locator(".fungus-switch");
+  }
+
+  /** The react-aria control (`.fungus-switch-button`); carries `data-focus-visible` under keyboard. */
+  get fungusSwitchButton(): Locator {
+    return this.page.locator(".fungus-switch-button");
+  }
+
+  /**
+   * Give the fungus switch keyboard-modality focus. Programmatic `.focus()` alone does not set
+   * react-aria's `data-focus-visible`; leaving and re-entering via Tab restores keyboard focus to
+   * the element under keyboard modality, which triggers `:focus-visible` / `data-focus-visible`.
+   */
+  async focusFungusSwitchViaKeyboard(): Promise<void> {
+    await this.fungusSwitch.focus();
+    await this.press("Shift+Tab");
+    await this.press("Tab");
+  }
+
   get crossPlantsButton(): Locator {
     return this.page.getByRole("button", { name: "Cross Plants", exact: true });
   }
@@ -91,6 +112,11 @@ export class BananasPage extends SimulationFramePage {
     return this.offspringGrid.locator(".offspring-row");
   }
 
+  /** The offspring grid's sibling scroll-focus ring (shown via CSS only under :focus-visible). */
+  get offspringGridFocusRing(): Locator {
+    return this.page.locator(".offspring-grid-wrap .scroll-focus-ring");
+  }
+
   async scrollOffspringGridToBottom(): Promise<void> {
     await this.offspringGrid.evaluate((el) => {
       el.scrollTop = el.scrollHeight;
@@ -99,6 +125,11 @@ export class BananasPage extends SimulationFramePage {
 
   crossRowButton(index: number): Locator {
     return this.offspringRows.nth(index).locator(".offspring-row-button");
+  }
+
+  /** The single tabbable offspring row button (roving tabindex — the one with tabindex="0"). */
+  get tabbableCrossRowButton(): Locator {
+    return this.offspringGrid.locator('.offspring-row-button[tabindex="0"]');
   }
 
   /** The offspring-plant icons within the Nth cross row (0-based) — 5–20 per cross. */
@@ -188,6 +219,17 @@ export class BananasPage extends SimulationFramePage {
 
   get pillChip(): Locator {
     return this.page.locator(".pill-chip");
+  }
+
+  get pillClose(): Locator {
+    return this.page.getByRole("button", { name: "Deselect cross, show all crosses" });
+  }
+
+  /** Deselect the active cross via the pill close button, using the keyboard (focus + Enter) to
+   *  mirror the real keyboard flow the focus-return behavior exists for. */
+  async closePillViaKeyboard(): Promise<void> {
+    await this.pillClose.focus();
+    await this.press("Enter");
   }
 
   // --- Composite helpers --------------------------------------------------

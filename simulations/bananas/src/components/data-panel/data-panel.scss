@@ -154,7 +154,7 @@
     align-items: center;
     background: tokens.$color-surface;
     border-radius: tokens.$radius-pill;
-    color: theme.$heading;
+    color: tokens.$gray-text;
     display: inline-flex;
     font-family: tokens.$font-family-base;
     font-size: tokens.$font-size-base;
@@ -166,6 +166,7 @@
 
   .phenotypes-pill--active {
     background: theme.$banana-cross-selected-bg;
+    color: theme.$heading;
     padding-right: 4px;
   }
 

@@ -62,6 +62,30 @@ export class SimulationFramePage {
     return this.page.getByRole("region", { name: "Data" });
   }
 
+  /**
+   * The Trials-region scroll container (`.content` inside the Trials Section). This is the element
+   * `useScrollFocusRing` toggles `tabindex="0"` on while the trials list overflows — shared by all
+   * sims via the `Section scrollFocusRing` opt-in.
+   */
+  get trialsScrollRegion(): Locator {
+    return this.trialsSlot.locator(".content");
+  }
+
+  /** The About dialog's scrollable body (`.modal-body`), a `useScrollFocusRing` scroll region. */
+  get modalBody(): Locator {
+    return this.page.locator(".modal-body");
+  }
+
+  /**
+   * Whether `locator`'s element overflows (`scrollHeight > clientHeight`) — the exact condition
+   * `useScrollFocusRing` uses to add/remove `tabindex="0"`. Lets a spec confirm the overflow
+   * precondition in-page before asserting the resulting tabindex, so an assertion never depends on
+   * an assumed layout.
+   */
+  async overflows(locator: Locator): Promise<boolean> {
+    return locator.evaluate((el) => el.scrollHeight > el.clientHeight);
+  }
+
   async openAbout(): Promise<void> {
     await this.aboutButton.click();
     await expect(this.aboutDialog).toBeVisible();

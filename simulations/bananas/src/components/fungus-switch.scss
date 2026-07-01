@@ -44,6 +44,14 @@
     gap: 6px;
   }
 
+  // Keyboard focus ring on the whole control; the outline follows the container's
+  // border-radius. RAC marks the inner .fungus-switch-button with data-focus-visible, so drive
+  // the container ring off that.
+  &:has(.fungus-switch-button[data-focus-visible]) {
+    outline: tokens.$focus-outline;
+    outline-offset: tokens.$focus-outline-offset;
+  }
+
   .fungus-switch-icon {
     color: theme.$heading;
     display: block;
@@ -137,8 +145,9 @@
     }
   }
 
-  // Disabled (locked): RAC sets data-disabled on the field; we add `.disabled` too. Dims to
-  // match the shared <button>'s [data-disabled] treatment so the row reads as uniformly disabled.
+  // Locked: the switch input is marked aria-disabled (kept focusable, not natively disabled) and
+  // the field gets `.disabled`. Dims to match the shared <button>'s [aria-disabled="true"]
+  // treatment so the row reads as uniformly disabled.
   &.disabled {
     border-color: theme.$border-faint;
     color: rgba(tokens.$color-text, 0.35);

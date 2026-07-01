@@ -46,12 +46,13 @@ test("Both parent selects are visible and enabled", async () => {
 });
 
 test("Cross Plants and Reset Trial are visible but disabled in the initial state", async () => {
-  // Both controls render; with no parents and no crosses, both are disabled (react-aria's
-  // data-disabled convention — see Resolved decision #9 fallback for unnamed state).
+  // Both controls render; with no parents and no crosses, both are disabled. The shared Button
+  // marks disabled via aria-disabled (keeping the control keyboard-focusable), not a native
+  // disabled attribute.
   await expect(bananas.crossPlantsButton).toBeVisible();
-  await expect(bananas.crossPlantsButton).toHaveAttribute("data-disabled", "true");
+  await expect(bananas.crossPlantsButton).toHaveAttribute("aria-disabled", "true");
   await expect(bananas.resetTrialButton).toBeVisible();
-  await expect(bananas.resetTrialButton).toHaveAttribute("data-disabled", "true");
+  await expect(bananas.resetTrialButton).toHaveAttribute("aria-disabled", "true");
 });
 
 test("Status pill is hidden until both parents are picked", async () => {

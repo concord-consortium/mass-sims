@@ -154,12 +154,12 @@ describe("Bananas App — simulation flow", () => {
     // from real state) stays absent. (The DOM checkbox can't be asserted here: a gated click
     // doesn't re-render, so React never re-syncs the controlled input.)
     const sw0 = getByRole("switch", { name: "Fungus" });
-    expect(sw0).toBeDisabled();
+    expect(sw0).toHaveAttribute("aria-disabled", "true");
     fireEvent.click(sw0);
     expect(queryByRole("status")).not.toBeInTheDocument();
 
     selectBothParents(getByRole);
-    expect(getByRole("switch", { name: "Fungus" })).not.toBeDisabled();
+    expect(getByRole("switch", { name: "Fungus" })).not.toHaveAttribute("aria-disabled");
 
     log.mockReset();
     fireEvent.click(getByRole("switch", { name: "Fungus" })); // on
@@ -184,16 +184,15 @@ describe("Bananas App — simulation flow", () => {
     fireEvent.click(getByRole("button", { name: "Cross Plants" }));
 
     const sw = getByRole("switch", { name: "Fungus" });
-    expect(sw).toBeDisabled();
+    expect(sw).toHaveAttribute("aria-disabled", "true");
     expect(sw).toBeChecked();
     expect(getByRole("status")).toHaveTextContent("Fungus active");
 
-    // Toggling the locked switch is a no-op (the gated handler is the last guard): fungusOn stays
-    // true, so the pill still reads "Fungus active". (jsdom doesn't re-render the no-op, so the
-    // DOM checkbox can't be re-asserted here.)
+    // Toggling the locked switch is a no-op (FungusSwitch swallows onChange while locked): fungusOn
+    // stays true, so the pill still reads "Fungus active".
     fireEvent.click(sw);
     expect(getByRole("status")).toHaveTextContent("Fungus active");
-    expect(getByRole("switch", { name: "Fungus" })).toBeDisabled();
+    expect(getByRole("switch", { name: "Fungus" })).toHaveAttribute("aria-disabled", "true");
   });
 
   it("keeps the Fungus lock through subsequent crosses up to the cap", () => {
@@ -203,9 +202,9 @@ describe("Bananas App — simulation flow", () => {
     for (let i = 0; i < 6; i++) {
       fireEvent.click(getByRole("button", { name: "Cross Plants" }));
     }
-    expect(getByRole("switch", { name: "Fungus" })).toBeDisabled();
+    expect(getByRole("switch", { name: "Fungus" })).toHaveAttribute("aria-disabled", "true");
     expect(getByRole("switch", { name: "Fungus" })).toBeChecked();
-    expect(getByRole("button", { name: "Cross Plants" })).toBeDisabled(); // at MAX_CROSSES
+    expect(getByRole("button", { name: "Cross Plants" })).toHaveAttribute("aria-disabled", "true"); // at MAX_CROSSES
     // At the cap two role="status" elements exist (pill + grid max-placeholder); target the pill.
     expect(container.querySelector(".status-pill")).toHaveTextContent("Fungus active");
   });
@@ -222,7 +221,7 @@ describe("Bananas App — simulation flow", () => {
     // Re-selecting parents proves the cross-lock was released and fungus is back to off.
     selectBothParents(getByRole);
     const sw = getByRole("switch", { name: "Fungus" });
-    expect(sw).not.toBeDisabled();
+    expect(sw).not.toHaveAttribute("aria-disabled");
     expect(sw).not.toBeChecked();
     expect(getByRole("status")).toHaveTextContent("Click Cross Plants to see their offspring");
   });
@@ -254,7 +253,7 @@ describe("Bananas App — simulation flow", () => {
 
     // Fungus lock released: re-selecting parents makes the switch interactable again.
     selectBothParents(getByRole);
-    expect(getByRole("switch", { name: "Fungus" })).not.toBeDisabled();
+    expect(getByRole("switch", { name: "Fungus" })).not.toHaveAttribute("aria-disabled");
   });
 
   it("Reset returns fungusOn to false", () => {
@@ -272,17 +271,17 @@ describe("Bananas App — simulation flow", () => {
   it("Reset is enabled with a single parent selected and clears it", () => {
     const { getByRole } = render(<App />);
     selectParent(getByRole, /Parent 1/i, "Wild W1");
-    expect(getByRole("button", { name: "Reset Trial" })).not.toBeDisabled();
+    expect(getByRole("button", { name: "Reset Trial" })).not.toHaveAttribute("aria-disabled");
 
     fireEvent.click(getByRole("button", { name: "Reset Trial" }));
     expect(getByRole("button", { name: /Parent 1/i })).toHaveTextContent("Select…");
-    expect(getByRole("button", { name: "Reset Trial" })).toBeDisabled(); // back to empty trial
+    expect(getByRole("button", { name: "Reset Trial" })).toHaveAttribute("aria-disabled", "true"); // back to empty trial
   });
 
   it("Reset is disabled and emits nothing from a fully empty trial", () => {
     const { getByRole } = render(<App />);
     const reset = getByRole("button", { name: "Reset Trial" });
-    expect(reset).toBeDisabled();
+    expect(reset).toHaveAttribute("aria-disabled", "true");
 
     log.mockReset();
     fireEvent.click(reset);
@@ -350,8 +349,8 @@ describe("Bananas App — simulation flow", () => {
     for (let i = 0; i < 6; i++) fireEvent.click(getByRole("button", { name: "Cross Plants" }));
     expect(getAllByRole("listitem")).toHaveLength(6);
     expect(getByText("Max number of crosses reached")).toBeInTheDocument();
-    expect(getByRole("button", { name: "Cross Plants" })).toBeDisabled();
-    expect(getByRole("switch", { name: "Fungus" })).toBeDisabled();
+    expect(getByRole("button", { name: "Cross Plants" })).toHaveAttribute("aria-disabled", "true");
+    expect(getByRole("switch", { name: "Fungus" })).toHaveAttribute("aria-disabled", "true");
   });
 
   it("renders every plant infected when an all-rr cross is made under fungus", () => {
@@ -439,6 +438,23 @@ describe("Bananas App — simulation flow", () => {
     expect(scrollBy).toHaveBeenCalledWith(
       expect.objectContaining({ top: expect.any(Number), behavior: expect.any(String) }),
     );
+  });
+
+  it("returns focus to the deselected row when the pill close button is clicked", () => {
+    const { getByRole, getAllByRole, container } = render(<App rng={seededRandom("pill-close")} />);
+    selectBothParents(getByRole);
+    for (let i = 0; i < 2; i++) fireEvent.click(getByRole("button", { name: "Cross Plants" }));
+    // Select row A2 → the Data panel's pill flips into the filter chip.
+    fireEvent.click(getAllByRole("button", { name: /^Cross \d+,/ })[1]);
+    expect(container.querySelector(".pill-chip")).toBeInTheDocument();
+
+    fireEvent.click(container.querySelector(".pill-close") as HTMLElement);
+
+    // Selection cleared (chip gone)...
+    expect(container.querySelector(".pill-chip")).not.toBeInTheDocument();
+    // ...and focus lands on the offspring-row button that was selected (index 1), not <body>.
+    const rows = container.querySelectorAll<HTMLElement>(".offspring-row-button");
+    expect(document.activeElement).toBe(rows[1]);
   });
 });
 
