@@ -154,7 +154,7 @@
     align-items: center;
     background: tokens.$color-surface;
     border-radius: tokens.$radius-pill;
-    color: tokens.$color-text;
+    color: theme.$heading;
     display: inline-flex;
     font-family: tokens.$font-family-base;
     font-size: tokens.$font-size-base;
@@ -184,9 +184,13 @@
     }
   }
 
+  .pill-chip-count {
+    font-weight: 400;
+  }
+
   .pill-close {
     align-items: center;
-    background: tokens.$color-surface;
+    background: theme.$surface;
     border: 0;
     border-radius: 50%;
     box-sizing: border-box;
@@ -203,6 +207,7 @@
     margin-top: -2px;
     margin-bottom: -2px;
     padding: 2px;
+    transition: tokens.$transition-interactive;
     width: 24px;
 
     svg {

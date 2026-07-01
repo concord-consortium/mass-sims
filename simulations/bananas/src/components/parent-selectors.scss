@@ -46,6 +46,7 @@
   // Phase 2: the JS sets data-condensed on the row when the triggers switch to Roboto Condensed.
   &[data-condensed] .react-aria-SelectValue {
     font-family: tokens.$font-family-condensed;
+    font-weight: 500;
   }
 
   .parent-circle {

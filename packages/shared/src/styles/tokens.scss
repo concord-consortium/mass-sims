@@ -143,6 +143,19 @@ $border-divider:         1px solid $color-divider;         // DataSubsection sep
 
 
 // =============================================================================
+// MOTION
+// =============================================================================
+
+// Quick feedback timing — one knob for how fast the UI responds. Shared by interactive state
+// changes (hover / press / select) and the popover + modal fade-ins.
+$duration-quick:         0.15s;
+
+// The standard interactive transition: background + border eased over the quick duration. A couple
+// of rules with a selection ring append `box-shadow $duration-quick ease` to this list.
+$transition-interactive: background-color $duration-quick ease, border-color $duration-quick ease;
+
+
+// =============================================================================
 // FOCUS / ACCESSIBILITY
 // =============================================================================
 

@@ -37,12 +37,14 @@ export interface ResistanceBarChartProps {
   series?: { healthy: number[]; infected: number[] } | null;
   fungusOn?: boolean;
   selectedCross?: number | null;
+  trialLetter: string;
 }
 
 export function ResistanceBarChart({
   series = null,
   fungusOn = false,
   selectedCross = null,
+  trialLetter,
 }: ResistanceBarChartProps) {
   // Width tracked via ResizeObserver on the wrapping div (the LineChart-aligned pattern): the
   // Data column flexes and the chart fills it. The SVG renders only once width > 0, which avoids
@@ -165,7 +167,7 @@ export function ResistanceBarChart({
           {hasData ? (
             <>
               {series.healthy.map((_, gi) => {
-                const label = `A${gi + 1}`;
+                const label = `${trialLetter}${gi + 1}`;
                 return (
                   <text
                     key={label}
@@ -187,7 +189,7 @@ export function ResistanceBarChart({
                 const infectedX = groupX + barW + BAR_GAP;
                 return (
                   // biome-ignore lint/suspicious/noArrayIndexKey: crosses are append-only, index is stable
-                  <g key={`A${gi + 1}-bars`}>
+                  <g key={`${trialLetter}${gi + 1}-bars`}>
                     <rect
                       className="bar-chart-bar--healthy"
                       x={groupX}
@@ -234,9 +236,9 @@ export function ResistanceBarChart({
           <tbody>
             {series.healthy.map((healthyPct, gi) => (
               // biome-ignore lint/suspicious/noArrayIndexKey: crosses are append-only, index is stable
-              <tr key={`A${gi + 1}-row`}>
+              <tr key={`${trialLetter}${gi + 1}-row`}>
                 {/* Fungus is all-or-nothing, so it's "introduced" at the first cross when on. */}
-                <td>{`A${gi + 1}${fungusOn && gi === 0 ? " (fungus introduced)" : ""}`}</td>
+                <td>{`${trialLetter}${gi + 1}${fungusOn && gi === 0 ? " (fungus introduced)" : ""}`}</td>
                 <td>{`${healthyPct}%`}</td>
                 <td>{`${series.infected[gi]}%`}</td>
               </tr>

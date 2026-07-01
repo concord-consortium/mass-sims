@@ -27,8 +27,14 @@ export class BananasPage extends SimulationFramePage {
 
   private async pickParent(trigger: Locator, id: ParentId): Promise<void> {
     await trigger.click();
-    // Only the open listbox renders options, so the label is unambiguous across both selects.
-    await this.page.getByRole("option", { name: PARENT_LABELS[id], exact: true }).click();
+    // Scope to the popover that's actually open. A just-closed select's listbox lingers for a
+    // frame during its fade-out — react-aria keeps the exiting Popover mounted and tags it
+    // [data-exiting] — so an unscoped option query can briefly match the same label in BOTH
+    // selects (strict-mode violation). :not([data-exiting]) targets the open popover.
+    await this.page
+      .locator(".select-popover:not([data-exiting])")
+      .getByRole("option", { name: PARENT_LABELS[id], exact: true })
+      .click();
   }
 
   async pickParent1(id: ParentId): Promise<void> {

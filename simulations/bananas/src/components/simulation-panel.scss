@@ -106,11 +106,18 @@
     border: 2px solid theme.$border;
     border-radius: 6px;
     margin: 5px 0;
+    // box-shadow is appended so the selected-row ring (--selected) fades in with the
+    // border/background instead of snapping.
+    transition: tokens.$transition-interactive, box-shadow tokens.$duration-quick ease;
     width: 100%;
   }
 
   .offspring-row:hover {
     background: theme.$accent;
+  }
+
+  .offspring-row:active {
+    background: theme.$banana-cross-selected-bg;
   }
 
   .offspring-row--selected,
@@ -168,7 +175,7 @@
 
   .offspring-plant {
     align-items: center;
-    background: theme.$content;
+    background: theme.$surface;
     border-radius: 50%;
     color: theme.$banana-healthy;
     display: flex;
@@ -244,7 +251,7 @@
     font-size: tokens.$font-size-base;
     font-style: italic;
     line-height: tokens.$line-height-sm;
-    margin: 10px 0 0;
+    margin: 6px 0;
     text-align: center;
     width: 100%;
   }

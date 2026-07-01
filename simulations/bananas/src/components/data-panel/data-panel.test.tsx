@@ -177,9 +177,20 @@ describe("BananasDataPanel — filter chip pill (MAS-12)", () => {
 
   it("renders the chip body and close button for a selected cross", () => {
     const { container, getByRole } = renderPanel(threeCrosses(2));
-    expect(getByRole("button", { name: "Scroll to cross 3" })).toBeInTheDocument();
+    expect(getByRole("button", { name: "Scroll to cross A3" })).toBeInTheDocument();
     expect(container.querySelector(".pill-chip")).toHaveTextContent("A3 (7 offspring)");
     expect(container.querySelector(".pill-close")).toBeInTheDocument();
+  });
+
+  it("prefixes the chip with the active trial's letter", () => {
+    const store = createTestStore({
+      trials: { B: { p1: "wild-w1", p2: "cavendish-c1", locked: true, crosses: [[plant(false)]] } },
+      ui: { selectedTrialLetter: "B", selectedCrossByTrial: { B: 0 } },
+    });
+    const { getByRole } = renderPanel(store);
+    expect(getByRole("button", { name: "Scroll to cross B1" })).toHaveTextContent(
+      "B1 (1 offspring)",
+    );
   });
 
   it("calls onPillChipClick (only) when the chip body is clicked, leaving the selection intact", () => {

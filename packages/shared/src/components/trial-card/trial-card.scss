@@ -15,6 +15,9 @@
     height: 100%;
     padding: 0;
     position: relative;
+    // box-shadow is appended so the selected-state ring (&.selected) fades in with the
+    // border/background instead of snapping.
+    transition: tokens.$transition-interactive, box-shadow tokens.$duration-quick ease;
     width: 100%;
   }
 
@@ -115,6 +118,7 @@
     color: tokens.$color-text;
     height: 28px;
     padding: 2px;
+    transition: tokens.$transition-interactive;
     width: 28px;
   }
 

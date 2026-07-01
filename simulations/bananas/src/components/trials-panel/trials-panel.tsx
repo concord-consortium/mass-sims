@@ -3,6 +3,7 @@ import {
   TrialCard,
   type TrialLetter,
   useLogEvent,
+  useScrollSelectedTrialIntoView,
 } from "@concord-consortium/mass-sims-shared";
 import { observer } from "mobx-react-lite";
 import type { KeyboardEvent } from "react";
@@ -44,6 +45,7 @@ export const TrialsPanel = observer(function TrialsPanel() {
   const store = useStores();
   const logEvent = useLogEvent();
   const selectedLetter = store.ui.selectedTrialLetter;
+  const listRef = useScrollSelectedTrialIntoView<HTMLDivElement>(selectedLetter);
 
   // Single funnel for every trial-selection change (card click, keyboard nav, post-add auto-select)
   // so the no-op skip and the `trial_selected` emit live in exactly one place. `selectTrial` itself
@@ -94,14 +96,18 @@ export const TrialsPanel = observer(function TrialsPanel() {
     e.preventDefault();
     const newLetter = letters[target];
     if (newLetter) navigateTo(newLetter);
-    // Move focus to the target card's button (focus() works regardless of tabIndex).
+    // Move focus to the target card's button (focus() works regardless of tabIndex). Suppress the
+    // browser's default focus-scroll (preventScroll) so it doesn't instantly jump an off-screen card
+    // into view before useScrollSelectedTrialIntoView's smooth scroll runs — otherwise keyboard nav
+    // shows a jump instead of the same smooth glide as a mouse selection.
     const buttons = e.currentTarget.querySelectorAll<HTMLButtonElement>(".trial-card");
-    buttons[target]?.focus();
+    buttons[target]?.focus({ preventScroll: true });
   };
 
   return (
     <div
       className="bananas-trials-panel"
+      ref={listRef}
       role="tablist"
       aria-orientation="vertical"
       aria-label="Trials"
