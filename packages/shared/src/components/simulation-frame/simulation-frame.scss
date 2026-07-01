@@ -127,7 +127,7 @@ $titlebar-about-leading-space: 5px;   // margin-left on the About button â†’ CCâ
     margin-left: $titlebar-about-leading-space;
     padding: 3px tokens.$space-3 3px tokens.$space-2;
     position: relative;
-    transition: background-color 0.15s ease, border-color 0.15s ease;
+    transition: tokens.$transition-interactive;
   }
 
   // Expanded touch target â€” extends 7 px above and below to reach 48 px effective.
@@ -238,7 +238,7 @@ $titlebar-about-leading-space: 5px;   // margin-left on the About button â†’ CCâ
 // No backdrop scrim: the sim content behind it stays interactive. Position is a transform
 // offset from this CSS anchor (set inline during drag, reset to 0,0 on each open).
 .simulation-frame-info-modal {
-  animation: info-modal-fade-in 0.15s ease;
+  animation: info-modal-fade-in tokens.$duration-quick ease;
   background: tokens.$color-surface;
   border: tokens.$border-strong;
   border-radius: tokens.$radius-lg;
@@ -296,7 +296,7 @@ $titlebar-about-leading-space: 5px;   // margin-left on the About button â†’ CCâ
     height: tokens.$touch-target-min;
     justify-content: center;
     padding: 0;
-    transition: background-color 0.15s ease, border-color 0.15s ease;
+    transition: tokens.$transition-interactive;
     width: tokens.$touch-target-min;
   }
 
