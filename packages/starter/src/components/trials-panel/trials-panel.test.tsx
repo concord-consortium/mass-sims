@@ -154,7 +154,9 @@ describe("TrialsPanel — trial-list logging", () => {
 
 describe("TrialsPanel — scroll selected into view", () => {
   it("scrolls the newly selected trial card into view on click", () => {
-    // jsdom doesn't implement scrollIntoView, so define it before spying.
+    // jsdom doesn't implement scrollIntoView, so define it before spying — capture the original
+    // and restore it afterward so the stub doesn't leak into later tests.
+    const originalScrollIntoView = HTMLElement.prototype.scrollIntoView;
     HTMLElement.prototype.scrollIntoView = () => {};
     const scrollSpy = vi
       .spyOn(HTMLElement.prototype, "scrollIntoView")
@@ -164,6 +166,7 @@ describe("TrialsPanel — scroll selected into view", () => {
     fireEvent.click(getAllByRole("tab")[1]);
     expect(scrollSpy).toHaveBeenCalledWith({ block: "nearest", behavior: "smooth" });
     scrollSpy.mockRestore();
+    HTMLElement.prototype.scrollIntoView = originalScrollIntoView;
   });
 });
 

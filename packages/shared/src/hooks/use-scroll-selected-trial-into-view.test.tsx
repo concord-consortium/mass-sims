@@ -21,7 +21,9 @@ function Harness({ selected }: { selected: string }) {
 }
 
 it("scrolls the selected trial card into view when selection changes", () => {
-  // jsdom doesn't implement scrollIntoView, so define it before spying.
+  // jsdom doesn't implement scrollIntoView, so define it before spying — capture the original
+  // and restore it afterward so the stub doesn't leak into later tests.
+  const originalScrollIntoView = HTMLElement.prototype.scrollIntoView;
   HTMLElement.prototype.scrollIntoView = () => {};
   const scrollSpy = vi.spyOn(HTMLElement.prototype, "scrollIntoView").mockImplementation(() => {});
   const { rerender } = render(<Harness selected="A" />);
@@ -29,4 +31,5 @@ it("scrolls the selected trial card into view when selection changes", () => {
   rerender(<Harness selected="B" />);
   expect(scrollSpy).toHaveBeenCalledWith({ block: "nearest", behavior: "smooth" });
   scrollSpy.mockRestore();
+  HTMLElement.prototype.scrollIntoView = originalScrollIntoView;
 });
