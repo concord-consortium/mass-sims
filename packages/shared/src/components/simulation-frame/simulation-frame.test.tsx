@@ -1,6 +1,25 @@
-import { fireEvent, render } from "@testing-library/react";
+import { fireEvent, render, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { SimulationFrame } from "./simulation-frame";
+
+// jsdom reports 0 for scrollHeight/clientHeight (no layout). Drive overflow by mocking the
+// prototype getters so the scroll-focus-ring hook's evaluation sees the values we want.
+function mockOverflow(scrollHeight: number, clientHeight: number) {
+  Object.defineProperty(HTMLElement.prototype, "scrollHeight", {
+    configurable: true,
+    get: () => scrollHeight,
+  });
+  Object.defineProperty(HTMLElement.prototype, "clientHeight", {
+    configurable: true,
+    get: () => clientHeight,
+  });
+}
+
+afterEach(() => {
+  // Remove the prototype overrides so other suites see real jsdom behavior.
+  delete (HTMLElement.prototype as unknown as { scrollHeight?: number }).scrollHeight;
+  delete (HTMLElement.prototype as unknown as { clientHeight?: number }).clientHeight;
+});
 
 function renderFrame(extra?: Partial<{ instruction: string }>) {
   return render(
@@ -154,6 +173,42 @@ describe("SimulationFrame", () => {
     fireEvent.click(getByRole("button", { name: /about/i }));
     expect(getByRole("dialog")).toBeInTheDocument();
     expect(getByText("about this sim")).toBeInTheDocument();
+  });
+
+  it("wraps the About body in a positioned scroll region with a focus-ring sibling", () => {
+    const { container, getByRole } = render(
+      <SimulationFrame simTitle="S" tagline="t" infoModalContent={<p>about this sim</p>}>
+        <SimulationFrame.Trials>a</SimulationFrame.Trials>
+        <SimulationFrame.Simulation>b</SimulationFrame.Simulation>
+        <SimulationFrame.Data>c</SimulationFrame.Data>
+      </SimulationFrame>,
+    );
+    fireEvent.click(getByRole("button", { name: /about/i }));
+    const body = container.querySelector(".modal-body");
+    if (!body) throw new Error("expected a modal body");
+    // The scroll container is tagged .scroll-region so the shared CSS draws its focus ring.
+    expect(body).toHaveClass("scroll-region");
+    // A positioned wrapper holds the region and the absolutely-placed ring sibling.
+    const wrap = body.parentElement;
+    expect(wrap).toHaveClass("modal-body-wrap");
+    expect(wrap?.querySelector(".scroll-focus-ring")).not.toBeNull();
+  });
+
+  it("makes the About body focusable (tabindex 0) when its content overflows", async () => {
+    mockOverflow(500, 100);
+    const { getByRole } = render(
+      <SimulationFrame simTitle="S" tagline="t" infoModalContent={<p>about this sim</p>}>
+        <SimulationFrame.Trials>a</SimulationFrame.Trials>
+        <SimulationFrame.Simulation>b</SimulationFrame.Simulation>
+        <SimulationFrame.Data>c</SimulationFrame.Data>
+      </SimulationFrame>,
+    );
+    fireEvent.click(getByRole("button", { name: /about/i }));
+    // The body mounts only when the panel opens, so the callback ref must attach to the
+    // late-mounted node and mark it keyboard-scrollable once it overflows.
+    await waitFor(() =>
+      expect(document.querySelector(".modal-body")).toHaveAttribute("tabindex", "0"),
+    );
   });
 
   it("titles the modal contextually from simTitle", () => {

@@ -59,4 +59,22 @@
     overflow: auto;
     padding: tokens.$space-4;
   }
+
+  .content-wrap {
+    display: flex;
+    flex: 1 1 auto;
+    flex-direction: column;
+    min-height: 0;
+    overflow: hidden;
+    position: relative;
+
+    .content {
+      flex: 1;
+      min-height: 0;
+    }
+
+    .scroll-focus-ring {
+      border-radius: tokens.$radius-lg;
+    }
+  }
 }

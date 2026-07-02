@@ -1,6 +1,6 @@
 import { useLogEvent } from "@concord-consortium/mass-sims-shared";
 import clsx from "clsx";
-import { useState } from "react";
+import { useLayoutEffect, useRef, useState } from "react";
 import { SwitchButton, SwitchField } from "react-aria-components";
 import FungusAddedIcon from "../assets/icons/fungus-added.svg?react";
 
@@ -24,16 +24,44 @@ export interface FungusSwitchProps {
 export function FungusSwitch({ isOn, isDisabled = false, onChange, trial }: FungusSwitchProps) {
   const logEvent = useLogEvent();
   const [announcement, setAnnouncement] = useState("");
+  const inputRef = useRef<HTMLInputElement>(null);
+  // Mark the underlying role="switch" input aria-disabled when locked rather than passing
+  // isDisabled to SwitchField (which renders a native `disabled` input, dropping it from the tab
+  // order so keyboard users can't discover it). RAC doesn't expose a prop to place aria-disabled
+  // on the input, so set it directly. The toggle is blocked in handleChange below. useLayoutEffect
+  // so a switch that mounts already-locked (e.g. restored saved state with crosses) exposes
+  // aria-disabled before paint, never a frame without it.
+  useLayoutEffect(() => {
+    const input = inputRef.current;
+    if (!input) return;
+    if (isDisabled) input.setAttribute("aria-disabled", "true");
+    else input.removeAttribute("aria-disabled");
+  }, [isDisabled]);
+  const handleChange = (value: boolean) => {
+    // Locked: ignore react-aria's onChange (fired by Space/click). Because the switch is
+    // controlled (isSelected={isOn}), swallowing onChange leaves the parent's isOn unchanged, so
+    // it can't toggle — no flicker.
+    if (isDisabled) return;
+    logEvent("fungus_set", { value, trial });
+    setAnnouncement(value ? "Fungus introduced." : "Fungus removed.");
+    onChange(value);
+  };
   return (
     <>
       <SwitchField
         className={clsx("fungus-switch", isDisabled && "disabled")}
         isSelected={isOn}
-        isDisabled={isDisabled}
-        onChange={(value) => {
-          logEvent("fungus_set", { value, trial });
-          setAnnouncement(value ? "Fungus introduced." : "Fungus removed.");
-          onChange(value);
+        inputRef={inputRef}
+        onChange={handleChange}
+        onKeyDown={(e) => {
+          // react-aria toggles on Space (native checkbox) but not Enter; add Enter to match the
+          // demo. RAC's SwitchButton doesn't forward onKeyDown, so handle it here on the container
+          // — the switch input is the only focusable descendant, so the event always comes from it.
+          // Ignore auto-repeats so a held key doesn't oscillate the toggle (native Space doesn't repeat).
+          if (e.key === "Enter" && !e.repeat && !isDisabled) {
+            e.preventDefault();
+            handleChange(!isOn);
+          }
         }}
       >
         <SwitchButton className="fungus-switch-button">

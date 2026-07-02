@@ -157,6 +157,6 @@ describe("SimulationView", () => {
       },
     };
     const { getByRole } = render(<SimulationView trial={completed} {...noopProps} />);
-    expect(getByRole("button", { name: /play/i })).toBeDisabled();
+    expect(getByRole("button", { name: /play/i })).toHaveAttribute("aria-disabled", "true");
   });
 });

@@ -44,7 +44,7 @@ test.describe("Single-trial flow", () => {
     await bananas.resetActiveTrial();
     await expect(bananas.offspringRows).toHaveCount(0);
     await expect(bananas.parent1Select).toBeEnabled();
-    await expect(bananas.crossPlantsButton).toHaveAttribute("data-disabled", "true");
+    await expect(bananas.crossPlantsButton).toHaveAttribute("aria-disabled", "true");
   });
 });
 
@@ -255,16 +255,17 @@ test.describe("Status pill text variants", () => {
 
 test.describe("Disabled-state transitions", () => {
   // Scenario 13: Cross Plants is disabled until both parents are picked; Reset Trial is disabled
-  // while the trial is clean. Disabled state is react-aria's data-disabled attribute.
+  // while the trial is clean. The shared Button signals disabled via aria-disabled (staying
+  // keyboard-focusable), not a native disabled attribute.
   test("Cross Plants and Reset Trial enable as the trial gains state", async () => {
     // Clean trial: both disabled.
-    await expect(bananas.crossPlantsButton).toHaveAttribute("data-disabled", "true");
-    await expect(bananas.resetTrialButton).toHaveAttribute("data-disabled", "true");
+    await expect(bananas.crossPlantsButton).toHaveAttribute("aria-disabled", "true");
+    await expect(bananas.resetTrialButton).toHaveAttribute("aria-disabled", "true");
 
     // One parent: the trial now has state → Reset enables; Cross still needs the second parent.
     await bananas.pickParent1(BASELINE_CROSS.p1);
     await expect(bananas.resetTrialButton).toBeEnabled();
-    await expect(bananas.crossPlantsButton).toHaveAttribute("data-disabled", "true");
+    await expect(bananas.crossPlantsButton).toHaveAttribute("aria-disabled", "true");
 
     // Second parent: Cross Plants enables.
     await bananas.pickParent2(BASELINE_CROSS.p2);

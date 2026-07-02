@@ -35,10 +35,11 @@ function storeWithCrosses(crosses: OffspringPlant[][], selectedCross: number | n
 function renderPanel(
   store: RootStoreInstance = createTestStore(),
   onPillChipClick: () => void = vi.fn(),
+  onPillCloseClick: () => void = vi.fn(),
 ) {
   return render(
     <RootStoreProvider store={store}>
-      <BananasDataPanel onPillChipClick={onPillChipClick} />
+      <BananasDataPanel onPillChipClick={onPillChipClick} onPillCloseClick={onPillCloseClick} />
     </RootStoreProvider>,
   );
 }
@@ -196,18 +197,29 @@ describe("BananasDataPanel — filter chip pill (MAS-12)", () => {
   it("calls onPillChipClick (only) when the chip body is clicked, leaving the selection intact", () => {
     const store = threeCrosses(2);
     const onPillChipClick = vi.fn();
-    const { container } = renderPanel(store, onPillChipClick);
+    const onPillCloseClick = vi.fn();
+    const { container } = renderPanel(store, onPillChipClick, onPillCloseClick);
     fireEvent.click(container.querySelector(".pill-chip") as HTMLElement);
     expect(onPillChipClick).toHaveBeenCalledTimes(1);
+    expect(onPillCloseClick).not.toHaveBeenCalled();
     expect(store.activeCross).toBe(2); // selection unchanged (not cleared)
   });
 
-  it("clears the selection (only) when the close button is clicked", () => {
+  it("keeps the chip out of the tab order but leaves the close button focusable", () => {
+    // The chip is a non-essential pointer affordance (tabindex=-1); the close button stays a
+    // normal keyboard-focusable button, matching the demo.
+    const { container } = renderPanel(threeCrosses(2));
+    expect(container.querySelector(".pill-chip")).toHaveAttribute("tabindex", "-1");
+    expect(container.querySelector(".pill-close")).not.toHaveAttribute("tabindex");
+  });
+
+  it("calls onPillCloseClick (only) when the close button is clicked", () => {
     const store = threeCrosses(2);
     const onPillChipClick = vi.fn();
-    const { container } = renderPanel(store, onPillChipClick);
+    const onPillCloseClick = vi.fn();
+    const { container } = renderPanel(store, onPillChipClick, onPillCloseClick);
     fireEvent.click(container.querySelector(".pill-close") as HTMLElement);
-    expect(store.activeCross).toBeNull(); // selection cleared
+    expect(onPillCloseClick).toHaveBeenCalledTimes(1);
     expect(onPillChipClick).not.toHaveBeenCalled();
   });
 
