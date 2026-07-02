@@ -10,6 +10,7 @@ import {
 } from "react";
 import ccLogo from "../../assets/branding/cc-logo.svg";
 import deseLogo from "../../assets/branding/dese-logo.svg";
+import { useScrollFocusRing } from "../../hooks/use-scroll-focus-ring";
 import { Section } from "../section/section";
 import { CloseIcon, InfoIcon } from "./icons";
 
@@ -40,7 +41,7 @@ interface SimulationSlotProps extends SlotProps {
 // composes it with its own root class as clsx("section", className).
 function Trials({ children, title = "Trials" }: SlotProps) {
   return (
-    <Section title={title} className="trials-area">
+    <Section title={title} className="trials-area" scrollFocusRing>
       <div className="trials-list">{children}</div>
     </Section>
   );
@@ -86,13 +87,16 @@ export function SimulationFrame({
   const wasOpenRef = useRef(false);
   const lastNotifiedOpenRef = useRef(infoOpen);
   const titleId = useId();
+  // Callback ref for the About body: makes it keyboard-scrollable (tabindex 0 + focus ring)
+  // only while its text overflows.
+  const modalBodyRef = useScrollFocusRing<HTMLDivElement>();
 
   // Focus management: move focus to the close button on open, and return it to the info
   // button (the trigger) on close — standard dialog etiquette so keyboard users aren't
   // stranded. The `wasOpenRef` guard ensures we only restore focus on a real open→close
   // transition, never on the initial render (when `infoOpen` already starts false).
-  // Full focus-trapping (Tab cycling within the modal) is still deferred to the shared
-  // Dialog component — TODO Phase 2/3.
+  // The draggable panel is intentionally non-modal, so Tab is deliberately NOT trapped;
+  // keyboard users can move out of it to the rest of the frame.
   useEffect(() => {
     if (infoOpen) {
       wasOpenRef.current = true;
@@ -238,7 +242,12 @@ export function SimulationFrame({
               <CloseIcon className="modal-close-icon" />
             </button>
           </header>
-          <div className="modal-body">{infoModalContent}</div>
+          <div className="modal-body-wrap">
+            <div className="modal-body scroll-region" ref={modalBodyRef}>
+              {infoModalContent}
+            </div>
+            <div className="scroll-focus-ring" aria-hidden="true" />
+          </div>
         </div>
       ) : null}
     </div>

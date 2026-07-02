@@ -1,5 +1,6 @@
 import { setInteractiveState, useInitMessage } from "@concord-consortium/lara-interactive-api";
 import {
+  prefersReducedMotion,
   SimulationFrame,
   TRIAL_LETTERS_DEFAULT as TRIAL_LETTERS,
   useLogEvent,
@@ -116,8 +117,7 @@ export const App = observer(function App({ rng = Math.random }: AppProps = {}) {
     const padBottom = parseFloat(cs.paddingBottom);
     const cRect = grid.getBoundingClientRect();
     const tRect = target.getBoundingClientRect();
-    const reduce = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
-    const behavior: ScrollBehavior = reduce ? "auto" : "smooth";
+    const behavior: ScrollBehavior = prefersReducedMotion() ? "auto" : "smooth";
     if (tRect.top < cRect.top + padTop) {
       grid.scrollBy({ top: tRect.top - cRect.top - padTop, behavior });
     } else if (tRect.bottom > cRect.bottom - padBottom) {
@@ -131,6 +131,18 @@ export const App = observer(function App({ rng = Math.random }: AppProps = {}) {
   const onPillChipClick = () => {
     const idx = rootStore.activeCross;
     if (idx !== null) scrollToCross(idx);
+  };
+
+  // Data-panel pill-close handler — deselect, then return focus to the row that was selected (or the
+  // first row), so keyboard users aren't stranded on the removed pill.
+  const onPillCloseClick = () => {
+    const idx = rootStore.activeCross; // the row being deselected
+    rootStore.ui.clearSelection();
+    const grid = gridRef.current;
+    const rows = grid?.querySelectorAll<HTMLElement>(".offspring-row-button");
+    if (!rows || rows.length === 0) return;
+    const target = (idx !== null ? rows[idx] : undefined) ?? rows[0];
+    target?.focus();
   };
 
   return (
@@ -148,7 +160,7 @@ export const App = observer(function App({ rng = Math.random }: AppProps = {}) {
           <SimulationPanel gridRef={gridRef} />
         </SimulationFrame.Simulation>
         <SimulationFrame.Data>
-          <BananasDataPanel onPillChipClick={onPillChipClick} />
+          <BananasDataPanel onPillChipClick={onPillChipClick} onPillCloseClick={onPillCloseClick} />
         </SimulationFrame.Data>
       </SimulationFrame>
     </RootStoreProvider>

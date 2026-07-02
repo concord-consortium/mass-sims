@@ -41,6 +41,7 @@ export {
   useModelState,
 } from "./hooks/use-model-state";
 export { useReloadWarning } from "./hooks/use-reload-warning";
+export { useScrollFocusRing } from "./hooks/use-scroll-focus-ring";
 export { useScrollSelectedTrialIntoView } from "./hooks/use-scroll-selected-trial-into-view";
 export {
   type UseSimulationRunnerOptions,
@@ -71,6 +72,10 @@ export {
 } from "./trials";
 
 // Utils
+export {
+  prefersReducedMotion,
+  smoothScrollIntoView,
+} from "./utils/reduced-motion";
 export {
   resetAll,
   resetSeededRandom,

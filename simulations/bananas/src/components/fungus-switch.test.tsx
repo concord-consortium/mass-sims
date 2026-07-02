@@ -68,12 +68,89 @@ describe("FungusSwitch", () => {
     expect(container.querySelector(".sr-only")).toHaveTextContent("Fungus removed.");
   });
 
-  it("renders the switch disabled when isDisabled is true", () => {
-    // jsdom's fireEvent.click bypasses native `disabled`, so onChange-suppression is verified
-    // at the panel level, where the gated onSetFungus handler is the real guard.
+  it("toggles once when Enter is pressed", () => {
+    const onChange = vi.fn();
+    const { getByRole } = render(<FungusSwitch isOn={false} onChange={onChange} trial="A" />);
+    const sw = getByRole("switch", { name: "Fungus" });
+    sw.focus();
+    fireEvent.keyDown(sw, { key: "Enter" });
+    expect(onChange).toHaveBeenCalledTimes(1);
+    expect(onChange).toHaveBeenCalledWith(true);
+  });
+
+  it("toggles off when Enter is pressed while on", () => {
+    const onChange = vi.fn();
+    const { getByRole } = render(<FungusSwitch isOn={true} onChange={onChange} trial="A" />);
+    const sw = getByRole("switch", { name: "Fungus" });
+    sw.focus();
+    fireEvent.keyDown(sw, { key: "Enter" });
+    expect(onChange).toHaveBeenCalledTimes(1);
+    expect(onChange).toHaveBeenCalledWith(false);
+  });
+
+  it("ignores auto-repeated Enter keydowns so a held key doesn't oscillate the toggle", () => {
+    const onChange = vi.fn();
+    const { getByRole } = render(<FungusSwitch isOn={false} onChange={onChange} trial="A" />);
+    const sw = getByRole("switch", { name: "Fungus" });
+    sw.focus();
+    fireEvent.keyDown(sw, { key: "Enter", repeat: true });
+    expect(onChange).not.toHaveBeenCalled();
+  });
+
+  it("Enter handler stays inert for Space (Space still toggles once via the native path)", () => {
+    // react-aria handles Space via the native checkbox (modeled by click in jsdom). Our added
+    // handler is Enter-only, so a Space keydown must NOT itself call onChange, and the native
+    // toggle must still fire exactly once — i.e. no double toggle.
+    const onChange = vi.fn();
+    const { getByRole } = render(<FungusSwitch isOn={false} onChange={onChange} trial="A" />);
+    const sw = getByRole("switch", { name: "Fungus" });
+    sw.focus();
+    fireEvent.keyDown(sw, { key: " " });
+    fireEvent.keyUp(sw, { key: " " });
+    expect(onChange).not.toHaveBeenCalled();
+    fireEvent.click(sw);
+    expect(onChange).toHaveBeenCalledTimes(1);
+    expect(onChange).toHaveBeenCalledWith(true);
+  });
+
+  it("does not toggle when Enter is pressed on a disabled switch", () => {
+    const onChange = vi.fn();
     const { getByRole } = render(
-      <FungusSwitch isOn={false} isDisabled onChange={noop} trial="A" />,
+      <FungusSwitch isOn={false} isDisabled onChange={onChange} trial="A" />,
     );
-    expect(getByRole("switch", { name: "Fungus" })).toBeDisabled();
+    const sw = getByRole("switch", { name: "Fungus" });
+    fireEvent.keyDown(sw, { key: "Enter" });
+    expect(onChange).not.toHaveBeenCalled();
+  });
+
+  it("exposes a keyboard-focusable switch", () => {
+    const { getByRole } = render(<FungusSwitch isOn={false} onChange={noop} trial="A" />);
+    const sw = getByRole("switch", { name: "Fungus" });
+    sw.focus();
+    expect(sw).toHaveFocus();
+  });
+
+  it("marks the locked switch aria-disabled but keeps it focusable and inert", () => {
+    const onChange = vi.fn();
+    const { getByRole } = render(
+      <FungusSwitch isOn={false} isDisabled onChange={onChange} trial="A" />,
+    );
+    const sw = getByRole("switch", { name: "Fungus" });
+
+    // Locked via aria-disabled, not a native `disabled` attribute (jest-dom's toBeDisabled only
+    // reads native disabled, so not.toBeDisabled() passes here).
+    expect(sw).toHaveAttribute("aria-disabled", "true");
+    expect(sw).not.toBeDisabled();
+
+    // Still in the tab order: a native-disabled input can't take focus, so this locks in the fix.
+    sw.focus();
+    expect(sw).toHaveFocus();
+
+    // Toggling is blocked across every path: click, Enter keydown, and the native Space path.
+    fireEvent.click(sw);
+    fireEvent.keyDown(sw, { key: "Enter" });
+    fireEvent.keyDown(sw, { key: " " });
+    fireEvent.keyUp(sw, { key: " " });
+    expect(onChange).not.toHaveBeenCalled();
   });
 });

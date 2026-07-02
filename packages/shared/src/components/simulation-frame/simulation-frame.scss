@@ -320,6 +320,19 @@ $titlebar-about-leading-space: 5px;   // margin-left on the About button â†’ CCâ
     width: 24px;
   }
 
+  .modal-body-wrap {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    min-height: 0;
+    overflow: hidden;
+    position: relative;
+
+    .scroll-focus-ring {
+      border-radius: 0 0 tokens.$radius-lg tokens.$radius-lg;
+    }
+  }
+
   .modal-body {
     color: tokens.$color-text;
     flex: 1;

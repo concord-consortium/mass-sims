@@ -30,14 +30,36 @@ describe("Button", () => {
     expect(onPress).toHaveBeenCalledTimes(1);
   });
 
-  it("forwards isDisabled to the underlying control", () => {
+  it("marks a disabled button aria-disabled without the native disabled attribute", () => {
+    const { getByRole } = render(<Button isDisabled>Play</Button>);
+    const button = getByRole("button");
+    expect(button).toHaveAttribute("aria-disabled", "true");
+    expect(button).not.toBeDisabled();
+  });
+
+  it("leaves an enabled button without aria-disabled", () => {
+    const { getByRole } = render(<Button>Play</Button>);
+    const button = getByRole("button");
+    expect(button).not.toHaveAttribute("aria-disabled");
+    expect(button).not.toBeDisabled();
+  });
+
+  it("keeps a disabled button keyboard-focusable", () => {
+    // A native-disabled button cannot receive focus, so this locks in the aria-disabled fix:
+    // keyboard users can still discover the control.
+    const { getByRole } = render(<Button isDisabled>Play</Button>);
+    const button = getByRole("button");
+    button.focus();
+    expect(button).toHaveFocus();
+  });
+
+  it("does not fire onPress when disabled", () => {
     const onPress = vi.fn();
     const { getByRole } = render(
       <Button onPress={onPress} isDisabled>
         Play
       </Button>,
     );
-    expect(getByRole("button")).toBeDisabled();
     fireEvent.click(getByRole("button"));
     expect(onPress).not.toHaveBeenCalled();
   });

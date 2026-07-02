@@ -67,6 +67,19 @@
     font-weight: bold;
   }
 
+  .offspring-grid-wrap {
+    display: flex;
+    flex: 1 1 auto;
+    flex-direction: column;
+    min-height: 0;
+    overflow: hidden;
+    position: relative;
+
+    .scroll-focus-ring {
+      border-radius: 0;
+    }
+  }
+
   .offspring-grid {
     align-items: flex-start;
     background: theme.$content;

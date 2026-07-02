@@ -50,4 +50,28 @@ describe("Section", () => {
     // works — and the external class is exactly what a slot uses to assign a grid-area.
     expect(getByRole("region", { name: "Trials" })).toHaveClass("external-area");
   });
+
+  it("wraps the content in a focusable scroll region with a ring sibling when scrollFocusRing is set", () => {
+    const { container, getByText } = render(
+      <Section title="Trials" scrollFocusRing>
+        trial content
+      </Section>,
+    );
+    // The scroll container is the .content element, now tagged scroll-region for the shared CSS.
+    const content = container.querySelector(".content");
+    if (!content) throw new Error("expected a content element");
+    expect(content).toHaveClass("scroll-region");
+    expect(content).toContainElement(getByText("trial content"));
+    // It sits inside a positioned wrapper that also holds the ring sibling.
+    const wrap = content.parentElement;
+    expect(wrap).toHaveClass("content-wrap");
+    expect(wrap?.querySelector(".scroll-focus-ring")).toBeInTheDocument();
+  });
+
+  it("uses the plain content div with no ring markup by default", () => {
+    const { container } = render(<Section title="Trials">trial content</Section>);
+    expect(container.querySelector(".scroll-region")).toBeNull();
+    expect(container.querySelector(".scroll-focus-ring")).toBeNull();
+    expect(container.querySelector(".content-wrap")).toBeNull();
+  });
 });

@@ -18,6 +18,8 @@ import "./data-panel.scss";
 export interface BananasDataPanelProps {
   /** App-bridged DOM scroll: scrolls the Sim grid to the selected cross (needs App's gridRef). */
   onPillChipClick: () => void;
+  /** App-bridged deselect: clears the selection and returns focus to the previously-selected row. */
+  onPillCloseClick: () => void;
 }
 
 // Two-line bar-chart title whose break point shifts with the container width (see the .rt-break
@@ -35,6 +37,7 @@ const resistanceTitle = (
 
 export const BananasDataPanel = observer(function BananasDataPanel({
   onPillChipClick,
+  onPillCloseClick,
 }: BananasDataPanelProps) {
   const rootStore = useStores();
   const trial = rootStore.activeTrial;
@@ -68,6 +71,10 @@ export const BananasDataPanel = observer(function BananasDataPanel({
             <button
               type="button"
               className="pill-chip"
+              // Non-essential convenience (scrolls the selected cross into view). Clickable by
+              // pointer but kept out of the tab order — the scroll it performs is reachable by
+              // keyboard elsewhere (the offspring grid is itself keyboard-scrollable).
+              tabIndex={-1}
               onClick={onPillChipClick}
               aria-label={`Scroll to cross ${trialLetter}${activeCross + 1}`}
             >
@@ -77,7 +84,7 @@ export const BananasDataPanel = observer(function BananasDataPanel({
             <button
               type="button"
               className="pill-close"
-              onClick={() => rootStore.ui.clearSelection()}
+              onClick={onPillCloseClick}
               aria-label="Deselect cross, show all crosses"
             >
               <PillCloseIcon aria-hidden="true" />

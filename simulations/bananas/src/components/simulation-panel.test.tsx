@@ -130,8 +130,19 @@ describe("SimulationPanel rendering", () => {
     expect(container.querySelector(".offspring-grid-max")).toHaveTextContent(
       "Max number of crosses reached",
     );
-    expect(getByRole("button", { name: "Cross Plants" })).toBeDisabled();
-    expect(getByRole("switch", { name: "Fungus" })).toBeDisabled();
+    expect(getByRole("button", { name: "Cross Plants" })).toHaveAttribute("aria-disabled", "true");
+    expect(getByRole("switch", { name: "Fungus" })).toHaveAttribute("aria-disabled", "true");
+  });
+});
+
+describe("SimulationPanel offspring grid scroll region", () => {
+  it("wraps the grid as a focusable scroll region with a focus ring sibling", () => {
+    const { container } = renderPanel(bothParents());
+    const grid = container.querySelector(".offspring-grid") as HTMLElement;
+    expect(grid).toHaveClass("scroll-region");
+    const wrap = grid.parentElement as HTMLElement;
+    expect(wrap).toHaveClass("offspring-grid-wrap");
+    expect(wrap.querySelector(".scroll-focus-ring")).toBeInTheDocument();
   });
 });
 
@@ -150,22 +161,27 @@ describe("SimulationPanel active-trial badge", () => {
 describe("SimulationPanel derived control states", () => {
   it("disables Cross Plants and Fungus until both parents are selected", () => {
     const { getByRole } = renderPanel(createTestStore({ trial: { p1: "wild-w1" } }));
-    expect(getByRole("button", { name: "Cross Plants" })).toBeDisabled();
-    expect(getByRole("switch", { name: "Fungus" })).toBeDisabled();
+    expect(getByRole("button", { name: "Cross Plants" })).toHaveAttribute("aria-disabled", "true");
+    expect(getByRole("switch", { name: "Fungus" })).toHaveAttribute("aria-disabled", "true");
   });
 
   it("enables Cross Plants and Fungus when both parents are selected and no crosses yet", () => {
     const { getByRole } = renderPanel(bothParents());
-    expect(getByRole("button", { name: "Cross Plants" })).not.toBeDisabled();
-    expect(getByRole("switch", { name: "Fungus" })).not.toBeDisabled();
+    expect(getByRole("button", { name: "Cross Plants" })).not.toHaveAttribute("aria-disabled");
+    expect(getByRole("switch", { name: "Fungus" })).not.toHaveAttribute("aria-disabled");
   });
 
   it("disables Reset for an empty trial and enables it once a parent is chosen", () => {
     const empty = renderPanel(createTestStore());
-    expect(empty.getByRole("button", { name: "Reset Trial" })).toBeDisabled();
+    expect(empty.getByRole("button", { name: "Reset Trial" })).toHaveAttribute(
+      "aria-disabled",
+      "true",
+    );
     empty.unmount();
     const withParent = renderPanel(createTestStore({ trial: { p1: "wild-w1" } }));
-    expect(withParent.getByRole("button", { name: "Reset Trial" })).not.toBeDisabled();
+    expect(withParent.getByRole("button", { name: "Reset Trial" })).not.toHaveAttribute(
+      "aria-disabled",
+    );
   });
 });
 
@@ -251,5 +267,115 @@ describe("SimulationPanel cross selection", () => {
     const rows = getAllByRole("button", { name: ROW_NAME });
     expect(rows[0]).toHaveAttribute("aria-pressed", "false");
     expect(rows[1]).toHaveAttribute("aria-pressed", "true");
+  });
+});
+
+// A store with three crosses so wrap-around has a clear middle row to distinguish from the ends.
+const threeCrosses = (overrides?: { selectedCross?: number | null }) => {
+  const sel = overrides?.selectedCross;
+  return createTestStore({
+    trial: {
+      p1: "wild-w1",
+      p2: "cavendish-c1",
+      locked: true,
+      crosses: [
+        [plant("Rr", true), plant("rr", false)],
+        [plant("Rr", true), plant("Rr", true)],
+        [plant("rr", false), plant("rr", false)],
+      ],
+    },
+    ui: { selectedCrossByTrial: sel == null ? {} : { A: sel } },
+  });
+};
+
+describe("SimulationPanel offspring roving tabindex", () => {
+  it("makes only the first row tabbable when nothing is selected", () => {
+    const { getAllByRole } = renderPanel(threeCrosses());
+    const rows = getAllByRole("button", { name: ROW_NAME });
+    expect(rows[0]).toHaveAttribute("tabindex", "0");
+    expect(rows[1]).toHaveAttribute("tabindex", "-1");
+    expect(rows[2]).toHaveAttribute("tabindex", "-1");
+  });
+
+  it("makes only the selected row tabbable when a cross is selected", () => {
+    const { getAllByRole } = renderPanel(threeCrosses({ selectedCross: 1 }));
+    const rows = getAllByRole("button", { name: ROW_NAME });
+    expect(rows[0]).toHaveAttribute("tabindex", "-1");
+    expect(rows[1]).toHaveAttribute("tabindex", "0");
+    expect(rows[2]).toHaveAttribute("tabindex", "-1");
+  });
+
+  it("moves the tab stop to a row when it becomes selected", () => {
+    const store = threeCrosses();
+    const { getAllByRole } = renderPanel(store);
+    act(() => {
+      store.ui.selectCross(2);
+    });
+    const rows = getAllByRole("button", { name: ROW_NAME });
+    expect(rows[2]).toHaveAttribute("tabindex", "0");
+    expect(rows[0]).toHaveAttribute("tabindex", "-1");
+  });
+});
+
+describe("SimulationPanel offspring arrow navigation", () => {
+  it("ArrowDown moves focus and the tab stop to the next row without selecting", () => {
+    const store = threeCrosses();
+    const { getAllByRole } = renderPanel(store);
+    const rows = getAllByRole("button", { name: ROW_NAME });
+    act(() => rows[0].focus());
+    fireEvent.keyDown(rows[0], { key: "ArrowDown" });
+    expect(rows[1]).toHaveFocus();
+    expect(rows[1]).toHaveAttribute("tabindex", "0");
+    expect(rows[0]).toHaveAttribute("tabindex", "-1");
+    // Focus-only: selection is untouched.
+    expect(store.activeCross).toBeNull();
+  });
+
+  it("ArrowUp moves focus to the previous row", () => {
+    const store = threeCrosses();
+    const { getAllByRole } = renderPanel(store);
+    const rows = getAllByRole("button", { name: ROW_NAME });
+    act(() => rows[2].focus());
+    fireEvent.keyDown(rows[2], { key: "ArrowUp" });
+    expect(rows[1]).toHaveFocus();
+  });
+
+  it("ArrowDown on the last row wraps to the first", () => {
+    const store = threeCrosses();
+    const { getAllByRole } = renderPanel(store);
+    const rows = getAllByRole("button", { name: ROW_NAME });
+    act(() => rows[2].focus());
+    fireEvent.keyDown(rows[2], { key: "ArrowDown" });
+    expect(rows[0]).toHaveFocus();
+    expect(rows[0]).toHaveAttribute("tabindex", "0");
+  });
+
+  it("ArrowUp on the first row wraps to the last", () => {
+    const store = threeCrosses();
+    const { getAllByRole } = renderPanel(store);
+    const rows = getAllByRole("button", { name: ROW_NAME });
+    act(() => rows[0].focus());
+    fireEvent.keyDown(rows[0], { key: "ArrowUp" });
+    expect(rows[2]).toHaveFocus();
+    expect(rows[2]).toHaveAttribute("tabindex", "0");
+  });
+
+  it("Home and End jump focus to the first and last rows", () => {
+    const store = threeCrosses();
+    const { getAllByRole } = renderPanel(store);
+    const rows = getAllByRole("button", { name: ROW_NAME });
+    act(() => rows[1].focus());
+    fireEvent.keyDown(rows[1], { key: "End" });
+    expect(rows[2]).toHaveFocus();
+    fireEvent.keyDown(rows[2], { key: "Home" });
+    expect(rows[0]).toHaveFocus();
+  });
+
+  it("keeps the tab stop in sync when a row is focused programmatically", () => {
+    const { getAllByRole } = renderPanel(threeCrosses());
+    const rows = getAllByRole("button", { name: ROW_NAME });
+    act(() => rows[2].focus());
+    expect(rows[2]).toHaveAttribute("tabindex", "0");
+    expect(rows[0]).toHaveAttribute("tabindex", "-1");
   });
 });
