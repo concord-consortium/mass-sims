@@ -1,3 +1,4 @@
+import { Announcer } from "@concord-consortium/mass-sims-shared";
 import { act, fireEvent, render } from "@testing-library/react";
 import type { RefObject } from "react";
 import { describe, expect, it, vi } from "vitest";
@@ -58,9 +59,9 @@ const twoCrosses = (overrides?: { selectedCross?: number | null }) => {
   });
 };
 
-// The cross-row buttons share the "Cross N, …" aria-label shape; this regex excludes the
+// The cross-row buttons share the "Cross {letter}{n}, …" aria-label shape; this regex excludes the
 // "Cross Plants" control button so getAllByRole targets only the selectable rows.
-const ROW_NAME = /^Cross \d+,/;
+const ROW_NAME = /^Cross [A-J]\d+,/;
 
 describe("SimulationPanel rendering", () => {
   it("renders selectors but no pill or grid hint for an empty trial", () => {
@@ -73,23 +74,25 @@ describe("SimulationPanel rendering", () => {
   });
 
   it("shows the cross-prompt pill and grid hint once both parents are set", () => {
-    const { getByRole, getByText } = renderPanel(bothParents());
-    expect(getByRole("status")).toHaveTextContent("Click Cross Plants to see their offspring");
+    const { container, getByText } = renderPanel(bothParents());
+    expect(container.querySelector(".status-pill")).toHaveTextContent(
+      "Click Cross Plants to see their offspring",
+    );
     expect(getByText(/Each cross will produce 5–20 offspring\./i)).toBeInTheDocument();
   });
 
   it("shows the fungus-active prompt and 'Fungus introduced' marker when fungus is on", () => {
-    const { getByRole, getByText } = renderPanel(
+    const { container, getByText } = renderPanel(
       createTestStore({ trial: { p1: "wild-w1", p2: "cavendish-c1", fungusOn: true } }),
     );
-    expect(getByRole("status")).toHaveTextContent(
+    expect(container.querySelector(".status-pill")).toHaveTextContent(
       "Cross plants to see their offspring · Fungus active",
     );
     expect(getByText("Fungus introduced")).toBeInTheDocument();
   });
 
   it("renders chips, the cross row, and the stats pill for a locked trial", () => {
-    const { getByText, getByRole, getAllByRole, queryByRole } = renderPanel(lockedOneCross());
+    const { container, getByText, getAllByRole, queryByRole } = renderPanel(lockedOneCross());
     // Locked → static chips, no interactive selectors.
     expect(queryByRole("button", { name: /Parent 1/i })).not.toBeInTheDocument();
     expect(getByText("Wild W1")).toBeInTheDocument();
@@ -97,7 +100,28 @@ describe("SimulationPanel rendering", () => {
     const rows = getAllByRole("listitem");
     expect(rows).toHaveLength(1);
     expect(rows[0]).toHaveTextContent("A1");
-    expect(getByRole("status")).toHaveTextContent(/Crosses:\s*1\s*·\s*Offspring:\s*2/);
+    expect(container.querySelector(".status-pill")).toHaveTextContent(
+      /Crosses:\s*1\s*·\s*Offspring:\s*2/,
+    );
+  });
+
+  it("labels cross rows with the active trial's letter", () => {
+    const { getByRole } = renderPanel(
+      createTestStore({
+        trials: {
+          B: {
+            p1: "wild-w1",
+            p2: "cavendish-c1",
+            locked: true,
+            crosses: [[plant("Rr", true), plant("rr", false, true)]],
+          },
+        },
+        ui: { selectedTrialLetter: "B" },
+      }),
+    );
+    const row = getByRole("button", { name: /^Cross B1,/ });
+    expect(row).toHaveAttribute("aria-label", "Cross B1, 2 offspring, 1 healthy, 1 infected");
+    expect(row).toHaveTextContent("B1");
   });
 
   it("marks infected offspring with the infected class", () => {
@@ -377,5 +401,33 @@ describe("SimulationPanel offspring arrow navigation", () => {
     act(() => rows[2].focus());
     expect(rows[2]).toHaveAttribute("tabindex", "0");
     expect(rows[0]).toHaveAttribute("tabindex", "-1");
+  });
+});
+
+describe("SimulationPanel cross-selection narration", () => {
+  // Renders under the shared <Announcer> so cross select/deselect narration can be asserted.
+  function renderWithAnnouncer(store: RootStoreInstance) {
+    const utils = render(
+      <RootStoreProvider store={store}>
+        <Announcer>
+          <SimulationPanel gridRef={{ current: null }} />
+        </Announcer>
+      </RootStoreProvider>,
+    );
+    const region = utils.container.querySelector('[aria-live="polite"]') as HTMLElement;
+    return { ...utils, region };
+  }
+
+  it("announces the selected cross's percentages on select", () => {
+    // twoCrosses' first cross is all-healthy → 100% healthy, 0% infected.
+    const { getAllByRole, region } = renderWithAnnouncer(twoCrosses());
+    fireEvent.click(getAllByRole("button", { name: ROW_NAME })[0]);
+    expect(region).toHaveTextContent("Cross A1: 100% healthy, 0% infected");
+  });
+
+  it("announces 'All crosses selected' when the selected cross is toggled off", () => {
+    const { getAllByRole, region } = renderWithAnnouncer(twoCrosses({ selectedCross: 0 }));
+    fireEvent.click(getAllByRole("button", { name: ROW_NAME })[0]);
+    expect(region).toHaveTextContent("All crosses selected");
   });
 });

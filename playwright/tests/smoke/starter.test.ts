@@ -36,7 +36,7 @@ test("About modal: opens via button, closes via close button, closes via Escape"
 });
 
 test("About modal: not open on initial load", async () => {
-  await expect(starter.aboutDialog).toBeHidden();
+  await expect(starter.aboutPanel).toBeHidden();
 });
 
 test("Simulation controls render with a sensible default disabled state", async () => {

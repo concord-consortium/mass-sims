@@ -1,6 +1,7 @@
+import type { TrialLetter } from "@concord-consortium/mass-sims-shared";
 import { useEffect, useRef, useState } from "react";
 import FungusAddedIcon from "../../assets/icons/fungus-added.svg?react";
-import { EMPTY_STATE_LABEL } from "./constants";
+import { BAR_LABEL_PREFIX, BAR_TABLE_LABEL, EMPTY_STATE_LABEL } from "./constants";
 
 const BAR_HEIGHT = 158;
 const MARGIN_TOP_DEFAULT = 15;
@@ -37,7 +38,7 @@ export interface ResistanceBarChartProps {
   series?: { healthy: number[]; infected: number[] } | null;
   fungusOn?: boolean;
   selectedCross?: number | null;
-  trialLetter: string;
+  trialLetter: TrialLetter;
 }
 
 export function ResistanceBarChart({
@@ -78,14 +79,11 @@ export function ResistanceBarChart({
   const showHighlight =
     hasData && selectedCross !== null && selectedCross >= 0 && selectedCross < numCrosses;
 
-  let ariaLabel = "Fungus resistance over crosses: no data";
-  if (hasData) {
-    const lastHealthy = series.healthy[numCrosses - 1];
-    const lastInfected = series.infected[numCrosses - 1];
-    ariaLabel = `Bar chart showing fungus resistance over ${numCrosses} cross${
-      numCrosses > 1 ? "es" : ""
-    }. Latest: ${lastHealthy}% healthy, ${lastInfected}% infected`;
-  }
+  const ariaLabel = hasData
+    ? `${BAR_LABEL_PREFIX} over ${numCrosses} cross${
+        numCrosses > 1 ? "es" : ""
+      }. Latest: ${series.healthy[numCrosses - 1]}% healthy, ${series.infected[numCrosses - 1]}% infected`
+    : `${BAR_LABEL_PREFIX}: no data`;
 
   return (
     <div className="resistance-chart-wrap" ref={containerRef}>
@@ -225,7 +223,7 @@ export function ResistanceBarChart({
       ) : null}
 
       {hasData ? (
-        <table className="sr-only">
+        <table className="sr-only" aria-label={BAR_TABLE_LABEL}>
           <thead>
             <tr>
               <th>Cross</th>

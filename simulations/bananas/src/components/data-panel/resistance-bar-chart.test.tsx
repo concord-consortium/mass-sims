@@ -1,6 +1,6 @@
 import { render } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
-import { EMPTY_STATE_LABEL } from "./constants";
+import { BAR_LABEL_PREFIX, BAR_TABLE_LABEL, EMPTY_STATE_LABEL } from "./constants";
 import { ResistanceBarChart } from "./resistance-bar-chart";
 
 // The global test-setup ResizeObserver mock fires synchronously with width 300, so the SVG —
@@ -11,9 +11,7 @@ const PLOT_H_NO_FUNGUS = 158 - 15 - 28; // BAR_HEIGHT − MARGIN.top − MARGIN.
 describe("ResistanceBarChart — empty frame", () => {
   it("renders an SVG with role=img and the no-data aria-label", () => {
     const { getByRole } = render(<ResistanceBarChart series={null} trialLetter="A" />);
-    expect(
-      getByRole("img", { name: "Fungus resistance over crosses: no data" }),
-    ).toBeInTheDocument();
+    expect(getByRole("img", { name: `${BAR_LABEL_PREFIX}: no data` })).toBeInTheDocument();
   });
 
   it("shows the 'No data' label", () => {
@@ -92,6 +90,13 @@ describe("ResistanceBarChart — fungus margin", () => {
 });
 
 describe("ResistanceBarChart — screen-reader table", () => {
+  it("names the sr-only data table for screen readers", () => {
+    const { getByRole } = render(
+      <ResistanceBarChart series={{ healthy: [80, 60], infected: [20, 40] }} trialLetter="A" />,
+    );
+    expect(getByRole("table", { name: BAR_TABLE_LABEL })).toBeInTheDocument();
+  });
+
   it("renders one row per cross with the healthy/infected percentages", () => {
     const { container } = render(
       <ResistanceBarChart series={{ healthy: [80, 60], infected: [20, 40] }} trialLetter="A" />,

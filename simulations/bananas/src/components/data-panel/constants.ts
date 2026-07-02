@@ -5,3 +5,6 @@ export const LEGEND_HEALTHY = "Healthy";
 export const LEGEND_INFECTED = "Infected";
 export const EMPTY_STATE_LABEL = "No data";
 export const LEGEND_DASH = "–"; // en-dash, demo's empty-state placeholder for legend %
+export const PIE_LABEL_PREFIX = "Pie chart showing offspring phenotypes";
+export const BAR_LABEL_PREFIX = "Bar chart showing fungus resistance";
+export const BAR_TABLE_LABEL = "Fungus resistance data by cross";

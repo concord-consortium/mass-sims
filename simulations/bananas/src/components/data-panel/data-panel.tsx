@@ -59,7 +59,8 @@ export const BananasDataPanel = observer(function BananasDataPanel({
     return { healthy, infected: 100 - healthy };
   }, [totals]);
 
-  const selectedCrossLabel = activeCross !== null ? `cross ${activeCross + 1}` : "all crosses";
+  const selectedCrossLabel =
+    activeCross !== null ? `cross ${trialLetter}${activeCross + 1}` : "all crosses";
 
   return (
     <div className="bananas-data-panel">

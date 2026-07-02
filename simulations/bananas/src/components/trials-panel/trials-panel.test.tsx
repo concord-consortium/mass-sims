@@ -9,6 +9,7 @@ vi.mock("@concord-consortium/mass-sims-shared", async (importOriginal) => ({
   useLogEvent: () => logEvent,
 }));
 
+import { Announcer, MAX_TRIALS_DEFAULT } from "@concord-consortium/mass-sims-shared";
 import type { OffspringPlant } from "../../model/genetics";
 import { type RootStoreInstance, RootStoreProvider } from "../../stores/root-store";
 import { createTestStore } from "../../stores/test-helpers";
@@ -19,14 +20,16 @@ function plant(infected: boolean): OffspringPlant {
 }
 
 function renderPanel(store: RootStoreInstance = createTestStore()) {
-  return {
-    store,
-    ...render(
-      <RootStoreProvider store={store}>
+  const utils = render(
+    <RootStoreProvider store={store}>
+      {/* Under the shared <Announcer> so reset / max-trials narration can be asserted. */}
+      <Announcer>
         <TrialsPanel />
-      </RootStoreProvider>,
-    ),
-  };
+      </Announcer>
+    </RootStoreProvider>,
+  );
+  const region = utils.container.querySelector('[aria-live="polite"]') as HTMLElement;
+  return { store, region, ...utils };
 }
 
 const tenTrials = () =>
@@ -135,10 +138,22 @@ describe("TrialsPanel — scroll selected into view", () => {
 });
 
 describe("TrialsPanel — max trials", () => {
-  it("hides + New and shows the status notice at the 10-trial cap", () => {
-    const { getByRole, queryByRole } = renderPanel(tenTrials());
+  it("hides + New and shows the plain-text notice at the 10-trial cap", () => {
+    const { container, queryByRole } = renderPanel(tenTrials());
     expect(queryByRole("button", { name: "Add new trial" })).not.toBeInTheDocument();
-    expect(getByRole("status")).toHaveTextContent("Max number of trials reached");
+    expect(container.querySelector(".max-trials-notice")).toHaveTextContent(
+      "Max number of trials reached",
+    );
+  });
+
+  it("announces the max-trials cap through the announcer when the last trial is added", () => {
+    // Start one below the cap (A–I) so clicking + New creates the 10th trial (J) and hits the cap.
+    const nineTrials = createTestStore({
+      trials: { A: {}, B: {}, C: {}, D: {}, E: {}, F: {}, G: {}, H: {}, I: {} },
+    });
+    const { getByRole, region } = renderPanel(nineTrials);
+    fireEvent.click(getByRole("button", { name: "Add new trial" }));
+    expect(region).toHaveTextContent(`Maximum of ${MAX_TRIALS_DEFAULT} trials reached.`);
   });
 });
 
@@ -148,10 +163,12 @@ describe("TrialsPanel — per-card reset", () => {
       trials: { A: { p1: "wild-w1", crosses: [[plant(false)]] }, B: { p1: "cavendish-c1" } },
     });
     // A is selected by default → its reset button is the visible one.
-    const { getByRole } = renderPanel(store);
+    const { getByRole, region } = renderPanel(store);
     fireEvent.click(getByRole("button", { name: "Reset trial A" }));
     expect(store.trials.get("A")?.canReset).toBe(false);
     expect(store.trials.get("B")?.p1).toBe("cavendish-c1"); // untouched
+    // The reset narrates through the shared announcer.
+    expect(region).toHaveTextContent("Trial A reset.");
   });
 });
 
@@ -259,9 +276,13 @@ describe("TrialsPanel — accessibility audit (Task 5)", () => {
     expect(tabs[1]).toHaveAttribute("aria-selected", "true"); // B (selected)
   });
 
-  it("exposes the max-trials notice as a live status region", () => {
-    const { getByRole } = renderPanel(tenTrials());
-    expect(getByRole("status")).toHaveTextContent("Max number of trials reached");
+  it("renders the max-trials notice", () => {
+    const { container, queryByRole } = renderPanel(tenTrials());
+    expect(container.querySelector(".max-trials-notice")).toHaveTextContent(
+      "Max number of trials reached",
+    );
+    // No ambient status region: all narration goes through the single shared announcer instead.
+    expect(queryByRole("status")).not.toBeInTheDocument();
   });
 
   it("reflects reset availability via aria-disabled on the selected card's reset button", () => {

@@ -35,6 +35,15 @@ export interface SelectProps<K extends Key = string> {
 /**
  * Token-driven dropdown on `react-aria-components`'s `Select`. Auto-emits via
  * `useLogEvent` on selection change when `action` is supplied.
+ *
+ * ARIA pattern (intentional): this delegates to react-aria's `Select`, which renders a
+ * `<button aria-haspopup="listbox">` trigger plus a `role="listbox"`/`role="option"` popover and
+ * moves real DOM focus among options — the WAI-ARIA "collapsible listbox / button + listbox"
+ * pattern. That is a deliberate, accepted deviation from the demo/spec's hand-rolled
+ * `role="combobox"` + `aria-activedescendant` ("select-only combobox"). Both are valid APG patterns;
+ * the react-aria one is battle-tested and keyboard-/screen-reader-complete, so it's preferred here.
+ * Don't re-hand-roll a combobox to "match the demo." See docs/infrastructure-plan.md §3
+ * ("Accessibility conventions & known gaps").
  */
 export function Select<K extends Key = string>({
   label,

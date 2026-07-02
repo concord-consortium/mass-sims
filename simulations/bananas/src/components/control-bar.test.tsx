@@ -7,8 +7,9 @@ import { describe, expect, it, vi } from "vitest";
 const { log } = vi.hoisted(() => ({ log: vi.fn() }));
 vi.mock("@concord-consortium/lara-interactive-api", () => ({ log }));
 
-import { seededRandom } from "@concord-consortium/mass-sims-shared";
+import { Announcer, seededRandom } from "@concord-consortium/mass-sims-shared";
 import type { OffspringPlant } from "../model/genetics";
+import { MAX_CROSSES } from "../model/genetics";
 import { type RootStoreInstance, RootStoreProvider } from "../stores/root-store";
 import { createTestStore } from "../stores/test-helpers";
 import { ControlBar } from "./control-bar";
@@ -18,11 +19,15 @@ function plant(infected = false): OffspringPlant {
 }
 
 function renderBar(store: RootStoreInstance = createTestStore()) {
-  return render(
+  const utils = render(
     <RootStoreProvider store={store}>
-      <ControlBar />
+      <Announcer>
+        <ControlBar />
+      </Announcer>
     </RootStoreProvider>,
   );
+  const region = utils.container.querySelector('[aria-live="polite"]') as HTMLElement;
+  return { region, ...utils };
 }
 
 // Canonical trial states for the control-enable matrix.
@@ -150,6 +155,48 @@ describe("ControlBar", () => {
 
     fireEvent.click(getByRole("switch", { name: "Fungus" }));
     expect(store.activeTrial.fungusOn).toBe(false);
+  });
+});
+
+describe("ControlBar — narration", () => {
+  it("announces the created cross and appends 'Parents locked.' on the first cross", () => {
+    // Distinct seed: seededRandom caches one PRNG per key, so reusing another test's key would
+    // continue its sequence. Counts are read from the resulting cross, so the seed's split is free.
+    const store = createTestStore(
+      { trial: { p1: "wild-w1", p2: "cavendish-c1", fungusOn: true } },
+      { rng: seededRandom("control-bar-narration") },
+    );
+    const { getByRole, region } = renderBar(store);
+    fireEvent.click(getByRole("button", { name: "Cross Plants" }));
+    const cross = store.activeTrial.crosses[0];
+    const healthy = cross.filter((p) => !p.infected).length;
+    expect(region).toHaveTextContent(
+      `Cross A1: ${cross.length} offspring, ${healthy} healthy, ${cross.length - healthy} infected. Parents locked.`,
+    );
+  });
+
+  it("composes the crosses-cap line into the creation utterance on the final cross", () => {
+    // Seed five crosses already made (locked), so the next Cross is the 6th = MAX_CROSSES.
+    const store = createTestStore({
+      trial: {
+        p1: "wild-w1",
+        p2: "cavendish-c1",
+        locked: true,
+        crosses: Array.from({ length: MAX_CROSSES - 1 }, () => [plant()]),
+      },
+    });
+    const { getByRole, region } = renderBar(store);
+    fireEvent.click(getByRole("button", { name: "Cross Plants" }));
+    // One coherent utterance: the created-cross line plus the cap — and NOT "Parents locked."
+    // (that only rides the first cross).
+    expect(region).toHaveTextContent(`Maximum of ${MAX_CROSSES} crosses reached.`);
+    expect(region).not.toHaveTextContent("Parents locked.");
+  });
+
+  it("announces 'Trial A reset.' when Reset Trial is pressed", () => {
+    const { getByRole, region } = renderBar(lockedWithCross());
+    fireEvent.click(getByRole("button", { name: "Reset Trial" }));
+    expect(region).toHaveTextContent("Trial A reset.");
   });
 });
 

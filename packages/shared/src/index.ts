@@ -4,6 +4,12 @@
 // and hooks land. See ../../../docs/infrastructure-plan.md §3 for the full intended contract.
 
 // Components
+export {
+  type AnnounceFn,
+  Announcer,
+  type AnnouncerProps,
+  useAnnounce,
+} from "./components/announcer/announcer";
 export { Button, type ButtonProps } from "./components/button/button";
 export { Checkbox, type CheckboxProps } from "./components/checkbox/checkbox";
 export {

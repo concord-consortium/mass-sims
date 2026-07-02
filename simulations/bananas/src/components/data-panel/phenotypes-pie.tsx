@@ -1,4 +1,4 @@
-import { EMPTY_STATE_LABEL } from "./constants";
+import { EMPTY_STATE_LABEL, PIE_LABEL_PREFIX } from "./constants";
 
 const PIE_WIDTH = 160;
 const PIE_HEIGHT = 90;
@@ -60,7 +60,7 @@ export function PhenotypesPie({
   if (!totals || total === 0) {
     return (
       <svg
-        aria-label="Offspring phenotypes: no data"
+        aria-label={`${PIE_LABEL_PREFIX}: no data`}
         className="phenotypes-pie"
         height={PIE_HEIGHT}
         role="img"
@@ -101,7 +101,7 @@ export function PhenotypesPie({
     return { ...s, d, lx, ly, showLabel: fraction > LABEL_MIN_FRACTION };
   });
 
-  const ariaLabel = `Offspring phenotypes for ${selectedCrossLabel}: ${healthyPct}% healthy, ${infectedPct}% infected`;
+  const ariaLabel = `${PIE_LABEL_PREFIX} for ${selectedCrossLabel}: ${healthyPct}% healthy, ${infectedPct}% infected`;
 
   return (
     <svg

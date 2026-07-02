@@ -102,7 +102,7 @@ test.describe("Per-card reset", () => {
 test.describe("About modal", () => {
   // Scenario 5: three close paths + the initial-load guard.
   test("opens via button, closes via close button and via Escape; not open on load", async () => {
-    await expect(bananas.aboutDialog).toBeHidden(); // initial load did not auto-open it
+    await expect(bananas.aboutPanel).toBeHidden(); // initial load did not auto-open it
     await bananas.openAbout();
     await bananas.closeAboutViaButton();
     await bananas.openAbout();
@@ -180,7 +180,7 @@ test.describe("Cross-row selection drives the Data panel", () => {
   // Scenario 9: selecting a cross row scopes the phenotype pie to that cross; deselecting it
   // returns the pie to the all-crosses aggregate. Two same-fungus-state crosses are sufficient to
   // exercise the scoping (fungus locks at the first cross). The pie's aria-label carries the
-  // current scope ("for cross 1" / "for cross 2" / "for all crosses"), which is the deterministic
+  // current scope ("for cross A1" / "for cross A2" / "for all crosses"), which is the deterministic
   // signal here (the exact percentages are RNG-driven).
   test("selecting a cross scopes the pie; deselecting restores the aggregate", async () => {
     await bananas.pickParents(BASELINE_CROSS.p1, BASELINE_CROSS.p2); // fungus stays off
@@ -192,10 +192,10 @@ test.describe("Cross-row selection drives the Data panel", () => {
     await expect(bananas.phenotypePie).toHaveAttribute("aria-label", /for all crosses/i);
 
     await bananas.selectCross(0);
-    await expect(bananas.phenotypePie).toHaveAttribute("aria-label", /for cross 1/i);
+    await expect(bananas.phenotypePie).toHaveAttribute("aria-label", /for cross A1/i);
 
     await bananas.selectCross(1);
-    await expect(bananas.phenotypePie).toHaveAttribute("aria-label", /for cross 2/i);
+    await expect(bananas.phenotypePie).toHaveAttribute("aria-label", /for cross A2/i);
 
     // Click the selected row again to deselect → back to the aggregate.
     await bananas.selectCross(1);

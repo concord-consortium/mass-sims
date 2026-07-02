@@ -38,6 +38,8 @@ function selectBothParents(getByRole: ReturnType<typeof render>["getByRole"]) {
   selectParent(getByRole, /Parent 2/i, "Cavendish C1");
 }
 
+const pill = () => document.querySelector(".status-pill");
+
 beforeEach(() => {
   // Standalone by default — App derives `isEmbedded = initMsg !== null`, and the real
   // useInitMessage returns null (not undefined) with no AP parent. Embedded tests override.
@@ -77,6 +79,20 @@ describe("Bananas App — info modal logging", () => {
   });
 });
 
+describe("Bananas App — live regions (F-4)", () => {
+  it("has exactly one shared polite announcer region and zero role=status regions at the cap", () => {
+    const { container, getByRole, queryAllByRole } = render(
+      <App rng={seededRandom("live-region")} />,
+    );
+    selectBothParents(getByRole);
+    // Drive to the crosses cap, where the old design had TWO role="status" regions (pill + notice).
+    for (let i = 0; i < 6; i++) fireEvent.click(getByRole("button", { name: "Cross Plants" }));
+    // Single shared announcer; the pill and both cap notices are now plain text.
+    expect(container.querySelectorAll('[aria-live="polite"]')).toHaveLength(1);
+    expect(queryAllByRole("status")).toHaveLength(0);
+  });
+});
+
 describe("Bananas App — simulation flow", () => {
   it("renders the selectors, offspring grid, and controls with NO status pill", () => {
     const { getByLabelText, getByRole, queryByRole } = render(<App />);
@@ -96,29 +112,28 @@ describe("Bananas App — simulation flow", () => {
   it("shows the cross prompt pill once both parents are selected", () => {
     const { getByRole } = render(<App />);
     selectBothParents(getByRole);
-    expect(getByRole("status")).toHaveTextContent("Click Cross Plants to see their offspring");
+    expect(pill()).toHaveTextContent("Click Cross Plants to see their offspring");
   });
 
-  it("renders the status pill as a live region (aria-live=polite) once shown", () => {
-    const { getByRole } = render(<App />);
+  it("renders the status pill", () => {
+    const { container, getByRole } = render(<App />);
     selectBothParents(getByRole);
-    expect(getByRole("status")).toHaveAttribute("aria-live", "polite");
+    const statusPill = container.querySelector(".status-pill") as HTMLElement;
+    expect(statusPill).toBeInTheDocument();
   });
 
   it("shows the fungus-active prompt pill when the Fungus switch is toggled on before crossing", () => {
     const { getByRole } = render(<App />);
     selectBothParents(getByRole);
     fireEvent.click(getByRole("switch", { name: "Fungus" }));
-    expect(getByRole("status")).toHaveTextContent(
-      "Cross plants to see their offspring · Fungus active",
-    );
+    expect(pill()).toHaveTextContent("Cross plants to see their offspring · Fungus active");
   });
 
   it("shows the crosses/offspring stats pill after a cross", () => {
     const { getByRole } = render(<App rng={seededRandom("state2")} />);
     selectBothParents(getByRole);
     fireEvent.click(getByRole("button", { name: "Cross Plants" }));
-    expect(getByRole("status")).toHaveTextContent(/Crosses:\s*1\s*·\s*Offspring:\s*\d+/);
+    expect(pill()).toHaveTextContent(/Crosses:\s*1\s*·\s*Offspring:\s*\d+/);
   });
 
   // Fungus must be toggled on before the first cross (the switch locks afterward).
@@ -127,9 +142,7 @@ describe("Bananas App — simulation flow", () => {
     selectBothParents(getByRole);
     fireEvent.click(getByRole("switch", { name: "Fungus" }));
     fireEvent.click(getByRole("button", { name: "Cross Plants" }));
-    expect(getByRole("status")).toHaveTextContent(
-      /Crosses:\s*1\s*·\s*Offspring:\s*\d+\s*·\s*Fungus active/,
-    );
+    expect(pill()).toHaveTextContent(/Crosses:\s*1\s*·\s*Offspring:\s*\d+\s*·\s*Fungus active/);
   });
 
   // Selecting a parent locks nothing yet; crossing replaces the selects with chips.
@@ -163,10 +176,10 @@ describe("Bananas App — simulation flow", () => {
 
     log.mockReset();
     fireEvent.click(getByRole("switch", { name: "Fungus" })); // on
-    expect(getByRole("status")).toHaveTextContent("Fungus active");
+    expect(pill()).toHaveTextContent("Fungus active");
     expect(getByRole("switch", { name: "Fungus" })).toBeChecked();
     fireEvent.click(getByRole("switch", { name: "Fungus" })); // off
-    expect(getByRole("status")).toHaveTextContent("Click Cross Plants to see their offspring");
+    expect(pill()).toHaveTextContent("Click Cross Plants to see their offspring");
     expect(getByRole("switch", { name: "Fungus" })).not.toBeChecked();
     fireEvent.click(getByRole("switch", { name: "Fungus" })); // on
     expect(getByRole("switch", { name: "Fungus" })).toBeChecked();
@@ -186,12 +199,12 @@ describe("Bananas App — simulation flow", () => {
     const sw = getByRole("switch", { name: "Fungus" });
     expect(sw).toHaveAttribute("aria-disabled", "true");
     expect(sw).toBeChecked();
-    expect(getByRole("status")).toHaveTextContent("Fungus active");
+    expect(pill()).toHaveTextContent("Fungus active");
 
     // Toggling the locked switch is a no-op (FungusSwitch swallows onChange while locked): fungusOn
     // stays true, so the pill still reads "Fungus active".
     fireEvent.click(sw);
-    expect(getByRole("status")).toHaveTextContent("Fungus active");
+    expect(pill()).toHaveTextContent("Fungus active");
     expect(getByRole("switch", { name: "Fungus" })).toHaveAttribute("aria-disabled", "true");
   });
 
@@ -205,7 +218,6 @@ describe("Bananas App — simulation flow", () => {
     expect(getByRole("switch", { name: "Fungus" })).toHaveAttribute("aria-disabled", "true");
     expect(getByRole("switch", { name: "Fungus" })).toBeChecked();
     expect(getByRole("button", { name: "Cross Plants" })).toHaveAttribute("aria-disabled", "true"); // at MAX_CROSSES
-    // At the cap two role="status" elements exist (pill + grid max-placeholder); target the pill.
     expect(container.querySelector(".status-pill")).toHaveTextContent("Fungus active");
   });
 
@@ -223,7 +235,7 @@ describe("Bananas App — simulation flow", () => {
     const sw = getByRole("switch", { name: "Fungus" });
     expect(sw).not.toHaveAttribute("aria-disabled");
     expect(sw).not.toBeChecked();
-    expect(getByRole("status")).toHaveTextContent("Click Cross Plants to see their offspring");
+    expect(pill()).toHaveTextContent("Click Cross Plants to see their offspring");
   });
 
   // ---- Reset Trial ----
@@ -260,11 +272,11 @@ describe("Bananas App — simulation flow", () => {
     const { getByRole } = render(<App />);
     selectBothParents(getByRole);
     fireEvent.click(getByRole("switch", { name: "Fungus" })); // on
-    expect(getByRole("status")).toHaveTextContent("Fungus active");
+    expect(pill()).toHaveTextContent("Fungus active");
 
     fireEvent.click(getByRole("button", { name: "Reset Trial" }));
     selectBothParents(getByRole); // re-select to observe the (now off) fungus state
-    expect(getByRole("status")).toHaveTextContent("Click Cross Plants to see their offspring");
+    expect(pill()).toHaveTextContent("Click Cross Plants to see their offspring");
     expect(getByRole("switch", { name: "Fungus" })).not.toBeChecked();
   });
 
@@ -388,12 +400,12 @@ describe("Bananas App — simulation flow", () => {
     selectBothParents(getByRole);
     for (let i = 0; i < 2; i++) fireEvent.click(getByRole("button", { name: "Cross Plants" }));
     // The descriptive name lives on the interactive row button (the selection target); the
-    // /^Cross \d+,/ name filter excludes the "Cross Plants" control button.
-    const rows = getAllByRole("button", { name: /^Cross \d+,/ });
+    // /^Cross [A-J]\d+,/ name filter excludes the "Cross Plants" control button.
+    const rows = getAllByRole("button", { name: /^Cross [A-J]\d+,/ });
     expect(rows).toHaveLength(2);
     for (const row of rows) {
       expect(row.getAttribute("aria-label")).toMatch(
-        /^Cross \d+, \d+ offspring, \d+ healthy, \d+ infected$/,
+        /^Cross [A-J]\d+, \d+ offspring, \d+ healthy, \d+ infected$/,
       );
     }
   });
@@ -416,7 +428,7 @@ describe("Bananas App — simulation flow", () => {
     selectBothParents(getByRole);
     fireEvent.click(getByRole("button", { name: "Cross Plants" }));
     // Select row A1 → the Data panel's pill flips into the filter chip.
-    fireEvent.click(getAllByRole("button", { name: /^Cross \d+,/ })[0]);
+    fireEvent.click(getAllByRole("button", { name: /^Cross [A-J]\d+,/ })[0]);
 
     const grid = container.querySelector(".offspring-grid") as HTMLElement;
     const row = container.querySelector(".offspring-row") as HTMLElement;
@@ -445,7 +457,7 @@ describe("Bananas App — simulation flow", () => {
     selectBothParents(getByRole);
     for (let i = 0; i < 2; i++) fireEvent.click(getByRole("button", { name: "Cross Plants" }));
     // Select row A2 → the Data panel's pill flips into the filter chip.
-    fireEvent.click(getAllByRole("button", { name: /^Cross \d+,/ })[1]);
+    fireEvent.click(getAllByRole("button", { name: /^Cross [A-J]\d+,/ })[1]);
     expect(container.querySelector(".pill-chip")).toBeInTheDocument();
 
     fireEvent.click(container.querySelector(".pill-close") as HTMLElement);
@@ -487,14 +499,14 @@ describe("Bananas App — AP saved state", () => {
 
   it("restores parents + crosses from a runtime init message's interactiveState", () => {
     useInitMessage.mockReturnValue({ mode: "runtime", interactiveState: savedState });
-    const { getByText, getByRole, getAllByRole, queryByRole } = render(<App />);
+    const { getByText, getAllByRole, queryByRole } = render(<App />);
     // Locked → parents shown as static chips, not selectors.
     expect(queryByRole("button", { name: /Parent 1/i })).not.toBeInTheDocument();
     expect(getByText("Wild W1")).toBeInTheDocument();
     expect(getByText("Cavendish C1")).toBeInTheDocument();
     // The recorded cross is restored verbatim.
     expect(getAllByRole("listitem")).toHaveLength(1);
-    expect(getByRole("status")).toHaveTextContent(/Crosses:\s*1\s*·\s*Offspring:\s*2/);
+    expect(pill()).toHaveTextContent(/Crosses:\s*1\s*·\s*Offspring:\s*2/);
   });
 
   it("does NOT restore when the init message has interactiveState: null (first session)", () => {

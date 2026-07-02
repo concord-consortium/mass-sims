@@ -181,8 +181,10 @@ export function SimulationFrame({
           <img className="partner-logo" src={ccLogo} alt="Concord Consortium" />
           {infoModalContent ? (
             <button
+              // The About panel is a `complementary` landmark, not a popup, so no aria-haspopup
+              // (that would promise a menu/listbox/dialog popup). aria-expanded still meaningfully
+              // reflects whether the region is currently shown.
               aria-expanded={infoOpen}
-              aria-haspopup="dialog"
               className="info-button"
               ref={triggerRef}
               type="button"
@@ -198,10 +200,14 @@ export function SimulationFrame({
       {children}
 
       {infoModalContent && infoOpen ? (
-        <div
+        // The About panel is a persistent, draggable, non-modal aside for use alongside the sim, so
+        // it's a `complementary` landmark, not a `dialog`. A named <aside> (aria-labelledby → its <h2>)
+        // at frame scope maps to the `complementary` role. `aria-modal` is deliberately omitted — focus
+        // is intentionally NOT trapped (see the focus-management effect above) so keyboard users can
+        // move between the panel and the rest of the frame.
+        <aside
           aria-labelledby={titleId}
           className="simulation-frame-info-modal"
-          role="dialog"
           style={{ transform: `translate(${dragOffset.x}px, ${dragOffset.y}px)` }}
           onKeyDown={(e) => {
             if (e.key === "Escape") {
@@ -248,7 +254,7 @@ export function SimulationFrame({
             </div>
             <div className="scroll-focus-ring" aria-hidden="true" />
           </div>
-        </div>
+        </aside>
       ) : null}
     </div>
   );

@@ -1,5 +1,6 @@
+import { Announcer, MAX_TRIALS_DEFAULT } from "@concord-consortium/mass-sims-shared";
 import { act, fireEvent, render } from "@testing-library/react";
-import { createElement, type ReactNode } from "react";
+import type { ReactNode } from "react";
 import { describe, expect, it, vi } from "vitest";
 
 // TrialsPanel consumes useLogEvent directly, so mock the hook (the seam it uses) while preserving the
@@ -27,9 +28,15 @@ const TRANSIENT: SimTransient = {
 };
 
 function renderPanel(store: RootStoreInstance) {
-  const wrapper = ({ children }: { children: ReactNode }) =>
-    createElement(RootStoreProvider, { store, children });
-  return render(<TrialsPanel />, { wrapper });
+  // Under the shared <Announcer> so reset / max-trials narration can be asserted (F-4).
+  const wrapper = ({ children }: { children: ReactNode }) => (
+    <RootStoreProvider store={store}>
+      <Announcer>{children}</Announcer>
+    </RootStoreProvider>
+  );
+  const utils = render(<TrialsPanel />, { wrapper });
+  const region = utils.container.querySelector('[aria-live="polite"]') as HTMLElement;
+  return { region, ...utils };
 }
 
 /** A store seeded with `count` trials (A, B, …), with A selected. */
@@ -78,12 +85,32 @@ describe("TrialsPanel — tab-like structure", () => {
     expect(tabs[1]).toHaveAttribute("aria-selected", "true");
   });
 
-  it("replaces the New card with a polite status notice at the cap", () => {
-    const { getByRole, queryByRole } = renderPanel(storeWith(10));
+  it("replaces the New card with a plain-text notice at the cap (no role=status)", () => {
+    const { container, queryByRole } = renderPanel(storeWith(10));
     expect(queryByRole("button", { name: "Add new trial" })).toBeNull();
-    const notice = getByRole("status");
-    expect(notice).toHaveAttribute("aria-live", "polite");
-    expect(notice).toHaveTextContent(/max number of trials/i);
+    // The notice is plain visible text now (F-4), not a role="status" live region.
+    expect(container.querySelector(".max-trials-notice")).toHaveTextContent(
+      /max number of trials/i,
+    );
+    expect(queryByRole("status")).not.toBeInTheDocument();
+  });
+});
+
+describe("TrialsPanel — narration (F-4)", () => {
+  it("announces the max-trials cap through the announcer when the last trial is added", () => {
+    // Start one below the cap so clicking + New creates the 10th trial and hits the cap.
+    const { getByRole, region } = renderPanel(storeWith(9));
+    fireEvent.click(getByRole("button", { name: "Add new trial" }));
+    expect(region).toHaveTextContent(`Maximum of ${MAX_TRIALS_DEFAULT} trials reached.`);
+  });
+
+  it("announces 'Trial A reset.' when a card's reset is pressed", () => {
+    // Seed A with output so its (selected-card) reset is enabled.
+    const store = storeWith(1);
+    act(() => store.activeTrial.setOutput(OUTPUT, TRANSIENT));
+    const { getByRole, region } = renderPanel(store);
+    fireEvent.click(getByRole("button", { name: "Reset trial A" }));
+    expect(region).toHaveTextContent("Trial A reset.");
   });
 });
 

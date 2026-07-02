@@ -1,12 +1,12 @@
 import { render } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
-import { EMPTY_STATE_LABEL } from "./constants";
+import { EMPTY_STATE_LABEL, PIE_LABEL_PREFIX } from "./constants";
 import { PhenotypesPie } from "./phenotypes-pie";
 
 describe("PhenotypesPie — empty state", () => {
   it("renders an SVG with role=img and the no-data aria-label", () => {
     const { getByRole } = render(<PhenotypesPie totals={null} />);
-    expect(getByRole("img", { name: "Offspring phenotypes: no data" })).toBeInTheDocument();
+    expect(getByRole("img", { name: `${PIE_LABEL_PREFIX}: no data` })).toBeInTheDocument();
   });
 
   it("shows the 'No data' label", () => {
@@ -66,7 +66,9 @@ describe("PhenotypesPie — slices", () => {
       <PhenotypesPie totals={{ healthy: 12, infected: 0 }} selectedCrossLabel="cross 2" />,
     );
     expect(
-      getByRole("img", { name: "Offspring phenotypes for cross 2: 100% healthy, 0% infected" }),
+      getByRole("img", {
+        name: `${PIE_LABEL_PREFIX} for cross 2: 100% healthy, 0% infected`,
+      }),
     ).toBeInTheDocument();
   });
 });
