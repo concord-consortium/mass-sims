@@ -190,7 +190,7 @@ export class BananasPage extends SimulationFramePage {
    * Reset the selected trial via the trials-panel reset (it overhangs the selected card). A
    * different code path from the control-bar "Reset Trial" button.
    */
-  async resetTrialViaCardOverhang(letter: string): Promise<void> {
+  async resetTrialViaPanel(letter: string): Promise<void> {
     await this.page.getByRole("button", { name: `Reset trial ${letter}`, exact: true }).click();
   }
 

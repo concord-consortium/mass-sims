@@ -92,7 +92,7 @@ test.describe("Trials-panel reset", () => {
     await bananas.crossPlants();
     await expect(bananas.offspringRows).toHaveCount(1);
 
-    await bananas.resetTrialViaCardOverhang("A");
+    await bananas.resetTrialViaPanel("A");
     await expect(bananas.offspringRows).toHaveCount(0);
     expect(await bananas.getActiveTrialLetter()).toBe("A"); // remains active
     await expect(bananas.parent1Select).toBeEnabled(); // unlocked back to the selectors

@@ -206,6 +206,21 @@ describe("TrialsPanel — reset", () => {
     // The reset narrates through the shared announcer.
     expect(region).toHaveTextContent("Trial A reset.");
   });
+
+  it("falls back to the first trial's reset when the selected letter is dangling", () => {
+    // A malformed hydrate could leave selectedTrialLetter pointing at a trial that doesn't exist.
+    // `activeTrial` falls back to the first trial; the panel reset must match — label + narrate +
+    // reset the fallback, never the dangling letter (and never a `-1` position).
+    const store = createTestStore({
+      trials: { B: { p1: "wild-w1", crosses: [[plant(false)]] } }, // only B exists
+      ui: { selectedTrialLetter: "A" }, // A isn't in the trials map → dangling
+    });
+    const { getByRole, queryByRole, region } = renderPanel(store);
+    expect(queryByRole("button", { name: "Reset trial A" })).toBeNull();
+    fireEvent.click(getByRole("button", { name: "Reset trial B" }));
+    expect(store.trials.get("B")?.canReset).toBe(false);
+    expect(region).toHaveTextContent("Trial B reset.");
+  });
 });
 
 describe("TrialsPanel — roving tabindex", () => {

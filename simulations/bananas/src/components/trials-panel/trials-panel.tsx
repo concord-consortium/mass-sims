@@ -33,9 +33,9 @@ function MaxTrialsNotice() {
 
 /**
  * The Trials column orchestrator: a single-select `role="listbox"` of trial `option`s (one shared
- * `<TrialCard role="option">` each, with a Bananas-local body), plus a `+ New` card or a "max
- * reached" notice as siblings *outside* the listbox, and a single panel-level reset button for the
- * selected trial (also outside the listbox — a listbox must not own focusable non-options).
+ * `<TrialCard>` each, with a Bananas-local body), plus a `+ New` card or a "max reached" notice as
+ * siblings *outside* the listbox, and a single panel-level reset button for the selected trial
+ * (also outside the listbox — a listbox must not own focusable non-options).
  * `observer`-wrapped so the card list, selection, and per-card aria-labels track store mutations.
  */
 export const TrialsPanel = observer(function TrialsPanel() {
@@ -44,17 +44,21 @@ export const TrialsPanel = observer(function TrialsPanel() {
   const announce = useAnnounce();
   const selectedLetter = store.ui.selectedTrialLetter;
   const listRef = useScrollSelectedTrialIntoView<HTMLDivElement>(selectedLetter);
-  // The panel reset is positioned over the selected card by index (cards are fixed-height); the
-  // CSS reads `--selected-index`. `activeTrial` is the selected trial (the only resettable one).
-  const selectedIndex = store.trialLetters.indexOf(selectedLetter);
+  // The panel reset is positioned over the selected card by index (cards are fixed-height); the CSS
+  // reads `--selected-index`. Clamp the index and derive `resetLetter` from it so a transiently
+  // dangling `selectedLetter` (a malformed hydrate, before the store's normalization fixes it)
+  // can't produce a nonsensical `-1` position or narrate/reset a letter that isn't there; both fall
+  // back to the first trial, matching `activeTrial`. In the normal case these equal the selection.
+  const selectedIndex = Math.max(0, store.trialLetters.indexOf(selectedLetter));
+  const resetLetter = store.trialLetters[selectedIndex] ?? selectedLetter;
   const activeTrial = store.activeTrial;
 
   // Reset the selected trial (the only one the panel reset targets). Emit before the reset so the
   // payload reads the trial being reset, then narrate it.
   const handleReset = () => {
-    logEvent("trial_reset", { trial: selectedLetter });
-    store.resetTrial(selectedLetter);
-    announce(`Trial ${selectedLetter} reset.`);
+    logEvent("trial_reset", { trial: resetLetter });
+    store.resetTrial(resetLetter);
+    announce(`Trial ${resetLetter} reset.`);
   };
 
   // Single funnel for every trial-selection change (card click, keyboard nav, post-add auto-select)
@@ -145,7 +149,7 @@ export const TrialsPanel = observer(function TrialsPanel() {
       {/* Panel-level reset for the selected trial — outside the listbox, positioned over the
           selected card by index via `--selected-index` (see trials-panel.scss). */}
       <TrialResetButton
-        letter={selectedLetter}
+        letter={resetLetter}
         disabled={!activeTrial.canReset}
         onReset={handleReset}
         style={{ "--selected-index": selectedIndex } as CSSProperties}
