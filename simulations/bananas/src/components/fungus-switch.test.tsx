@@ -1,4 +1,5 @@
 import { fireEvent, render } from "@testing-library/react";
+import type { ReactElement } from "react";
 import { describe, expect, it, vi } from "vitest";
 
 // FungusSwitch consumes the shared useLogEvent hook directly, so mock the hook (the seam it
@@ -9,9 +10,18 @@ vi.mock("@concord-consortium/mass-sims-shared", async (importOriginal) => ({
   useLogEvent: () => logEvent,
 }));
 
+import { Announcer } from "@concord-consortium/mass-sims-shared";
 import { FungusSwitch } from "./fungus-switch";
 
 const noop = () => {};
+
+// Renders the switch under the shared <Announcer> so its narration flows through the one polite
+// region.
+function renderInAnnouncer(ui: ReactElement) {
+  const utils = render(<Announcer>{ui}</Announcer>);
+  const region = utils.container.querySelector('[aria-live="polite"]') as HTMLElement;
+  return { ...utils, region };
+}
 
 describe("FungusSwitch", () => {
   it("renders a switch accessibly named Fungus", () => {
@@ -54,18 +64,20 @@ describe("FungusSwitch", () => {
     expect(logEvent).toHaveBeenCalledWith("fungus_set", { value: true, trial: "A" });
   });
 
-  it("announces 'Fungus introduced.' in the live region when toggled on", () => {
-    const { getByRole, container } = render(
+  it("announces 'Fungus introduced.' through the shared announcer when toggled on", () => {
+    const { getByRole, region } = renderInAnnouncer(
       <FungusSwitch isOn={false} onChange={noop} trial="A" />,
     );
     fireEvent.click(getByRole("switch", { name: "Fungus" }));
-    expect(container.querySelector(".sr-only")).toHaveTextContent("Fungus introduced.");
+    expect(region).toHaveTextContent("Fungus introduced.");
   });
 
-  it("announces 'Fungus removed.' in the live region when toggled off", () => {
-    const { getByRole, container } = render(<FungusSwitch isOn={true} onChange={noop} trial="A" />);
+  it("announces 'Fungus removed.' through the shared announcer when toggled off", () => {
+    const { getByRole, region } = renderInAnnouncer(
+      <FungusSwitch isOn={true} onChange={noop} trial="A" />,
+    );
     fireEvent.click(getByRole("switch", { name: "Fungus" }));
-    expect(container.querySelector(".sr-only")).toHaveTextContent("Fungus removed.");
+    expect(region).toHaveTextContent("Fungus removed.");
   });
 
   it("toggles once when Enter is pressed", () => {

@@ -291,6 +291,16 @@ Wrappers never re-export react-aria-components directly. Sims import controls on
 
 The first wrapper, `<Button>`, ships in Phase 2c along with `useLogEvent`; `<Slider>`, `<NumberField>`, `<Switch>`, `<Select>`, and `<Checkbox>` followed in Phase 3 (along with the hand-rolled `<LineChart>` / `<Histogram>`, which are SVG components rather than control wrappers).
 
+### Accessibility conventions & known gaps (MAS-25 audit)
+
+The MAS-25 ARIA audit settled a few cross-cutting conventions and recorded some deferred robustness gaps in the shared controls. Captured here so they aren't re-litigated:
+
+- **Disabled-control policy is intentionally split.** Controls that must stay keyboard-discoverable while inert use **`aria-disabled` + a JS activation guard** (they keep their tab stop): the shared `<Button>`, the `<TrialCard>` reset, and the Bananas fungus switch. The form-input wrappers — `<Select>`, `<Slider>`, `<Switch>`, `<Checkbox>`, `<NumberField>` — keep react-aria's **native `disabled`** (dropped from the tab order). This mirrors the demo/spec and is deliberate; don't "unify" it into an inconsistency. (The parent `<Select>`'s native-disabled path is effectively unreachable anyway — locking swaps it for a static `.parent-chip`.)
+- **Parent select uses the react-aria APG pattern, by design.** The parent dropdown delegates to react-aria's `Select` — a `<button aria-haspopup="listbox">` trigger plus a `role="listbox"`/`role="option"` popover with roving DOM focus — rather than the demo's hand-rolled `role="combobox"` + `aria-activedescendant`. Both are valid WAI-ARIA APG patterns ("collapsible listbox" vs "select-only combobox"); the react-aria one is battle-tested and keyboard-/SR-complete, so it's preferred. Documented at the top of [`select.tsx`](../packages/shared/src/components/select/select.tsx).
+- **Deferred robustness gaps, to revisit when a consumer needs them:**
+  - **Nameless-if-unnamed controls.** `<NumberField>`, `<Select>`, `<Slider>`, `<LineChart>`, and `<Histogram>` make their `label`/`ariaLabel` optional with **no `aria-label` fallback** — omitting it yields an unnamed control / unnamed `role="img"`. Every current consumer supplies a name; consider requiring one (or falling back) when a consumer doesn't.
+  - **No error/validation association exists yet.** There's no validation UI anywhere, so `aria-describedby` / `role="alert"` / `aria-invalid` wiring is N/A today. `<NumberField>` clamps `min`/`max` silently. If/when a sim adds validation, wire this up.
+
 ### What's deliberately *not* in this section
 
 Layout details, dimensions (1044/1024/989/767 × 562), the three-column flex behavior, chrome suppression when embedded, scrolling rules, touch interaction specifics, color palette, region visual styling — all in the [UI Design Plan](./ui-design-plan.md).

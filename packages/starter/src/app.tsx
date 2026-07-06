@@ -1,5 +1,6 @@
 import { setInteractiveState, useInitMessage } from "@concord-consortium/lara-interactive-api";
 import {
+  Announcer,
   SimulationFrame,
   TRIAL_LETTERS_DEFAULT,
   useReloadWarning,
@@ -146,44 +147,49 @@ export const App = observer(function App() {
 
   return (
     <RootStoreProvider store={rootStore}>
-      <SimulationFrame
-        simTitle="Random Walk"
-        tagline="An interactive starter simulation"
-        infoModalContent={
-          <p>
-            This is the Mass Sims starter simulation — a small random-walk model that serves as the
-            template for new sims. Adjust the parameters, run trials, and observe how the population
-            disperses over time.
-          </p>
-        }
-      >
-        <SimulationFrame.Trials>
-          <TrialsPanel />
-        </SimulationFrame.Trials>
+      {/* One shared polite live region for the sim's narration. For now it carries the
+          trials-panel reset / max-trials-cap announcements; future narration should route
+          through the same channel. */}
+      <Announcer>
+        <SimulationFrame
+          simTitle="Random Walk"
+          tagline="An interactive starter simulation"
+          infoModalContent={
+            <p>
+              This is the Mass Sims starter simulation — a small random-walk model that serves as
+              the template for new sims. Adjust the parameters, run trials, and observe how the
+              population disperses over time.
+            </p>
+          }
+        >
+          <SimulationFrame.Trials>
+            <TrialsPanel />
+          </SimulationFrame.Trials>
 
-        <SimulationFrame.Simulation instruction="Choose parameters, then press Play">
-          {/*
+          <SimulationFrame.Simulation instruction="Choose parameters, then press Play">
+            {/*
             The `key` forces <SimulationView> to remount whenever the selected trial changes OR the
             active trial's output transitions between empty and done. This matters because
             <SimulationView>'s `useModelState` only consumes initial input values on MOUNT — without
             the remount, switching trials or resetting would leave stale per-frame transient state.
             Sourcing the key from store reads is fine; dropping it is a stale-input bug.
           */}
-          <SimulationView
-            key={`${selectedLetter}:${activeTrial.output ? "done" : "empty"}`}
-            trial={activeTrial}
-            trialLabel={selectedLetter}
-            onInputChange={(input) => activeTrial.setInput(input)}
-            onComplete={(output, finalTransient) => activeTrial.setOutput(output, finalTransient)}
-            onReset={() => rootStore.resetTrial()}
-            onProgress={handleProgress}
-          />
-        </SimulationFrame.Simulation>
+            <SimulationView
+              key={`${selectedLetter}:${activeTrial.output ? "done" : "empty"}`}
+              trial={activeTrial}
+              trialLabel={selectedLetter}
+              onInputChange={(input) => activeTrial.setInput(input)}
+              onComplete={(output, finalTransient) => activeTrial.setOutput(output, finalTransient)}
+              onReset={() => rootStore.resetTrial()}
+              onProgress={handleProgress}
+            />
+          </SimulationFrame.Simulation>
 
-        <SimulationFrame.Data>
-          <DataPanel trial={activeTrial} liveSeries={liveSeries} />
-        </SimulationFrame.Data>
-      </SimulationFrame>
+          <SimulationFrame.Data>
+            <DataPanel trial={activeTrial} liveSeries={liveSeries} />
+          </SimulationFrame.Data>
+        </SimulationFrame>
+      </Announcer>
     </RootStoreProvider>
   );
 });

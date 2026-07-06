@@ -30,7 +30,7 @@ test("About modal: opens via button, closes via close button, closes via Escape"
 });
 
 test("About modal: not open on initial load", async () => {
-  await expect(bananas.aboutDialog).toBeHidden();
+  await expect(bananas.aboutPanel).toBeHidden();
 });
 
 test("Trial A is seeded and selected on load", async () => {

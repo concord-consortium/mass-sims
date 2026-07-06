@@ -1,4 +1,9 @@
-import { smoothScrollIntoView, useScrollFocusRing } from "@concord-consortium/mass-sims-shared";
+import {
+  smoothScrollIntoView,
+  type TrialLetter,
+  useAnnounce,
+  useScrollFocusRing,
+} from "@concord-consortium/mass-sims-shared";
 import clsx from "clsx";
 import { observer } from "mobx-react-lite";
 import { type KeyboardEvent, type RefObject, useEffect, useState } from "react";
@@ -52,6 +57,7 @@ interface OffspringListProps {
   trial: TrialModelInstance;
   activeCross: number | null;
   selectCross: (idx: number | null) => void;
+  trialLetter: TrialLetter;
 }
 
 /**
@@ -69,8 +75,10 @@ const OffspringList = observer(function OffspringList({
   trial,
   activeCross,
   selectCross,
+  trialLetter,
 }: OffspringListProps) {
   const count = trial.crosses.length;
+  const announce = useAnnounce();
 
   // Roving focus index: which row carries tabIndex={0}. Defaults to the selected cross, else the
   // first row. Independent of selection because arrow nav moves focus without selecting.
@@ -129,7 +137,21 @@ const OffspringList = observer(function OffspringList({
         const healthy = plants.filter((p) => !p.infected).length;
         const infected = plants.length - healthy;
         const selected = activeCross === gi;
-        const toggle = () => selectCross(selected ? null : gi);
+        const toggle = () => {
+          if (selected) {
+            selectCross(null);
+            announce("All crosses selected");
+          } else {
+            selectCross(gi);
+            // Percentages match the pie's rounding (healthy rounded, infected = remainder).
+            const total = plants.length;
+            const healthyPct = total === 0 ? 0 : Math.round((healthy / total) * 100);
+            const infectedPct = total === 0 ? 0 : 100 - healthyPct;
+            announce(
+              `Cross ${trialLetter}${gi + 1}: ${healthyPct}% healthy, ${infectedPct}% infected`,
+            );
+          }
+        };
 
         return (
           <li
@@ -138,7 +160,7 @@ const OffspringList = observer(function OffspringList({
             className={clsx("offspring-row", selected && "offspring-row--selected")}
           >
             <button
-              aria-label={`Cross ${gi + 1}, ${plants.length} offspring, ${healthy} healthy, ${infected} infected`}
+              aria-label={`Cross ${trialLetter}${gi + 1}, ${plants.length} offspring, ${healthy} healthy, ${infected} infected`}
               aria-pressed={selected}
               className="offspring-row-button"
               type="button"
@@ -153,7 +175,7 @@ const OffspringList = observer(function OffspringList({
               }}
             >
               <div className="offspring-row-label">
-                <span className="offspring-row-name">{`A${gi + 1}`}</span>
+                <span className="offspring-row-name">{`${trialLetter}${gi + 1}`}</span>
                 <span className="offspring-row-count">{`(${plants.length})`}</span>
               </div>
               <div className="offspring-row-plants">
@@ -193,10 +215,11 @@ function renderOffspringGrid(
   trial: TrialModelInstance,
   activeCross: number | null,
   selectCross: (idx: number | null) => void,
+  trialLetter: TrialLetter,
 ) {
   const bothParentsSelected = !!(trial.p1 && trial.p2);
   const fungusMarker = trial.fungusOn ? (
-    <div className="fungus-marker" role="presentation">
+    <div className="fungus-marker">
       <span className="fungus-marker-label">
         <FungusAddedIcon className="fungus-marker-icon" aria-hidden="true" />
         Fungus introduced
@@ -207,14 +230,18 @@ function renderOffspringGrid(
   return (
     <>
       {fungusMarker}
-      <OffspringList trial={trial} activeCross={activeCross} selectCross={selectCross} />
+      <OffspringList
+        trial={trial}
+        activeCross={activeCross}
+        selectCross={selectCross}
+        trialLetter={trialLetter}
+      />
       {bothParentsSelected && trial.crosses.length === 0 ? (
         <p className="offspring-grid-placeholder">Each cross will produce 5–20 offspring.</p>
       ) : null}
       {trial.crosses.length >= MAX_CROSSES ? (
-        <div className="offspring-grid-max" role="status" aria-live="polite">
-          Max number of crosses reached
-        </div>
+        // The cap is narrated once, composed into the cross-creation utterance, through the shared <Announcer>.
+        <div className="offspring-grid-max">Max number of crosses reached</div>
       ) : null}
     </>
   );
@@ -256,11 +283,7 @@ export const SimulationPanel = observer(function SimulationPanel({
 
         {pillContent ? (
           <div className="status-pill-wrap">
-            <div
-              className={clsx("status-pill", pillCondensable && "status-pill--condensable")}
-              role="status"
-              aria-live="polite"
-            >
+            <div className={clsx("status-pill", pillCondensable && "status-pill--condensable")}>
               {pillContent}
             </div>
           </div>
@@ -274,7 +297,12 @@ export const SimulationPanel = observer(function SimulationPanel({
           `.offspring-row` and appears in cross-index order (row 0 is A1, row 1 is A2, …).
         */}
           <section className="offspring-grid scroll-region" ref={gridCallbackRef}>
-            {renderOffspringGrid(trial, activeCross, (idx) => rootStore.ui.selectCross(idx))}
+            {renderOffspringGrid(
+              trial,
+              activeCross,
+              (idx) => rootStore.ui.selectCross(idx),
+              rootStore.ui.selectedTrialLetter,
+            )}
           </section>
           <div className="scroll-focus-ring" aria-hidden="true" />
         </div>

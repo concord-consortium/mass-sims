@@ -3,8 +3,9 @@ import { expect, type Locator, type Page } from "@playwright/test";
 /**
  * Page object for the shared `<SimulationFrame>` chrome that every sim renders
  * (packages/shared/src/components/simulation-frame). Holds locators + actions for the parts
- * common to all sims: the header (title, tagline, About button), the About dialog and its
- * close paths, and the three named slot regions (Trials / Simulation / Data).
+ * common to all sims: the header (title, tagline, About button), the About panel (a
+ * `complementary` landmark) and its close paths, and the three named slot regions
+ * (Trials / Simulation / Data).
  *
  * There is deliberately NO `goto()`: the base chrome has no canonical URL, so navigation lives
  * only on per-sim subclasses, which read their URL from the sims registry via getSimUrl(name).
@@ -32,19 +33,22 @@ export class SimulationFramePage {
     return this.header.locator(".tagline");
   }
 
-  /** The header "About" button that toggles the info dialog. */
+  /** The header "About" button that toggles the About info panel. */
   get aboutButton(): Locator {
     return this.page.getByRole("button", { name: /about/i });
   }
 
-  /** The About info panel (role="dialog"); only present in the DOM while open. */
-  get aboutDialog(): Locator {
-    return this.page.getByRole("dialog");
+  /**
+   * The About info panel — a `complementary` landmark (not a dialog), named by its "About the …
+   * Simulation" heading; only present in the DOM while open.
+   */
+  get aboutPanel(): Locator {
+    return this.page.getByRole("complementary", { name: /About the .* Simulation/ });
   }
 
-  /** The close ("✕") button inside the About dialog (aria-label "Close"). */
+  /** The close ("✕") button inside the About panel (aria-label "Close"). */
   get closeAboutButton(): Locator {
-    return this.aboutDialog.getByRole("button", { name: "Close" });
+    return this.aboutPanel.getByRole("button", { name: "Close" });
   }
 
   /** The Trials slot region (aria-label "Trials"). */
@@ -71,7 +75,7 @@ export class SimulationFramePage {
     return this.trialsSlot.locator(".content");
   }
 
-  /** The About dialog's scrollable body (`.modal-body`), a `useScrollFocusRing` scroll region. */
+  /** The About panel's scrollable body (`.modal-body`), a `useScrollFocusRing` scroll region. */
   get modalBody(): Locator {
     return this.page.locator(".modal-body");
   }
@@ -88,17 +92,17 @@ export class SimulationFramePage {
 
   async openAbout(): Promise<void> {
     await this.aboutButton.click();
-    await expect(this.aboutDialog).toBeVisible();
+    await expect(this.aboutPanel).toBeVisible();
   }
 
   async closeAboutViaButton(): Promise<void> {
     await this.closeAboutButton.click();
-    await expect(this.aboutDialog).toBeHidden();
+    await expect(this.aboutPanel).toBeHidden();
   }
 
   async closeAboutViaEscape(): Promise<void> {
     await this.press("Escape");
-    await expect(this.aboutDialog).toBeHidden();
+    await expect(this.aboutPanel).toBeHidden();
   }
 
   /** Press a key on the keyboard (acts on the focused element). Keeps `page` encapsulated. */

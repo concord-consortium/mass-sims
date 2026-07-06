@@ -168,6 +168,9 @@ function ParentSlot({ label, value, isLocked, onSelect, action, actionParams }: 
       </div>
     );
   }
+  // The parent dropdown uses the shared react-aria `<Select>` (button + role="listbox"/"option"),
+  // not the demo's hand-rolled role="combobox" + aria-activedescendant — an intentional, accepted
+  // deviation. Rationale + the WAI-ARIA pattern comparison live in select.tsx's docstring.
   return (
     <Select<ParentId>
       label={label}

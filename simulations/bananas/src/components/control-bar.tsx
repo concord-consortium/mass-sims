@@ -1,9 +1,10 @@
-import { Button, useLogEvent } from "@concord-consortium/mass-sims-shared";
+import { Button, useAnnounce, useLogEvent } from "@concord-consortium/mass-sims-shared";
 import { observer } from "mobx-react-lite";
 import type { FunctionComponent, SVGProps } from "react";
 
 import CrossIcon from "../assets/icons/cross.svg?react";
 import ResetIcon from "../assets/icons/reset.svg?react";
+import { MAX_CROSSES } from "../model/genetics";
 import { useStores } from "../stores/root-store";
 import { FungusSwitch } from "./fungus-switch";
 
@@ -28,6 +29,7 @@ function ControlButton({ label, Icon, isDisabled, onPress }: ControlButtonProps)
 export const ControlBar = observer(function ControlBar() {
   const { activeTrial, resetTrial, ui } = useStores();
   const logEvent = useLogEvent();
+  const announce = useAnnounce();
 
   const handleCross = () => {
     const beforeLen = activeTrial.crosses.length;
@@ -42,19 +44,22 @@ export const ControlBar = observer(function ControlBar() {
     const offspring = lastCross?.length ?? 0;
     const healthy = lastCross?.filter((p) => !p.infected).length ?? 0;
     const infected = offspring - healthy;
-    logEvent("plants_crossed", {
-      trial: ui.selectedTrialLetter,
-      generation,
-      offspring,
-      healthy,
-      infected,
-    });
+    const trial = ui.selectedTrialLetter;
+    logEvent("plants_crossed", { trial, generation, offspring, healthy, infected });
+    // Narrate the created cross. Same-event lines are composed into ONE utterance: the first cross
+    // locks the parents + fungus, and the last cross hits the crosses cap — both are appended here
+    // rather than issued as separate announce() calls, so a screen reader hears one coherent line.
+    let message = `Cross ${trial}${generation}: ${offspring} offspring, ${healthy} healthy, ${infected} infected.`;
+    if (beforeLen === 0) message += " Parents locked.";
+    if (generation === MAX_CROSSES) message += ` Maximum of ${MAX_CROSSES} crosses reached.`;
+    announce(message);
   };
 
   const handleReset = () => {
     const trial = ui.selectedTrialLetter;
     logEvent("trial_reset", { trial });
     resetTrial();
+    announce(`Trial ${trial} reset.`);
   };
 
   return (

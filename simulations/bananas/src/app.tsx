@@ -1,5 +1,6 @@
 import { setInteractiveState, useInitMessage } from "@concord-consortium/lara-interactive-api";
 import {
+  Announcer,
   prefersReducedMotion,
   SimulationFrame,
   TRIAL_LETTERS_DEFAULT as TRIAL_LETTERS,
@@ -147,22 +148,29 @@ export const App = observer(function App({ rng = Math.random }: AppProps = {}) {
 
   return (
     <RootStoreProvider store={rootStore}>
-      <SimulationFrame
-        simTitle="Bananas"
-        tagline="An interactive genetics simulation"
-        infoModalContent={<AboutContent />}
-        onInfoOpenChange={handleInfoOpenChange}
-      >
-        <SimulationFrame.Trials>
-          <TrialsPanel />
-        </SimulationFrame.Trials>
-        <SimulationFrame.Simulation instruction="Select two parents to begin">
-          <SimulationPanel gridRef={gridRef} />
-        </SimulationFrame.Simulation>
-        <SimulationFrame.Data>
-          <BananasDataPanel onPillChipClick={onPillChipClick} onPillCloseClick={onPillCloseClick} />
-        </SimulationFrame.Data>
-      </SimulationFrame>
+      {/* One shared polite live region for all Bananas narration. Wraps the frame so every panel
+          is a descendant. */}
+      <Announcer>
+        <SimulationFrame
+          simTitle="Bananas"
+          tagline="An interactive genetics simulation"
+          infoModalContent={<AboutContent />}
+          onInfoOpenChange={handleInfoOpenChange}
+        >
+          <SimulationFrame.Trials>
+            <TrialsPanel />
+          </SimulationFrame.Trials>
+          <SimulationFrame.Simulation instruction="Select two parents to begin">
+            <SimulationPanel gridRef={gridRef} />
+          </SimulationFrame.Simulation>
+          <SimulationFrame.Data>
+            <BananasDataPanel
+              onPillChipClick={onPillChipClick}
+              onPillCloseClick={onPillCloseClick}
+            />
+          </SimulationFrame.Data>
+        </SimulationFrame>
+      </Announcer>
     </RootStoreProvider>
   );
 });

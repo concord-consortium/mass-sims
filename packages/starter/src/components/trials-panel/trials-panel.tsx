@@ -1,7 +1,9 @@
 import {
+  MAX_TRIALS_DEFAULT,
   TRIAL_LETTERS_DEFAULT,
   TrialCard,
   type TrialLetter,
+  useAnnounce,
   useLogEvent,
   useScrollSelectedTrialIntoView,
 } from "@concord-consortium/mass-sims-shared";
@@ -25,11 +27,9 @@ function NewTrialCard({ onAdd }: { onAdd: () => void }) {
 
 /** Shown in place of the `+ New` card once all MAX_TRIALS trials exist. */
 function MaxTrialsNotice() {
-  return (
-    <div className="max-trials-notice" role="status" aria-live="polite">
-      Max number of trials reached
-    </div>
-  );
+  // Plain visible text — no role="status"/aria-live. The cap is narrated once via the shared
+  // <Announcer> from handleAdd when the last trial is created.
+  return <div className="max-trials-notice">Max number of trials reached</div>;
 }
 
 /**
@@ -47,6 +47,7 @@ function MaxTrialsNotice() {
 export const TrialsPanel = observer(function TrialsPanel() {
   const store = useStores();
   const logEvent = useLogEvent();
+  const announce = useAnnounce();
   const selectedLetter = store.ui.selectedTrialLetter;
   const listRef = useScrollSelectedTrialIntoView<HTMLDivElement>(selectedLetter);
 
@@ -70,6 +71,8 @@ export const TrialsPanel = observer(function TrialsPanel() {
     // distinct actions).
     logEvent("trial_added", { trial: newLetter });
     navigateTo(newLetter);
+    // Announce the trials cap when this add was the last one (nothing else narrates in this handler).
+    if (!store.canAddTrial) announce(`Maximum of ${MAX_TRIALS_DEFAULT} trials reached.`);
   };
 
   // Roving-tabindex keyboard navigation, delegated to the tablist. Up/Down move focus AND selection
@@ -135,6 +138,7 @@ export const TrialsPanel = observer(function TrialsPanel() {
               // the reset so the payload reads the trial being reset.
               logEvent("trial_reset", { trial: letter });
               store.resetTrial(letter);
+              announce(`Trial ${letter} reset.`);
             }}
           >
             <TrialCardBody trial={trial} />

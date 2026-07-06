@@ -1,6 +1,6 @@
-import { useLogEvent } from "@concord-consortium/mass-sims-shared";
+import { useAnnounce, useLogEvent } from "@concord-consortium/mass-sims-shared";
 import clsx from "clsx";
-import { useLayoutEffect, useRef, useState } from "react";
+import { useLayoutEffect, useRef } from "react";
 import { SwitchButton, SwitchField } from "react-aria-components";
 import FungusAddedIcon from "../assets/icons/fungus-added.svg?react";
 
@@ -18,12 +18,12 @@ export interface FungusSwitchProps {
  * Bananas-local Fungus toggle, built on react-aria-components' SwitchField + SwitchButton.
  * Emits `fungus_set` with the new boolean on toggle. The "Off"/"On" text and icon are
  * decorative (aria-hidden): the accessible name is the visible "Fungus" label and the on/off
- * value comes from the switch role's checked state. A visually-hidden live region announces
- * "Fungus introduced." / "Fungus removed." on toggle.
+ * value comes from the switch role's checked state. Toggling narrates "Fungus introduced." /
+ * "Fungus removed." through the shared <Announcer>.
  */
 export function FungusSwitch({ isOn, isDisabled = false, onChange, trial }: FungusSwitchProps) {
   const logEvent = useLogEvent();
-  const [announcement, setAnnouncement] = useState("");
+  const announce = useAnnounce();
   const inputRef = useRef<HTMLInputElement>(null);
   // Mark the underlying role="switch" input aria-disabled when locked rather than passing
   // isDisabled to SwitchField (which renders a native `disabled` input, dropping it from the tab
@@ -43,48 +43,41 @@ export function FungusSwitch({ isOn, isDisabled = false, onChange, trial }: Fung
     // it can't toggle — no flicker.
     if (isDisabled) return;
     logEvent("fungus_set", { value, trial });
-    setAnnouncement(value ? "Fungus introduced." : "Fungus removed.");
+    announce(value ? "Fungus introduced." : "Fungus removed.");
     onChange(value);
   };
   return (
-    <>
-      <SwitchField
-        className={clsx("fungus-switch", isDisabled && "disabled")}
-        isSelected={isOn}
-        inputRef={inputRef}
-        onChange={handleChange}
-        onKeyDown={(e) => {
-          // react-aria toggles on Space (native checkbox) but not Enter; add Enter to match the
-          // demo. RAC's SwitchButton doesn't forward onKeyDown, so handle it here on the container
-          // — the switch input is the only focusable descendant, so the event always comes from it.
-          // Ignore auto-repeats so a held key doesn't oscillate the toggle (native Space doesn't repeat).
-          if (e.key === "Enter" && !e.repeat && !isDisabled) {
-            e.preventDefault();
-            handleChange(!isOn);
-          }
-        }}
-      >
-        <SwitchButton className="fungus-switch-button">
-          <FungusAddedIcon className="fungus-switch-icon" aria-hidden="true" />
-          <span className="fungus-switch-label">Fungus</span>
-          <span className="fungus-switch-hit">
-            <span className={clsx("fungus-switch-state", !isOn && "active")} aria-hidden="true">
-              Off
-            </span>
-            <span className={clsx("fungus-switch-track", isOn && "on")}>
-              <span className="fungus-switch-thumb" />
-            </span>
-            <span className={clsx("fungus-switch-state", isOn && "active")} aria-hidden="true">
-              On
-            </span>
+    <SwitchField
+      className={clsx("fungus-switch", isDisabled && "disabled")}
+      isSelected={isOn}
+      inputRef={inputRef}
+      onChange={handleChange}
+      onKeyDown={(e) => {
+        // react-aria toggles on Space (native checkbox) but not Enter; add Enter to match the
+        // demo. RAC's SwitchButton doesn't forward onKeyDown, so handle it here on the container
+        // — the switch input is the only focusable descendant, so the event always comes from it.
+        // Ignore auto-repeats so a held key doesn't oscillate the toggle (native Space doesn't repeat).
+        if (e.key === "Enter" && !e.repeat && !isDisabled) {
+          e.preventDefault();
+          handleChange(!isOn);
+        }
+      }}
+    >
+      <SwitchButton className="fungus-switch-button">
+        <FungusAddedIcon className="fungus-switch-icon" aria-hidden="true" />
+        <span className="fungus-switch-label">Fungus</span>
+        <span className="fungus-switch-hit">
+          <span className={clsx("fungus-switch-state", !isOn && "active")} aria-hidden="true">
+            Off
           </span>
-        </SwitchButton>
-      </SwitchField>
-      {/* aria-live without role="status" so toggles are announced without colliding with the
-          status pill's own role="status". */}
-      <div className="sr-only" aria-live="polite">
-        {announcement}
-      </div>
-    </>
+          <span className={clsx("fungus-switch-track", isOn && "on")}>
+            <span className="fungus-switch-thumb" />
+          </span>
+          <span className={clsx("fungus-switch-state", isOn && "active")} aria-hidden="true">
+            On
+          </span>
+        </span>
+      </SwitchButton>
+    </SwitchField>
   );
 }

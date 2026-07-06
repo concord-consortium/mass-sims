@@ -18,7 +18,13 @@ import { App } from "../../app";
 import type { OffspringPlant } from "../../model/genetics";
 import { type RootStoreInstance, RootStoreProvider } from "../../stores/root-store";
 import { createTestStore } from "../../stores/test-helpers";
-import { LEGEND_DASH, LEGEND_HEALTHY, LEGEND_INFECTED } from "./constants";
+import {
+  BAR_LABEL_PREFIX,
+  LEGEND_DASH,
+  LEGEND_HEALTHY,
+  LEGEND_INFECTED,
+  PIE_LABEL_PREFIX,
+} from "./constants";
 import { BananasDataPanel } from "./data-panel";
 
 function plant(infected: boolean): OffspringPlant {
@@ -94,10 +100,8 @@ describe("BananasDataPanel — accessibility", () => {
 
   it("exposes both charts as labeled images with their empty-state descriptions", () => {
     const { getByRole } = renderPanel();
-    expect(getByRole("img", { name: "Offspring phenotypes: no data" })).toBeInTheDocument();
-    expect(
-      getByRole("img", { name: "Fungus resistance over crosses: no data" }),
-    ).toBeInTheDocument();
+    expect(getByRole("img", { name: `${PIE_LABEL_PREFIX}: no data` })).toBeInTheDocument();
+    expect(getByRole("img", { name: `${BAR_LABEL_PREFIX}: no data` })).toBeInTheDocument();
   });
 
   it("orders every legend Healthy → Infected in the DOM (reading-order convention)", () => {
@@ -156,7 +160,9 @@ describe("BananasDataPanel — pie + legend wiring (MAS-12)", () => {
     );
     const { getByRole } = renderPanel(store);
     expect(
-      getByRole("img", { name: "Offspring phenotypes for cross 1: 100% healthy, 0% infected" }),
+      getByRole("img", {
+        name: `${PIE_LABEL_PREFIX} for cross A1: 100% healthy, 0% infected`,
+      }),
     ).toBeInTheDocument();
   });
 });

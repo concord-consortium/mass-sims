@@ -59,7 +59,12 @@ describe("SimulationFrame", () => {
       </SimulationFrame>,
     );
     // The button's accessible name is the text 'About' (icon is decorative aria-hidden).
-    expect(getByRole("button", { name: "About" })).toBeInTheDocument();
+    const about = getByRole("button", { name: "About" });
+    expect(about).toBeInTheDocument();
+    // The About panel is a `complementary` landmark, not a popup, so the trigger must NOT advertise
+    // aria-haspopup; aria-expanded still reflects the region's shown/hidden state.
+    expect(about).not.toHaveAttribute("aria-haspopup");
+    expect(about).toHaveAttribute("aria-expanded", "false");
   });
 
   it("renders each slot's children inside a titled region", () => {
@@ -159,7 +164,7 @@ describe("SimulationFrame", () => {
       </SimulationFrame>,
     );
     expect(getByRole("button", { name: /about/i })).toBeInTheDocument();
-    expect(queryByRole("dialog")).not.toBeInTheDocument();
+    expect(queryByRole("complementary")).not.toBeInTheDocument();
   });
 
   it("opens the modal with the info content when the About button is clicked", () => {
@@ -171,7 +176,7 @@ describe("SimulationFrame", () => {
       </SimulationFrame>,
     );
     fireEvent.click(getByRole("button", { name: /about/i }));
-    expect(getByRole("dialog")).toBeInTheDocument();
+    expect(getByRole("complementary")).toBeInTheDocument();
     expect(getByText("about this sim")).toBeInTheDocument();
   });
 
@@ -220,9 +225,11 @@ describe("SimulationFrame", () => {
       </SimulationFrame>,
     );
     fireEvent.click(getByRole("button", { name: /about/i }));
-    // The dialog's accessible name comes from its heading, derived from simTitle.
+    // The complementary region's accessible name comes from its heading, derived from simTitle.
     expect(getByRole("heading", { name: "About the Bananas Simulation" })).toBeInTheDocument();
-    expect(getByRole("dialog", { name: "About the Bananas Simulation" })).toBeInTheDocument();
+    expect(
+      getByRole("complementary", { name: "About the Bananas Simulation" }),
+    ).toBeInTheDocument();
   });
 
   it("closes the modal via the close button", () => {
@@ -235,7 +242,7 @@ describe("SimulationFrame", () => {
     );
     fireEvent.click(getByRole("button", { name: /about/i }));
     fireEvent.click(getByRole("button", { name: /close/i }));
-    expect(queryByRole("dialog")).not.toBeInTheDocument();
+    expect(queryByRole("complementary")).not.toBeInTheDocument();
   });
 
   it("renders the About panel inside the frame, anchored top-right with no backdrop scrim", () => {
@@ -247,13 +254,13 @@ describe("SimulationFrame", () => {
       </SimulationFrame>,
     );
     fireEvent.click(getByRole("button", { name: /about/i }));
-    const dialog = getByRole("dialog");
-    // No full-screen scrim wraps the dialog — the sim content behind it stays interactive.
+    const panel = getByRole("complementary");
+    // No full-screen scrim wraps the panel — the sim content behind it stays interactive.
     expect(container.querySelector(".simulation-frame-info-overlay")).toBeNull();
     // The panel lives INSIDE the frame so its `position: absolute` anchors to the frame
     // (which is `position: relative`), not the page — keeping it placed per-frame.
     const frame = container.querySelector(".simulation-frame");
-    expect(frame?.contains(dialog)).toBe(true);
+    expect(frame?.contains(panel)).toBe(true);
   });
 
   it("renders a draggable header handle on the About panel", () => {
@@ -280,7 +287,7 @@ describe("SimulationFrame", () => {
     fireEvent.click(getByRole("button", { name: /about/i }));
     // Drag position is a transform offset reset to 0,0 on each open, so the panel always
     // reappears at its CSS-anchored default rather than wherever it was last dragged.
-    expect(getByRole("dialog")).toHaveStyle({ transform: "translate(0px, 0px)" });
+    expect(getByRole("complementary")).toHaveStyle({ transform: "translate(0px, 0px)" });
   });
 
   it("toggles the About panel closed when the About button is clicked again", () => {
@@ -293,10 +300,10 @@ describe("SimulationFrame", () => {
     );
     const aboutButton = getByRole("button", { name: /about/i });
     fireEvent.click(aboutButton);
-    expect(getByRole("dialog")).toBeInTheDocument();
+    expect(getByRole("complementary")).toBeInTheDocument();
     // Clicking About again closes the open panel (matches the demo's toggle behavior).
     fireEvent.click(aboutButton);
-    expect(queryByRole("dialog")).not.toBeInTheDocument();
+    expect(queryByRole("complementary")).not.toBeInTheDocument();
   });
 
   it("nudges the About panel with Alt+Arrow keyboard dragging", () => {
@@ -308,12 +315,12 @@ describe("SimulationFrame", () => {
       </SimulationFrame>,
     );
     fireEvent.click(getByRole("button", { name: /about/i }));
-    const dialog = getByRole("dialog");
+    const panel = getByRole("complementary");
     // Alt+ArrowRight moves +10px on x; Alt+Shift+ArrowDown then adds +40px on y.
-    fireEvent.keyDown(dialog, { key: "ArrowRight", altKey: true });
-    expect(dialog).toHaveStyle({ transform: "translate(10px, 0px)" });
-    fireEvent.keyDown(dialog, { key: "ArrowDown", altKey: true, shiftKey: true });
-    expect(dialog).toHaveStyle({ transform: "translate(10px, 40px)" });
+    fireEvent.keyDown(panel, { key: "ArrowRight", altKey: true });
+    expect(panel).toHaveStyle({ transform: "translate(10px, 0px)" });
+    fireEvent.keyDown(panel, { key: "ArrowDown", altKey: true, shiftKey: true });
+    expect(panel).toHaveStyle({ transform: "translate(10px, 40px)" });
   });
 
   it("removes drag listeners from window if the frame unmounts mid-drag", () => {
@@ -409,7 +416,7 @@ describe("SimulationFrame", () => {
     const aboutButton = getByRole("button", { name: /about/i });
     fireEvent.click(aboutButton);
     fireEvent.click(getByRole("button", { name: /close/i }));
-    expect(queryByRole("dialog")).not.toBeInTheDocument();
+    expect(queryByRole("complementary")).not.toBeInTheDocument();
     // Focus returns to the element that opened the modal — standard dialog etiquette.
     expect(aboutButton).toHaveFocus();
   });
@@ -424,11 +431,11 @@ describe("SimulationFrame", () => {
     );
     fireEvent.click(getByRole("button", { name: /about/i }));
     // Focus moves to the close button on open; Escape dispatched from there must bubble to
-    // the dialog's onKeyDown and close it — mirroring the real keyboard path.
+    // the panel's onKeyDown and close it — mirroring the real keyboard path.
     const closeButton = getByRole("button", { name: /close/i });
     expect(closeButton).toHaveFocus();
     fireEvent.keyDown(closeButton, { key: "Escape" });
-    expect(queryByRole("dialog")).not.toBeInTheDocument();
+    expect(queryByRole("complementary")).not.toBeInTheDocument();
   });
 
   it("calls onInfoOpenChange(true) on open and (false) on close, but never on initial render", () => {
