@@ -144,9 +144,11 @@ const OffspringList = observer(function OffspringList({
           } else {
             selectCross(gi);
             // Percentages match the pie's rounding (healthy rounded, infected = remainder).
-            const healthyPct = Math.round((healthy / plants.length) * 100);
+            const total = plants.length;
+            const healthyPct = total === 0 ? 0 : Math.round((healthy / total) * 100);
+            const infectedPct = total === 0 ? 0 : 100 - healthyPct;
             announce(
-              `Cross ${trialLetter}${gi + 1}: ${healthyPct}% healthy, ${100 - healthyPct}% infected`,
+              `Cross ${trialLetter}${gi + 1}: ${healthyPct}% healthy, ${infectedPct}% infected`,
             );
           }
         };

@@ -52,11 +52,13 @@ export function Announcer({ children }: AnnouncerProps) {
   const [message, setMessage] = useState("");
   const queueRef = useRef<string[]>([]);
   const flushingRef = useRef(false);
-  const timersRef = useRef<ReturnType<typeof setTimeout>[]>([]);
+  // At most ONE timer is ever pending: the flush chain is strictly sequential (step → dwell timer →
+  // clear timer → step), and announce() never schedules directly (it only enqueues + kicks step).
+  // So a single id suffices — each schedule overwrites the previous, already-fired one.
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const schedule = useCallback((fn: () => void, ms: number) => {
-    const id = setTimeout(fn, ms);
-    timersRef.current.push(id);
+    timerRef.current = setTimeout(fn, ms);
   }, []);
 
   // Flush one message: show it, hold for the dwell, clear, then a short gap before the next. Runs
@@ -87,13 +89,12 @@ export function Announcer({ children }: AnnouncerProps) {
     [step],
   );
 
-  // Drop any pending timers (and the queue) if the region unmounts mid-flush, so no setState fires
+  // Drop the pending timer (and the queue) if the region unmounts mid-flush, so no setState fires
   // on an unmounted component.
   useEffect(() => {
-    const timers = timersRef.current;
     return () => {
-      for (const id of timers) clearTimeout(id);
-      timers.length = 0;
+      if (timerRef.current !== null) clearTimeout(timerRef.current);
+      timerRef.current = null;
       queueRef.current = [];
       flushingRef.current = false;
     };
