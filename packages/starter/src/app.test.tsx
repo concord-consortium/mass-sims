@@ -46,9 +46,9 @@ describe("Starter App", () => {
 
   it("loads with an empty trial A and a New card (no B yet)", () => {
     const { getByRole, queryByRole, queryByText } = render(<App />);
-    expect(getByRole("tab", { name: /^Trial A/ })).toBeInTheDocument();
+    expect(getByRole("option", { name: /^Trial A/ })).toBeInTheDocument();
     expect(getByRole("button", { name: "Add new trial" })).toBeInTheDocument();
-    expect(queryByRole("tab", { name: /^Trial B/ })).toBeNull();
+    expect(queryByRole("option", { name: /^Trial B/ })).toBeNull();
     // Empty trial → no recorded stats yet.
     expect(queryByText(/avg \d/i)).toBeNull();
   });
@@ -59,14 +59,14 @@ describe("Starter App", () => {
     // Trial A's card now shows recorded stats…
     expect(view.getByText(/avg \d/i)).toBeInTheDocument();
     // …and no Trial B appeared (completion updates the selected trial, not appends).
-    expect(view.queryByRole("tab", { name: /^Trial B/ })).toBeNull();
+    expect(view.queryByRole("option", { name: /^Trial B/ })).toBeNull();
   });
 
   it("adds an empty Trial B only when the New card is clicked", () => {
     const { getByRole, queryByRole } = render(<App />);
-    expect(queryByRole("tab", { name: /^Trial B/ })).toBeNull();
+    expect(queryByRole("option", { name: /^Trial B/ })).toBeNull();
     fireEvent.click(getByRole("button", { name: "Add new trial" }));
-    expect(getByRole("tab", { name: /^Trial B/ })).toBeInTheDocument();
+    expect(getByRole("option", { name: /^Trial B/ })).toBeInTheDocument();
   });
 
   it("resets a completed trial back to empty without deleting the card", () => {
@@ -75,7 +75,7 @@ describe("Starter App", () => {
     expect(view.getByText(/avg \d/i)).toBeInTheDocument();
     // The selected card's reset affordance clears it (trials are reset, not deleted).
     fireEvent.click(view.getByRole("button", { name: "Reset trial A" }));
-    expect(view.getByRole("tab", { name: /^Trial A/ })).toBeInTheDocument();
+    expect(view.getByRole("option", { name: /^Trial A/ })).toBeInTheDocument();
     expect(view.queryByText(/avg \d/i)).toBeNull();
   });
 
@@ -104,8 +104,8 @@ describe("Starter App — AP saved state", () => {
 
   it("renders the default empty trial when no init message arrives (standalone)", () => {
     const { getByRole, queryByRole } = render(<App />);
-    expect(getByRole("tab", { name: /^Trial A/ })).toBeInTheDocument();
-    expect(queryByRole("tab", { name: /^Trial B/ })).toBeNull();
+    expect(getByRole("option", { name: /^Trial A/ })).toBeInTheDocument();
+    expect(queryByRole("option", { name: /^Trial B/ })).toBeNull();
   });
 
   it("restores trials + selectedTrialLetter from a runtime init message's interactiveState", () => {
@@ -125,11 +125,14 @@ describe("Starter App — AP saved state", () => {
       interactiveState: { version: 1, trials: { A: trialA, B: trialB }, selectedTrialLetter: "B" },
     });
     const view = render(<App />);
-    expect(view.getByRole("tab", { name: /^Trial A/ })).toBeInTheDocument();
-    expect(view.getByRole("tab", { name: /^Trial B/ })).toBeInTheDocument();
+    expect(view.getByRole("option", { name: /^Trial A/ })).toBeInTheDocument();
+    expect(view.getByRole("option", { name: /^Trial B/ })).toBeInTheDocument();
     // The restored selection is honored — B is active, not a default fall-back to A.
-    expect(view.getByRole("tab", { name: /^Trial B/ })).toHaveAttribute("aria-selected", "true");
-    expect(view.getByRole("tab", { name: /^Trial A/ })).toHaveAttribute("aria-selected", "false");
+    expect(view.getByRole("option", { name: /^Trial B/ })).toHaveAttribute("aria-selected", "true");
+    expect(view.getByRole("option", { name: /^Trial A/ })).toHaveAttribute(
+      "aria-selected",
+      "false",
+    );
     // /avg 3/ matches trial A's saved avgDistance (3.14).
     expect(view.getByText(/avg 3/i)).toBeInTheDocument();
   });
@@ -150,14 +153,14 @@ describe("Starter App — AP saved state", () => {
     // Trial A is preserved (not discarded to a fresh seed)…
     expect(view.getByText(/avg 9/i)).toBeInTheDocument();
     // …and selection self-heals to A.
-    expect(view.getByRole("tab", { name: /^Trial A/ })).toHaveAttribute("aria-selected", "true");
+    expect(view.getByRole("option", { name: /^Trial A/ })).toHaveAttribute("aria-selected", "true");
   });
 
   it("does NOT restore when the init message has interactiveState: null (first session)", () => {
     useInitMessageMock.mockReturnValue({ mode: "runtime", interactiveState: null });
     const view = render(<App />);
-    expect(view.getByRole("tab", { name: /^Trial A/ })).toBeInTheDocument();
-    expect(view.queryByRole("tab", { name: /^Trial B/ })).toBeNull();
+    expect(view.getByRole("option", { name: /^Trial A/ })).toBeInTheDocument();
+    expect(view.queryByRole("option", { name: /^Trial B/ })).toBeNull();
   });
 
   it("calls setInteractiveState on every trial-list change (add / complete / reset)", () => {

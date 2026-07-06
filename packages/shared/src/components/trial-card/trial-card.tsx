@@ -1,6 +1,5 @@
 import clsx from "clsx";
 import type { ReactNode } from "react";
-import ResetIcon from "../../assets/reset-icon.svg?react";
 import { TRIAL_LETTERS_DEFAULT as LETTERS } from "../../trials/constants";
 import "./trial-card.scss";
 
@@ -8,74 +7,54 @@ export interface TrialCardProps {
   children?: ReactNode;
   index: number;
   selected: boolean;
-  resetDisabled?: boolean;
   onSelect: () => void;
-  onReset: () => void;
   /** Overrides the default `"Trial X"` accessible name — e.g. to enrich it with trial state. */
   ariaLabel?: string;
-  /** Roving-tabindex control for the card button. Omitted → native (always tabbable). */
+  /** Roving-tabindex control for the option button (selected → `0`, the rest → `-1`). */
   tabIndex?: number;
-  /** ARIA role for the card button — e.g. `"tab"` when used inside a tablist. Omitted → native button. */
-  role?: string;
-  /** `aria-selected` state, for tablist usage. Omitted when `undefined` (non-tab consumers). */
-  ariaSelected?: boolean;
 }
 
 /**
- * The common chrome around a recorded trial. Renders a wrapper div containing two SIBLING
- * buttons: the card itself (activates `onSelect`) and a reset affordance (activates
- * `onReset`, only rendered when `selected`). Both are real `<button>` elements — NO
- * nested buttons, NO `role="button"` workarounds. The wrapper provides the positioning
- * context; CSS visually places the reset button overhanging the card's upper-right corner.
+ * A trial rendered as a single-select listbox `option`: a presentational (`role="none"`) wrapper
+ * around a real `<button role="option">`, so the option reads as a direct child of the consumer's
+ * `role="listbox"` container (no unannotated `<div>` in the owned chain). Selected + roving state is
+ * driven by `selected` (→ `aria-selected` + the `.selected` class) and `tabIndex`.
  *
- * Letter assignment is index-based and bounded to A through J (10 trials max). If a sim
- * needs more, expose a `letter` prop in a follow-up.
+ * The reset affordance is deliberately NOT part of the card — a `listbox` must not contain focusable
+ * non-option descendants, so consumers render a single `<TrialResetButton>` at the panel level,
+ * outside the listbox and positioned over the selected card.
+ *
+ * Letter assignment is index-based and bounded to A through J (10 trials max). If a sim needs more,
+ * expose a `letter` prop in a follow-up.
  */
 export function TrialCard({
   children,
   index,
   selected,
-  resetDisabled = false,
   onSelect,
-  onReset,
   ariaLabel,
   tabIndex,
-  role,
-  ariaSelected,
 }: TrialCardProps) {
   const letter = LETTERS[index] ?? "?";
-  // Tab semantics are opt-in: only attach `role` + `aria-selected` when a role is supplied, so a
-  // plain-button consumer never receives an `aria-selected` its role wouldn't support.
-  const tabProps = role ? { role, "aria-selected": ariaSelected } : {};
 
   return (
-    <div className={clsx("trial-card-wrapper", { selected })}>
+    // Presentational wrapper: keeps the fixed footprint + `.selected` styling and lets the option
+    // button read as a direct child of the listbox.
+    <div className={clsx("trial-card-wrapper", { selected })} role="none">
       <button
         type="button"
         className="trial-card"
+        role="option"
+        aria-selected={selected}
         aria-label={ariaLabel ?? `Trial ${letter}`}
         tabIndex={tabIndex}
         onClick={onSelect}
-        {...tabProps}
       >
         <span className="letter-badge" aria-hidden="true">
           {letter}
         </span>
         <div className="body">{children}</div>
       </button>
-      {selected ? (
-        <button
-          type="button"
-          className="reset-button"
-          aria-label={`Reset trial ${letter}`}
-          aria-disabled={resetDisabled || undefined}
-          onClick={() => {
-            if (!resetDisabled) onReset();
-          }}
-        >
-          <ResetIcon aria-hidden="true" className="reset-button-icon" />
-        </button>
-      ) : null}
     </div>
   );
 }

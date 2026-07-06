@@ -25,7 +25,7 @@ test("loads the sim shell", async () => {
   await expect(starter.trialsSlot).toBeVisible();
   await expect(starter.simulationSlot).toBeVisible();
   await expect(starter.dataSlot).toBeVisible();
-  await expect(starter.trialsTablist).toBeVisible();
+  await expect(starter.trialsListbox).toBeVisible();
 });
 
 test("About modal: opens via button, closes via close button, closes via Escape", async () => {
@@ -67,10 +67,10 @@ test("Reload warning does NOT fire on clean state", async () => {
   await starter.assertReloadWarning(false);
 });
 
-test("Trial selector: A is seeded as the selected tab in a vertical tablist", async () => {
-  await expect(starter.trialsTablist).toHaveAttribute("aria-orientation", "vertical");
-  await expect(starter.trialTab("A")).toHaveAttribute("aria-selected", "true");
-  await expect(starter.trialTab("B")).toHaveCount(0);
+test("Trial selector: A is seeded as the selected option in a vertical listbox", async () => {
+  await expect(starter.trialsListbox).toHaveAttribute("aria-orientation", "vertical");
+  await expect(starter.trialOption("A")).toHaveAttribute("aria-selected", "true");
+  await expect(starter.trialOption("B")).toHaveCount(0);
   await expect(starter.newTrialCard).toBeVisible();
 });
 
@@ -78,9 +78,9 @@ test("Keyboard nav: ArrowDown moves focus AND selection to the next trial", asyn
   // Add a second trial (auto-selected), then go back to A so ArrowDown has somewhere to move.
   await starter.addTrial();
   await starter.selectTrial("A");
-  await starter.trialTab("A").focus();
+  await starter.trialOption("A").focus();
   await page.keyboard.press("ArrowDown");
-  await expect(starter.trialTab("B")).toHaveAttribute("aria-selected", "true");
+  await expect(starter.trialOption("B")).toHaveAttribute("aria-selected", "true");
   // Roving tabindex moves focus too, not just selection.
   expect(await starter.focusedAriaLabel()).toMatch(/^Trial B\b/);
 });

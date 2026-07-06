@@ -8,13 +8,7 @@ function Harness({ selected }: { selected: string }) {
   return (
     <div ref={ref}>
       {["A", "B"].map((letter, i) => (
-        <TrialCard
-          key={letter}
-          index={i}
-          selected={letter === selected}
-          onSelect={() => {}}
-          onReset={() => {}}
-        />
+        <TrialCard key={letter} index={i} selected={letter === selected} onSelect={() => {}} />
       ))}
     </div>
   );

@@ -6,7 +6,7 @@ import { SimulationFramePage } from "./simulation-frame-page";
 /**
  * Page object for the Bananas genetics sim. Extends the shared-chrome base with Bananas-specific
  * controls (parent selectors, the fungus switch, the Cross Plants / Reset Trial control bar, the
- * offspring grid, the trial tablist, the Data-panel charts) plus the functional actions. Locators
+ * offspring grid, the trial listbox, the Data-panel charts) plus the functional actions. Locators
  * favor accessible queries; CSS fallbacks are used only for elements with no good accessible name
  * (the active-trial badge, the status pill, offspring rows).
  */
@@ -155,12 +155,13 @@ export class BananasPage extends SimulationFramePage {
 
   // --- Trials panel -------------------------------------------------------
 
-  get trialsTablist(): Locator {
-    return this.page.getByRole("tablist", { name: "Trials" });
+  get trialsListbox(): Locator {
+    return this.page.getByRole("listbox", { name: "Trials" });
   }
 
-  trialTab(letter: string): Locator {
-    return this.page.getByRole("tab", { name: new RegExp(`^Trial ${letter}\\b`) });
+  /** A trial option by its letter, e.g. trialOption("A"). Cards are role="option" in the listbox. */
+  trialOption(letter: string): Locator {
+    return this.page.getByRole("option", { name: new RegExp(`^Trial ${letter}\\b`) });
   }
 
   /** The aria-label of the currently focused element (for roving-tabindex keyboard-nav asserts). */
@@ -182,12 +183,12 @@ export class BananasPage extends SimulationFramePage {
   }
 
   async selectTrial(letter: string): Promise<void> {
-    await this.trialTab(letter).click();
+    await this.trialOption(letter).click();
   }
 
   /**
-   * Reset a trial via its per-card reset overhang (only present on the selected card). This is a
-   * different code path from the control-bar "Reset Trial" button — it resets the acted-on card.
+   * Reset the selected trial via the trials-panel reset (it overhangs the selected card). A
+   * different code path from the control-bar "Reset Trial" button.
    */
   async resetTrialViaCardOverhang(letter: string): Promise<void> {
     await this.page.getByRole("button", { name: `Reset trial ${letter}`, exact: true }).click();

@@ -37,23 +37,24 @@ function FrameAtWidth({
           standalone={standalone}
         >
           <SimulationFrame.Trials>
-            {PLACEHOLDER_TRIAL_LETTERS.map((letter, i) => (
-              <TrialCard
-                key={letter}
-                index={i}
-                selected={i === selectedIndex}
-                onSelect={() => setSelectedIndex(i)}
-                onReset={() => {
-                  /* placeholder — no real state */
-                }}
-                // Static preview: no model to run a trial, so the reset stays disabled —
-                // mirrors the demo's initial state. Enable-after-run logic arrives in Phase 2b.
-                resetDisabled={true}
-              >
-                <span>Placeholder</span>
-                <span>data</span>
-              </TrialCard>
-            ))}
+            {/* Trials are a single-select listbox of `option` cards (the same shape the sims use).
+                The per-trial reset is a panel-level affordance in the real sims (a <TrialResetButton>
+                positioned over the selected card, outside the listbox); this layout preview omits
+                it — it's exercised by the sims + TrialResetButton's own unit tests. */}
+            <div role="listbox" aria-label="Trials" aria-orientation="vertical">
+              {PLACEHOLDER_TRIAL_LETTERS.map((letter, i) => (
+                <TrialCard
+                  key={letter}
+                  index={i}
+                  selected={i === selectedIndex}
+                  tabIndex={i === selectedIndex ? 0 : -1}
+                  onSelect={() => setSelectedIndex(i)}
+                >
+                  <span>Placeholder</span>
+                  <span>data</span>
+                </TrialCard>
+              ))}
+            </div>
           </SimulationFrame.Trials>
           <SimulationFrame.Simulation instruction="Placeholder instruction">
             <div
