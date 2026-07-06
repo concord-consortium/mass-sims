@@ -140,7 +140,7 @@ const OffspringList = observer(function OffspringList({
         const toggle = () => {
           if (selected) {
             selectCross(null);
-            announce("All crosses selected");
+            announce("No crosses selected. Charts reflect all crosses.");
           } else {
             selectCross(gi);
             // Percentages match the pie's rounding (healthy rounded, infected = remainder).

@@ -425,9 +425,9 @@ describe("SimulationPanel cross-selection narration", () => {
     expect(region).toHaveTextContent("Cross A1: 100% healthy, 0% infected");
   });
 
-  it("announces 'All crosses selected' when the selected cross is toggled off", () => {
+  it("announces 'No crosses selected. Charts reflect all crosses.' when the selected cross is toggled off", () => {
     const { getAllByRole, region } = renderWithAnnouncer(twoCrosses({ selectedCross: 0 }));
     fireEvent.click(getAllByRole("button", { name: ROW_NAME })[0]);
-    expect(region).toHaveTextContent("All crosses selected");
+    expect(region).toHaveTextContent("No crosses selected. Charts reflect all crosses.");
   });
 });

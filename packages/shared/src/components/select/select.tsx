@@ -1,5 +1,5 @@
 import clsx from "clsx";
-import type { ReactNode } from "react";
+import { type ReactNode, useContext, useEffect } from "react";
 import {
   Select as AriaSelect,
   Button,
@@ -8,11 +8,40 @@ import {
   ListBox,
   ListBoxItem,
   Popover,
+  SelectStateContext,
   SelectValue,
 } from "react-aria-components";
 import { useLogEvent } from "../../hooks/use-log-event";
 
 import "./select.scss";
+
+/**
+ * Restores click-outside-to-close and open-trigger-toggle, which react-aria only wires up for
+ * *modal* popovers (via the underlay) — our `isNonModal` popover drops both. See the `isNonModal`
+ * note on `<Popover>` below.
+ */
+function CloseOnOutsidePointer() {
+  const state = useContext(SelectStateContext);
+  useEffect(() => {
+    if (!state?.isOpen) return;
+    // Capture-phase so the close is decided before other handlers act on the same gesture.
+    const onPointerDown = (event: PointerEvent) => {
+      const target = event.target as Element | null;
+      // A press inside the portaled list is a selection — leave it to react-aria.
+      if (target?.closest?.(".select-popover")) return;
+      // Our own open trigger (the only expanded one): swallow the press, else react-aria would
+      // close on blur then re-open it on the same gesture. Any other press just dismisses.
+      if (target?.closest?.('.react-aria-Button[aria-expanded="true"]')) {
+        event.preventDefault();
+        event.stopPropagation();
+      }
+      state.close();
+    };
+    document.addEventListener("pointerdown", onPointerDown, true);
+    return () => document.removeEventListener("pointerdown", onPointerDown, true);
+  }, [state, state?.isOpen]);
+  return null;
+}
 
 export interface SelectOption<K extends Key = string> {
   id: K;
@@ -74,6 +103,7 @@ export function Select<K extends Key = string>({
       placeholder={placeholder}
       className={clsx("select", className)}
     >
+      <CloseOnOutsidePointer />
       {label != null ? <Label>{label}</Label> : null}
       <Button>
         <SelectValue />
@@ -81,8 +111,15 @@ export function Select<K extends Key = string>({
           <polygon points="16.59 8.59 12 13.17 7.41 8.59 6 10 12 16 18 10" />
         </svg>
       </Button>
-      {/* offset={0} so the popover sits flush below the trigger (see select.scss). */}
-      <Popover className="select-popover" offset={0}>
+      {/*
+        offset={0} so the popover sits flush below the trigger (see select.scss).
+        isNonModal so the rest of the row stays hoverable while the list is open — a modal popover
+        both covers the page with a pointer-capturing underlay and marks siblings `inert`, so
+        neither the open trigger nor the other parent dropdown can be hovered (can't be undone in
+        CSS; hence non-modal). The trade-off — losing outside-click/toggle close — is restored by
+        <CloseOnOutsidePointer> above.
+      */}
+      <Popover className="select-popover" offset={0} isNonModal>
         <ListBox items={options}>
           {(item: SelectOption<K>) => <ListBoxItem id={item.id}>{item.label}</ListBoxItem>}
         </ListBox>
