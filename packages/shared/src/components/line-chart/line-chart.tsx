@@ -54,13 +54,18 @@ export function LineChart<T extends Record<string, number | string>>({
     return () => observer.disconnect();
   }, []);
 
+  // Expose the chart as a labeled image only when there's an accessible name to give it: a
+  // role="img" with no label is an unlabeled image (WCAG 1.1.1), and a role-less <div> must not
+  // carry aria-label. Kept as one spread so role + aria-label always travel together (or neither
+  // does — then the region reads as decorative and the visible empty-state text carries meaning).
+  const imgProps = ariaLabel ? { role: "img" as const, "aria-label": ariaLabel } : {};
+
   if (data.length < 2) {
     return (
       <div
         ref={containerRef}
         className={clsx("line-chart-empty", className)}
-        role="img"
-        aria-label={ariaLabel}
+        {...imgProps}
         style={{ height }}
       >
         {emptyState ?? "No data"}
@@ -93,12 +98,7 @@ export function LineChart<T extends Record<string, number | string>>({
     .join(" ");
 
   return (
-    <div
-      ref={containerRef}
-      className={clsx("line-chart", className)}
-      role="img"
-      aria-label={ariaLabel}
-    >
+    <div ref={containerRef} className={clsx("line-chart", className)} {...imgProps}>
       {/* The wrapping div is the labeled image region (role="img" + aria-label), so the SVG
           internals are aria-hidden — assistive tech announces the region's label atomically.
           The <title> still provides a hover tooltip when a label is supplied. */}

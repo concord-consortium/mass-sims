@@ -44,6 +44,17 @@ describe("LineChart", () => {
     expect(getByLabelText("Avg distance over time")).toBeInTheDocument();
   });
 
+  it("does not expose an img role when no ariaLabel is given (no unlabeled image)", () => {
+    const data = [
+      { x: 0, y: 0 },
+      { x: 1, y: 1 },
+    ];
+    const { queryByRole } = render(<LineChart data={data} xKey="x" yKey="y" height={130} />);
+    // A role="img" with no accessible name is a WCAG 1.1.1 failure; unlabeled, the region is
+    // decorative and claims no image role at all.
+    expect(queryByRole("img")).not.toBeInTheDocument();
+  });
+
   it("renders x and y axis titles when supplied", () => {
     const data = [
       { x: 0, y: 0 },

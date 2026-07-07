@@ -160,7 +160,14 @@ $titlebar-about-leading-space: 5px;   // margin-left on the About button â†’ CCâ
     width: 24px;
   }
 
-  // Grid-area assignments applied to each slot's Section root (a direct child) via className.
+  // The <main> landmark wrapping the three slots generates no box, so its children (the slot
+  // Sections) participate directly in this grid via their grid-area classes below.
+  .sim-main {
+    display: contents;
+  }
+
+  // Grid-area assignments applied to each slot's Section root (a grid child, via the transparent
+  // .sim-main wrapper) via className.
   .trials-area {
     grid-area: trials;
 

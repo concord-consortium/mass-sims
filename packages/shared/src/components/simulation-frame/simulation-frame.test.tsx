@@ -77,6 +77,14 @@ describe("SimulationFrame", () => {
     expect(getByText("data-content")).toBeInTheDocument();
   });
 
+  it("wraps the three slot regions in a single main landmark", () => {
+    const { getByRole } = renderFrame();
+    const main = getByRole("main");
+    expect(main).toContainElement(getByRole("region", { name: "Trials" }));
+    expect(main).toContainElement(getByRole("region", { name: "Simulation" }));
+    expect(main).toContainElement(getByRole("region", { name: "Data" }));
+  });
+
   it("forwards the Simulation instruction to its section", () => {
     const { getByText } = renderFrame({ instruction: "Select two parents to begin" });
     expect(getByText("Select two parents to begin")).toBeInTheDocument();

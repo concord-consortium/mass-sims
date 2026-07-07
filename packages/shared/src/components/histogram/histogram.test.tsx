@@ -42,6 +42,13 @@ describe("Histogram", () => {
     expect(getByLabelText("Distance distribution")).toBeInTheDocument();
   });
 
+  it("does not expose an img role when no ariaLabel is given (no unlabeled image)", () => {
+    const { queryByRole } = render(<Histogram values={[1, 2, 3]} height={160} />);
+    // A role="img" with no accessible name is a WCAG 1.1.1 failure; unlabeled, the region is
+    // decorative and claims no image role at all.
+    expect(queryByRole("img")).not.toBeInTheDocument();
+  });
+
   it("renders x and y axis titles when supplied", () => {
     const { getByText } = render(
       <Histogram

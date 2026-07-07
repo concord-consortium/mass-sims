@@ -46,13 +46,18 @@ export function Histogram({
     return () => observer.disconnect();
   }, []);
 
+  // Expose the chart as a labeled image only when there's an accessible name to give it: a
+  // role="img" with no label is an unlabeled image (WCAG 1.1.1), and a role-less <div> must not
+  // carry aria-label. Kept as one spread so role + aria-label always travel together (or neither
+  // does — then the region reads as decorative and the visible empty-state text carries meaning).
+  const imgProps = ariaLabel ? { role: "img" as const, "aria-label": ariaLabel } : {};
+
   if (values.length === 0) {
     return (
       <div
         ref={containerRef}
         className={clsx("histogram-empty", className)}
-        role="img"
-        aria-label={ariaLabel}
+        {...imgProps}
         style={{ height }}
       >
         {emptyState ?? "No data"}
@@ -73,12 +78,7 @@ export function Histogram({
   const barWidth = plotW / counts.length;
 
   return (
-    <div
-      ref={containerRef}
-      className={clsx("histogram", className)}
-      role="img"
-      aria-label={ariaLabel}
-    >
+    <div ref={containerRef} className={clsx("histogram", className)} {...imgProps}>
       {/* The wrapping div is the labeled image region; the SVG internals are aria-hidden so
           assistive tech announces the region's label atomically (see LineChart). */}
       <svg
