@@ -66,4 +66,49 @@ describe("Select", () => {
     const { getByRole } = render(<Select options={OPTIONS} isDisabled />);
     expect(getByRole("button")).toBeDisabled();
   });
+
+  // The non-modal popover (chosen so sibling controls stay hoverable while the list is open)
+  // drops react-aria's built-in click-outside/toggle close, which CloseOnOutsidePointer restores.
+  describe("CloseOnOutsidePointer", () => {
+    it("closes the open listbox on a pointer-down outside it", () => {
+      const { getByRole, queryByRole, getByTestId } = render(
+        <div>
+          <Select options={OPTIONS} />
+          <div data-testid="outside">outside</div>
+        </div>,
+      );
+      fireEvent.click(getByRole("button"));
+      expect(getByRole("listbox")).toBeInTheDocument();
+
+      fireEvent.pointerDown(getByTestId("outside"));
+      expect(queryByRole("listbox")).not.toBeInTheDocument();
+    });
+
+    it("closes on a pointer-down on the open trigger (toggle-to-close)", () => {
+      const { getByRole, queryByRole } = render(<Select options={OPTIONS} />);
+      const trigger = getByRole("button");
+      fireEvent.click(trigger);
+      expect(getByRole("listbox")).toBeInTheDocument();
+
+      // A real click begins with pointerdown; the handler closes on that and swallows it so
+      // react-aria can't reopen on the same gesture. That gesture-linked no-reopen depends on the
+      // browser's pointer→click sequencing (covered by the app-level e2e); here we assert the
+      // unit mechanism — the pointerdown on the expanded trigger dismisses the list.
+      fireEvent.pointerDown(trigger);
+      expect(queryByRole("listbox")).not.toBeInTheDocument();
+    });
+
+    it("leaves a pointer-down inside the list to react-aria (does not pre-close a selection)", () => {
+      const onSelectionChange = vi.fn();
+      const { getByRole } = render(
+        <Select options={OPTIONS} onSelectionChange={onSelectionChange} />,
+      );
+      fireEvent.click(getByRole("button"));
+      const option = getByRole("option", { name: "Fast" });
+
+      fireEvent.pointerDown(option);
+      fireEvent.click(option);
+      expect(onSelectionChange).toHaveBeenCalledWith("fast");
+    });
+  });
 });
