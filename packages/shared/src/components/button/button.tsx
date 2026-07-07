@@ -29,7 +29,7 @@ export interface ButtonProps extends Omit<AriaButtonProps, "className"> {
  * This deliberately differs from the shared form controls (Select/Slider/Switch/…), which keep
  * react-aria's native `disabled`.
  *
- * Pattern reference for Phase 3 controls (Slider, Switch, …). See
+ * Pattern reference for the other shared controls (Slider, Switch, …). See
  * infrastructure-plan.md §3 "Shared controls policy".
  */
 export function Button({

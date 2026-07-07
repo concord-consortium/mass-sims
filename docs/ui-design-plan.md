@@ -1,7 +1,7 @@
 # Mass Sims — UI Design Plan
 
-**Status:** v0.x — in active design iteration
-**Date:** May 2026
+**Status:** Design realized in the shipped Bananas sim; still iterating on the open questions in §15. The three-region `SimulationFrame`, the `Section`/`DataSubsection`/`TrialCard` chrome, the demo-derived palette and tokens (§13), and the draggable non-modal About panel (§21) are all implemented as described here. Remaining open items are tracked in §15–§16.
+**Date:** May 2026 (last reconciled against the code July 7, 2026)
 **Companion to:** Infrastructure Plan (`infrastructure-plan.md`)
 **Audience:** UI designer, frontend developers building region components, anyone making visual / layout / interaction decisions
 
