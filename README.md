@@ -4,7 +4,7 @@ Educational science simulations monorepo. Each simulation is a standalone, stati
 
 ## Status
 
-Under active development. The shared library, the `starter` template, and the CI/CD + deployment pipeline are in place, and **Bananas** — the first full simulation — is essentially complete.
+Under active development. The shared library, the `starter` template, and the CI/CD + deployment pipeline are in place, and **Bananas** — the first full simulation — has shipped.
 
 ## Planning & Reference Documents
 
