@@ -1,0 +1,76 @@
+@use "../../styles/tokens" as tokens;
+
+// Appearance of the trial reset affordance. POSITIONING (top/left offsets) is deliberately left to
+// the consumer — the button is `position: absolute`, and the sims position it over the selected
+// card by index (see the trial-reset-position mixin).
+.reset-button {
+  align-items: center;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  height: tokens.$touch-target-min;
+  justify-content: center;
+  padding: 0;
+  position: absolute;
+  width: tokens.$touch-target-min;
+  z-index: 1; // keep the touch target above the card so corner clicks hit the reset
+}
+
+.reset-button:focus-visible {
+  outline: none;
+}
+
+// The 28 × 28 surface box behind the icon — a ::before, NOT the icon element's own background, so
+// it stays fully opaque when the reset is disabled (only the arrow glyph dims, keeping the box
+// legible against the card).
+.reset-button::before {
+  background: tokens.$color-surface;
+  border-radius: tokens.$radius-sm;
+  content: "";
+  height: 28px;
+  position: absolute;
+  transition: tokens.$transition-interactive;
+  width: 28px;
+}
+
+// Visible 28 × 28 focus ring inside the larger touch area.
+.reset-button:focus-visible::after {
+  border-radius: tokens.$radius-sm;
+  content: "";
+  height: 28px;
+  outline: tokens.$focus-outline;
+  outline-offset: 0;
+  position: absolute;
+  width: 28px;
+}
+
+// The arrow glyph. Transparent background (the ::before is the box); position:relative so it
+// stacks above the ::before box.
+.reset-button-icon {
+  background: transparent;
+  color: tokens.$color-text;
+  height: 28px;
+  padding: 2px;
+  position: relative;
+  width: 28px;
+}
+
+.reset-button:hover:not([aria-disabled="true"])::before,
+.reset-button:focus-visible:not([aria-disabled="true"])::before {
+  background: tokens.$color-surface-hover;
+}
+
+.reset-button:active:not([aria-disabled="true"])::before {
+  background: tokens.$color-surface-active;
+}
+
+.reset-button[aria-disabled="true"] {
+  cursor: default;
+}
+
+// Only the arrow glyph fades — the ::before box stays opaque, so the disabled control stays
+// clearly visible against the card.
+.reset-button[aria-disabled="true"] .reset-button-icon {
+  opacity: 0.35;
+}

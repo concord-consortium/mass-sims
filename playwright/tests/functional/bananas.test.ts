@@ -54,7 +54,7 @@ test.describe("Multi-trial", () => {
     expect(await bananas.getActiveTrialLetter()).toBe("A");
 
     await bananas.addTrial();
-    await expect(bananas.trialTab("B")).toBeVisible();
+    await expect(bananas.trialOption("B")).toBeVisible();
     expect(await bananas.getActiveTrialLetter()).toBe("B"); // new trial auto-selected
 
     await bananas.selectTrial("A");
@@ -84,15 +84,15 @@ test.describe("Multi-trial", () => {
   });
 });
 
-test.describe("Per-card reset", () => {
-  // Scenario 4: the per-card reset overhang resets that card and keeps it active. This is a
-  // different code path from the control-bar "Reset Trial" button (it targets the acted-on card).
-  test("the card reset overhang clears the trial and keeps it active", async () => {
+test.describe("Trials-panel reset", () => {
+  // Scenario 4: the panel reset overhang (over the selected card) resets that trial and keeps it
+  // active. A different code path from the control-bar "Reset Trial" button.
+  test("the panel reset overhang clears the trial and keeps it active", async () => {
     await bananas.pickParents(BASELINE_CROSS.p1, BASELINE_CROSS.p2);
     await bananas.crossPlants();
     await expect(bananas.offspringRows).toHaveCount(1);
 
-    await bananas.resetTrialViaCardOverhang("A");
+    await bananas.resetTrialViaPanel("A");
     await expect(bananas.offspringRows).toHaveCount(0);
     expect(await bananas.getActiveTrialLetter()).toBe("A"); // remains active
     await expect(bananas.parent1Select).toBeEnabled(); // unlocked back to the selectors
@@ -142,9 +142,9 @@ test.describe("Active-trial badge sync", () => {
 });
 
 test.describe("Keyboard navigation in the Trials panel", () => {
-  // Scenario 8: roving tabindex — Arrow moves focus AND selection (WAI-ARIA tabs pattern);
-  // Home/End jump to first/last; ArrowDown at the last card does not wrap.
-  test("arrow / Home / End move focus and selection, with no wrap at the ends", async () => {
+  // Scenario 8: roving tabindex — Arrow moves focus AND selection (single-select listbox,
+  // selection-follows-focus); Home/End jump to first/last; ArrowDown at the last card wraps to first.
+  test("arrow / Home / End move focus and selection, wrapping at the ends", async () => {
     await bananas.addTrial(); // B
     await bananas.addTrial(); // C — three trials now (A, B, C)
 
@@ -157,7 +157,7 @@ test.describe("Keyboard navigation in the Trials panel", () => {
     await bananas.press("ArrowDown");
     expect(await bananas.getActiveTrialLetter()).toBe("B");
     expect(await bananas.focusedAriaLabel()).toMatch(/^Trial B\b/);
-    await expect(bananas.trialTab("B")).toHaveAttribute("aria-selected", "true");
+    await expect(bananas.trialOption("B")).toHaveAttribute("aria-selected", "true");
 
     // Home → A.
     await bananas.press("Home");
@@ -169,10 +169,10 @@ test.describe("Keyboard navigation in the Trials panel", () => {
     expect(await bananas.getActiveTrialLetter()).toBe("C");
     expect(await bananas.focusedAriaLabel()).toMatch(/^Trial C\b/);
 
-    // ArrowDown at the last card → stays on C (no wrap).
+    // ArrowDown at the last card → WRAPS back to the first (A).
     await bananas.press("ArrowDown");
-    expect(await bananas.getActiveTrialLetter()).toBe("C");
-    expect(await bananas.focusedAriaLabel()).toMatch(/^Trial C\b/);
+    expect(await bananas.getActiveTrialLetter()).toBe("A");
+    expect(await bananas.focusedAriaLabel()).toMatch(/^Trial A\b/);
   });
 });
 

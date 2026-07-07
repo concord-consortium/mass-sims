@@ -1,0 +1,18 @@
+@use "./tokens" as tokens;
+
+// Shared SCSS mixins. `@use` this from a component/sim stylesheet:
+//   @use "@concord-consortium/mass-sims-shared/styles/mixins" as mixins;
+//   .reset-button { @include mixins.trial-reset-position; }
+
+// Positions a panel-level trial reset button over the SELECTED trial card, overhanging its
+// top-right corner. The math is derived from the shared card footprint + row gap, so it tracks
+// card sizing automatically.
+//
+// The consumer must: (1) render the button (`position: absolute`, from trial-reset-button.scss)
+// inside a `position: relative` container laid out as the trial-card grid, and (2) set the
+// `--selected-index` custom property inline to the selected card's row index. Shared here because
+// the formula is identical across sims (only the reset's colors differ per sim).
+@mixin trial-reset-position {
+  left: calc(#{tokens.$trial-card-width} - #{tokens.$touch-target-min} + 2px);
+  top: calc(var(--selected-index, 0) * (#{tokens.$trial-card-height} + #{tokens.$column-gap}) - 2px);
+}

@@ -37,8 +37,8 @@ export class StarterPage extends SimulationFramePage {
   }
 
   /**
-   * The control-bar Reset button. Distinct from a trial card's per-card "Reset trial X"
-   * affordance — `exact` keeps this from matching the card reset's accessible name.
+   * The control-bar Reset button. Distinct from the trials-panel "Reset trial X" affordance —
+   * `exact` keeps this from matching that reset's accessible name.
    */
   get resetButton(): Locator {
     return this.page.getByRole("button", { name: "Reset", exact: true });
@@ -55,20 +55,20 @@ export class StarterPage extends SimulationFramePage {
   }
 
   // --- Trials panel -------------------------------------------------------
-  // A "tab-like" selector: role="tablist" container, cards as role="tab" with roving tabindex and
-  // enriched accessible names.
+  // A single-select listbox: role="listbox" container, cards as role="option" with roving tabindex
+  // and enriched accessible names.
 
-  /** The trial-selector tablist (vertical, labeled "Trials"). */
-  get trialsTablist(): Locator {
-    return this.page.getByRole("tablist", { name: "Trials" });
+  /** The trial-selector listbox (vertical, labeled "Trials"). */
+  get trialsListbox(): Locator {
+    return this.page.getByRole("listbox", { name: "Trials" });
   }
 
   /**
-   * A trial tab by its letter, e.g. trialTab("A"). Cards are role="tab" with an enriched accessible
-   * name ("Trial A. Walker count 50, step size 1…"), so match on the leading "Trial X".
+   * A trial option by its letter, e.g. trialOption("A"). Cards are role="option" with an enriched
+   * accessible name ("Trial A. Walker count 50, step size 1…"), so match on the leading "Trial X".
    */
-  trialTab(letter: string): Locator {
-    return this.page.getByRole("tab", { name: new RegExp(`^Trial ${letter}\\b`) });
+  trialOption(letter: string): Locator {
+    return this.page.getByRole("option", { name: new RegExp(`^Trial ${letter}\\b`) });
   }
 
   /** The "+ New" card that appends a trial. Replaced by the max-trials notice at MAX_TRIALS. */
@@ -76,7 +76,7 @@ export class StarterPage extends SimulationFramePage {
     return this.page.getByRole("button", { name: "Add new trial" });
   }
 
-  /** The "Max number of trials reached" status notice that replaces "+ New" at the cap. */
+  /** The "Max number of trials reached" notice that replaces "+ New" at the cap. */
   get maxTrialsNotice(): Locator {
     return this.page.getByText("Max number of trials reached");
   }
@@ -86,7 +86,7 @@ export class StarterPage extends SimulationFramePage {
   }
 
   async selectTrial(letter: string): Promise<void> {
-    await this.trialTab(letter).click();
+    await this.trialOption(letter).click();
   }
 
   /** The aria-label of the currently focused element (for roving-tabindex keyboard-nav asserts). */

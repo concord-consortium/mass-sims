@@ -35,6 +35,10 @@ export {
 export { Slider, type SliderProps } from "./components/slider/slider";
 export { Switch, type SwitchProps } from "./components/switch/switch";
 export { TrialCard, type TrialCardProps } from "./components/trial-card/trial-card";
+export {
+  TrialResetButton,
+  type TrialResetButtonProps,
+} from "./components/trial-reset-button/trial-reset-button";
 
 // Hooks
 export { useCurrentAndPrevious } from "./hooks/use-current-and-previous";

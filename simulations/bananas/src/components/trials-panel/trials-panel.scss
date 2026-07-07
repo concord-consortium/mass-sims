@@ -1,4 +1,5 @@
 @use "@concord-consortium/mass-sims-shared/styles/tokens" as tokens;
+@use "@concord-consortium/mass-sims-shared/styles/mixins" as mixins;
 @use "../../theme" as theme;
 
 .bananas-trials-panel {
@@ -9,7 +10,19 @@
   // Nudge the cards 1px left so the card's right edge clears the vertical scrollbar
   // when it's shown (the 120px card otherwise sits flush against the scrollbar gutter).
   margin-left: -1px;
+  position: relative;
   width: 100%;
+
+  // The listbox holds only the option cards; the `+ New`/notice + reset are siblings outside it.
+  // A flex column with `$column-gap` between cards (and the outer panel repeats that gap between
+  // the listbox and the `+ New` card below it).
+  .bananas-trials-listbox {
+    align-items: flex-start;
+    display: flex;
+    flex-direction: column;
+    gap: tokens.$column-gap;
+    width: 100%;
+  }
 
   .trial-card-wrapper {
     .trial-card {
@@ -40,20 +53,31 @@
       background: theme.$heading;
       color: theme.$accent;
     }
+  }
 
-    .reset-button-icon {
-      background: theme.$surface;
-      color: theme.$heading;
-    }
+  // Panel-level reset: position it over the selected card by index (shared formula;
+  // `--selected-index` is set inline), then apply the Bananas theme colors.
+  .reset-button {
+    @include mixins.trial-reset-position;
+  }
 
-    .reset-button:hover:not([aria-disabled="true"]) .reset-button-icon,
-    .reset-button:focus-visible:not([aria-disabled="true"]) .reset-button-icon {
-      background: theme.$accent;
-    }
+  // Box color on the ::before (stays opaque when disabled); arrow color on the icon (dims when
+  // disabled) — see trial-reset-button.scss for the box-vs-glyph split.
+  .reset-button::before {
+    background: theme.$surface;
+  }
 
-    .reset-button:active:not([aria-disabled="true"]) .reset-button-icon {
-      background: theme.$accent-strong;
-    }
+  .reset-button-icon {
+    color: theme.$heading;
+  }
+
+  .reset-button:hover:not([aria-disabled="true"])::before,
+  .reset-button:focus-visible:not([aria-disabled="true"])::before {
+    background: theme.$accent;
+  }
+
+  .reset-button:active:not([aria-disabled="true"])::before {
+    background: theme.$accent-strong;
   }
 }
 
@@ -69,9 +93,9 @@
   flex-direction: column;
   flex-shrink: 0;
   gap: 2px;
-  height: 136px;
+  height: tokens.$trial-card-height;
   justify-content: center;
-  width: 120px;
+  width: tokens.$trial-card-width;
 
   &:hover,
   &:focus-visible {

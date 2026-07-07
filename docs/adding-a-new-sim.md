@@ -82,16 +82,11 @@ per-frame state and the play/pause/step loop — these **stay** alongside MST: M
 (what trials exist, which is selected, each trial's recorded result); `useModelState` owns the
 per-frame transient state of the trial currently running.
 
-**Trials column.** `src/components/trials-panel/` renders the trial selector as a "tab-like" control
-(a `role="tablist"` of `role="tab"` cards with roving-tabindex keyboard nav, a `+ New` card, and a
-max-trials notice) — a pragmatic pattern, *not* strict WAI-ARIA tabs (see
-[docs/playwright.md](./playwright.md)). Reuse Starter's `<TrialsPanel>` as the reference and swap in
-your sim's per-card body and enriched aria-label.
-
-> **This ARIA shape is under review.** Using `role="tab"` without a real
-> `aria-controls`/`tabpanel` relationship is a known, deliberate trade-off (there's one shared
-> Simulation panel for all trials, so the strict tabs pattern doesn't fit cleanly). A planned
-> accessibility follow-up will likely move existing sims to **listbox/option** semantics.
+**Trials column.** `src/components/trials-panel/` renders the trial selector as a single-select
+`role="listbox"` of `role="option"` cards with roving-tabindex keyboard nav, plus a `+ New` card and
+a max-trials notice as siblings *outside* the listbox (a listbox must not own focusable non-options)
+— see [docs/playwright.md](./playwright.md). Reuse Starter's `<TrialsPanel>` as the reference and
+swap in your sim's per-card body and enriched aria-label.
 
 For parameter inputs and data visualization, use the **shared controls and charts** from
 `@concord-consortium/mass-sims-shared` rather than native HTML elements — the Starter's

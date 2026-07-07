@@ -13,6 +13,8 @@
     "./vitest-config": "./src/vitest-config.ts",
     "./styles/tokens": "./src/styles/tokens.scss",
     "./styles/tokens.scss": "./src/styles/tokens.scss",
+    "./styles/mixins": "./src/styles/mixins.scss",
+    "./styles/mixins.scss": "./src/styles/mixins.scss",
     "./styles/global": "./src/styles/global.scss",
     "./styles/global.scss": "./src/styles/global.scss"
   },

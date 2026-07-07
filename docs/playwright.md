@@ -144,20 +144,20 @@ via `completeOneTrial()` (shorten the run via the on-page NumberField, then Step
 
 ## The trial-selector pattern
 
-All sims render their Trials column as a **tab-like selector** — a pragmatic convention, *not*
-strict WAI-ARIA tabs: a `role="tablist"` container (`aria-orientation="vertical"`,
-`aria-label="Trials"`) holds the trial cards as `role="tab"` elements, alongside the `+ New` card /
-max-trials notice. Cards carry `aria-selected`, roving tabindex (only the selected card is tabbable),
-and an enriched accessible name (e.g. Starter's "Trial A. Walker count 50, step size 1"). It's
-"tab-like" because the cards have no `aria-controls`/tabpanel link — the Simulation panel is the
-implicit panel the active card controls.
+All sims render their Trials column as a single-select **listbox**: a `role="listbox"` container
+(`aria-orientation="vertical"`, `aria-label="Trials"`) holds the trial cards as `role="option"`
+elements. The `+ New` card and max-trials notice are siblings *outside* the listbox — a listbox must
+not own focusable non-options. Cards carry `aria-selected`, roving tabindex (only the selected card
+is tabbable), and an enriched accessible name (e.g. Starter's "Trial A. Walker count 50, step size
+1").
 
-Page objects expose this via `trialsTablist`, `trialTab(letter)` (matched on the leading "Trial X",
-since the accessible name is enriched), `newTrialCard` (accessible name **"Add new trial"**),
+Page objects expose this via `trialsListbox`, `trialOption(letter)` (matched on the leading "Trial
+X", since the accessible name is enriched), `newTrialCard` (accessible name **"Add new trial"**),
 `maxTrialsNotice`, and `focusedAriaLabel()` for roving-tabindex keyboard-nav asserts. Keyboard
-contract: Up/Down move focus **and** selection to the adjacent card (no wrap); Home/End jump to
-first/last; Left/Right are ignored (vertical orientation). At the cap, `+ New` is replaced by a
-`role="status"` `aria-live="polite"` notice.
+contract: Up/Down move focus **and** selection to the adjacent card and **wrap** (last→first,
+first→last); Home/End jump to first/last; Left/Right are ignored (vertical orientation). At the cap,
+`+ New` is replaced by a plain-text notice (the trials-reached announcement is narrated once via the
+shared `<Announcer>`, not an inline live region).
 
 Each sim also emits `trial_added` / `trial_selected` / `trial_reset` log events on these mutations.
 The e2e suite doesn't assert log payloads (that's unit-test territory) — it covers the visible/ARIA

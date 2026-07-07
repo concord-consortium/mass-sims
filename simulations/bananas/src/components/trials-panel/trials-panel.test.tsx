@@ -1,4 +1,4 @@
-import { act, fireEvent, render } from "@testing-library/react";
+import { act, fireEvent, render, within } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
 // TrialsPanel consumes useLogEvent directly, so mock the hook (the seam it uses) while preserving
@@ -40,13 +40,47 @@ const tenTrials = () =>
 const threeTrials = () => createTestStore({ trials: { A: {}, B: {}, C: {} } });
 
 describe("TrialsPanel — structure", () => {
-  it("renders the tablist with one card and a + New card initially, no max notice", () => {
+  it("renders the listbox with one option and a + New card initially, no max notice", () => {
     const { container, getByRole, queryByRole } = renderPanel();
-    expect(getByRole("tablist", { name: "Trials" })).toBeInTheDocument();
-    expect(getByRole("tab", { name: /^Trial A/ })).toBeInTheDocument();
+    expect(getByRole("listbox", { name: "Trials" })).toBeInTheDocument();
+    expect(getByRole("option", { name: /^Trial A/ })).toBeInTheDocument();
     expect(getByRole("button", { name: "Add new trial" })).toBeInTheDocument();
     expect(queryByRole("status")).not.toBeInTheDocument();
     expect(container.querySelectorAll(".trial-card")).toHaveLength(1);
+  });
+
+  it("is a single-select listbox (no aria-multiselectable), orientation vertical", () => {
+    const { getByRole } = renderPanel();
+    const listbox = getByRole("listbox", { name: "Trials" });
+    expect(listbox).not.toHaveAttribute("aria-multiselectable");
+    expect(listbox).toHaveAttribute("aria-orientation", "vertical");
+  });
+
+  it("the listbox owns ONLY option cards — the + New card and the reset are outside it", () => {
+    const { getByRole } = renderPanel(threeTrials());
+    const listbox = getByRole("listbox", { name: "Trials" });
+    // One option per trial, nothing else counted as an option.
+    expect(within(listbox).getAllByRole("option")).toHaveLength(3);
+    // The panel reset and the + New card are siblings of the listbox, not descendants.
+    expect(listbox.contains(getByRole("button", { name: "Reset trial A" }))).toBe(false);
+    expect(listbox.contains(getByRole("button", { name: "Add new trial" }))).toBe(false);
+    // Every direct child is a presentational (role="none") TrialCard wrapper, so the option button
+    // inside each reads as a direct child of the listbox — no unannotated <div> in the owned chain.
+    for (const child of Array.from(listbox.children)) {
+      expect(child).toHaveAttribute("role", "none");
+    }
+  });
+
+  it("ignores Enter in the listbox handler (native button activation selects — no double)", () => {
+    // The listbox onKeyDown handles only arrows/Home/End; Enter/Space are the option button's
+    // native job, so a keydown Enter on an unselected option does NOT select via the handler.
+    const store = threeTrials();
+    const { getByRole } = renderPanel(store);
+    fireEvent.keyDown(getByRole("option", { name: /^Trial B/ }), { key: "Enter" });
+    expect(store.ui.selectedTrialLetter).toBe("A"); // unchanged by the handler
+    // A real click (the native activation path) selects exactly once.
+    fireEvent.click(getByRole("option", { name: /^Trial B/ }));
+    expect(store.ui.selectedTrialLetter).toBe("B");
   });
 });
 
@@ -64,7 +98,7 @@ describe("TrialsPanel — add / select", () => {
       ui: { selectedCrossByTrial: { A: 0 } },
     });
     const { getByRole } = renderPanel(store);
-    fireEvent.click(getByRole("tab", { name: /^Trial B/ }));
+    fireEvent.click(getByRole("option", { name: /^Trial B/ }));
     expect(store.ui.selectedTrialLetter).toBe("B");
     // A's cross-selection memory survives the switch (Resolved decision #1).
     expect(store.ui.selectedCrossByTrial.get("A")).toBe(0);
@@ -83,14 +117,14 @@ describe("TrialsPanel — logging", () => {
   it("logs trial_selected with the previous letter on card click", () => {
     const { getByRole } = renderPanel(createTestStore({ trials: { A: {}, B: {} } }));
     logEvent.mockReset();
-    fireEvent.click(getByRole("tab", { name: /^Trial B/ }));
+    fireEvent.click(getByRole("option", { name: /^Trial B/ }));
     expect(logEvent).toHaveBeenCalledWith("trial_selected", { trial: "B", previous: "A" });
   });
 
   it("emits nothing when the already-selected card is clicked (no-op skip)", () => {
     const { getByRole } = renderPanel(createTestStore({ trials: { A: {}, B: {} } }));
     logEvent.mockReset();
-    fireEvent.click(getByRole("tab", { name: /^Trial A/ })); // A is selected by default
+    fireEvent.click(getByRole("option", { name: /^Trial A/ })); // A is selected by default
     expect(logEvent).not.toHaveBeenCalled();
   });
 
@@ -102,17 +136,19 @@ describe("TrialsPanel — logging", () => {
     expect(logEvent).toHaveBeenCalledWith("trial_selected", { trial: "B", previous: "A" });
   });
 
-  it("emits nothing when keyboard nav is a no-op at the boundary", () => {
-    const { container } = renderPanel(createTestStore({ trials: { A: {}, B: {} } }));
+  it("emits nothing when keyboard nav is a no-op (a single trial wraps to itself)", () => {
+    // With wrapping, the only no-op is a one-trial list: the arrow target === the current trial,
+    // so navigateTo's same-letter skip fires and nothing is logged.
+    const { container } = renderPanel(createTestStore()); // single trial A
     const cards = container.querySelectorAll(".trial-card");
     logEvent.mockReset();
-    fireEvent.keyDown(cards[0], { key: "ArrowUp" }); // already at the top → target stays A
+    fireEvent.keyDown(cards[0], { key: "ArrowDown" }); // wraps A → A → no selection change
     expect(logEvent).not.toHaveBeenCalled();
   });
 
-  it("logs trial_reset with the iteration letter on the per-card reset overhang", () => {
+  it("logs trial_reset for the selected trial via the panel reset button", () => {
     const store = createTestStore({ trials: { A: { p1: "wild-w1", crosses: [[plant(false)]] } } });
-    const { getByRole } = renderPanel(store); // A selected by default → its reset is visible
+    const { getByRole } = renderPanel(store); // A selected by default → panel reset targets A
     logEvent.mockReset();
     fireEvent.click(getByRole("button", { name: "Reset trial A" }));
     expect(logEvent).toHaveBeenCalledWith("trial_reset", { trial: "A" });
@@ -130,7 +166,7 @@ describe("TrialsPanel — scroll selected into view", () => {
       .mockImplementation(() => {});
     const { getByRole } = renderPanel(createTestStore({ trials: { A: {}, B: {} } }));
     scrollSpy.mockClear();
-    fireEvent.click(getByRole("tab", { name: /^Trial B/ }));
+    fireEvent.click(getByRole("option", { name: /^Trial B/ }));
     expect(scrollSpy).toHaveBeenCalledWith({ block: "nearest", behavior: "smooth" });
     scrollSpy.mockRestore();
     HTMLElement.prototype.scrollIntoView = originalScrollIntoView;
@@ -157,8 +193,8 @@ describe("TrialsPanel — max trials", () => {
   });
 });
 
-describe("TrialsPanel — per-card reset", () => {
-  it("resets only the targeted trial when its reset button is clicked", () => {
+describe("TrialsPanel — reset", () => {
+  it("resets only the selected trial when the panel reset is clicked", () => {
     const store = createTestStore({
       trials: { A: { p1: "wild-w1", crosses: [[plant(false)]] }, B: { p1: "cavendish-c1" } },
     });
@@ -169,6 +205,21 @@ describe("TrialsPanel — per-card reset", () => {
     expect(store.trials.get("B")?.p1).toBe("cavendish-c1"); // untouched
     // The reset narrates through the shared announcer.
     expect(region).toHaveTextContent("Trial A reset.");
+  });
+
+  it("falls back to the first trial's reset when the selected letter is dangling", () => {
+    // A malformed hydrate could leave selectedTrialLetter pointing at a trial that doesn't exist.
+    // `activeTrial` falls back to the first trial; the panel reset must match — label + narrate +
+    // reset the fallback, never the dangling letter (and never a `-1` position).
+    const store = createTestStore({
+      trials: { B: { p1: "wild-w1", crosses: [[plant(false)]] } }, // only B exists
+      ui: { selectedTrialLetter: "A" }, // A isn't in the trials map → dangling
+    });
+    const { getByRole, queryByRole, region } = renderPanel(store);
+    expect(queryByRole("button", { name: "Reset trial A" })).toBeNull();
+    fireEvent.click(getByRole("button", { name: "Reset trial B" }));
+    expect(store.trials.get("B")?.canReset).toBe(false);
+    expect(region).toHaveTextContent("Trial B reset.");
   });
 });
 
@@ -197,7 +248,7 @@ describe("TrialsPanel — aria-label enrichment + reactivity", () => {
       },
     });
     const { getByRole } = renderPanel(store);
-    expect(getByRole("tab", { name: /^Trial A/ }).getAttribute("aria-label")).toBe(
+    expect(getByRole("option", { name: /^Trial A/ }).getAttribute("aria-label")).toBe(
       "Trial A. W1 crossed with C1. 3 offspring, 2 healthy, 1 infected",
     );
   });
@@ -205,30 +256,30 @@ describe("TrialsPanel — aria-label enrichment + reactivity", () => {
   it("updates the aria-label reactively when the trial is crossed", () => {
     const store = createTestStore({ trials: { A: { p1: "wild-w1", p2: "cavendish-c1" } } });
     const { getByRole } = renderPanel(store);
-    expect(getByRole("tab", { name: /^Trial A/ }).getAttribute("aria-label")).toBe(
+    expect(getByRole("option", { name: /^Trial A/ }).getAttribute("aria-label")).toBe(
       "Trial A. W1 crossed with C1",
     );
     act(() => {
       store.trials.get("A")?.crossPlants();
     });
-    expect(getByRole("tab", { name: /^Trial A/ }).getAttribute("aria-label")).toMatch(
+    expect(getByRole("option", { name: /^Trial A/ }).getAttribute("aria-label")).toMatch(
       /^Trial A\. W1 crossed with C1\. \d+ offspring, \d+ healthy, \d+ infected$/,
     );
   });
 });
 
 describe("TrialsPanel — keyboard navigation", () => {
-  it("ArrowDown moves selection to the next card (no wrap at the end)", () => {
+  it("ArrowDown moves selection to the next card and WRAPS from the last to the first", () => {
     const { store, container } = renderPanel(threeTrials());
     const cards = container.querySelectorAll(".trial-card");
     fireEvent.keyDown(cards[0], { key: "ArrowDown" });
     expect(store.ui.selectedTrialLetter).toBe("B");
     act(() => store.ui.selectTrial("C"));
     fireEvent.keyDown(cards[2], { key: "ArrowDown" });
-    expect(store.ui.selectedTrialLetter).toBe("C"); // no wrap past the last card
+    expect(store.ui.selectedTrialLetter).toBe("A"); // wraps past the last card back to the first
   });
 
-  it("ArrowUp moves to the previous card (no wrap at the top)", () => {
+  it("ArrowUp moves to the previous card and WRAPS from the first to the last", () => {
     const store = threeTrials();
     store.ui.selectTrial("B");
     const { container } = renderPanel(store);
@@ -236,7 +287,7 @@ describe("TrialsPanel — keyboard navigation", () => {
     fireEvent.keyDown(cards[1], { key: "ArrowUp" });
     expect(store.ui.selectedTrialLetter).toBe("A");
     fireEvent.keyDown(cards[0], { key: "ArrowUp" });
-    expect(store.ui.selectedTrialLetter).toBe("A"); // no wrap past the first card
+    expect(store.ui.selectedTrialLetter).toBe("C"); // wraps past the first card back to the last
   });
 
   it("Home / End jump to the first / last card", () => {
@@ -257,23 +308,23 @@ describe("TrialsPanel — keyboard navigation", () => {
   });
 });
 
-describe("TrialsPanel — accessibility audit (Task 5)", () => {
-  it("exposes a vertical tablist named Trials", () => {
+describe("TrialsPanel — accessibility", () => {
+  it("exposes a vertical listbox named Trials", () => {
     const { getByRole } = renderPanel();
-    expect(getByRole("tablist", { name: /trials/i })).toHaveAttribute(
+    expect(getByRole("listbox", { name: /trials/i })).toHaveAttribute(
       "aria-orientation",
       "vertical",
     );
   });
 
-  it("renders each card as a tab with aria-selected reflecting selection", () => {
+  it("renders each card as an option with aria-selected reflecting selection", () => {
     const store = createTestStore({ trials: { A: {}, B: {} } });
     store.ui.selectTrial("B");
     const { getAllByRole } = renderPanel(store);
-    const tabs = getAllByRole("tab");
-    expect(tabs).toHaveLength(2);
-    expect(tabs[0]).toHaveAttribute("aria-selected", "false"); // A
-    expect(tabs[1]).toHaveAttribute("aria-selected", "true"); // B (selected)
+    const options = getAllByRole("option");
+    expect(options).toHaveLength(2);
+    expect(options[0]).toHaveAttribute("aria-selected", "false"); // A
+    expect(options[1]).toHaveAttribute("aria-selected", "true"); // B (selected)
   });
 
   it("renders the max-trials notice", () => {
@@ -285,7 +336,7 @@ describe("TrialsPanel — accessibility audit (Task 5)", () => {
     expect(queryByRole("status")).not.toBeInTheDocument();
   });
 
-  it("reflects reset availability via aria-disabled on the selected card's reset button", () => {
+  it("reflects reset availability via aria-disabled on the panel reset button", () => {
     // Selected empty trial A → reset present but disabled.
     const empty = renderPanel();
     expect(empty.getByRole("button", { name: "Reset trial A" })).toHaveAttribute(

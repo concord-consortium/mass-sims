@@ -35,8 +35,8 @@ test("About modal: not open on initial load", async () => {
 
 test("Trial A is seeded and selected on load", async () => {
   // Exactly one trial card (A) exists, and it's the active selection.
-  await expect(bananas.trialTab("A")).toBeVisible();
-  await expect(bananas.trialTab("B")).toHaveCount(0);
+  await expect(bananas.trialOption("A")).toBeVisible();
+  await expect(bananas.trialOption("B")).toHaveCount(0);
   expect(await bananas.getActiveTrialLetter()).toBe("A");
 });
 
