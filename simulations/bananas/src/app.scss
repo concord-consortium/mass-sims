@@ -89,11 +89,14 @@
       background: theme.$accent-strong;
     }
 
-    // While open, the attached list + rotated caret already signal "active"; keep the trigger
-    // itself in its default (unselected) color rather than the hover/pressed accent.
-    &[aria-expanded="true"],
-    &[aria-expanded="true"][data-hovered] {
+    // While open the trigger rests in its default color (the list + rotated caret already signal
+    // "active"), overriding react-aria's data-pressed which it holds for the whole open state.
+    // It still shows the hover accent on hover, per design.
+    &[aria-expanded="true"] {
       background: theme.$surface;
+    }
+    &[aria-expanded="true"][data-hovered] {
+      background: theme.$accent;
     }
 
     .select-caret {
