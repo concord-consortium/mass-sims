@@ -46,22 +46,23 @@ export const TrialsPanel = observer(function TrialsPanel() {
   const announce = useAnnounce();
   const selectedLetter = store.ui.selectedTrialLetter;
   const listRef = useScrollSelectedTrialIntoView<HTMLDivElement>(selectedLetter);
-  // The panel reset is positioned over the selected card by index (cards are fixed-height); the CSS
-  // reads `--selected-index`. Clamp the index and derive `resetLetter` from it so a transiently
-  // dangling `selectedLetter` (a malformed hydrate, before the store's normalization fixes it)
-  // can't produce a nonsensical `-1` position or narrate/reset a letter that isn't there; both fall
-  // back to the first trial, matching `activeTrial`. In the normal case these equal the selection.
+  // The rendered selection, roving tabindex, keyboard nav, and panel reset all key off one clamped
+  // fallback. A transiently dangling `selectedLetter` (a malformed hydrate, before the store's
+  // normalization fixes it) matches no card; clamping the index to a real trial keeps exactly one
+  // option selected and tabbable (never a listbox with no tab stop), positions the reset over that
+  // card (cards are fixed-height, so the CSS reads `--selected-index`), and stops reset from
+  // narrating or targeting a letter that isn't there. In the normal case these equal the selection.
   // `activeTrial` is resettable once it has a recorded output.
   const selectedIndex = Math.max(0, store.trialLetters.indexOf(selectedLetter));
-  const resetLetter = store.trialLetters[selectedIndex] ?? selectedLetter;
+  const selectedOptionLetter = store.trialLetters[selectedIndex] ?? selectedLetter;
   const activeTrial = store.activeTrial;
 
   // Reset the selected trial (the only one the panel reset targets). Emit before the reset so the
   // payload reads the trial being reset, then narrate it.
   const handleReset = () => {
-    logEvent("trial_reset", { trial: resetLetter });
-    store.resetTrial(resetLetter);
-    announce(`Trial ${resetLetter} reset.`);
+    logEvent("trial_reset", { trial: selectedOptionLetter });
+    store.resetTrial(selectedOptionLetter);
+    announce(`Trial ${selectedOptionLetter} reset.`);
   };
 
   // Single funnel for every trial-selection change (card click, keyboard nav, post-add auto-select)
@@ -96,7 +97,7 @@ export const TrialsPanel = observer(function TrialsPanel() {
   const onKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
     if (!(e.target as HTMLElement).closest(".trial-card")) return;
     const letters = store.trialLetters;
-    const i = letters.indexOf(selectedLetter);
+    const i = selectedIndex;
     let target: number;
     switch (e.key) {
       case "ArrowDown":
@@ -135,7 +136,7 @@ export const TrialsPanel = observer(function TrialsPanel() {
         onKeyDown={onKeyDown}
       >
         {Array.from(store.trials.entries()).map(([letter, trial]) => {
-          const selected = letter === selectedLetter;
+          const selected = letter === selectedOptionLetter;
           return (
             <TrialCard
               key={letter}
@@ -153,7 +154,7 @@ export const TrialsPanel = observer(function TrialsPanel() {
       {/* Panel-level reset for the selected trial — outside the listbox, positioned over the
           selected card by index via `--selected-index` (see trials-panel.scss). */}
       <TrialResetButton
-        letter={resetLetter}
+        letter={selectedOptionLetter}
         disabled={activeTrial.output === null}
         onReset={handleReset}
         style={{ "--selected-index": selectedIndex } as CSSProperties}
