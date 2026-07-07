@@ -175,6 +175,7 @@ export function SimulationView({
         ref={canvasRef}
         width={canvasWidth}
         height={CANVAS_HEIGHT}
+        role="img"
         aria-label="Random walk visualization"
       />
       <div className="controls">

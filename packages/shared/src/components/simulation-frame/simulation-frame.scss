@@ -20,21 +20,12 @@ $titlebar-about-leading-space: 5px;   // margin-left on the About button → CC�
   color: tokens.$color-text;
   display: grid;
   font-family: tokens.$font-family-base;
-  column-gap: tokens.$column-gap;
   row-gap: $titlebar-content-gap;
+  // Two stacked rows: the title bar, then the <main> content region (a single column each). The
+  // three-column split of the content lives on .sim-main below so <main> can be a real grid box.
   grid-template-areas:
-    "titlebar  titlebar    titlebar"
-    "trials    simulation  data";
-  // Trials is fixed at 155 px; Simulation and Data share the remaining space in
-  // a 564 : 285 ratio (≈ 66.4 % : 33.6 %). This calibrates to the absolute
-  // 155 / 564 / 285 layout at 1044 px (AP Full Width) and proportionally shrinks
-  // below — down to 767 px AP 2-col with the instructions panel visible.
-  // `minmax(0, …fr)` lets the children actually shrink rather than refusing to
-  // dip below their content's intrinsic width. See ui-design-plan.md §7.
-  grid-template-columns:
-    tokens.$column-trials-width
-    minmax(0, #{tokens.$column-simulation-flex}fr)
-    minmax(0, #{tokens.$column-data-flex}fr);
+    "titlebar"
+    "content";
   grid-template-rows: tokens.$frame-titlebar-height 1fr;
   height: tokens.$frame-height;
   min-width: tokens.$frame-width-ap-2col-shown;
@@ -160,7 +151,31 @@ $titlebar-about-leading-space: 5px;   // margin-left on the About button → CC�
     width: 24px;
   }
 
-  // Grid-area assignments applied to each slot's Section root (a direct child) via className.
+  // The <main> landmark IS the content-row grid: it holds the three slot Sections in their columns.
+  // Kept a real box (not `display: contents`) on purpose — `display: contents` has known AT-interop
+  // gaps that can drop the element from the accessibility tree, which would silently un-expose the
+  // very landmark this exists to provide.
+  //
+  // Columns: Trials is fixed at 155 px; Simulation and Data share the remaining space in a 564 : 285
+  // ratio (≈ 66.4 % : 33.6 %). This calibrates to the absolute 155 / 564 / 285 layout at 1044 px (AP
+  // Full Width) and proportionally shrinks below — down to 767 px AP 2-col with the instructions
+  // panel visible. `minmax(0, …fr)` lets the children actually shrink rather than refusing to dip
+  // below their content's intrinsic width. See ui-design-plan.md §7.
+  .sim-main {
+    grid-area: content;
+    display: grid;
+    grid-template-areas: "trials simulation data";
+    grid-template-columns:
+      tokens.$column-trials-width
+      minmax(0, #{tokens.$column-simulation-flex}fr)
+      minmax(0, #{tokens.$column-data-flex}fr);
+    grid-template-rows: minmax(0, 1fr);
+    column-gap: tokens.$column-gap;
+    min-height: 0; // let the panels' internal scroll regions size within the content row
+  }
+
+  // Grid-area assignments applied to each slot's Section root (a grid child of .sim-main) via
+  // className.
   .trials-area {
     grid-area: trials;
 

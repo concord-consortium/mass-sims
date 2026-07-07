@@ -4,11 +4,14 @@ import { Histogram } from "./histogram";
 
 describe("Histogram", () => {
   it("renders the empty state when values is empty", () => {
-    const { getByText, container } = render(
+    const { getByText, container, queryByRole } = render(
       <Histogram values={[]} height={160} ariaLabel="Test histogram" />,
     );
     expect(getByText("No data")).toBeInTheDocument();
     expect(container.querySelector("svg")).toBeNull();
+    // The empty state is a plain text placeholder, never role="img" — an atomic img role would hide
+    // the "No data" message from screen readers (even with an ariaLabel present, as here).
+    expect(queryByRole("img")).not.toBeInTheDocument();
   });
 
   it("renders a custom empty-state message when supplied", () => {
@@ -40,6 +43,13 @@ describe("Histogram", () => {
       <Histogram values={[1, 2, 3]} height={160} ariaLabel="Distance distribution" />,
     );
     expect(getByLabelText("Distance distribution")).toBeInTheDocument();
+  });
+
+  it("does not expose an img role when no ariaLabel is given (no unlabeled image)", () => {
+    const { queryByRole } = render(<Histogram values={[1, 2, 3]} height={160} />);
+    // A role="img" with no accessible name is a WCAG 1.1.1 failure; unlabeled, the region is
+    // decorative and claims no image role at all.
+    expect(queryByRole("img")).not.toBeInTheDocument();
   });
 
   it("renders x and y axis titles when supplied", () => {

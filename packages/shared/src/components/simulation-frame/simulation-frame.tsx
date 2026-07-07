@@ -197,7 +197,12 @@ export function SimulationFrame({
         </div>
       </header>
 
-      {children}
+      {/*
+        The three slot Sections are the sim's primary content, so they live in a <main> landmark
+        (screen-reader "skip to main content" target; distinguishes them from the title-bar banner
+        and the About complementary panel).
+      */}
+      <main className="sim-main">{children}</main>
 
       {infoModalContent && infoOpen ? (
         // The About panel is a persistent, draggable, non-modal aside for use alongside the sim, so

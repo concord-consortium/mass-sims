@@ -1,4 +1,4 @@
-import { render } from "@testing-library/react";
+import { render, within } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import type { RecordedTrial, Walker } from "../model/types";
 import { DataPanel } from "./data-panel";
@@ -32,19 +32,29 @@ describe("DataPanel", () => {
   });
 
   it("renders the histogram frame even for an empty (unrun) selected trial", () => {
-    // No finalTransient → the histogram shows its "No data" state but the canvas is still present.
-    const { getByLabelText } = render(<DataPanel trial={emptyTrial()} />);
-    expect(getByLabelText(/distance distribution/i)).toBeInTheDocument();
+    // Empty trial → the histogram shows a "No data" text placeholder. It is deliberately NOT a
+    // role="img" with an aria-label (an atomic img role would hide the message from screen readers),
+    // so the subsection heading identifies the chart and the placeholder text conveys the state.
+    const { getByRole } = render(<DataPanel trial={emptyTrial()} />);
+    const heading = getByRole("heading", { level: 3, name: "Final Distance Distribution" });
+    const subsection = heading.closest(".data-subsection");
+    expect(subsection).not.toBeNull();
+    expect(within(subsection as HTMLElement).getByText("No data")).toBeInTheDocument();
   });
 
   it("always renders the time-series chart, with or without data", () => {
+    // With data: the chart's SVG is exposed as a labeled image (role="img" + aria-label).
     const withData = render(<DataPanel trial={runTrial(5)} />);
     expect(withData.getByLabelText(/distance over time/i)).toBeInTheDocument();
     withData.unmount();
 
-    // The chart frame stays present even for an unrun, selected trial (it shows a "No data" state).
+    // Empty: the chart shows a "No data" text placeholder (not a labeled image), identified by its
+    // subsection heading.
     const empty = render(<DataPanel trial={emptyTrial()} />);
-    expect(empty.getByLabelText(/distance over time/i)).toBeInTheDocument();
+    const heading = empty.getByRole("heading", { level: 3, name: "Average Distance Over Time" });
+    const subsection = heading.closest(".data-subsection");
+    expect(subsection).not.toBeNull();
+    expect(within(subsection as HTMLElement).getByText("No data")).toBeInTheDocument();
   });
 
   it("renders the chart with liveSeries when supplied (in-progress run on an empty trial)", () => {

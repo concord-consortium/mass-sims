@@ -4,12 +4,15 @@ import { LineChart } from "./line-chart";
 
 describe("LineChart", () => {
   it("renders the empty state when data has fewer than 2 points", () => {
-    const { getByText, container } = render(
+    const { getByText, container, queryByRole } = render(
       <LineChart data={[]} xKey="x" yKey="y" height={130} ariaLabel="Test chart" />,
     );
     expect(getByText("No data")).toBeInTheDocument();
     // No SVG plot in the empty state.
     expect(container.querySelector("svg")).toBeNull();
+    // The empty state is a plain text placeholder, never role="img" — an atomic img role would hide
+    // the "No data" message from screen readers (even with an ariaLabel present, as here).
+    expect(queryByRole("img")).not.toBeInTheDocument();
   });
 
   it("renders a custom empty-state message when supplied", () => {
@@ -42,6 +45,17 @@ describe("LineChart", () => {
       <LineChart data={data} xKey="x" yKey="y" height={130} ariaLabel="Avg distance over time" />,
     );
     expect(getByLabelText("Avg distance over time")).toBeInTheDocument();
+  });
+
+  it("does not expose an img role when no ariaLabel is given (no unlabeled image)", () => {
+    const data = [
+      { x: 0, y: 0 },
+      { x: 1, y: 1 },
+    ];
+    const { queryByRole } = render(<LineChart data={data} xKey="x" yKey="y" height={130} />);
+    // A role="img" with no accessible name is a WCAG 1.1.1 failure; unlabeled, the region is
+    // decorative and claims no image role at all.
+    expect(queryByRole("img")).not.toBeInTheDocument();
   });
 
   it("renders x and y axis titles when supplied", () => {
