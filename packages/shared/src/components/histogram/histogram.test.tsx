@@ -4,11 +4,14 @@ import { Histogram } from "./histogram";
 
 describe("Histogram", () => {
   it("renders the empty state when values is empty", () => {
-    const { getByText, container } = render(
+    const { getByText, container, queryByRole } = render(
       <Histogram values={[]} height={160} ariaLabel="Test histogram" />,
     );
     expect(getByText("No data")).toBeInTheDocument();
     expect(container.querySelector("svg")).toBeNull();
+    // The empty state is a plain text placeholder, never role="img" — an atomic img role would hide
+    // the "No data" message from screen readers (even with an ariaLabel present, as here).
+    expect(queryByRole("img")).not.toBeInTheDocument();
   });
 
   it("renders a custom empty-state message when supplied", () => {

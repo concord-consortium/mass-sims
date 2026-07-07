@@ -80,11 +80,11 @@ function FrameAtWidth({
 
 export function Preview() {
   return (
-    <main style={{ padding: 24 }}>
+    <div style={{ padding: 24 }}>
       <h1 style={{ fontFamily: "system-ui" }}>SimulationFrame — four target widths × 562 px</h1>
       {WIDTHS.map((w) => (
         <FrameAtWidth key={w.px} {...w} />
       ))}
-    </main>
+    </div>
   );
 }
