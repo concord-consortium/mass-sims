@@ -21,8 +21,7 @@ a well-tested palette is the whole strategy.
 
 - **Semantic HTML first.** Prefer native `<button>`, `<ul>`/`<li>`, real headings over `role` divs.
   Bananas' cross list is a native `<ul>`/`<li>` with `<button aria-pressed>` rows, not `role` divs.
-- **Decorative SVGs are always `aria-hidden="true"`** — baked into each icon string (including the
-  shared `InfoIcon`/`CloseIcon`). Brand logos use a real `alt`.
+- **Decorative SVGs are always `aria-hidden="true"`** — baked into each icon component (including the shared `InfoIcon`/`CloseIcon`). Brand logos use a real `alt`.
 - **Color is never the only channel.** The palette is chosen with deuteranopia/protanopia in mind;
   encode state with shape + label + color redundantly, meeting WCAG AA contrast.
 - **Touch targets ≥ 44 × 44 px** everywhere (the `--touch-target-min` token). Pointer events, no
