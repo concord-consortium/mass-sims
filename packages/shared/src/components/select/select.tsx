@@ -18,7 +18,8 @@ import "./select.scss";
 /**
  * Restores click-outside-to-close and open-trigger-toggle, which react-aria only wires up for
  * *modal* popovers (via the underlay) — our `isNonModal` popover drops both. See the `isNonModal`
- * note on `<Popover>` below.
+ * note on `<Popover>` below. An outside press isn't swallowed, so (like the design's dropdown) the
+ * same click also activates whatever control it landed on — dismiss + pass-through, not a trap.
  */
 function CloseOnOutsidePointer() {
   const state = useContext(SelectStateContext);
@@ -29,9 +30,11 @@ function CloseOnOutsidePointer() {
       const target = event.target as Element | null;
       // A press inside the portaled list is a selection — leave it to react-aria.
       if (target?.closest?.(".select-popover")) return;
-      // Our own open trigger (the only expanded one): swallow the press, else react-aria would
-      // close on blur then re-open it on the same gesture. Any other press just dismisses.
-      if (target?.closest?.('.react-aria-Button[aria-expanded="true"]')) {
+      // Our own open trigger (the only expanded listbox trigger): swallow the press, else
+      // react-aria would close on blur then re-open it on the same gesture. Matching on the
+      // trigger's stable ARIA state rather than react-aria's `.react-aria-Button` class keeps
+      // this from breaking if that internal class changes. Any other press just dismisses.
+      if (target?.closest?.('[aria-haspopup="listbox"][aria-expanded="true"]')) {
         event.preventDefault();
         event.stopPropagation();
       }

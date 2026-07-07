@@ -92,8 +92,8 @@ describe("Select", () => {
 
       // A real click begins with pointerdown; the handler closes on that and swallows it so
       // react-aria can't reopen on the same gesture. That gesture-linked no-reopen depends on the
-      // browser's pointer→click sequencing (covered by the app-level e2e); here we assert the
-      // unit mechanism — the pointerdown on the expanded trigger dismisses the list.
+      // browser's pointer→click sequencing, which jsdom's discrete events can't reproduce; here we
+      // assert the unit mechanism — the pointerdown on the expanded trigger dismisses the list.
       fireEvent.pointerDown(trigger);
       expect(queryByRole("listbox")).not.toBeInTheDocument();
     });
