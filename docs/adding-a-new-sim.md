@@ -184,10 +184,13 @@ and `setInteractiveState()` is a no-op, so no `inIframe()` guards are needed. Th
 `setInteractiveState` rather than lara-interactive-api's combined `useInteractiveState` hook because
 that composes more cleanly with the MST snapshot flow.
 
-> **Chrome when embedded.** `<SimulationFrame>` accepts `standalone?: boolean` to toggle
-> its outer container (defaults to `true`, overridable via a `?standalone=false` URL
-> param). If your host should supply the surrounding chrome, derive it from the embed
-> flag: `<SimulationFrame standalone={!isEmbedded} …>`.
+> **Chrome when embedded.** `<SimulationFrame>` toggles its outer container via
+> `standalone?: boolean`, and the starter template already wires it to embed detection —
+> `<SimulationFrame standalone={!isEmbedded} …>` — so an embedded sim suppresses its own
+> container and lets AP supply the chrome with no author action needed. Precedence is
+> `?standalone=` URL param → prop → `true` default: the param is the highest, so appending
+> `?standalone=false` forces AP-style chrome for testing/preview without editing the sim,
+> even though the sim always passes the prop.
 
 ## 6. Logging conventions
 

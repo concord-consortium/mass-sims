@@ -403,7 +403,7 @@ Kept here as a decision log.
 
 28. **Columns flex below 1044.** Trials stays fixed at 155 px; Simulation and Data share the remaining space in a 564 : 285 ratio. The previous "fixed three columns at 1044, alternate layout below" model is superseded.
 
-29. **Standalone sims render an outer container.** A 2 px solid border with a 10 px corner radius wraps the SimulationFrame when `standalone={true}` (the default). AP-embedded sims pass `standalone={false}` so AP's chrome is the only visual container.
+29. **Standalone sims render an outer container.** A 2 px solid border with a 10 px corner radius wraps the SimulationFrame when `standalone={true}` (the default). Sims derive the prop from embed detection (`standalone={!isEmbedded}`) so an AP-embedded sim suppresses the container, leaving AP's chrome as the only visual container.
 
 ---
 

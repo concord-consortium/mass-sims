@@ -155,6 +155,7 @@ export const App = observer(function App({ rng = Math.random }: AppProps = {}) {
           simTitle="Bananas"
           tagline="An interactive genetics simulation"
           infoModalContent={<AboutContent />}
+          standalone={!isEmbedded}
           onInfoOpenChange={handleInfoOpenChange}
         >
           <SimulationFrame.Trials>

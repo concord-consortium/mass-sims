@@ -48,7 +48,7 @@ three named slots placed by grid-area (source order doesn't matter).
 | `simTitle` | `string` | Shown in the 50 px title bar. |
 | `tagline` | `string` | Shown beside the title. |
 | `infoModalContent?` | `ReactNode` | Content of the **About** panel; omit to hide the About button. |
-| `standalone?` | `boolean` | Toggles the 2 px/10 px-radius outer container. Defaults to `true`, overridable at runtime via a `?standalone=false` URL param. Pass `standalone={!isEmbedded}` when embedded so AP supplies the chrome. |
+| `standalone?` | `boolean` | Toggles the 2 px/10 px-radius outer container. Precedence: a `?standalone=` URL param wins over this prop, which wins over the `true` default. Pass `standalone={!isEmbedded}` so an embedded sim lets AP supply the chrome; `?standalone=false` still overrides the prop to force it off (testing/preview). |
 | `onInfoOpenChange?` | `(open: boolean) => void` | Fires when the About panel opens/closes. |
 
 Slots: `<SimulationFrame.Trials>`, `<SimulationFrame.Simulation>`, `<SimulationFrame.Data>`. Each

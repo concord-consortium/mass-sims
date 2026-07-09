@@ -80,7 +80,7 @@ export function SimulationFrame({
   standalone,
 }: SimulationFrameProps) {
   const urlStandalone = useUrlStandaloneParam();
-  const effectiveStandalone = standalone ?? urlStandalone ?? true;
+  const effectiveStandalone = urlStandalone ?? standalone ?? true;
   const [infoOpen, setInfoOpen] = useState(false);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const closeRef = useRef<HTMLButtonElement>(null);

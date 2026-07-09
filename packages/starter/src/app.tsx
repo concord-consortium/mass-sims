@@ -161,6 +161,7 @@ export const App = observer(function App() {
               population disperses over time.
             </p>
           }
+          standalone={!isEmbedded}
         >
           <SimulationFrame.Trials>
             <TrialsPanel />
