@@ -227,7 +227,7 @@ The `SimulationFrame` was to support narrow mode via a `layout="narrow" | "wide"
 - Left cluster: `simTitle` (Lato 24 / 28 px bold) followed by `tagline` (Lato 16 / 20 px regular).
 - Right cluster: the project-wide partner branding (DESE + Concord Consortium logos, shipped as SVGs inside `packages/shared` and rendered by `<SimulationFrame>` internally — the same in every Mass Sims sim) followed by the **About** button (`min-height: 44 px`, 2 px border `#555`, 6 px border-radius, info icon + "About" label).
 
-The sim title bar is rendered **always** — both in standalone deploys and when embedded in Activity Player. No "chrome suppression" mode.
+The sim title bar is rendered **always** — both in standalone deploys and when embedded in Activity Player — and its contents are identical in either context. The only chrome that differs by context is the outer container (the 2 px / 10 px-radius border), which embedded sims suppress so AP's chrome is the sole container (see #29).
 
 **What's NOT part of the sim:** the teal "**[Sim] Simulation**" bar that appears above the sim title bar in the demo (background `#047a99`, Lato 16 px white text) is rendered by Activity Player's wrapper chrome, not by `<SimulationFrame>`. `<SimulationFrame>` has no `projectName` prop and does not render that row. In standalone deploys (no AP wrapper), the teal bar simply doesn't appear — there's nothing the sim needs to do to suppress it, because the sim never rendered it.
 
@@ -374,7 +374,7 @@ Kept here as a decision log.
 17. **Light/dark mode** → No.
 18. **Devices and viewport** → Four exact widths (1044, 1024, 989, 767) at a fixed 562 px height. Widths are driven by Activity Player's embedding modes; height is driven by working backwards from the tightest available viewport across supported devices (Chromebook is the binding constraint at 609 px available height). Supported devices: Teacher Desktop, Chromebook, iPad 10th gen (landscape), Android tablet (landscape). iPad ≤ 9th gen has a known 20 px width-overflow on the right edge of the data column, accepted as a known edge case. The three columns flex to fit every width — Trials fixed at 155 px, Simulation and Data sharing the rest in a 564 : 285 ratio (see §7); there is no separate narrow mode. Touch-friendly hit targets (≥ 44 × 44 px) throughout. Trials list and data panel scroll vertically inside their columns; the simulation column does not scroll.
 
-19. **Sim title bar (one row, always rendered)** → `<SimulationFrame>` renders a single 50 px header row with `simTitle` + `tagline` on the left and project-wide partner branding (DESE + Concord Consortium SVGs) + the About button on the right. No project bar in the sim itself. The teal "[Sim] Simulation" bar above is Activity Player's chrome and is not modeled by `<SimulationFrame>` at all. No chrome-suppression mode — what the sim renders is the same standalone and embedded.
+19. **Sim title bar (one row, always rendered)** → `<SimulationFrame>` renders a single 50 px header row with `simTitle` + `tagline` on the left and project-wide partner branding (DESE + Concord Consortium SVGs) + the About button on the right. No project bar in the sim itself. The teal "[Sim] Simulation" bar above is Activity Player's chrome and is not modeled by `<SimulationFrame>` at all. The title bar and its contents render identically standalone and embedded; the only context-dependent chrome is the outer container, which embedded sims suppress (see #29).
 
 20. **Partner branding scope** → Identical across every Mass Sims sim. The DESE + Concord Consortium logos ship as SVGs inside `packages/shared` and are rendered internally by `<SimulationFrame>`. Not configurable per sim, not exposed as a prop.
 
@@ -423,7 +423,7 @@ These remain unanswered. Each is a decision the designer + team need to make.
 
 ~~**Q30. Narrow-mode (676 px) layout.**~~ **Closed.** The three columns flex from 767 to 1044; no alternate layout is required. See §7.
 
-~~**Q31. Chrome suppression when embedded in Activity Player.**~~ **Resolved (#19):** the sim renders one 50 px title bar always, in standalone and embedded mode. There is no project bar to suppress.
+~~**Q31. Chrome suppression when embedded in Activity Player.**~~ **Resolved (#19):** the sim renders one 50 px title bar always, in standalone and embedded mode, and there is no project bar to suppress. (The outer container is the one piece of chrome that differs by context — embedded sims suppress it; see #29.)
 
 **Q32. Sim-title typography at narrower widths.** The designed sim-title-bar at 1044 px shows `simTitle` at 24 / 28 px bold beside `tagline` at 16 / 20 px regular. Whether the tagline truncates, wraps, hides, or scales at 989 / 767 px is still being designed.
 
