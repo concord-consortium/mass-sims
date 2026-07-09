@@ -136,14 +136,15 @@ Then wire two effects in `app.tsx` — restore on init, push on change:
 ```tsx
 // app.tsx
 import { setInteractiveState, useInitMessage } from "@concord-consortium/lara-interactive-api";
-import { useReloadWarning } from "@concord-consortium/mass-sims-shared";
+import { inIframe, useReloadWarning } from "@concord-consortium/mass-sims-shared";
 import { applySnapshot, getSnapshot, onSnapshot } from "mobx-state-tree";
 import { useEffect } from "react";
 import type { RootStoreSnapshotOut } from "./stores/root-store";
 import { migrateSavedState, type SavedState, toSavedState } from "./stores/saved-state";
 
 const initMsg = useInitMessage<SavedState>();
-const isEmbedded = initMsg !== null; // embedded once the AP handshake delivers an init message
+// Embedded = running inside AP (or any iframe host).
+const isEmbedded = initMsg !== null || inIframe();
 
 // Hydrate: migrate the wire format, then project it into the MST snapshot shape and apply. NOTE the
 // explicit { trials, ui: {...} } construction — the wire format is NOT the store snapshot.
@@ -184,10 +185,13 @@ and `setInteractiveState()` is a no-op, so no `inIframe()` guards are needed. Th
 `setInteractiveState` rather than lara-interactive-api's combined `useInteractiveState` hook because
 that composes more cleanly with the MST snapshot flow.
 
-> **Chrome when embedded.** `<SimulationFrame>` accepts `standalone?: boolean` to toggle
-> its outer container (defaults to `true`, overridable via a `?standalone=false` URL
-> param). If your host should supply the surrounding chrome, derive it from the embed
-> flag: `<SimulationFrame standalone={!isEmbedded} …>`.
+> **Chrome when embedded.** `<SimulationFrame>` toggles its outer container via
+> `standalone?: boolean`, and the starter template already wires it to embed detection —
+> `<SimulationFrame standalone={!isEmbedded} …>` — so an embedded sim suppresses its own
+> container and lets AP supply the chrome with no author action needed. Precedence is
+> `?standalone=` URL param → prop → `true` default: the param is the highest, so appending
+> `?standalone=false` forces AP-style chrome for testing/preview without editing the sim,
+> even though the sim always passes the prop.
 
 ## 6. Logging conventions
 

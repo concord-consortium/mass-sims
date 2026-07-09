@@ -539,20 +539,20 @@ describe("SimulationFrame", () => {
       expect(container.querySelector(".simulation-frame")).toHaveClass("standalone");
     });
 
-    it("explicit standalone={true} prop wins over ?standalone=false in the URL", () => {
+    it("?standalone=false in the URL overrides an explicit standalone={true} prop", () => {
       setUrlParam("false");
       const { container } = render(
         <SimulationFrame simTitle="Sim" tagline="t" standalone={true} />,
       );
-      expect(container.querySelector(".simulation-frame")).toHaveClass("standalone");
+      expect(container.querySelector(".simulation-frame")).not.toHaveClass("standalone");
     });
 
-    it("explicit standalone={false} prop wins over ?standalone=true in the URL", () => {
+    it("?standalone=true in the URL overrides an explicit standalone={false} prop", () => {
       setUrlParam("true");
       const { container } = render(
         <SimulationFrame simTitle="Sim" tagline="t" standalone={false} />,
       );
-      expect(container.querySelector(".simulation-frame")).not.toHaveClass("standalone");
+      expect(container.querySelector(".simulation-frame")).toHaveClass("standalone");
     });
   });
 });

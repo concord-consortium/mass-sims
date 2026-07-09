@@ -82,6 +82,7 @@ export {
 } from "./trials";
 
 // Utils
+export { inIframe } from "./utils/embedding";
 export {
   prefersReducedMotion,
   smoothScrollIntoView,

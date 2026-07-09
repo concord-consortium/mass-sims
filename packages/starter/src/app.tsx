@@ -1,6 +1,7 @@
 import { setInteractiveState, useInitMessage } from "@concord-consortium/lara-interactive-api";
 import {
   Announcer,
+  inIframe,
   SimulationFrame,
   TRIAL_LETTERS_DEFAULT,
   useReloadWarning,
@@ -42,8 +43,8 @@ export const App = observer(function App() {
   // AP saved-state sync: restore on init, push on change. Standalone-safe — outside AP,
   // useInitMessage stays null and setInteractiveState is a no-op. See infra-plan §3.
   const initMsg = useInitMessage<SavedState>();
-  // Embedded once the AP handshake has delivered an init message; null in standalone.
-  const isEmbedded = initMsg !== null;
+  // Embedded = running inside AP (or any iframe host).
+  const isEmbedded = initMsg !== null || inIframe();
 
   // Defensive normalization: if `selectedTrialLetter` ever names a trial that doesn't exist (e.g. a
   // restored saved state whose active letter wasn't among its trials), re-select the first available
@@ -161,6 +162,7 @@ export const App = observer(function App() {
               population disperses over time.
             </p>
           }
+          standalone={!isEmbedded}
         >
           <SimulationFrame.Trials>
             <TrialsPanel />
