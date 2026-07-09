@@ -1,6 +1,7 @@
 import { setInteractiveState, useInitMessage } from "@concord-consortium/lara-interactive-api";
 import {
   Announcer,
+  inIframe,
   prefersReducedMotion,
   SimulationFrame,
   TRIAL_LETTERS_DEFAULT as TRIAL_LETTERS,
@@ -28,7 +29,8 @@ interface AppProps {
 export const App = observer(function App({ rng = Math.random }: AppProps = {}) {
   const [rootStore] = useState(() => createRootStore({ rng }));
   const initMsg = useInitMessage<SavedState>();
-  const isEmbedded = initMsg !== null;
+  // Embedded = running inside AP (or any iframe host).
+  const isEmbedded = initMsg !== null || inIframe();
 
   // About / info modal open & close logging. Memoized so the SimulationFrame's notification effect
   // isn't re-subscribed on every App re-render (logEvent itself is a stable callback).

@@ -136,14 +136,15 @@ Then wire two effects in `app.tsx` — restore on init, push on change:
 ```tsx
 // app.tsx
 import { setInteractiveState, useInitMessage } from "@concord-consortium/lara-interactive-api";
-import { useReloadWarning } from "@concord-consortium/mass-sims-shared";
+import { inIframe, useReloadWarning } from "@concord-consortium/mass-sims-shared";
 import { applySnapshot, getSnapshot, onSnapshot } from "mobx-state-tree";
 import { useEffect } from "react";
 import type { RootStoreSnapshotOut } from "./stores/root-store";
 import { migrateSavedState, type SavedState, toSavedState } from "./stores/saved-state";
 
 const initMsg = useInitMessage<SavedState>();
-const isEmbedded = initMsg !== null; // embedded once the AP handshake delivers an init message
+// Embedded = running inside AP (or any iframe host).
+const isEmbedded = initMsg !== null || inIframe();
 
 // Hydrate: migrate the wire format, then project it into the MST snapshot shape and apply. NOTE the
 // explicit { trials, ui: {...} } construction — the wire format is NOT the store snapshot.
