@@ -69,7 +69,7 @@ function Data({ children, title = "Data" }: SlotProps) {
  * Simulation and Data flex in a 564 : 285 ratio so the layout adapts to all four
  * container widths (1044 / 1024 / 989 / 767). The `standalone` prop toggles a
  * 2 px / 10 px-radius outer container that AP-embedded sims suppress so AP's chrome is
- * the only container.
+ * the only container. A `standalone` query param in the URL will override the prop.
  */
 export function SimulationFrame({
   simTitle,
