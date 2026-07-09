@@ -1,7 +1,7 @@
 // @concord-consortium/mass-sims-shared
 //
-// Public barrel for the shared library. Phase 1 populates this incrementally as components
-// and hooks land. See ../../../docs/infrastructure-plan.md §3 for the full intended contract.
+// Public barrel for the shared library — the single entry point every sim imports from.
+// See ../../../docs/infrastructure-plan.md §3 for the full API contract.
 
 // Components
 export {

@@ -1,7 +1,7 @@
 # Mass Sims — Infrastructure Plan
 
-**Status:** Phase 0 complete; Phase 1 in progress (shared library v0 — utility hooks + design tokens ported, Vitest set up; `SimulationFrame`/`Section` skeleton + info modal built to the §3 API, with a non-deployed four-width × 562 preview. Structure complete; final visual treatment deferred). Plan kept in sync as Phase 0/1 lessons are absorbed.
-**Date:** May 26, 2026
+**Status:** Infrastructure and shared library complete; first sim shipped. The shared library exposes the full §3 surface — `SimulationFrame` (with the draggable, non-modal About panel, superseding the earlier centered-modal skeleton), `Section`, `TrialCard`, `DataSubsection`, the react-aria control wrappers (`Button`/`Slider`/`NumberField`/`Switch`/`Select`/`Checkbox`), the hand-rolled `LineChart`/`Histogram`, the hooks, and the MST-based trial-list infrastructure. The `starter` template and **Bananas** (the first full sim) are essentially complete, and the CI/CD + per-sim S3 deploy pipeline is in place. This plan remains the source of truth for infrastructure decisions; forward-looking sections describe intent that later work may refine.
+**Date:** May 26, 2026 (last reconciled against the code July 7, 2026)
 **Author:** Plan assembled by Claude based on analysis of `foss` and `dese-models`
 **Scope:** Tooling, file structure, dependencies, build, CI/CD, hooks API, deployment, transferability. **Visual design lives in a separate document — [UI Design Plan](./ui-design-plan.md)** — and iterates on a different cadence.
 **Reference repos analyzed:**
@@ -24,10 +24,10 @@ The shared library exposes a `<SimulationFrame>` compound component with three n
 | Improvements to backport from DESE | `useFrameLoop`, `useStateWithCallbackLazy`, `seeded-random`, frame-rate limiting pattern in `app.tsx`, V2 control components (selectively) | These are real perf wins absent from FOSS |
 | Framework | React 19.2 | Current stable; concurrent features, Actions, automatic memoization compiler |
 | Language | TypeScript 6.x | Strict-by-default; stays on 6 rather than 7 beta until 7 ships stable |
-| Build tool | **Vite 6+** (replacing Webpack 5) | ~24x faster HMR, ~3-5x faster prod builds, ~38 lines of config vs 110+. Already in production at CC in `accessibility-tools` and `datagoat`. |
+| Build tool | **Vite 8** (replacing Webpack 5) | ~24x faster HMR, ~3-5x faster prod builds, ~38 lines of config vs 110+. Already in production at CC in `accessibility-tools` and `datagoat`. (Started at Vite 6; bumped to 8 during Phase 1 to align with `@vitejs/plugin-react@^6` — see §7.) |
 | Package manager | **Yarn 1.x workspaces** (unchanged from FOSS) | Avoid adding a third package manager (pnpm) to the CC toolkit; existing repos use Yarn. |
 | Monorepo orchestrator | **Lerna 4** (unchanged from FOSS) | Works for our scale (~6 packages). Turborepo is easy to layer in later if package count grows past ~10. |
-| UI component library | **MUI v9** with the new non-Emotion engine (or skip MUI entirely — see Open Questions) | v9 decouples styling so we are not forced into Emotion |
+| UI component library | **react-aria-components** (Adobe) — MUI was evaluated and dropped | Headless, fully-accessible primitives; every shared control is a thin token-styled wrapper. Resolves the earlier MUI-vs-skip-MUI question — see §7 and §11 #9. |
 | Styling | Plain (global) SCSS, side-effect imported, scoped under a per-component root class (continuation of existing approach) | Matches the house convention (DESE uses ~450 plain `.scss` files, zero CSS Modules); no reason to churn. *(Earlier drafts said "SCSS Modules" — corrected once DESE's actual convention was verified during Phase 1.)* |
 | Unit testing | **Vitest** (replacing Jest) | Comes essentially free with Vite — same transform pipeline. Running Jest with Vite is more work than just using Vitest. |
 | E2E testing | **Playwright** (replacing Cypress) | Already the cross-org migration target; not counted toward the change budget. |
@@ -78,8 +78,7 @@ mass-sims/                              ← repo root (concord-consortium/mass-s
 │   │   │   │   └── use-reload-warning.ts     ← beforeunload confirmation
 │   │   │   ├── utils/
 │   │   │   │   ├── seeded-random.ts        ← from DESE (deterministic sims)
-│   │   │   │   ├── math-utils.ts
-│   │   │   │   └── platform-utils.ts
+│   │   │   │   └── reduced-motion.ts       ← prefers-reduced-motion helpers
 │   │   │   ├── styles/
 │   │   │   │   ├── tokens.scss             ← design tokens (demo-derived palette, no CSS output)
 │   │   │   │   └── global.scss             ← :root custom properties; imported once per sim entry
@@ -243,9 +242,9 @@ The Phase 3 form controls, each a thin react-aria-components wrapper per the [Sh
 
 ### `<LineChart>` and `<Histogram>` — hand-rolled SVG charts
 
-No charting library (§11 #19). Both render a `role="img"` region named by `ariaLabel` (the SVG internals are `aria-hidden`), with full-width gridlines (no plot-border box), token-driven theming via CSS classes on the SVG primitives, and responsive width via `ResizeObserver`.
+No charting library (§11 #19). Each renders — **when given an `ariaLabel`** — a `role="img"` region named by it (the SVG internals are `aria-hidden`); with no `ariaLabel` the wrapper is decorative/role-less rather than an unlabeled image, and the empty/no-data state is plain announceable text (never `role="img"`). Full-width gridlines (no plot-border box), token-driven theming via CSS classes on the SVG primitives, and responsive width via `ResizeObserver`.
 
-- **`<LineChart>`** — single-series line over pre-positioned data. `data` / `xKey` / `yKey` / `height`, plus optional `ariaLabel` / `xLabel` / `yLabel` / `emptyState`. Renders a `<polyline>` + circle markers; shows the empty state when there are < 2 points. Multi-series + legend + marker styling are deferred (see the Phase 3 plan's Deferred follow-ups).
+- **`<LineChart>`** — single-series line over pre-positioned data. `data` / `xKey` / `yKey` / `height`, plus optional `ariaLabel` / `xLabel` / `yLabel` / `emptyState`. Renders a `<polyline>` + circle markers; shows the empty state when there are < 2 points. Multi-series + legend + marker styling are deferred until a sim needs them.
 - **`<Histogram>`** — takes raw `values: readonly number[]` and **auto-bins** them into round-width bins (via `histogramBins` / `niceStep` helpers co-located with the component, internal — not a public util). `values` / `targetBinCount` / `height`, plus optional `ariaLabel` / `xLabel` / `yLabel` / `emptyState`. The raw-values input (vs. pre-categorized data) distinguishes it from a future categorical `<BarChart>`.
 
 ### AP state sync
@@ -271,9 +270,7 @@ Exported from `packages/shared/src/hooks/`:
 Exported from `packages/shared/src/utils/`:
 
 - `seeded-random.ts` — deterministic random for reproducible sims.
-- `math-utils.ts` — math helpers.
-- `platform-utils.ts` — platform detection (desktop/touch/etc.).
-- `env.ts` — single point of `import.meta.env` access (see Addendum A.1 for why).
+- `reduced-motion.ts` — `prefersReducedMotion()` plus a `smoothScrollIntoView` helper that respects it.
 
 ### Design tokens
 
@@ -293,12 +290,12 @@ The first wrapper, `<Button>`, ships in Phase 2c along with `useLogEvent`; `<Sli
 
 ### Accessibility conventions & known gaps (MAS-25 audit)
 
-The MAS-25 ARIA audit settled a few cross-cutting conventions and recorded some deferred robustness gaps in the shared controls. Captured here so they aren't re-litigated:
+The MAS-25 ARIA audit settled a few cross-cutting conventions and recorded some deferred robustness gaps in the shared controls. Captured here so they aren't re-litigated. The full, consolidated set of accessibility conventions every sim follows lives in **[accessibility.md](./accessibility.md)** — this section keeps the infrastructure-level decisions:
 
 - **Disabled-control policy is intentionally split.** Controls that must stay keyboard-discoverable while inert use **`aria-disabled` + a JS activation guard** (they keep their tab stop): the shared `<Button>`, the `<TrialCard>` reset, and the Bananas fungus switch. The form-input wrappers — `<Select>`, `<Slider>`, `<Switch>`, `<Checkbox>`, `<NumberField>` — keep react-aria's **native `disabled`** (dropped from the tab order). This mirrors the demo/spec and is deliberate; don't "unify" it into an inconsistency. (The parent `<Select>`'s native-disabled path is effectively unreachable anyway — locking swaps it for a static `.parent-chip`.)
 - **Parent select uses the react-aria APG pattern, by design.** The parent dropdown delegates to react-aria's `Select` — a `<button aria-haspopup="listbox">` trigger plus a `role="listbox"`/`role="option"` popover with roving DOM focus — rather than the demo's hand-rolled `role="combobox"` + `aria-activedescendant`. Both are valid WAI-ARIA APG patterns ("collapsible listbox" vs "select-only combobox"); the react-aria one is battle-tested and keyboard-/SR-complete, so it's preferred. Documented at the top of [`select.tsx`](../packages/shared/src/components/select/select.tsx).
 - **Deferred robustness gaps, to revisit when a consumer needs them:**
-  - **Nameless-if-unnamed controls.** `<NumberField>`, `<Select>`, `<Slider>`, `<LineChart>`, and `<Histogram>` make their `label`/`ariaLabel` optional with **no `aria-label` fallback** — omitting it yields an unnamed control / unnamed `role="img"`. Every current consumer supplies a name; consider requiring one (or falling back) when a consumer doesn't.
+  - **Nameless-if-unnamed controls.** `<NumberField>`, `<Select>`, and `<Slider>` make their `label`/`ariaLabel` optional with **no `aria-label` fallback** — omitting it yields an unnamed control. `<LineChart>` / `<Histogram>` now degrade gracefully instead: with no `ariaLabel` they drop `role="img"` and render decorative (rather than an unlabeled image), so a nameless chart is silent to AT but not a WCAG 1.1.1 failure. Every current consumer supplies a name; consider requiring one (or falling back) when a consumer doesn't.
   - **No error/validation association exists yet.** There's no validation UI anywhere, so `aria-describedby` / `role="alert"` / `aria-invalid` wiring is N/A today. `<NumberField>` clamps `min`/`max` silently. If/when a sim adds validation, wire this up.
 
 ### What's deliberately *not* in this section
@@ -317,8 +314,8 @@ Direct lifts (with light updates for modern dependencies):
 - **Build/deploy GitHub Actions pattern.** `ci.yml` and `release.yml` translate cleanly with the new toolchain.
 - **Design tokens.** Initially seeded from FOSS's blue/orange/green/purple palette as a placeholder; superseded by the demo-derived palette (mostly grayscale + `#005FCC` focus + `#e8e8e8` panel surface; Lato + Roboto Condensed). See UI Design Plan §13 for the concrete values. The structuring convention (semantic aliases over raw values; nothing hard-coded outside `tokens.scss`) is unchanged.
 - **`Dialog` with `focus-trap`** and **drag-and-drop** wrappers around `@dnd-kit`.
-- **A `Table` component** if and when a sim needs tabular data. FOSS's `react-table` v7 implementation is the starting point if we revive it, though the underlying library choice (Tanstack v8 vs react-aria-components Table vs something simpler) is deliberately deferred until the first sim's needs can drive it — see the Phase 3 plan's Deferred follow-ups.
-- **`BarGraph` component** as a starting point for any bar visualization a future sim wants. The shared chart approach is hand-rolled (React + SCSS + SVG, no library) per the Phase 3 decision; see infrastructure-plan §11 #19 and the Phase 3 plan for context.
+- **A `Table` component** if and when a sim needs tabular data. FOSS's `react-table` v7 implementation is the starting point if we revive it, though the underlying library choice (Tanstack v8 vs react-aria-components Table vs something simpler) is deliberately deferred until the first sim's needs can drive it.
+- **`BarGraph` component** as a starting point for any bar visualization a future sim wants. The shared chart approach is hand-rolled (React + SCSS + SVG, no library); see §11 #19 for context.
 
 Do **not** clone:
 
@@ -414,7 +411,7 @@ Target versions, current as of May 2026. Pin minor where stability matters, allo
 | `@biomejs/biome` | `^2.4.0` | Lint + format in one tool. Pin the minor explicitly: the config schema changed between 2.0 and 2.2 (folder-ignore patterns dropped the trailing `/**`, `organizeImports` moved into `assist.actions.source`, `noConsoleLog` renamed to `noConsole`). The `$schema` URL in `biome.json` must track the installed minor or the IDE complains and the CLI may warn on schema drift. When bumping the package, update the URL in the same commit. |
 | `lefthook` | latest | Git precommit/prepush hooks |
 | `react-aria-components` | `^1.18` | Headless, fully-accessible UI primitives from Adobe. Every shared interactive control is a thin wrapper around a react-aria primitive that applies our tokens, SCSS, and the `useLogEvent` auto-emit. Replaces MUI as the resolved answer to the UI-library question (UI Design Plan §15 Q9, now closed). |
-| ~~`@tanstack/react-table`~~ | _deferred_ | Table component deferred until a sim needs tabular data — see Phase 3 plan's Deferred follow-ups for context. |
+| ~~`@tanstack/react-table`~~ | _deferred_ | Table component deferred until a sim needs tabular data. |
 | `@dnd-kit/core`, `@dnd-kit/sortable` | latest | Keyboard-accessible DnD |
 | `iframe-phone` | `^1.3.1` | Concord's parent ↔ child iframe messaging (for Activity Player embed). Stable; last published 2021. |
 | `@concord-consortium/lara-interactive-api` | `^1.9.4` | Portal-report-compatible state sync + action logging; uses `iframe-phone` under the hood. |
@@ -422,7 +419,7 @@ Target versions, current as of May 2026. Pin minor where stability matters, allo
 | `focus-trap-react` | latest | Dialog focus trap |
 | `clsx` | latest | Tiny class joiner |
 | `sass`, `postcss`, `autoprefixer` | latest | SCSS compilation + browser prefix |
-| ~~`@axe-core/react`~~ | _deferred_ | Runtime a11y checking deferred to Phase 6 hardening (Biome's a11y rules + the axe DevTools extension cover Phase 3). `@axe-core/react` is archived for React 18+, so the future integration uses the bare `axe-core` package. See Phase 3 plan's Deferred follow-ups. |
+| ~~`@axe-core/react`~~ | _deferred_ | Runtime a11y checking deferred to Phase 6 hardening (Biome's a11y rules + the axe DevTools extension cover the interim). `@axe-core/react` is archived for React 18+, so the future integration uses the bare `axe-core` package. |
 
 Removed compared to FOSS/DESE: `webpack` and all loaders, `jest` and `ts-jest`, `cypress`, `eslint` and all eslint plugins (replaced by Biome), `react-howler`, the entire translation tooling, `@material-ui/core@^4` (DESE), `@svgr/webpack` (replaced by `vite-plugin-svgr`), and any `@mui/*` (the UI library answer is `react-aria-components` — see §11 #9 closed).
 
@@ -649,19 +646,19 @@ Create the `concord-consortium/mass-sims` repo. Set up the empty Yarn + Lerna mo
 **Phase 1 — Shared library v0 (≈ 1-2 weeks)**
 Port the smaller utility hooks and design tokens from FOSS/DESE. Build the three-region `SimulationFrame` component fresh — slot API and `<Section>` wrapper per §3, visual specifics per the [UI Design Plan](./ui-design-plan.md). Implement `useReloadWarning`. Port the FOSS palette into `tokens.scss` with token-only access (plus the global stylesheet that mirrors selected tokens as CSS custom properties). Set up Vitest + a couple of smoke tests. Confirm rendering at the four target widths × 562 px from the UI plan.
 
-> **Status (Phase 1 build):** `Section` and the `SimulationFrame` compound component (header + Trials/Simulation/Data slots + three-column flex grid + accessible info modal) are built to the §3 API and exported from the shared barrel; the four-width × 562 render check is satisfied by the non-deployed `packages/sim-frame-preview` workspace. Utility hooks, tokens, and `global.scss` are in place. **Deferred:** final Section/chip/region visual treatment and designer-tuned slot proportions. Styling is plain (global) SCSS scoped under a per-component root class (the verified house convention — see the corrected Styling note in §1); the info-modal prop is `infoModalContent`. See [docs/simulation-frame-plan.md](./simulation-frame-plan.md).
+> **Status (Phase 1 build):** `Section` and the `SimulationFrame` compound component (header + Trials/Simulation/Data slots + three-column flex grid + accessible info modal) are built to the §3 API and exported from the shared barrel; the four-width × 562 render check is satisfied by the non-deployed `packages/sim-frame-preview` workspace. Utility hooks, tokens, and `global.scss` are in place. **Deferred:** final Section/chip/region visual treatment and designer-tuned slot proportions. Styling is plain (global) SCSS scoped under a per-component root class (the verified house convention — see the corrected Styling note in §1); the info-modal prop is `infoModalContent`.
 
 **Phase 2 — Starter simulation + iframe embedding + logging + scaffolding (≈ 4-6 weeks total)**
 Phase 2 was always going to be the biggest single block, so it's split into three landed-incrementally subphases.
 
-- **Phase 2a — Shared library rebuild against the demo design (✅ COMPLETE).** Token rewrite (`tokens.scss`, `global.scss`), partner-branding SVGs, restructured `<SimulationFrame>` (50 px title bar, draggable About panel, no project bar), new `<TrialCard>` and `<DataSubsection>` components, `sim-frame-preview` workspace updated. See [docs/phase-2a-shared-rebuild-plan.md](./phase-2a-shared-rebuild-plan.md).
+- **Phase 2a — Shared library rebuild against the demo design (✅ COMPLETE).** Token rewrite (`tokens.scss`, `global.scss`), partner-branding SVGs, restructured `<SimulationFrame>` (50 px title bar, draggable About panel, no project bar), new `<TrialCard>` and `<DataSubsection>` components, `sim-frame-preview` workspace updated.
 
-- **Phase 2b — Starter sim + simulation state hooks (✅ COMPLETE).** Built `packages/starter` as a real random-walk simulation; landed `useModelState<IInput, IOutput, ITransient>` and `useSimulationRunner`. Addendum (Tasks 11–15) added responsive column flex behavior + standalone outer container to `<SimulationFrame>`. See [docs/phase-2b-starter-sim-plan.md](./phase-2b-starter-sim-plan.md).
+- **Phase 2b — Starter sim + simulation state hooks (✅ COMPLETE).** Built `packages/starter` as a real random-walk simulation; landed `useModelState<IInput, IOutput, ITransient>` and `useSimulationRunner`. Addendum (Tasks 11–15) added responsive column flex behavior + standalone outer container to `<SimulationFrame>`.
 
-- **Phase 2c — AP embedding, action logging, react-aria foundation, scaffolding (≈ 2-3 weeks).** Wire sims to `@concord-consortium/lara-interactive-api`'s state sync (`useInitMessage` + `setInteractiveState`) directly — no custom wrapper hook in shared; the convention is documented in §3 above and shown by worked example in `docs/adding-a-new-sim.md`. Prove the round-trip with a local Activity Player smoke test. Implement `useLogEvent` with the dual-transport design (portal-report via lara-interactive-api + GA4 via inline `gtag.js`) — continuous controls emit on commit only (`pointerup`/`change`), not during drag. Inject `VITE_GA_PROPERTY_ID` into each sim's `index.html` template; verify GA is fully disabled when the env var is empty. Land the **react-aria-components foundation** (the UI primitives library, decision 9 in §11) plus the first shared control, `<Button>`, wired to auto-emit log events; migrate Starter's existing Play/Pause/Step/Reset to it. Build `scripts/new-sim.ts` and `scripts/gen-workflows.ts` along with their CI `--check` modes — these unlock easy growth toward 20+ sims and should exist before the first real sim, not after the fifth. (`scripts/gen-index.ts` already shipped in Phase 1.) See [docs/phase-2c-embedding-logging-scaffolding-plan.md](./phase-2c-embedding-logging-scaffolding-plan.md).
+- **Phase 2c — AP embedding, action logging, react-aria foundation, scaffolding (≈ 2-3 weeks).** Wire sims to `@concord-consortium/lara-interactive-api`'s state sync (`useInitMessage` + `setInteractiveState`) directly — no custom wrapper hook in shared; the convention is documented in §3 above and shown by worked example in `docs/adding-a-new-sim.md`. Prove the round-trip with a local Activity Player smoke test. Implement `useLogEvent` with the dual-transport design (portal-report via lara-interactive-api + GA4 via inline `gtag.js`) — continuous controls emit on commit only (`pointerup`/`change`), not during drag. Inject `VITE_GA_PROPERTY_ID` into each sim's `index.html` template; verify GA is fully disabled when the env var is empty. Land the **react-aria-components foundation** (the UI primitives library, decision 9 in §11) plus the first shared control, `<Button>`, wired to auto-emit log events; migrate Starter's existing Play/Pause/Step/Reset to it. Build `scripts/new-sim.ts` and `scripts/gen-workflows.ts` along with their CI `--check` modes — these unlock easy growth toward 20+ sims and should exist before the first real sim, not after the fifth. (`scripts/gen-index.ts` already shipped in Phase 1.)
 
 **Phase 3 — Port the remaining controls + viz components (≈ 2-3 weeks)**
-With the react-aria-components pattern established in Phase 2c, mechanically port the remaining V2 controls (`Slider`, `Switch`, `Select`, `Checkbox`, `NumberField`) as thin wrappers, plus two graphing primitives (hand-rolled SVG `<LineChart>` and `<Histogram>` — no chart library, matching FOSS / DESE precedent). Each control auto-emits via `useLogEvent` per the convention established in §3. Add unit tests for each. Migrate the remaining Starter native HTML inputs (walker-count slider, step-size slider, frames-per-trial number input) to the new shared controls, and the two canvas-based charts in the Starter's data panel to the new shared chart components. Runtime accessibility checking via `axe-core` is deliberately deferred to Phase 6 hardening (Biome's a11y rule group covers the common-case static checks in this phase; the axe DevTools Chrome extension covers on-demand runtime checks during development). The `<Table>` component is deliberately deferred to a later phase — no sim currently in design needs one, and the underlying library choice (Tanstack v8 vs react-aria-components Table vs simpler) should be driven by a real sim's tabular-data needs. See [docs/phase-3-port-remaining-controls-plan.md](./phase-3-port-remaining-controls-plan.md). 
+With the react-aria-components pattern established in Phase 2c, mechanically port the remaining V2 controls (`Slider`, `Switch`, `Select`, `Checkbox`, `NumberField`) as thin wrappers, plus two graphing primitives (hand-rolled SVG `<LineChart>` and `<Histogram>` — no chart library, matching FOSS / DESE precedent). Each control auto-emits via `useLogEvent` per the convention established in §3. Add unit tests for each. Migrate the remaining Starter native HTML inputs (walker-count slider, step-size slider, frames-per-trial number input) to the new shared controls, and the two canvas-based charts in the Starter's data panel to the new shared chart components. Runtime accessibility checking via `axe-core` is deliberately deferred to Phase 6 hardening (Biome's a11y rule group covers the common-case static checks in this phase; the axe DevTools Chrome extension covers on-demand runtime checks during development). The `<Table>` component is deliberately deferred to a later phase — no sim currently in design needs one, and the underlying library choice (Tanstack v8 vs react-aria-components Table vs simpler) should be driven by a real sim's tabular-data needs.
 
 **Phase 4 — First real simulation (≈ 2-4 weeks per sim, depending on complexity)**
 Scaffold `simulations/bananas` from the starter. Iterate on the shared layer as gaps appear. The first real sim is where the abstractions get stress-tested; budget extra time. Specifically: settle the framework-level pattern for in-progress transient state escaping `useModelState` / `useSimulationRunner` to consumers outside the Simulation slot (live charts in the Data panel, live readouts elsewhere). The Phase 2b Starter intentionally leaves this question open — `output` is committed only at trial completion — because the first real sim's live-visualization shape is the right data point to design against. Candidate shapes include an `onTransientChange` option on `useSimulationRunner`, a pub-sub primitive, or hoisting transient state out of `<SimulationView>`.
@@ -727,7 +724,7 @@ A decision log. Items numbered here so the gaps reflect what's been delegated to
 
 12-18, 14a. *UI / visual design decisions (simulation region layout, data panel position, trials list behavior, section title chips, run-history persistence, default color palette, light/dark mode, devices and viewport) → moved to [UI Design Plan §14](./ui-design-plan.md). The contract-level requirements they imply on the shared library (`<SimulationFrame>` slots, `<Section>` component, `useReloadWarning` hook, `tokens.scss` / `global.scss` token system) are captured in §3 of this plan.*
 
-19. **Charting library** → **None — hand-rolled SVG.** Shared `<LineChart>` and `<Histogram>` in `packages/shared` are React + SCSS + SVG components (no library), matching FOSS / DESE precedent (both hand-roll their visualizations). `<Histogram>` auto-bins raw `number[]` values (via internal `histogramBins` / `niceStep` helpers); `<LineChart>` plots single-series `(x, y)` data. Token-driven theming via CSS classes on the SVG primitives; full control over a11y and bundle weight. Other chart types (categorical bar, scatter, area, multi-series + legend) are deferred until a sim needs them, and the library question gets revisited only if a sim needs interactive tooltips / animation / brushing that would be too costly to hand-roll — see the Phase 3 plan's Deferred follow-ups. Closes UI Design Plan §15 Q19.
+19. **Charting library** → **None — hand-rolled SVG.** Shared `<LineChart>` and `<Histogram>` in `packages/shared` are React + SCSS + SVG components (no library), matching FOSS / DESE precedent (both hand-roll their visualizations). `<Histogram>` auto-bins raw `number[]` values (via internal `histogramBins` / `niceStep` helpers); `<LineChart>` plots single-series `(x, y)` data. Token-driven theming via CSS classes on the SVG primitives; full control over a11y and bundle weight. Other chart types (categorical bar, scatter, area, multi-series + legend) are deferred until a sim needs them, and the library question gets revisited only if a sim needs interactive tooltips / animation / brushing that would be too costly to hand-roll. Closes UI Design Plan §15 Q19.
 
 20-21. *Shared-library scope decisions (simulation rendering layer, `<RunsTable>`/`<BarGraph>` location) → tracked in [UI Design Plan §15](./ui-design-plan.md).*
 
@@ -774,7 +771,7 @@ We may eventually need to hand the simulations (code, built artifacts, or both) 
 ### What we're deliberately *not* doing yet
 
 - **Not** stripping CC branding from the source (the credits/info modal still says "Concord Consortium"). A future DESE handover would substitute via a config switch, not a fork.
-- **Deferred but planned: a context-injected log service.** `useLogEvent` currently calls the portal-report + GA transports directly. We plan to refactor it to resolve a *log service* from a top-level React context, making the dual-transport logger one swappable implementation set by the app. This formalizes the §13.4 seam — giving a DESE deployment a clean place to plug in alternative analytics — and lets tests inject a mock service via a provider instead of mocking the `lara-interactive-api` module. Chosen shape: keep `useLogEvent`'s signature (it reads the service from context and still returns a `logEvent` fn), so call sites and `<Button>` are unaffected and no caller churns. **Out of scope for Phase 2c** (tracked in that plan's deferred follow-ups); no hard deadline — do it as a cleanup, and it becomes a prerequisite once a second log implementation (e.g. DESE analytics) is actually needed.
+- **Deferred but planned: a context-injected log service.** `useLogEvent` currently calls the portal-report + GA transports directly. We plan to refactor it to resolve a *log service* from a top-level React context, making the dual-transport logger one swappable implementation set by the app. This formalizes the §13.4 seam — giving a DESE deployment a clean place to plug in alternative analytics — and lets tests inject a mock service via a provider instead of mocking the `lara-interactive-api` module. Chosen shape: keep `useLogEvent`'s signature (it reads the service from context and still returns a `logEvent` fn), so call sites and `<Button>` are unaffected and no caller churns. **Not part of the initial logging work**; no hard deadline — do it as a cleanup, and it becomes a prerequisite once a second log implementation (e.g. DESE analytics) is actually needed.
 - **Not** building a `.tar.gz` export script for handoff. We'll write one if/when the transfer scope is clear.
 
 ### To revisit when DESE transfer requirements are known
@@ -804,7 +801,7 @@ The general principle: **isolate tool-specific touchpoints behind thin abstracti
 **Likelihood:** Low-to-moderate. The S3 publicPath spike in Phase 0 is the gate — if the spike succeeds we're committed; if it fails this is the most likely rollback.
 
 **Lock-in surface (avoid these to keep rollback cheap):**
-- `import.meta.env.*` — centralize all access in `packages/shared/src/utils/env.ts` so the Vite-specific syntax appears in exactly one file. On rollback, replace that file's body with `process.env.*` reads behind a `DefinePlugin` and nothing else changes.
+- `import.meta.env.*` — the plan recommended centralizing all access in a single `packages/shared/src/utils/env.ts`. **This was not adopted** — no `env.ts` was created and the few `import.meta.env` reads sit inline, so on rollback they (not one file) are the find-replace surface: convert them to `process.env.*` reads behind a `DefinePlugin`. Still a small surface today, but worth centralizing before it grows if rollback likelihood rises.
 - `import.meta.glob` — **do not use.** Use static imports. If a dynamic-import pattern is needed, use the ES standard `import()` which both bundlers support.
 - `import.meta.hot` (HMR API) — only use if necessary; both bundlers expose HMR but with different APIs.
 - Vite plugins without a clear Webpack equivalent — prefer well-known plugins (`vite-plugin-svgr`, `vite-plugin-checker`) over exotic ones.
@@ -815,7 +812,7 @@ The general principle: **isolate tool-specific touchpoints behind thin abstracti
 - Each `vite.config.ts` → `webpack.config.js` (and a `webpack-common.config.js` extracted to `packages/shared/`).
 - Each sim's `index.html` (Vite's bare `<script type="module" src="/src/index.tsx">` → Webpack pattern with `HtmlWebpackPlugin` injection).
 - All SVG import statements (find-replace `.svg?react` → `.svg` plus the named-export change).
-- `packages/shared/src/utils/env.ts` (rewritten).
+- The inline `import.meta.env.*` reads (converted to `process.env.*` behind a `DefinePlugin`; the proposed `env.ts` centralization was never adopted, so these are scattered rather than in one file).
 - `package.json` scripts in every package (`vite` → `webpack serve`, `vite build` → `webpack --mode production`).
 - `vitest.config.ts` (covered separately in A.2; the two roll back together cleanly).
 
@@ -825,7 +822,7 @@ The general principle: **isolate tool-specific touchpoints behind thin abstracti
 1. Copy FOSS's `common/webpack-common.config.js` into `packages/shared/` as the starting point.
 2. Convert one sim's `vite.config.ts` to `webpack.config.js` extending the shared common config.
 3. Replace SVG imports project-wide via codemod.
-4. Rewrite `packages/shared/src/utils/env.ts` to read from `process.env`.
+4. Convert the inline `import.meta.env.*` reads to `process.env` (behind `DefinePlugin`).
 5. Add `webpack`, `webpack-cli`, `webpack-dev-server`, `ts-loader`, `babel-loader`, `css-loader`, `sass-loader`, `style-loader`, `html-webpack-plugin`, `@svgr/webpack`, `copy-webpack-plugin` to devDependencies.
 6. Roll back Vitest in the same change (see A.2).
 7. Update CI: `vite build` → `webpack --mode production`.
@@ -945,7 +942,7 @@ The first four are configuration-level rollbacks. Playwright is the only one wit
 
 To keep rollbacks cheap, the team should adopt these conventions from Phase 0:
 
-1. Centralize `import.meta.env` access in `packages/shared/src/utils/env.ts`.
+1. Centralize `import.meta.env` access in a single `packages/shared/src/utils/env.ts`. *(Not adopted — the surface stayed small enough that the reads were left inline; revisit if it grows.)*
 2. Never use `import.meta.glob` or `import.meta.vitest`.
 3. Always import test functions explicitly from `"vitest"`.
 4. Document the SVG import convention in `packages/shared/README.md`.

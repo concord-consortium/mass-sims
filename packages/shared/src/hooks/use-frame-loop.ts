@@ -12,8 +12,8 @@ import { useEffect, useRef } from "react";
  * - On unmount, the rAF schedule is canceled.
  *
  * This is the rAF wrapper the infrastructure plan §5 calls for. Higher-level lifecycle
- * (play/pause/step) is intentionally kept out of this hook — it will live in
- * useSimulationRunner (Phase 2), which will compose this.
+ * (play/pause/step) is intentionally kept out of this hook — it lives in
+ * useSimulationRunner, which composes this.
  */
 export function useFrameLoop(callback: (deltaMs: number) => void, enabled: boolean): void {
   const callbackRef = useRef(callback);
