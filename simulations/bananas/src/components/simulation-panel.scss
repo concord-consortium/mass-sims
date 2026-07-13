@@ -1,6 +1,10 @@
 @use "@concord-consortium/mass-sims-shared/styles/tokens" as tokens;
 @use "../theme" as theme;
 
+$offspring-grid-pad-top: 23px;
+$offspring-grid-pad-bottom: 7px;
+$offspring-row-margin: 5px;
+
 .active-trial-badge {
   align-items: center;
   background: theme.$heading;
@@ -89,7 +93,7 @@
     justify-content: flex-start;
     min-height: 0;
     overflow-y: auto;
-    padding: 23px 17px 7px;
+    padding: $offspring-grid-pad-top 17px $offspring-grid-pad-bottom;
   }
 
   .offspring-list {
@@ -118,7 +122,9 @@
     background: theme.$surface;
     border: 2px solid theme.$border;
     border-radius: 6px;
-    margin: 5px 0;
+    margin: $offspring-row-margin 0;
+    scroll-margin-bottom: $offspring-grid-pad-bottom;
+    scroll-margin-top: $offspring-grid-pad-top + $offspring-row-margin;
     // box-shadow is appended so the selected-row ring (--selected) fades in with the
     // border/background instead of snapping.
     transition: tokens.$transition-interactive, box-shadow tokens.$duration-quick ease;
@@ -140,6 +146,11 @@
     box-shadow: inset 0 0 0 1px theme.$banana-cross-selected-border;
   }
 
+  .offspring-row:has(.offspring-row-button:focus-visible) {
+    outline: tokens.$focus-outline;
+    outline-offset: tokens.$focus-outline-offset;
+  }
+
   .offspring-row-button {
     appearance: none;
     background: transparent;
@@ -154,9 +165,9 @@
     text-align: inherit;
     width: 100%;
 
+    // The ring is drawn on the parent row (above), so suppress the button's own default.
     &:focus-visible {
-      outline: tokens.$focus-outline;
-      outline-offset: tokens.$focus-outline-offset;
+      outline: none;
     }
   }
 
