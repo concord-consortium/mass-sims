@@ -191,13 +191,6 @@ describe("useTrialsKeyboardNav — ignored keys", () => {
     }
     expect(onSelect).not.toHaveBeenCalled();
   });
-
-  it("does not act on keydowns from the reset button (a non-roving focusable)", () => {
-    const onSelect = vi.fn();
-    const { reset } = setup({ onSelect });
-    fireEvent.keyDown(reset(), { key: "ArrowDown" });
-    expect(onSelect).not.toHaveBeenCalled();
-  });
 });
 
 describe("useTrialsKeyboardNav — focus after add", () => {

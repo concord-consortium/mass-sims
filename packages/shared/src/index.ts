@@ -18,6 +18,11 @@ export {
 } from "./components/data-subsection/data-subsection";
 export { Histogram, type HistogramProps } from "./components/histogram/histogram";
 export { LineChart, type LineChartProps } from "./components/line-chart/line-chart";
+export { MaxTrialsNotice } from "./components/max-trials-notice/max-trials-notice";
+export {
+  NewTrialCard,
+  type NewTrialCardProps,
+} from "./components/new-trial-card/new-trial-card";
 export {
   NumberField,
   type NumberFieldProps,

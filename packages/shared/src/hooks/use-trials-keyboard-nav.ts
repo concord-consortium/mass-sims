@@ -82,9 +82,6 @@ export function useTrialsKeyboardNav<T extends HTMLElement>({
   const onKeyDown = (e: KeyboardEvent<HTMLElement>) => {
     const target = e.target as HTMLElement;
     const onNewCard = !!target.closest(".new-trial-card");
-    const onTrialCard = !onNewCard && !!target.closest(".trial-card");
-    // Only the roving members act here; a keydown on the reset button or container chrome is ignored.
-    if (!onNewCard && !onTrialCard) return;
 
     const container = containerRef.current;
     if (!container) return;
@@ -94,6 +91,10 @@ export function useTrialsKeyboardNav<T extends HTMLElement>({
     const ringLength = cards.length + (canAddTrial ? 1 : 0);
     if (ringLength === 0) return;
 
+    // Which roving member the key came from. A keydown from anything else — the reset button, or
+    // container chrome if a consumer delegates from a wrapper rather than the listbox — matches no
+    // card, so `indexOf` yields -1 and the key is ignored. This is the ONLY membership check;
+    // don't add an earlier `closest()` early-out, which would be redundant with it.
     const current = onNewCard
       ? newIndex
       : cards.indexOf(target.closest(".trial-card") as HTMLButtonElement);

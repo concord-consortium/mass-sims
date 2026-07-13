@@ -1,5 +1,7 @@
 import {
   MAX_TRIALS_DEFAULT,
+  MaxTrialsNotice,
+  NewTrialCard,
   TRIAL_LETTERS_DEFAULT,
   TrialCard,
   type TrialLetter,
@@ -10,52 +12,13 @@ import {
   useTrialsKeyboardNav,
 } from "@concord-consortium/mass-sims-shared";
 import { observer } from "mobx-react-lite";
-import type { CSSProperties, FocusEvent, KeyboardEvent } from "react";
-import AddIcon from "../../assets/icons/add.svg?react";
+import type { CSSProperties } from "react";
 import { useStores } from "../../stores/root-store";
 import { TrialCardBody, trialAriaLabel } from "./trial-card-body";
 
+// `.new-trial-card` and `.max-trials-notice` are styled here, not by the shared components — those
+// ship no SCSS because the `+ New` card is themed per sim.
 import "./trials-panel.scss";
-
-/**
- * The `+ New` card: appends a trial and selects it. A native button (Enter/Space handled natively).
- * It joins the trials' single roving tab stop, so its `tabIndex` and the shared nav handlers
- * (arrow-key ring + focus tracking) come from `useTrialsKeyboardNav` — it sits outside the listbox,
- * so it carries the handlers itself rather than inheriting them from the listbox.
- */
-function NewTrialCard({
-  onAdd,
-  tabIndex,
-  onKeyDown,
-  onFocus,
-}: {
-  onAdd: () => void;
-  tabIndex: number;
-  onKeyDown: (e: KeyboardEvent<HTMLElement>) => void;
-  onFocus: (e: FocusEvent<HTMLElement>) => void;
-}) {
-  return (
-    <button
-      type="button"
-      className="new-trial-card"
-      aria-label="Add new trial"
-      tabIndex={tabIndex}
-      onClick={onAdd}
-      onKeyDown={onKeyDown}
-      onFocus={onFocus}
-    >
-      <AddIcon className="new-trial-card-icon" aria-hidden="true" />
-      <span className="new-trial-card-text">New</span>
-    </button>
-  );
-}
-
-/** Shown in place of the `+ New` card once all MAX_TRIALS trials exist. */
-function MaxTrialsNotice() {
-  // Plain visible text — no role="status"/aria-live. The cap is narrated once via the shared
-  // <Announcer> from handleAdd when the last trial is created.
-  return <div className="max-trials-notice">Max number of trials reached</div>;
-}
 
 /**
  * The Trials column orchestrator: a single-select `role="listbox"` of trial `option`s (one shared
