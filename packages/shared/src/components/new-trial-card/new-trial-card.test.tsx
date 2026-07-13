@@ -27,7 +27,7 @@ describe("NewTrialCard", () => {
     expect(getByRole("button", { name: "Add new trial" })).toHaveClass("new-trial-card");
   });
 
-  it("hides its icon from assistive tech and exposes only the visible 'New' text", () => {
+  it("hides its icon from assistive tech and renders the visible 'New' text", () => {
     const { getByRole, container } = renderCard();
     expect(container.querySelector(".new-trial-card-icon")).toHaveAttribute("aria-hidden", "true");
     expect(getByRole("button", { name: "Add new trial" })).toHaveTextContent("New");
