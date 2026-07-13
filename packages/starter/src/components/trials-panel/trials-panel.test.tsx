@@ -178,11 +178,12 @@ describe("TrialsPanel — trial-list logging", () => {
     expect(logEvent).toHaveBeenCalledWith("trial_selected", { trial: "B", previous: "A" });
   });
 
-  it("emits nothing when keyboard nav is a no-op (a single trial wraps to itself)", () => {
-    // With wrapping, the only no-op is a one-trial list: the arrow target === the current trial.
+  it("emits nothing when keyboard nav moves onto the non-selectable + New card", () => {
+    // ArrowDown from the only trial lands on the + New card (the ring's last node); it isn't
+    // selectable, so no selection change occurs and nothing is logged.
     const { getAllByRole } = renderPanel(storeWith(1));
     logEvent.mockReset();
-    fireEvent.keyDown(getAllByRole("option")[0], { key: "ArrowDown" }); // wraps A → A → no change
+    fireEvent.keyDown(getAllByRole("option")[0], { key: "ArrowDown" }); // A → + New (focus only)
     expect(logEvent).not.toHaveBeenCalled();
   });
 
@@ -214,50 +215,54 @@ describe("TrialsPanel — scroll selected into view", () => {
   });
 });
 
-describe("TrialsPanel — roving-tabindex keyboard navigation", () => {
-  it("ArrowDown moves focus AND selection to the next card, WRAPPING from last to first", () => {
+describe("TrialsPanel — keyboard-nav wiring", () => {
+  // The ring itself (ArrowDown/Up/Home/End across the cards AND the + New card, wrapping, the cap,
+  // focus-after-add) is BEHAVIOR owned by the shared hook and tested once, sim-agnostically, in
+  // packages/shared/src/hooks/use-trials-keyboard-nav.test.tsx. Don't re-test it here.
+  //
+  // These tests prove only that THIS panel wires the hook up: the handlers reach both the listbox
+  // and the + New card, the hook's tabIndexes land on the cards / + New / reset, and handleAdd calls
+  // focusAddedTrial. That includes pinning the `.trial-card` / `.new-trial-card` / `.reset-button`
+  // class convention the hook selects on — the one thing the hook's own harness can't catch.
+  it("ArrowDown on a card selects the next one (handler wired to the listbox)", () => {
     const store = storeWith(3);
     const { getAllByRole } = renderPanel(store);
-    const options = getAllByRole("option");
-    options[0].focus();
-    fireEvent.keyDown(options[0], { key: "ArrowDown" });
+    fireEvent.keyDown(getAllByRole("option")[0], { key: "ArrowDown" });
     expect(store.ui.selectedTrialLetter).toBe("B");
-
-    // From the last card, ArrowDown wraps back to the first.
-    act(() => store.ui.selectTrial("C"));
-    fireEvent.keyDown(getAllByRole("option")[2], { key: "ArrowDown" });
-    expect(store.ui.selectedTrialLetter).toBe("A");
   });
 
-  it("ArrowUp moves to the previous card, WRAPPING from first to last", () => {
+  it("End reaches the + New card (handlers wired to the card outside the listbox)", () => {
     const store = storeWith(3);
     store.ui.selectTrial("B");
-    const { getAllByRole } = renderPanel(store);
-    fireEvent.keyDown(getAllByRole("option")[1], { key: "ArrowUp" });
-    expect(store.ui.selectedTrialLetter).toBe("A");
-
-    // From the first card, ArrowUp wraps to the last.
-    fireEvent.keyDown(getAllByRole("option")[0], { key: "ArrowUp" });
-    expect(store.ui.selectedTrialLetter).toBe("C");
-  });
-
-  it("Home and End jump to the first and last cards", () => {
-    const store = storeWith(3);
-    store.ui.selectTrial("B");
-    const { getAllByRole } = renderPanel(store);
+    const { getAllByRole, getByRole } = renderPanel(store);
+    const newCard = getByRole("button", { name: "Add new trial" });
     fireEvent.keyDown(getAllByRole("option")[1], { key: "End" });
-    expect(store.ui.selectedTrialLetter).toBe("C");
-    fireEvent.keyDown(getAllByRole("option")[2], { key: "Home" });
+    expect(newCard).toBe(document.activeElement);
+    expect(store.ui.selectedTrialLetter).toBe("B"); // + New isn't selectable
+
+    // ...and the + New card's own handler drives the ring back into the listbox.
+    fireEvent.keyDown(newCard, { key: "Home" });
     expect(store.ui.selectedTrialLetter).toBe("A");
   });
 
-  it("ignores Left/Right (vertical orientation per WAI-ARIA)", () => {
+  it("moving to the + New card shifts the single tab stop off the cards and the reset", () => {
     const store = storeWith(3);
-    const { getAllByRole } = renderPanel(store);
-    fireEvent.keyDown(getAllByRole("option")[0], { key: "ArrowRight" });
-    expect(store.ui.selectedTrialLetter).toBe("A");
-    fireEvent.keyDown(getAllByRole("option")[0], { key: "ArrowLeft" });
-    expect(store.ui.selectedTrialLetter).toBe("A");
+    store.activeTrial.setOutput(OUTPUT, TRANSIENT); // reset enabled so it renders as a button
+    const { getAllByRole, getByRole } = renderPanel(store);
+    fireEvent.keyDown(getAllByRole("option")[0], { key: "End" }); // → + New
+    expect(getByRole("button", { name: "Add new trial" })).toHaveAttribute("tabindex", "0");
+    for (const option of getAllByRole("option")) expect(option).toHaveAttribute("tabindex", "-1");
+    expect(getByRole("button", { name: "Reset trial A" })).toHaveAttribute("tabindex", "-1");
+  });
+
+  it("moves focus onto the newly added card when + New is activated (focusAddedTrial wired)", () => {
+    const store = storeWith(2);
+    store.ui.selectTrial("B");
+    const { getByRole, getAllByRole } = renderPanel(store);
+    fireEvent.click(getByRole("button", { name: "Add new trial" }));
+    expect(store.ui.selectedTrialLetter).toBe("C");
+    const options = getAllByRole("option");
+    expect(options[options.length - 1]).toBe(document.activeElement); // focus follows the add
   });
 
   it("ignores Enter in the listbox handler (native button activation selects — no double)", () => {

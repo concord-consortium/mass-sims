@@ -142,9 +142,11 @@ test.describe("Active-trial badge sync", () => {
 });
 
 test.describe("Keyboard navigation in the Trials panel", () => {
-  // Scenario 8: roving tabindex — Arrow moves focus AND selection (single-select listbox,
-  // selection-follows-focus); Home/End jump to first/last; ArrowDown at the last card wraps to first.
-  test("arrow / Home / End move focus and selection, wrapping at the ends", async () => {
+  // Scenario 8: roving tabindex — Arrow moves focus AND selection between cards (single-select
+  // listbox, selection-follows-focus). The + New card joins the ring as the node just past the last
+  // card, so ArrowDown from the last card / ArrowUp from the first card / End all land on it (focus
+  // only — it isn't selectable); Home returns to the first card.
+  test("arrow / Home / End ring the cards and the + New card", async () => {
     await bananas.addTrial(); // B
     await bananas.addTrial(); // C — three trials now (A, B, C)
 
@@ -159,20 +161,45 @@ test.describe("Keyboard navigation in the Trials panel", () => {
     expect(await bananas.focusedAriaLabel()).toMatch(/^Trial B\b/);
     await expect(bananas.trialOption("B")).toHaveAttribute("aria-selected", "true");
 
-    // Home → A.
-    await bananas.press("Home");
-    expect(await bananas.getActiveTrialLetter()).toBe("A");
-    expect(await bananas.focusedAriaLabel()).toMatch(/^Trial A\b/);
-
-    // End → last (C).
+    // End → the + New card (ring's last node); focus moves, selection stays on B.
     await bananas.press("End");
-    expect(await bananas.getActiveTrialLetter()).toBe("C");
-    expect(await bananas.focusedAriaLabel()).toMatch(/^Trial C\b/);
+    await expect(bananas.newTrialCard).toBeFocused();
+    expect(await bananas.getActiveTrialLetter()).toBe("B"); // + New isn't selectable
 
-    // ArrowDown at the last card → WRAPS back to the first (A).
+    // ArrowDown from + New wraps to the first card (A), which becomes selected.
     await bananas.press("ArrowDown");
     expect(await bananas.getActiveTrialLetter()).toBe("A");
     expect(await bananas.focusedAriaLabel()).toMatch(/^Trial A\b/);
+
+    // ArrowUp from the first card → + New; ArrowUp again → the last card (C).
+    await bananas.press("ArrowUp");
+    await expect(bananas.newTrialCard).toBeFocused();
+    await bananas.press("ArrowUp");
+    expect(await bananas.getActiveTrialLetter()).toBe("C");
+
+    // Home → back to the first card (A).
+    await bananas.press("Home");
+    expect(await bananas.getActiveTrialLetter()).toBe("A");
+  });
+
+  // The whole column is a single tab stop: Tab from a trial card reaches its reset then leaves to
+  // the Simulation region; Tab from the + New card skips the reset (it shares the card tab stop).
+  test("Tab order: card → reset → Simulation; + New → Simulation", async () => {
+    await bananas.addTrial(); // B
+    await bananas.selectTrial("A"); // focus card A
+
+    await bananas.press("Tab");
+    expect(await bananas.focusedAriaLabel()).toBe("Reset trial A"); // card → its reset
+    await bananas.press("Tab");
+    expect(await bananas.isFocusWithin(bananas.simulationSlot)).toBe(true); // reset → Simulation
+
+    // Park roving focus on + New, then Tab: the reset is skipped.
+    await bananas.selectTrial("A");
+    await bananas.press("End");
+    await expect(bananas.newTrialCard).toBeFocused();
+    await bananas.press("Tab");
+    expect(await bananas.focusedAriaLabel()).not.toBe("Reset trial A");
+    expect(await bananas.isFocusWithin(bananas.simulationSlot)).toBe(true);
   });
 });
 

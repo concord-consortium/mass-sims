@@ -63,6 +63,11 @@ export {
   useStateWithCallbackInstant,
   useStateWithCallbackLazy,
 } from "./hooks/use-state-with-callback";
+export {
+  type TrialsKeyboardNav,
+  type UseTrialsKeyboardNavOptions,
+  useTrialsKeyboardNav,
+} from "./hooks/use-trials-keyboard-nav";
 
 // Trial-list infrastructure
 export {

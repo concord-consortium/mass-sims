@@ -7,19 +7,43 @@ import {
   useAnnounce,
   useLogEvent,
   useScrollSelectedTrialIntoView,
+  useTrialsKeyboardNav,
 } from "@concord-consortium/mass-sims-shared";
 import { observer } from "mobx-react-lite";
-import type { CSSProperties, KeyboardEvent } from "react";
+import type { CSSProperties, FocusEvent, KeyboardEvent } from "react";
 import AddIcon from "../../assets/icons/add.svg?react";
 import { useStores } from "../../stores/root-store";
 import { TrialCardBody, trialAriaLabel } from "./trial-card-body";
 
 import "./trials-panel.scss";
 
-/** The `+ New` card: appends a trial and selects it. A native button (Enter/Space handled natively). */
-function NewTrialCard({ onAdd }: { onAdd: () => void }) {
+/**
+ * The `+ New` card: appends a trial and selects it. A native button (Enter/Space handled natively).
+ * It joins the trials' single roving tab stop, so its `tabIndex` and the shared nav handlers
+ * (arrow-key ring + focus tracking) come from `useTrialsKeyboardNav` — it sits outside the listbox,
+ * so it carries the handlers itself rather than inheriting them from the listbox.
+ */
+function NewTrialCard({
+  onAdd,
+  tabIndex,
+  onKeyDown,
+  onFocus,
+}: {
+  onAdd: () => void;
+  tabIndex: number;
+  onKeyDown: (e: KeyboardEvent<HTMLElement>) => void;
+  onFocus: (e: FocusEvent<HTMLElement>) => void;
+}) {
   return (
-    <button type="button" className="new-trial-card" aria-label="Add new trial" onClick={onAdd}>
+    <button
+      type="button"
+      className="new-trial-card"
+      aria-label="Add new trial"
+      tabIndex={tabIndex}
+      onClick={onAdd}
+      onKeyDown={onKeyDown}
+      onFocus={onFocus}
+    >
       <AddIcon className="new-trial-card-icon" aria-hidden="true" />
       <span className="new-trial-card-text">New</span>
     </button>
@@ -72,6 +96,17 @@ export const TrialsPanel = observer(function TrialsPanel() {
     store.ui.selectTrial(newLetter);
   };
 
+  // Roving-tabindex keyboard nav for the whole column (cards + `+ New` card as one tab stop),
+  // driven by the shared hook. The handlers hang off the panel wrapper so they also fire when the
+  // `+ New` card (outside the listbox) is focused; the returned tabIndexes drive the roving tab stop.
+  const nav = useTrialsKeyboardNav({
+    containerRef: listRef,
+    letters: store.trialLetters,
+    selectedIndex,
+    canAddTrial: store.canAddTrial,
+    selectLetter: navigateTo,
+  });
+
   const handleAdd = () => {
     // Guard on the return value: defensive against clicking `+ New` as the cap flips (the visual
     // card is also gated on `canAddTrial`, so this normally never returns null).
@@ -81,45 +116,10 @@ export const TrialsPanel = observer(function TrialsPanel() {
     // distinct actions). `addTrial` doesn't change the selection, so navigateTo's emit fires here.
     logEvent("trial_added", { trial: newLetter });
     navigateTo(newLetter);
+    nav.focusAddedTrial();
     // Announce the trials cap when this add was the last one (nothing else narrates in this
     // handler, so no same-event composition is needed — unlike the cross cap in ControlBar).
     if (!store.canAddTrial) announce(`Maximum of ${MAX_TRIALS_DEFAULT} trials reached.`);
-  };
-
-  // Roving-tabindex keyboard navigation, delegated to the listbox. Up/Down move focus AND selection
-  // to the adjacent option and WRAP (last→first, first→last); Home/End jump to the first/last.
-  // Left/Right are intentionally ignored (vertical orientation, per WAI-ARIA). Acts only when a
-  // trial card is focused — the `+ New` card is outside the listbox and handles Enter/Space natively.
-  const onKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
-    if (!(e.target as HTMLElement).closest(".trial-card")) return;
-    const letters = store.trialLetters;
-    const i = selectedIndex;
-    let target: number;
-    switch (e.key) {
-      case "ArrowDown":
-        target = (i + 1) % letters.length;
-        break;
-      case "ArrowUp":
-        target = (i - 1 + letters.length) % letters.length;
-        break;
-      case "Home":
-        target = 0;
-        break;
-      case "End":
-        target = letters.length - 1;
-        break;
-      default:
-        return;
-    }
-    e.preventDefault();
-    const newLetter = letters[target];
-    if (newLetter) navigateTo(newLetter);
-    // Move focus to the target card's button (focus() works regardless of tabIndex). Suppress the
-    // browser's default focus-scroll (preventScroll) so it doesn't instantly jump an off-screen card
-    // into view before useScrollSelectedTrialIntoView's smooth scroll runs — otherwise keyboard nav
-    // shows a jump instead of the same smooth glide as a mouse selection.
-    const buttons = e.currentTarget.querySelectorAll<HTMLButtonElement>(".trial-card");
-    buttons[target]?.focus({ preventScroll: true });
   };
 
   return (
@@ -129,7 +129,8 @@ export const TrialsPanel = observer(function TrialsPanel() {
         role="listbox"
         aria-orientation="vertical"
         aria-label="Trials"
-        onKeyDown={onKeyDown}
+        onKeyDown={nav.onKeyDown}
+        onFocus={nav.onFocus}
       >
         {Array.from(store.trials.entries()).map(([letter, trial]) => {
           const selected = letter === selectedOptionLetter;
@@ -138,7 +139,7 @@ export const TrialsPanel = observer(function TrialsPanel() {
               key={letter}
               index={TRIAL_LETTERS.indexOf(letter as TrialLetter)}
               selected={selected}
-              tabIndex={selected ? 0 : -1}
+              tabIndex={selected ? nav.selectedCardTabIndex : -1}
               ariaLabel={trialAriaLabel(letter, trial)}
               onSelect={() => navigateTo(letter)}
             >
@@ -153,9 +154,19 @@ export const TrialsPanel = observer(function TrialsPanel() {
         letter={selectedOptionLetter}
         disabled={!activeTrial.canReset}
         onReset={handleReset}
+        tabIndex={nav.resetTabIndex}
         style={{ "--selected-index": selectedIndex } as CSSProperties}
       />
-      {store.canAddTrial ? <NewTrialCard onAdd={handleAdd} /> : <MaxTrialsNotice />}
+      {store.canAddTrial ? (
+        <NewTrialCard
+          onAdd={handleAdd}
+          tabIndex={nav.newCardTabIndex}
+          onKeyDown={nav.onKeyDown}
+          onFocus={nav.onFocus}
+        />
+      ) : (
+        <MaxTrialsNotice />
+      )}
     </div>
   );
 });
