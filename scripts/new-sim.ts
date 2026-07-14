@@ -156,7 +156,7 @@ export function scaffoldSim(name: string): { port: number } {
   if (!isValidSimName(name)) {
     throw new Error(
       `Invalid sim name "${name}". Use kebab-case (lowercase, digits, hyphens; starting with a ` +
-        `letter). Reserved: shared, starter, mass-sims.`,
+        `letter). Reserved: ${[...RESERVED].join(", ")}.`,
     );
   }
 

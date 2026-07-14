@@ -6,10 +6,12 @@ const PREVIEW_ROUTE = "/__preview";
 
 // Absolute path to the preview entry, resolved from THIS module's location so it's correct no matter
 // which sim's dev server is hosting it. Loading a Vite config is a Node import, so `import.meta.url`
-// is a file: URL in every real run. Under Vitest the module is transformed and served over http
-// instead, so fall back to the pathname there rather than throwing at import time.
+// is a file: URL in every real run; under Vitest the module is transformed and served over http
+// instead, so fall back to the pathname there rather than throwing at import time. The backslashes
+// `fileURLToPath` returns on Windows would make an invalid `/@fs/` URL — Vite's form is `/@fs/C:/…`.
 const entryUrl = new URL("./main.tsx", import.meta.url);
-const previewEntry = entryUrl.protocol === "file:" ? fileURLToPath(entryUrl) : entryUrl.pathname;
+const previewEntry =
+  entryUrl.protocol === "file:" ? fileURLToPath(entryUrl).replaceAll("\\", "/") : entryUrl.pathname;
 
 /** Minimal escaping for the two values we interpolate into the shell (both from local config). */
 function escapeHtml(s: string): string {
