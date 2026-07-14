@@ -176,8 +176,8 @@ jobs:
         run: |
           set -e
           shopt -s nullglob
-          # packages/starter is a template and packages/sim-frame-preview is a dev tool — neither
-          # lives under simulations/, so only real sims are deployed.
+          # packages/starter is a template, not a sim — it doesn't live under simulations/, so only
+          # real sims are deployed.
           for sim_dir in simulations/*/; do
             sim_name="$(basename "$sim_dir")"
             if [ ! -d "$sim_dir/dist" ]; then

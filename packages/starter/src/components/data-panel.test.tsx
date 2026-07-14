@@ -21,13 +21,11 @@ describe("DataPanel", () => {
     expect(getAllByRole("heading", { level: 3 })).toHaveLength(2);
   });
 
-  it("renders the Final Distance Distribution histogram for a completed selected trial", () => {
+  it("renders the Final Distances histogram for a completed selected trial", () => {
     const { getByRole, getByLabelText } = render(
       <DataPanel trial={runTrial(5, [{ x: 3, y: 4 }])} />,
     );
-    expect(
-      getByRole("heading", { level: 3, name: "Final Distance Distribution" }),
-    ).toBeInTheDocument();
+    expect(getByRole("heading", { level: 3, name: "Final Distances" })).toBeInTheDocument();
     expect(getByLabelText(/distance distribution/i)).toBeInTheDocument();
   });
 
@@ -36,7 +34,7 @@ describe("DataPanel", () => {
     // role="img" with an aria-label (an atomic img role would hide the message from screen readers),
     // so the subsection heading identifies the chart and the placeholder text conveys the state.
     const { getByRole } = render(<DataPanel trial={emptyTrial()} />);
-    const heading = getByRole("heading", { level: 3, name: "Final Distance Distribution" });
+    const heading = getByRole("heading", { level: 3, name: "Final Distances" });
     const subsection = heading.closest(".data-subsection");
     expect(subsection).not.toBeNull();
     expect(within(subsection as HTMLElement).getByText("No data")).toBeInTheDocument();
@@ -51,7 +49,7 @@ describe("DataPanel", () => {
     // Empty: the chart shows a "No data" text placeholder (not a labeled image), identified by its
     // subsection heading.
     const empty = render(<DataPanel trial={emptyTrial()} />);
-    const heading = empty.getByRole("heading", { level: 3, name: "Average Distance Over Time" });
+    const heading = empty.getByRole("heading", { level: 3, name: "Distance Over Time" });
     const subsection = heading.closest(".data-subsection");
     expect(subsection).not.toBeNull();
     expect(within(subsection as HTMLElement).getByText("No data")).toBeInTheDocument();

@@ -259,14 +259,68 @@ separately-compiled component stylesheets. The UI Design Plan owns the concrete 
 ## Build helpers
 
 - **`createSimViteConfig({ port })`** → the shared Vite config every sim's `vite.config.ts` uses. Sets
-  `base: "./"`, the `svgrPlugin()` + `react()` + `gtagInjector()` plugins, the `renderBuiltUrl`
-  expression that makes JS-emitted asset URLs resolve relative to the chunk (for top-level release
-  promotion — see [infrastructure-plan.md §8](../../docs/infrastructure-plan.md)), and asset hashing.
+  `base: "./"`, the `svgrPlugin()` + `react()` + `gtagInjector()` + `widthPreviewPlugin()` plugins, the
+  `renderBuiltUrl` expression that makes JS-emitted asset URLs resolve relative to the chunk (for
+  top-level release promotion — see [infrastructure-plan.md §8](../../docs/infrastructure-plan.md)),
+  and asset hashing.
 - **`gtagInjector()`** — replaces the `<!--GA-->` placeholder in `index.html` with the gtag snippet when
   `VITE_GA_PROPERTY_ID` is set at build time; strips it when unset.
 - **`svgrPlugin()`** — the `?react` SVG transform (svgo disabled so `fill="currentColor"` and `viewBox`
   survive). Needed by every consumer that bundles or tests this package — see below.
+- **`widthPreviewPlugin()`** — serves the dev-only width preview at `/__preview` (see below). Already
+  included by `createSimViteConfig()`; a sim never wires it up itself.
 - **`createSimVitestConfig()`** → the shared jsdom Vitest config (`globals: false`, `css: false`, etc.).
+
+---
+
+## Width preview (`/__preview`)
+
+Every sim's dev server serves a **width preview** — the sim rendered in an `<iframe>` at each of the
+four widths it has to work within. Start any sim and open the URL the banner prints:
+
+```
+$ yarn workspace bananas dev
+  ➜  Local:         http://localhost:8080/
+  ➜  Width preview: http://localhost:8080/__preview
+```
+
+There is nothing to install or configure: the plugin ships inside `createSimViteConfig()`, so a sim
+scaffolded by `yarn new-sim` has it from the first run. It's `apply: "serve"`, so it contributes
+nothing to `vite build` and can never reach `dist/`.
+
+The page renders one card per entry in `TARGET_WIDTHS`, each a **real, interactive instance** of the
+sim (they're independent — clicking in one doesn't affect the others):
+
+- **Standalone toggle** per card, defaulting to the mode's true value (standalone only at 1024). It
+  drives the sim's existing `?standalone=true|false` URL override.
+- **Zoom** (default: fit to window) scales the frames with a CSS transform. Each iframe still *lays
+  out* at its true pixel width — only the rendering shrinks — so what you see is the real layout,
+  merely drawn smaller. Zoomed out, the cards wrap and sit side by side for comparison.
+- **Reload**, per card or all at once, for a clean sim instance.
+
+It also flags the layout problems an iframe would otherwise **hide** rather than advertise — a
+too-tall sim just gets a scrollbar, clipped text just looks like shorter text, and content escaping
+the frame is silently cut off by the standalone container's `overflow: hidden`:
+
+| Warning | Means |
+| --- | --- |
+| `Content doesn't fit — 18 px too tall` | The sim renders past the box AP gives it. |
+| `Text is clipped in 1 element: …` | Text hard-clipped by a hidden overflow (an intentional `ellipsis` doesn't count). |
+| `2 elements outside the frame: …` | Content rendering past the frame's left/right edge. Only the outermost offender is named. |
+
+A healthy sim is silent, so anything it says is a real finding — it caught a genuine 767-px-only
+overflow in `starter`'s data panel the first time it was pointed at it.
+
+> **Deliberately not checked: touch-target minimums.** The naive test (bounding box < 44 px) fires on
+> react-aria's visually-hidden inputs and on controls that expand their hit area with an `::after`
+> pseudo-element, so it reports violations on a compliant sim. Doing it right means resolving each
+> control's *effective* hit target, and belongs with the planned axe-based a11y auditing.
+
+**`TARGET_WIDTHS`** (`src/layout/target-widths.ts`) is the source of truth for the four widths in
+TypeScript — consumed by this page and by the root `playwright.config.ts`, whose project matrix runs
+the whole e2e suite once per width. It's a **pure** module (no component/SCSS/SVG imports) so
+Playwright's tsconfig can import it directly rather than through the barrel. `tokens.scss` necessarily
+carries its own copy, since SCSS can't read TypeScript; change one, change the other.
 
 ---
 

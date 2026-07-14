@@ -30,7 +30,7 @@ const SCRIPT_DIR = dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = resolve(SCRIPT_DIR, "..");
 
 const SIM_NAME_PATTERN = /^[a-z][a-z0-9-]*$/;
-const RESERVED = new Set(["shared", "starter", "sim-frame-preview", "mass-sims"]);
+const RESERVED = new Set(["shared", "starter", "mass-sims"]);
 const SKIP_DIRS = new Set(["node_modules", "dist", "coverage", ".vite"]);
 
 /** Paths excluded from the starter copy: build/dep directories and any *.tsbuildinfo file. */
@@ -156,7 +156,7 @@ export function scaffoldSim(name: string): { port: number } {
   if (!isValidSimName(name)) {
     throw new Error(
       `Invalid sim name "${name}". Use kebab-case (lowercase, digits, hyphens; starting with a ` +
-        `letter). Reserved: shared, starter, sim-frame-preview, mass-sims.`,
+        `letter). Reserved: shared, starter, mass-sims.`,
     );
   }
 

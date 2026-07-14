@@ -17,7 +17,7 @@ yarn new-sim <name>
 
 `<name>` is kebab-case (lowercase, digits, hyphens; starting with a letter) and becomes
 both the directory name (`simulations/<name>/`) and the package name. Reserved names
-(`shared`, `starter`, `sim-frame-preview`, `mass-sims`) are rejected, and the script
+(`shared`, `starter`, `mass-sims`) are rejected, and the script
 refuses to overwrite an existing directory.
 
 This copies `packages/starter/` into `simulations/<name>/`, rewrites the `package.json`
@@ -248,6 +248,31 @@ See [`docs/playwright.md`](./playwright.md) for the full conventions (page-objec
 test-data re-export convention, the four-width matrix, the build contract, the reload-warning
 pattern, and how CI runs the suite).
 
+## 10. Check it at the four target widths
+
+Your sim has to work at 1044 / 1024 / 989 / 767 px × 562 (the Activity Player allocations — see
+[ui-design-plan.md §6](./ui-design-plan.md)). You get a preview of all four at once for free: start
+the dev server and open the `/__preview` URL it prints in the banner.
+
+```
+$ yarn workspace <name> dev
+  ➜  Local:         http://localhost:80XX/
+  ➜  Width preview: http://localhost:80XX/__preview
+```
+
+Nothing to configure — the route ships inside `createSimViteConfig()`, which your scaffolded
+`vite.config.ts` already uses, and it's dev-only (it can't reach `dist/`). Each card is a real,
+interactive instance of your sim; zoom out to compare them side by side.
+
+Watch for the red warnings under a card. They catch what an iframe otherwise hides — content that
+renders past its 562 px allocation (which just becomes an easy-to-miss scrollbar), text hard-clipped
+by a hidden overflow, and elements escaping the frame (silently cut off by the standalone container).
+**A healthy sim is silent**, so treat anything it says as a real finding: narrow widths are where
+layouts break, and 767 is the one that usually finds you.
+
+See the [shared package README](../packages/shared/README.md#width-preview-__preview) for the full
+behavior.
+
 ## Quick checklist
 
 - [ ] `yarn new-sim <name>` then `yarn install`
@@ -257,4 +282,5 @@ pattern, and how CI runs the suite).
 - [ ] Define the versioned `SavedState` and wire the hydrate (`applySnapshot`) / persist (`onSnapshot`) effects + standalone-gated reload warning (`hasAnyProgress`)
 - [ ] Give interactive controls snake_case `action` names
 - [ ] `yarn workspace <name> typecheck && yarn workspace <name> test && yarn workspace <name> build`
+- [ ] Open `/__preview` on the dev server and confirm the sim fits — and is warning-free — at all four widths
 - [ ] Update the scaffolded smoke spec's title assertion + page-object locators; run `yarn test:playwright:build playwright/tests/smoke/<name>.test.ts` (see [`docs/playwright.md`](./playwright.md))

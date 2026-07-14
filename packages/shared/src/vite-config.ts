@@ -1,3 +1,7 @@
+// Self-referencing import (via this package's own `exports` map) rather than a relative one: Vite
+// loads sim configs through Node's native TS support, which won't resolve an extensionless relative
+// specifier. The exports map names the `.ts` file explicitly, so Node resolves it.
+import { widthPreviewPlugin } from "@concord-consortium/mass-sims-shared/preview-plugin";
 import react from "@vitejs/plugin-react";
 import { defineConfig, type Plugin, type UserConfig } from "vite";
 import svgr from "vite-plugin-svgr";
@@ -57,7 +61,7 @@ export interface SimViteConfigOverrides {
 export function createSimViteConfig(overrides: SimViteConfigOverrides): UserConfig {
   return defineConfig({
     base: "./",
-    plugins: [svgrPlugin(), react(), gtagInjector()],
+    plugins: [svgrPlugin(), react(), gtagInjector(), widthPreviewPlugin()],
     experimental: {
       // Chunks live at `<sim>/assets/<chunk>-<hash>.js`, so `new URL("..",
       // import.meta.url)` resolves to the sim root; appending the asset path yields the
