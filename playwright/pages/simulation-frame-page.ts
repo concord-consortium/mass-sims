@@ -110,6 +110,10 @@ export class SimulationFramePage {
     await this.page.keyboard.press(key);
   }
 
+  async isFocusWithin(locator: Locator): Promise<boolean> {
+    return locator.evaluate((el) => el.contains(document.activeElement));
+  }
+
   /**
    * Assert whether the standalone reload warning is currently armed.
    *

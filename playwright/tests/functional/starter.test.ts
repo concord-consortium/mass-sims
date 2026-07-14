@@ -25,3 +25,92 @@ test.describe("Scroll-region tabindex on overflow", () => {
     await expect(starter.trialsScrollRegion).toHaveAttribute("tabindex", "0");
   });
 });
+
+test.describe("Trials column — + New card in the roving ring + tab order", () => {
+  // Real-Tab and arrow-key traversal across the cards, the + New card, and the reset button —
+  // behavior driven by the shared useTrialsKeyboardNav hook, so this coverage stands in for every
+  // sim. Three trials (A, B, C): the list doesn't overflow, so no scroll-region tab stop interferes.
+  test.beforeEach(async () => {
+    await starter.addTrial(); // B
+    await starter.addTrial(); // C (now selected + focused)
+  });
+
+  test("ArrowDown from the last card, and End from any card, land on the + New card", async () => {
+    await starter.selectTrial("C"); // last card, selected + focused
+    await starter.press("ArrowDown");
+    expect(await starter.focusedAriaLabel()).toBe("Add new trial");
+
+    await starter.selectTrial("A");
+    await starter.press("End");
+    expect(await starter.focusedAriaLabel()).toBe("Add new trial");
+  });
+
+  test("ArrowUp from the first card lands on + New; Home from + New returns to the first card", async () => {
+    await starter.selectTrial("A"); // first card
+    await starter.press("ArrowUp");
+    expect(await starter.focusedAriaLabel()).toBe("Add new trial");
+
+    await starter.press("Home");
+    expect(await starter.focusedAriaLabel()).toBe("Trial A. Walker count 50, step size 1");
+  });
+
+  test("Tab from a trial card goes to its reset, then out to the Simulation region", async () => {
+    await starter.selectTrial("A"); // focuses card A
+    await starter.press("Tab");
+    expect(await starter.focusedAriaLabel()).toBe("Reset trial A"); // card → its reset
+    await starter.press("Tab");
+    expect(await starter.isFocusWithin(starter.simulationSlot)).toBe(true); // reset → Simulation
+  });
+
+  test("Tab from the + New card skips the reset and goes straight to the Simulation region", async () => {
+    await starter.selectTrial("A");
+    await starter.press("End"); // roving focus → + New card
+    await expect(starter.newTrialCard).toBeFocused();
+    await starter.press("Tab");
+    expect(await starter.focusedAriaLabel()).not.toBe("Reset trial A"); // reset is skipped
+    expect(await starter.isFocusWithin(starter.simulationSlot)).toBe(true);
+  });
+
+  test("the cards + the + New card form a SINGLE tab stop (Shift+Tab into the column returns to it)", async () => {
+    await starter.selectTrial("A");
+    await starter.press("End"); // park roving focus on + New
+    await expect(starter.newTrialCard).toBeFocused();
+    await starter.press("Tab"); // leave the column (→ Simulation)
+    expect(await starter.isFocusWithin(starter.simulationSlot)).toBe(true);
+    await starter.press("Shift+Tab"); // back into the column → the remembered + New card
+    await expect(starter.newTrialCard).toBeFocused();
+  });
+});
+
+test.describe("Trials column — arrowing back from + New scrolls the card into view", () => {
+  // Landing on + New scrolls the list to the bottom. Arrowing back onto the card that is STILL
+  // selected is a no-op for the selection, so useScrollSelectedTrialIntoView never fires — the hook
+  // has to scroll that card itself or focus lands off-screen. Only observable on OVERFLOWING list.
+  test.beforeEach(async () => {
+    for (let i = 0; i < MAX_TRIALS - 2; i++) await starter.addTrial(); // 9 trials: overflows, + New still shown
+    expect(await starter.overflows(starter.trialsScrollRegion)).toBe(true);
+    await expect(starter.newTrialCard).toBeVisible();
+  });
+
+  test("first card → + New → back to the first card leaves it fully in view", async () => {
+    await starter.selectTrial("A"); // first card, top of the list
+    await expect(starter.trialOption("A")).toBeInViewport();
+
+    await starter.press("ArrowUp"); // → + New, scrolling the list to the bottom
+    await expect(starter.newTrialCard).toBeFocused();
+
+    await starter.press("ArrowDown"); // wraps back onto A, which is still selected
+    await expect(starter.trialOption("A")).toBeFocused();
+    await expect(starter.trialOption("A")).toBeInViewport(); // must be scrolled back, not left off-screen
+  });
+
+  test("Home from + New scrolls the still-selected first card back into view", async () => {
+    await starter.selectTrial("A");
+    await starter.press("End"); // → + New (bottom of the list)
+    await expect(starter.newTrialCard).toBeFocused();
+
+    await starter.press("Home"); // → first card, still selected
+    await expect(starter.trialOption("A")).toBeFocused();
+    await expect(starter.trialOption("A")).toBeInViewport();
+  });
+});

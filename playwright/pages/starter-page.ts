@@ -76,6 +76,10 @@ export class StarterPage extends SimulationFramePage {
     return this.page.getByRole("button", { name: "Add new trial" });
   }
 
+  trialResetButton(letter: string): Locator {
+    return this.page.getByRole("button", { name: `Reset trial ${letter}` });
+  }
+
   /** The "Max number of trials reached" notice that replaces "+ New" at the cap. */
   get maxTrialsNotice(): Locator {
     return this.page.getByText("Max number of trials reached");

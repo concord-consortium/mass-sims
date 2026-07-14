@@ -8,6 +8,7 @@ export interface TrialResetButtonProps {
   disabled?: boolean;
   letter: string;
   style?: CSSProperties;
+  tabIndex?: number;
   onReset: () => void;
 }
 
@@ -24,6 +25,7 @@ export function TrialResetButton({
   onReset,
   className,
   style,
+  tabIndex,
 }: TrialResetButtonProps) {
   return (
     <button
@@ -31,6 +33,7 @@ export function TrialResetButton({
       aria-label={`Reset trial ${letter}`}
       className={clsx("reset-button", className)}
       style={style}
+      tabIndex={tabIndex}
       type="button"
       onClick={() => {
         if (!disabled) onReset();

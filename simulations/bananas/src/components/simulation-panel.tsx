@@ -127,7 +127,7 @@ const OffspringList = observer(function OffspringList({
     const nextButton = buttons[next];
     if (nextButton) {
       nextButton.focus({ preventScroll: true });
-      smoothScrollIntoView(nextButton);
+      smoothScrollIntoView(nextButton.closest(".offspring-row") ?? nextButton);
     }
   };
 

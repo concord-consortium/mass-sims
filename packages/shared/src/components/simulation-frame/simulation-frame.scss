@@ -202,7 +202,8 @@ $titlebar-about-leading-space: 5px;   // margin-left on the About button â†’ CCâ
     // card as scroll-margin (NOT the scroller's scroll-padding, which scrollIntoView's "nearest"
     // alignment ignores in Chromium); the top value mirrors the .content padding-top above so the
     // two can't drift, and the bottom matches the standard content bottom padding.
-    .trial-card-wrapper {
+    .trial-card-wrapper,
+    .new-trial-card {
       scroll-margin-bottom: tokens.$space-4;
       scroll-margin-top: $titlebar-content-gap + tokens.$space-4 - 3px;
     }

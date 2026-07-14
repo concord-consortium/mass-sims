@@ -52,16 +52,32 @@ a static `.parent-chip`.)
 The Trials column is a **`role="listbox"`** (`aria-orientation="vertical"`, `aria-label="Trials"`) of
 **`role="option"`** cards (shared `<TrialCard>`):
 
-- Each card carries `aria-selected`, **roving tabindex** (only the selected card is tabbable, the rest
-  `-1`), and an **enriched accessible name** (e.g. Starter's `"Trial A. Walker count 50, step size 1"`).
+- Each card carries `aria-selected`, an **enriched accessible name** (e.g. Starter's
+  `"Trial A. Walker count 50, step size 1"`), and a **roving tabindex** — see the shared tab stop below.
 - The **`+ New` card**, the **max-trials notice**, and the **panel-level reset button**
   (`<TrialResetButton>`) are siblings *outside* the listbox — **a listbox must not own focusable
   non-options**. The reset is positioned over the selected card via a CSS `--selected-index`.
-- **Keyboard contract:** Up/Down move focus **and** selection to the adjacent card and **wrap**
-  (last→first, first→last); Home/End jump to first/last; Left/Right are ignored (vertical orientation).
-  `+ New` sits outside the listbox and handles Enter/Space natively.
+- **One tab stop for the whole column.** The cards **and** the `+ New` card share a single roving tab
+  stop — the shared **`useTrialsKeyboardNav`** hook drives every card's, the `+ New` card's, and the
+  reset's `tabIndex`, so exactly one of {selected card, `+ New` card} is tabbable at a time.
+  - **Arrow ring:** Up/Down move through the cards **and** the `+ New` card, which joins the ring as
+    the node just past the last card. So ArrowDown from the last card and ArrowUp from the first card
+    both land on `+ New` (the ring wraps: `… last card → + New → first card …`). Moving onto a card
+    moves **focus and selection**; moving onto `+ New` moves **focus only** (it isn't selectable).
+  - **Home/End:** Home → first card; End → the `+ New` card (or, at the trials cap where `+ New` is
+    gone, the last card). Left/Right are ignored (vertical orientation).
+  - **Tab:** from a trial card → its reset button → the Simulation region; from the `+ New` card →
+    straight to the Simulation region (the reset shares the *card* tab stop, so it's skipped). Enter/
+    Space on `+ New` are handled natively; activating it moves focus onto the newly-created card.
 
-Sims reuse Starter's `<TrialsPanel>` and swap in their per-card body + enriched `aria-label`.
+Sims reuse Starter's `<TrialsPanel>` and swap in their per-card body + enriched `aria-label`; the
+keyboard/roving behavior lives entirely in the shared hook, so every sim inherits it identically.
+
+> **Deviation from the strict listbox pattern (accepted):** because `+ New` is a focusable non-option
+> that must sit outside the listbox, arrowing onto it moves focus *without* moving selection, and the
+> listbox momentarily has no tabbable option (the tab stop is on `+ New`). This is deliberate — it's
+> what makes the column a single tab stop — and is honest to AT (the `+ New` button announces itself).
+> It is **not** a WCAG failure; do **not** "fix" it by moving `+ New` inside the listbox.
 
 > **History:** this was a `tablist`/`tab` pattern (no `tabpanel`s, non-tab children inside the list).
 > MAS-25 F-1 moved it to `listbox`/`option`; don't reintroduce `role="tab"` for the trials.
