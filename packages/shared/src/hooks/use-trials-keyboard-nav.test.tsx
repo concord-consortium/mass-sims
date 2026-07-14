@@ -57,17 +57,20 @@ function Harness({
     <div ref={containerRef}>
       <div role="listbox" aria-label="Trials" onKeyDown={nav.onKeyDown} onFocus={nav.onFocus}>
         {letters.map((letter) => (
-          <button
-            key={letter}
-            type="button"
-            className="trial-card"
-            role="option"
-            aria-label={`Trial ${letter}`}
-            aria-selected={letter === selected}
-            tabIndex={letter === selected ? nav.selectedCardTabIndex : -1}
-          >
-            {letter}
-          </button>
+          // The presentational wrapper mirrors the real <TrialCard>: it is what carries scroll-margin
+          // and what the hook scrolls, so the harness must reproduce it.
+          <div key={letter} className="trial-card-wrapper" role="none">
+            <button
+              type="button"
+              className="trial-card"
+              role="option"
+              aria-label={`Trial ${letter}`}
+              aria-selected={letter === selected}
+              tabIndex={letter === selected ? nav.selectedCardTabIndex : -1}
+            >
+              {letter}
+            </button>
+          </div>
         ))}
       </div>
       <button
@@ -190,6 +193,65 @@ describe("useTrialsKeyboardNav — ignored keys", () => {
       expect(notPrevented).toBe(true); // event not canceled → hook ignored it
     }
     expect(onSelect).not.toHaveBeenCalled();
+  });
+});
+
+describe("useTrialsKeyboardNav — scrolling back from the + New card", () => {
+  /** Spy on scrollIntoView, capturing the ELEMENT it was called on (jsdom doesn't implement it). */
+  function spyOnScroll() {
+    const original = HTMLElement.prototype.scrollIntoView;
+    HTMLElement.prototype.scrollIntoView = () => {};
+    const targets: Element[] = [];
+    const spy = vi.spyOn(HTMLElement.prototype, "scrollIntoView").mockImplementation(function (
+      this: HTMLElement,
+    ) {
+      targets.push(this);
+    });
+    return {
+      targets,
+      restore: () => {
+        spy.mockRestore();
+        HTMLElement.prototype.scrollIntoView = original;
+      },
+    };
+  }
+
+  // Landing on + New scrolls the list to the bottom. Arrowing back onto the card that is STILL
+  // selected is a no-op for selectLetter, so useScrollSelectedTrialIntoView (which keys off the
+  // selected letter changing) never fires — without an explicit scroll here, focus would sit on an
+  // off-screen card.
+  it("scrolls the card back into view when arrowing off + New onto the still-selected card", () => {
+    const { targets, restore } = spyOnScroll();
+    const { card, newCard } = setup({ selectedStart: "A" }); // A is the FIRST card
+    fireEvent.keyDown(card("A"), { key: "ArrowUp" }); // first card → + New (scrolls to bottom)
+    targets.length = 0;
+    fireEvent.keyDown(newCard() as HTMLElement, { key: "ArrowDown" }); // wraps back onto A (no-op select)
+
+    // The wrapper — not the inner option button — is the scroll target: it carries the scroll-margin
+    // that clears the overlaid section chip.
+    expect(targets).toEqual([card("A").closest(".trial-card-wrapper")]);
+    restore();
+  });
+
+  it("also covers the last-card path (ArrowDown → + New → ArrowUp)", () => {
+    const { targets, restore } = spyOnScroll();
+    const { card, newCard } = setup({ selectedStart: "C" }); // C is the LAST card
+    fireEvent.keyDown(card("C"), { key: "ArrowDown" }); // last card → + New
+    targets.length = 0;
+    fireEvent.keyDown(newCard() as HTMLElement, { key: "ArrowUp" }); // back onto C (no-op select)
+    expect(targets).toEqual([card("C").closest(".trial-card-wrapper")]);
+    restore();
+  });
+
+  it("does NOT double-scroll when the selection DOES change (the effect owns that case)", () => {
+    // Moving between two different cards changes the selection, so useScrollSelectedTrialIntoView
+    // handles the scroll; the hook must not also scroll, or the card gets two competing glides.
+    const { targets, restore } = spyOnScroll();
+    const { card } = setup({ selectedStart: "A" });
+    targets.length = 0;
+    fireEvent.keyDown(card("A"), { key: "ArrowDown" }); // A → B: selection changes
+    expect(targets).toEqual([]);
+    restore();
   });
 });
 

@@ -134,8 +134,20 @@ export function useTrialsKeyboardNav<T extends HTMLElement>({
     // regardless of tabIndex; preventScroll defers scrolling to useScrollSelectedTrialIntoView's
     // smooth glide so keyboard nav matches a mouse selection.
     const letter = letters[next];
+    const selectionChanged = letter !== undefined && letter !== letters[selectedIndex];
     if (letter) selectLetter(letter);
-    cards[next]?.focus({ preventScroll: true });
+    const card = cards[next];
+    card?.focus({ preventScroll: true });
+
+    // ...but that delegation only works when the selection actually changes, since
+    // useScrollSelectedTrialIntoView keys off `selectedLetter`. Arrowing back from `+ New` onto the
+    // card that is STILL selected (first card → `+ New` → ArrowDown/Home; last card → `+ New` →
+    // ArrowUp) is a no-op for selectLetter, so nothing would undo the scroll-to-bottom that landing
+    // on `+ New` just did — focus would sit on an off-screen card. Scroll it ourselves in that case.
+    if (!selectionChanged) {
+      const wrapper = card?.closest<HTMLElement>(".trial-card-wrapper");
+      if (wrapper) smoothScrollIntoView(wrapper);
+    }
   };
 
   return {

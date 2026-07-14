@@ -81,3 +81,36 @@ test.describe("Trials column — + New card in the roving ring + tab order", () 
     await expect(starter.newTrialCard).toBeFocused();
   });
 });
+
+test.describe("Trials column — arrowing back from + New scrolls the card into view", () => {
+  // Landing on + New scrolls the list to the bottom. Arrowing back onto the card that is STILL
+  // selected is a no-op for the selection, so useScrollSelectedTrialIntoView never fires — the hook
+  // has to scroll that card itself or focus lands off-screen. Only observable on OVERFLOWING list.
+  test.beforeEach(async () => {
+    for (let i = 0; i < MAX_TRIALS - 2; i++) await starter.addTrial(); // 9 trials: overflows, + New still shown
+    expect(await starter.overflows(starter.trialsScrollRegion)).toBe(true);
+    await expect(starter.newTrialCard).toBeVisible();
+  });
+
+  test("first card → + New → back to the first card leaves it fully in view", async () => {
+    await starter.selectTrial("A"); // first card, top of the list
+    await expect(starter.trialOption("A")).toBeInViewport();
+
+    await starter.press("ArrowUp"); // → + New, scrolling the list to the bottom
+    await expect(starter.newTrialCard).toBeFocused();
+
+    await starter.press("ArrowDown"); // wraps back onto A, which is still selected
+    await expect(starter.trialOption("A")).toBeFocused();
+    await expect(starter.trialOption("A")).toBeInViewport(); // must be scrolled back, not left off-screen
+  });
+
+  test("Home from + New scrolls the still-selected first card back into view", async () => {
+    await starter.selectTrial("A");
+    await starter.press("End"); // → + New (bottom of the list)
+    await expect(starter.newTrialCard).toBeFocused();
+
+    await starter.press("Home"); // → first card, still selected
+    await expect(starter.trialOption("A")).toBeFocused();
+    await expect(starter.trialOption("A")).toBeInViewport();
+  });
+});
