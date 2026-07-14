@@ -33,6 +33,8 @@
     "test:playwright:open": "playwright test --ui",
     "playwright:install": "playwright install --with-deps chromium",
     "gen-index": "tsx scripts/gen-index.ts",
+    "gen-widths": "tsx scripts/gen-widths.ts",
+    "gen-widths:check": "tsx scripts/gen-widths.ts --check",
     "gen-workflows": "tsx scripts/gen-workflows.ts",
     "gen-workflows:check": "tsx scripts/gen-workflows.ts --check",
     "build:top-test": "tsx scripts/build-top-test.ts",

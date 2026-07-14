@@ -25,6 +25,7 @@ jobs:
       - run: yarn test
       - run: yarn test:scripts
       - run: yarn gen-index --check
+      - run: yarn gen-widths --check
       - run: yarn gen-workflows --check
 
   # End-to-end tests (Playwright). Runs after `checks`, in parallel with the deploy jobs. Builds

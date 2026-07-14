@@ -19,7 +19,16 @@
 // docs/ui-design-plan.md §13). They supersede the earlier FOSS-palette
 // placeholder. Sim-specific accent colors (e.g. Bananas' healthy/infected
 // swatches) live in the sim, not here.
+//
+// The four target widths and the frame height are the one exception to "single
+// source of truth for dimensions": they're also needed by TypeScript (the width
+// preview, playwright.config.ts), so they're defined in
+// `src/layout/target-widths.ts` and generated into SCSS from there. The forward
+// below re-exports them under this module, so consumers still read them as
+// `tokens.$frame-height` and never know the difference.
 // =============================================================================
+
+@forward "widths.generated";
 
 
 // =============================================================================
@@ -93,16 +102,13 @@ $space-8:                64px;
 // LAYOUT DIMENSIONS (see docs/ui-design-plan.md §6-8, §9, §13)
 // =============================================================================
 
-// The four target widths and the single fixed height.
-// These duplicate `src/layout/target-widths.ts`, which is the source of truth
-// for the same numbers in TS (the width-preview page + playwright.config.ts).
-// Change one, change the other.
-$frame-height:                       562px;
-$frame-width-ap-full:                1044px;
-$frame-width-standalone:             1024px;   // widest standalone content area (border adds 2px each side → 1028 outer)
-$frame-width-standalone-min:         768px;    // narrowest standalone content area (responsive floor; border adds 2px each side → 772 outer)
-$frame-width-ap-2col-hidden:         989px;
-$frame-width-ap-2col-shown:          767px;
+// The four target widths ($frame-width-ap-full / -standalone / -ap-2col-hidden / -ap-2col-shown) and
+// $frame-height are generated from src/layout/target-widths.ts — see the @forward at the top of this
+// file. They are NOT declared here. To change them, edit the TypeScript and run `yarn gen-widths`.
+//
+// This one is not a target width: it's the responsive floor for the standalone container, with no
+// TypeScript consumer, so it stays hand-written.
+$frame-width-standalone-min:         768px;    // narrowest standalone content area (border adds 2px each side → 772 outer)
 
 // Single header row — there is no project bar in the sim (AP renders that).
 $frame-titlebar-height:              50px;

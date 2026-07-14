@@ -155,8 +155,11 @@ The height (**562 px**) is fixed across all four modes — it's the height Activ
 > **Checking a sim against these numbers.** Every sim's dev server serves a width preview at
 > `/__preview` that renders the sim in an iframe at all four widths at once and flags content that
 > doesn't fit, clipped text, and elements escaping the frame. The Playwright suite also runs once per
-> width. Both read the same source of truth, `packages/shared/src/layout/target-widths.ts` — so if a
-> width here changes, change it there (and in `tokens.scss`, which necessarily keeps its own copy).
+> width.
+>
+> **Changing a width here means changing it in exactly one place in the code:**
+> `packages/shared/src/layout/target-widths.ts`. The preview and `playwright.config.ts` import it,
+> and `yarn gen-widths` generates the SCSS tokens from it — CI fails if the two drift.
 
 ### Why 562 × 1044: device chrome math
 

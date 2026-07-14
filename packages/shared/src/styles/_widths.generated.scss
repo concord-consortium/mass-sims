@@ -1,0 +1,20 @@
+// =============================================================================
+// GENERATED FILE — DO NOT EDIT.
+//
+// Written by `yarn gen-widths` from packages/shared/src/layout/target-widths.ts,
+// which is the single source of truth for these numbers (the width preview and
+// playwright.config.ts read the same module). CI runs `yarn gen-widths --check`,
+// so a hand-edit here — or a change there without regenerating — fails the build.
+//
+// Forwarded by tokens.scss, so stylesheets reach these as `tokens.$frame-height`
+// (never by @use-ing this file directly).
+// =============================================================================
+
+// The height Activity Player gives the sim iframe. Fixed across all four modes.
+$frame-height:                      562px;
+
+// The four widths a sim's layout must work within.
+$frame-width-ap-full:               1044px;
+$frame-width-standalone:            1024px;
+$frame-width-ap-2col-hidden:        989px;
+$frame-width-ap-2col-shown:         767px;
