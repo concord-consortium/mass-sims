@@ -61,9 +61,10 @@ export const TrialsPanel = observer(function TrialsPanel() {
     store.ui.selectTrial(newLetter);
   };
 
-  // Roving-tabindex keyboard nav for the whole column (cards + `+ New` card as one tab stop),
-  // driven by the shared hook. The handlers hang off the panel wrapper so they also fire when the
-  // `+ New` card (outside the listbox) is focused; the returned tabIndexes drive the roving tab stop.
+  // Roving-tabindex keyboard nav for the whole column (cards + `+ New` card as one tab stop), driven
+  // by the shared hook. Its handlers go on the listbox (which delegates for the cards) AND on the
+  // `+ New` card, which lives outside the listbox and so must carry them itself — NOT on the panel
+  // wrapper, which stays non-interactive. The returned tabIndexes drive the roving tab stop.
   const nav = useTrialsKeyboardNav({
     containerRef: listRef,
     letters: store.trialLetters,

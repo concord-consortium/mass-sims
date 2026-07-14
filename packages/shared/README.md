@@ -89,8 +89,27 @@ keyboard-focusable-when-overflowing ring), `className?`, `children`. Generates i
 
 **`<TrialResetButton>`** — the reset affordance for the selected trial, rendered by the sim **outside**
 the listbox (a listbox must not own focusable non-options). Props: `letter: string` (for the accessible
-name), `onReset: () => void`, `disabled?: boolean`, `className?`, `style?`. Uses `aria-disabled` + a
-JS guard so it stays keyboard-discoverable when there's nothing to reset.
+name), `onReset: () => void`, `disabled?: boolean`, `tabIndex?: number`, `className?`, `style?`. Uses
+`aria-disabled` + a JS guard so it stays keyboard-discoverable when there's nothing to reset. `tabIndex`
+comes from `useTrialsKeyboardNav` — the reset shares the *card's* tab stop, so it drops to `-1` while
+the roving focus rests on the `+ New` card.
+
+**`<NewTrialCard>`** — the `+ New` card that appends a trial. A native `<button>` named
+`"Add new trial"` (Enter/Space activate natively), rendered **outside** the listbox for the same reason
+as the reset, while still sharing the column's single roving tab stop. Props: `onAdd: () => void`,
+`tabIndex: number`, `onKeyDown`, `onFocus` — the last three all come from `useTrialsKeyboardNav`. It
+carries the nav handlers itself because, sitting outside the listbox, it can't inherit the listbox's
+delegated handler.
+
+**`<MaxTrialsNotice>`** — replaces `<NewTrialCard>` once `MAX_TRIALS` trials exist. No props. Plain
+visible text, deliberately **not** a live region: the cap is narrated once through the sim's single
+`<Announcer>`.
+
+> Both ship **no SCSS** — unlike the other shared components, the `+ New` card is themed per sim, so
+> each sim's `trials-panel.scss` styles `.new-trial-card` / `-icon` / `-text` and `.max-trials-notice`.
+> The *markup* is shared because `useTrialsKeyboardNav` finds its elements by class name
+> (`.trial-card`, `.new-trial-card`, `.reset-button`); owning those classes here stops a sim renaming
+> one out from under the hook.
 
 ### Controls
 
@@ -164,6 +183,24 @@ Queue-backed with a single pending timer and clear-then-re-announce for repeats.
   inset `:focus-visible` ring. Pass an existing `RefObject` to share one element.
 - **`useScrollSelectedTrialIntoView<T>(selectedLetter: string)`** → a `RefObject` to put on the trials
   scroller; scrolls the `.trial-card-wrapper.selected` card into view when `selectedLetter` changes.
+- **`useTrialsKeyboardNav<T>({ containerRef, letters, selectedIndex, canAddTrial, selectLetter })`** —
+  roving-tabindex keyboard nav making the whole Trials column a **single tab stop**: the cards *and*
+  the `+ New` card share one roving tab stop, and `+ New` joins the arrow ring as the node just past
+  the last card (`… ↓ last card ↓ + New ↓ first card ↓ …`, wrapping). `Home` → first card; `End` →
+  `+ New` (or the last card at the cap). Moving onto a card moves focus **and** selection; moving onto
+  `+ New` moves focus only (it isn't selectable). Returns:
+
+  | Returns | Attach to |
+  | --- | --- |
+  | `onKeyDown`, `onFocus` | the **listbox** (delegates for the cards) **and** `<NewTrialCard>` |
+  | `selectedCardTabIndex` | the selected `<TrialCard>` (unselected cards are always `-1`) |
+  | `newCardTabIndex` | `<NewTrialCard>` |
+  | `resetTabIndex` | `<TrialResetButton>` |
+  | `focusAddedTrial()` | call after adding a trial — moves focus onto the new card |
+
+  Do **not** hang the handlers on the panel wrapper: it's a non-interactive `<div>` (and would trip
+  `a11y/noStaticElementInteractions`). Because the hook selects on `.trial-card` / `.new-trial-card` /
+  `.reset-button`, use the shared components rather than re-rolling the markup.
 
 ### Utility hooks
 
