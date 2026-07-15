@@ -1,0 +1,140 @@
+@use "@concord-consortium/mass-sims-shared/styles/tokens" as tokens;
+@use "@concord-consortium/mass-sims-shared/styles/mixins" as mixins;
+@use "../../theme" as theme;
+
+.noreaster-trials-panel {
+  align-items: flex-start;
+  display: flex;
+  flex-direction: column;
+  gap: tokens.$column-gap;
+  position: relative;
+  width: 100%;
+
+  // The listbox holds only the option cards; the `+ New`/notice + reset are siblings outside it.
+  // A flex column with `$column-gap` between cards (and the outer panel repeats that gap between
+  // the listbox and the `+ New` card below it).
+  .noreaster-trials-listbox {
+    align-items: flex-start;
+    display: flex;
+    flex-direction: column;
+    gap: tokens.$column-gap;
+    width: 100%;
+  }
+
+  // Nor'easter theme for the shared <TrialCard> — recolor the card, its letter badge, and the
+  // selected state from the demo blues.
+  .trial-card-wrapper {
+    .trial-card {
+      background: theme.$surface;
+      border-color: theme.$border;
+
+      &:hover,
+      &:focus-visible {
+        background: theme.$hover;
+      }
+
+      &:active {
+        background: theme.$active;
+      }
+    }
+
+    .letter-badge {
+      background: theme.$trial-label-bg;
+    }
+
+    &.selected .trial-card {
+      background: theme.$title-bar;
+      border-color: theme.$heading;
+      box-shadow: inset 0 0 0 1px theme.$heading;
+    }
+
+    &.selected .letter-badge {
+      background: theme.$heading;
+      color: theme.$trial-label-bg;
+    }
+  }
+
+  // Panel-level reset: position it over the selected card by index (shared formula;
+  // `--selected-index` is set inline), then apply the Nor'easter theme colors. Box color on the
+  // ::before (stays opaque when disabled); arrow color on the icon (dims when disabled).
+  .reset-button {
+    @include mixins.trial-reset-position;
+  }
+
+  .reset-button::before {
+    background: theme.$surface;
+  }
+
+  .reset-button-icon {
+    color: theme.$heading;
+  }
+
+  .reset-button:hover:not([aria-disabled="true"])::before,
+  .reset-button:focus-visible:not([aria-disabled="true"])::before {
+    background: theme.$hover;
+  }
+
+  .reset-button:active:not([aria-disabled="true"])::before {
+    background: theme.$active;
+  }
+}
+
+// "New trial" card — sim-owned (the shared TrialCard has no add variant); matches the TrialCard
+// 120 × 136 footprint.
+.new-trial-card {
+  align-items: center;
+  background: transparent;
+  border: 2px dashed theme.$border;
+  border-radius: tokens.$radius-md;
+  color: tokens.$color-text;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  font-family: tokens.$font-family-base;
+  font-size: tokens.$font-size-base;
+  font-weight: 700;
+  gap: tokens.$space-1;
+  height: tokens.$trial-card-height;
+  justify-content: center;
+  width: tokens.$trial-card-width;
+
+  &:hover,
+  &:focus-visible {
+    background: theme.$hover;
+  }
+
+  &:focus-visible {
+    outline: tokens.$focus-outline;
+    outline-offset: tokens.$focus-outline-offset;
+  }
+}
+
+.new-trial-card-icon {
+  color: theme.$heading;
+  height: 24px;
+  width: 24px;
+}
+
+.new-trial-card-text {
+  font-weight: 700;
+}
+
+// Trial card body (the shared <TrialCard>'s children, inside its `.body`): stacks the avg / σ rows.
+.trial-card-body {
+  align-items: center;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  width: 100%;
+}
+
+// "Max number of trials reached" notice — replaces the `+ New` card at the cap.
+.max-trials-notice {
+  color: tokens.$color-text;
+  font-family: tokens.$font-family-base;
+  font-size: tokens.$font-size-base;
+  font-style: italic;
+  text-align: center;
+  width: 100%;
+}

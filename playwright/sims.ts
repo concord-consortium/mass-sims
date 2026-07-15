@@ -18,6 +18,7 @@ export interface SimEntry {
 export const SIMS: SimEntry[] = [
   { name: "starter", port: 8080 },
   { name: "bananas", port: 8081 },
+  { name: "noreaster", port: 8082 },
 ];
 
 /** Look up a sim entry by name. Throws if the sim is not registered. */
