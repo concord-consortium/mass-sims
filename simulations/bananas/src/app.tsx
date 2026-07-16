@@ -84,11 +84,8 @@ export const App = observer(function App({ rng = Math.random }: AppProps = {}) {
   // actions; belt-and-suspenders alongside the `activeTrial` view's own fallback.
   useEffect(() => {
     return reaction(
-      () => ({
-        letter: rootStore.ui.selectedTrialLetter,
-        exists: rootStore.trials.has(rootStore.ui.selectedTrialLetter),
-      }),
-      ({ exists }) => {
+      () => rootStore.trials.has(rootStore.ui.selectedTrialLetter),
+      (exists) => {
         if (!exists) {
           // Pick the first *valid* letter (A–J). Via locked actions every key is already a letter,
           // so this equals keys()[0]; the guard only matters if a malformed hydrate left a non-A–J

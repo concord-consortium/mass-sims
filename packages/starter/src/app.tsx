@@ -53,11 +53,8 @@ export const App = observer(function App() {
   // letter so the matching card shows selected.
   useEffect(() => {
     return reaction(
-      () => ({
-        letter: rootStore.ui.selectedTrialLetter,
-        exists: rootStore.trials.has(rootStore.ui.selectedTrialLetter),
-      }),
-      ({ exists }) => {
+      () => rootStore.trials.has(rootStore.ui.selectedTrialLetter),
+      (exists) => {
         if (!exists) {
           const first = rootStore.trialLetters.find((l) =>
             (TRIAL_LETTERS_DEFAULT as readonly string[]).includes(l),
