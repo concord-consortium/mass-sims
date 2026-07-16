@@ -30,7 +30,7 @@ describe("isValidSimName", () => {
   it("rejects reserved words", () => {
     expect(isValidSimName("shared")).toBe(false);
     expect(isValidSimName("starter")).toBe(false);
-    expect(isValidSimName("sim-frame-preview")).toBe(false);
+    expect(isValidSimName("mass-sims")).toBe(false);
   });
 });
 

@@ -12,6 +12,9 @@ template `yarn new-sim` copies), and `simulations/*` (the sims; **bananas** is t
 
 - `yarn build` / `yarn test` / `yarn lint` / `yarn typecheck` — whole repo (Lerna fans out).
 - `yarn workspace <name> test` / `dev` / `build` — one workspace.
+- **`/__preview` on any sim's dev server** — that sim at all four target widths at once (real
+  interactive iframes), flagging content that overflows its allocation, clipped text, and elements
+  escaping the frame. Dev-only, zero per-sim setup; the URL is printed in the Vite banner.
 - `yarn test:playwright:build` — build every sim **then** run e2e. Use this most of the time.
 - `yarn test:playwright` — runs e2e assuming `dist/` already exists (does **not** build).
 - `yarn new-sim <name>` — scaffold a sim from `packages/starter`. Then `yarn install`.
@@ -32,6 +35,9 @@ template `yarn new-sim` copies), and `simulations/*` (the sims; **bananas** is t
   code paths. `reuseExistingServer: false`, so a stray server makes Playwright fail loudly.
 - **Biome minor version is pinned on purpose.** The config schema shifts across minors; bump the
   `$schema` URL in `biome.json` in the same commit as the package bump.
+- **The four target widths live in two places.** `packages/shared/src/layout/target-widths.ts`
+  is the TypeScript source of truth (the width preview + `playwright.config.ts`'s project matrix both
+  read it); `tokens.scss` carries its own copy. Change one, change the other.
 
 ## Conventions not obvious at a glance
 

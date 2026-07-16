@@ -1,0 +1,147 @@
+.width-preview {
+  background: #f4f5f7;
+  color: #222;
+  font-family: system-ui, -apple-system, sans-serif;
+  min-height: 100vh;
+  padding: 20px;
+
+  .preview-header {
+    align-items: flex-start;
+    display: flex;
+    gap: 16px;
+    justify-content: space-between;
+    margin-bottom: 20px;
+  }
+
+  .preview-title {
+    font-size: 18px;
+    margin: 0;
+  }
+
+  .preview-note {
+    color: #666;
+    font-size: 13px;
+    margin: 4px 0 0;
+    max-width: 70ch;
+  }
+
+  .preview-button {
+    background: #fff;
+    border: 1px solid #b7bcc4;
+    border-radius: 5px;
+    color: #222;
+    cursor: pointer;
+    font: inherit;
+    font-size: 13px;
+    padding: 4px 10px;
+    white-space: nowrap;
+
+    &:hover {
+      background: #eceef1;
+    }
+  }
+
+  .preview-controls {
+    align-items: center;
+    display: flex;
+    gap: 10px;
+  }
+
+  .preview-zoom {
+    align-items: center;
+    color: #444;
+    display: flex;
+    font-size: 13px;
+    gap: 5px;
+
+    select {
+      font: inherit;
+      font-size: 13px;
+    }
+  }
+
+  // Cards wrap, so once zoomed down far enough they sit side by side for comparison rather than
+  // forcing a scroll down the page.
+  .preview-cards {
+    align-items: flex-start;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 28px 24px;
+  }
+
+  .preview-card {
+    margin: 0;
+  }
+
+  // Sized to the frame's scaled footprint by the component (a transform doesn't affect layout).
+  .card-scaler {
+    overflow: hidden;
+  }
+
+  // Never wraps: a taller caption on one card would push its frame down and knock the row out of
+  // alignment. The mode label truncates instead (see .card-label).
+  .card-caption {
+    align-items: center;
+    display: flex;
+    gap: 10px;
+    margin-bottom: 6px;
+  }
+
+  .card-width {
+    font-size: 14px;
+    font-weight: 700;
+  }
+
+  // Takes the slack (so the controls sit at the right edge of the card's own width, lining up with
+  // the frame they act on) and gives it back by truncating when the card is too narrow to hold it.
+  .card-label {
+    color: #666;
+    flex: 1;
+    font-size: 13px;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .card-toggle {
+    align-items: center;
+    color: #444;
+    cursor: pointer;
+    display: flex;
+    font-size: 13px;
+    gap: 5px;
+  }
+
+  // Sized to the sim's exact allocation — the same box Activity Player would give it. The iframe
+  // fills it exactly, so this box itself never overflows: content that doesn't fit scrolls *inside*
+  // the frame. That's faithful to production but easy to miss, so `useFrameOverflow` measures the
+  // frame's document and adds `.overflowing` here.
+  .card-viewport {
+    background: #fff;
+    box-shadow: 0 1px 3px rgb(0 0 0 / 15%);
+
+    &.overflowing {
+      outline: 2px solid #d43c2c;
+      outline-offset: -2px;
+    }
+  }
+
+  .card-frame {
+    border: 0;
+    display: block;
+  }
+
+  .card-problems {
+    color: #b3281a;
+    font-size: 13px;
+    font-weight: 700;
+    list-style: none;
+    margin: 6px 0 0;
+    padding: 0;
+
+    li + li {
+      margin-top: 2px;
+    }
+  }
+}

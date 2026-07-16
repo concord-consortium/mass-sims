@@ -34,7 +34,7 @@ export function DataPanel({ trial, liveSeries }: DataPanelProps) {
 
   return (
     <>
-      <DataSubsection title="Final Distance Distribution">
+      <DataSubsection title="Final Distances">
         <Histogram
           values={distances}
           height={HIST_H}
@@ -44,7 +44,7 @@ export function DataPanel({ trial, liveSeries }: DataPanelProps) {
           emptyState="No data"
         />
       </DataSubsection>
-      <DataSubsection title="Average Distance Over Time">
+      <DataSubsection title="Distance Over Time">
         <LineChart
           data={seriesData}
           xKey="frame"

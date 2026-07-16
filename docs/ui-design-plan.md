@@ -152,6 +152,12 @@ The UI designer has specified four exact widths and one fixed height that the la
 
 The height (**562 px**) is fixed across all four modes — it's the height Activity Player gives the iframe. All four widths accommodate the three-column layout: Trials stays fixed at 155 px while the Simulation and Data columns flex to share the remaining space (see §7).
 
+> **Checking a sim against these numbers.** Every sim's dev server serves a width preview at
+> `/__preview` that renders the sim in an iframe at all four widths at once and flags content that
+> doesn't fit, clipped text, and elements escaping the frame. The Playwright suite also runs once per
+> width. Both read the same source of truth, `packages/shared/src/layout/target-widths.ts` — so if a
+> width here changes, change it there (and in `tokens.scss`, which necessarily keeps its own copy).
+
 ### Why 562 × 1044: device chrome math
 
 The four widths trace directly to Activity Player's embedding modes, but the 562 px height was chosen by working backwards from the available viewport on every supported device — i.e., the screen minus the browser/OS chrome that sits above and below the page content. The chrome varies significantly:

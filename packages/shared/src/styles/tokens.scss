@@ -94,6 +94,9 @@ $space-8:                64px;
 // =============================================================================
 
 // The four target widths and the single fixed height.
+// These duplicate `src/layout/target-widths.ts`, which is the source of truth
+// for the same numbers in TS (the width-preview page + playwright.config.ts).
+// Change one, change the other.
 $frame-height:                       562px;
 $frame-width-ap-full:                1044px;
 $frame-width-standalone:             1024px;   // widest standalone content area (border adds 2px each side → 1028 outer)

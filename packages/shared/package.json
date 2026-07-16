@@ -9,6 +9,7 @@
   "types": "./src/index.ts",
   "exports": {
     ".": "./src/index.ts",
+    "./preview-plugin": "./src/preview/preview-plugin.ts",
     "./vite-config": "./src/vite-config.ts",
     "./vitest-config": "./src/vitest-config.ts",
     "./styles/tokens": "./src/styles/tokens.scss",

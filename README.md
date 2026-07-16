@@ -37,6 +37,9 @@ yarn install
 yarn workspace bananas dev      # the first complete sim
 yarn workspace starter dev      # the reusable template
 
+# …then open /__preview on that dev server to see the sim at all four target
+# widths at once, with layout problems flagged. The URL is printed in the banner.
+
 # Build everything
 yarn build
 
@@ -75,8 +78,7 @@ See **[docs/adding-a-new-sim.md](docs/adding-a-new-sim.md)** for the full walkth
 mass-sims/
 ├── packages/
 │   ├── shared/            Shared library (@concord-consortium/mass-sims-shared) — components, hooks, trial-list infra, styles
-│   ├── starter/           Re-usable starter simulation template (scaffolded by `yarn new-sim`)
-│   └── sim-frame-preview/ Dev-only preview of SimulationFrame at the four target widths (not deployed)
+│   └── starter/           Re-usable starter simulation template (scaffolded by `yarn new-sim`)
 ├── simulations/           Per-sim workspaces
 │   └── bananas/           The first complete simulation
 ├── playwright/            E2E suite (registry, page objects, testdata, tests)

@@ -1,4 +1,7 @@
 import { defineConfig, devices } from "@playwright/test";
+// Pure constants module, imported directly rather than via the package barrel — the barrel pulls in
+// component scss/svg side-effects this tsconfig can't resolve.
+import { FRAME_HEIGHT, TARGET_WIDTH_PX } from "./packages/shared/src/layout/target-widths";
 import { SIMS } from "./playwright/sims";
 
 // Playwright config lives at the repo root so `playwright test` discovers it without --config=...`.
@@ -8,11 +11,10 @@ import { SIMS } from "./playwright/sims";
 // each sim's pre-built dist/. `yarn test:playwright` assumes dist/ exists;
 // `yarn test:playwright:build` (or CI's explicit `lerna run build` step) builds it.
 
-// The four canonical AP allocation widths, all at height 562.
+// The four canonical AP allocation widths, all at height 562, from the shared source of truth
+// (packages/shared/src/layout/target-widths.ts — shared with the width-preview page).
 // Same specs run once per project; Playwright reports per-project pass/fail, giving
 // cross-width regression coverage cheaply.
-const VIEWPORT_WIDTHS = [1044, 1024, 989, 767] as const;
-const VIEWPORT_HEIGHT = 562;
 
 export default defineConfig({
   testDir: "./playwright/tests",
@@ -37,11 +39,11 @@ export default defineConfig({
   // NO baseURL: specs target different sims at different ports, and a single baseURL would
   // silently route one sim's tests at another. Every page object navigates explicitly via
   // getSimUrl(name) from the registry.
-  projects: VIEWPORT_WIDTHS.map((width) => ({
+  projects: TARGET_WIDTH_PX.map((width) => ({
     name: `chromium-${width}`,
     use: {
       ...devices["Desktop Chrome"],
-      viewport: { width, height: VIEWPORT_HEIGHT },
+      viewport: { width, height: FRAME_HEIGHT },
     },
   })),
   // One preview server per registered sim, derived from the registry so ports can't drift.
