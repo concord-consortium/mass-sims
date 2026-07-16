@@ -1,0 +1,91 @@
+@use "@concord-consortium/mass-sims-shared/styles/tokens" as tokens;
+@use "./theme" as theme;
+
+// Nor'easter theme. The sim's CSS loads after the shared library's, so these equal-specificity
+// overrides win the cascade without extra wrappers.
+.simulation-frame {
+  background: theme.$surface;
+
+  &.standalone {
+    border-color: theme.$border;
+  }
+
+  .title-bar {
+    background: theme.$title-bar;
+  }
+
+  .sim-title {
+    color: theme.$heading;
+    font-family: "Vampiro One", #{tokens.$font-family-base};
+    font-weight: 400;
+  }
+
+  .info-button {
+    background: theme.$surface;
+    border-color: theme.$border;
+
+    &:hover,
+    &:focus-visible {
+      background: theme.$hover;
+    }
+
+    &:active {
+      background: theme.$active;
+    }
+
+    .info-button-icon {
+      color: theme.$heading;
+    }
+  }
+
+  .section {
+    background: theme.$surface;
+    border-color: theme.$border;
+
+    &.simulation-area {
+      background: theme.$title-bar;
+    }
+
+    &.data-area {
+      background: theme.$surface;
+    }
+
+    .chip {
+      background: theme.$tab;
+      border-color: theme.$border;
+    }
+
+    .title {
+      color: theme.$heading;
+    }
+
+    .instruction {
+      background: theme.$surface;
+    }
+  }
+
+  .simulation-frame-info-modal {
+    border-color: theme.$border;
+
+    .modal-drag-handle {
+      background: theme.$surface;
+      border-bottom-color: theme.$border;
+    }
+
+    .modal-header-icon,
+    .modal-close-icon {
+      color: theme.$heading;
+    }
+
+    .modal-close {
+      &:hover,
+      &:focus-visible {
+        background: theme.$hover;
+      }
+
+      &:active {
+        background: theme.$active;
+      }
+    }
+  }
+}
