@@ -2,7 +2,7 @@
   "name": "noreaster",
   "version": "0.0.1",
   "private": true,
-  "description": "Nor'easter — which air masses create a nor'easter? A Mass Sims educational simulation.",
+  "description": "Nor'easter — which air masses create a nor'easter?",
   "license": "MIT",
   "type": "module",
   "scripts": {
