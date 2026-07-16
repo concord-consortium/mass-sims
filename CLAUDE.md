@@ -18,16 +18,19 @@ template `yarn new-sim` copies), and `simulations/*` (the sims; **bananas** is t
 - `yarn test:playwright:build` — build every sim **then** run e2e. Use this most of the time.
 - `yarn test:playwright` — runs e2e assuming `dist/` already exists (does **not** build).
 - `yarn new-sim <name>` — scaffold a sim from `packages/starter`. Then `yarn install`.
-- `yarn gen-index` / `yarn gen-workflows` — regenerate the root `index.html` and per-sim CI workflows.
+- `yarn gen-index` / `yarn gen-workflows` / `yarn gen-widths` — regenerate the root `index.html`,
+  the per-sim CI workflows, and the SCSS width tokens (from `layout/target-widths.ts`).
 
 ## Gotchas that actually bite
 
 - **Ports collide.** A sim's dev server (`yarn workspace <sim> dev`) and Playwright's preview servers
   both want ports 8080+. Stop the dev server before running e2e, or run it on another port
   (`--port 8100`).
-- **Regenerated files must be committed.** `gen-index` and `gen-workflows` have `--check` modes CI runs
-  on every push — a stale root `index.html` or a missing `.github/workflows/sim-<name>.yml` **fails CI**.
-  Run both and commit their output when adding a sim.
+- **Regenerated files must be committed.** `gen-index`, `gen-workflows`, and `gen-widths` all have
+  `--check` modes CI runs on every push — a stale root `index.html`, a missing
+  `.github/workflows/sim-<name>.yml`, or a `_widths.generated.scss` that drifted from
+  `target-widths.ts` **fails CI**. Run the first two and commit their output when adding a sim; run
+  `gen-widths` when changing a target width.
 - **Playwright testdata imports the pure `constants` module, not the barrel.** The package barrel pulls
   in component scss/svg side-effects the Playwright tsconfig can't resolve. Import trial-list constants
   from `packages/shared/src/trials/constants` directly.
@@ -35,9 +38,11 @@ template `yarn new-sim` copies), and `simulations/*` (the sims; **bananas** is t
   code paths. `reuseExistingServer: false`, so a stray server makes Playwright fail loudly.
 - **Biome minor version is pinned on purpose.** The config schema shifts across minors; bump the
   `$schema` URL in `biome.json` in the same commit as the package bump.
-- **The four target widths live in two places.** `packages/shared/src/layout/target-widths.ts`
-  is the TypeScript source of truth (the width preview + `playwright.config.ts`'s project matrix both
-  read it); `tokens.scss` carries its own copy. Change one, change the other.
+- **The four target widths are defined once, in TypeScript, and generated into SCSS.**
+  `packages/shared/src/layout/target-widths.ts` is the source of truth (the width preview and
+  `playwright.config.ts`'s project matrix both import it). `yarn gen-widths` emits
+  `styles/_widths.generated.scss`, which `tokens.scss` `@forward`s — so stylesheets still read
+  `tokens.$frame-height`. Never hand-edit the generated file; CI runs `gen-widths --check`.
 
 ## Conventions not obvious at a glance
 

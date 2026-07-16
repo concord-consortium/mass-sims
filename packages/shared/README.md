@@ -316,11 +316,27 @@ overflow in `starter`'s data panel the first time it was pointed at it.
 > pseudo-element, so it reports violations on a compliant sim. Doing it right means resolving each
 > control's *effective* hit target, and belongs with the planned axe-based a11y auditing.
 
-**`TARGET_WIDTHS`** (`src/layout/target-widths.ts`) is the source of truth for the four widths in
-TypeScript — consumed by this page and by the root `playwright.config.ts`, whose project matrix runs
-the whole e2e suite once per width. It's a **pure** module (no component/SCSS/SVG imports) so
-Playwright's tsconfig can import it directly rather than through the barrel. `tokens.scss` necessarily
-carries its own copy, since SCSS can't read TypeScript; change one, change the other.
+### `TARGET_WIDTHS` — one definition, three consumers
+
+`src/layout/target-widths.ts` is the **single source of truth** for the four widths and the 562 px
+height, everywhere in the repo:
+
+| Consumer | How it reads them |
+| --- | --- |
+| The width preview | imports the module |
+| `playwright.config.ts` (the four-project e2e matrix) | imports the module directly — **not** via the barrel, which would drag in component scss/svg side-effects its tsconfig can't resolve |
+| SCSS (`tokens.$frame-height`, `tokens.$frame-width-*`) | `yarn gen-widths` emits `styles/_widths.generated.scss`, which `tokens.scss` `@forward`s |
+
+So the module must stay **pure** — no component, SCSS, or SVG imports — since Playwright and the
+generator both load it in plain Node, outside any bundler.
+
+Change a width by editing the TypeScript and running **`yarn gen-widths`**; commit the regenerated
+SCSS. CI runs `gen-widths --check`, so drift between the two fails the build rather than silently
+desynchronizing the layout from the tests. Never hand-edit `_widths.generated.scss`.
+
+> Going the other way — defining the widths in SCSS and reading them from TS via a `.module.scss`
+> `:export` — doesn't work here: `:export` only yields a JS object when a *bundler* transforms the
+> file, and both `playwright.config.ts` and the generator run in plain Node.
 
 ---
 
