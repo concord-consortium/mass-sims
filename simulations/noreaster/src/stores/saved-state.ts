@@ -18,9 +18,9 @@ function isObject(value: unknown): value is Record<string, unknown> {
 function isSimInput(value: unknown): boolean {
   return isObject(value) && typeof value.seed === "string";
 }
-/** A `SimOutput` — a recorded-output object (no fields defined yet). */
+/** A `SimOutput` — no fields are defined yet, so version 1 accepts only an empty object. */
 function isSimOutput(value: unknown): boolean {
-  return isObject(value);
+  return isObject(value) && Object.keys(value).length === 0;
 }
 
 /**

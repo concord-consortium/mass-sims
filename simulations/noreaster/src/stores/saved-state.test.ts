@@ -71,6 +71,16 @@ describe("migrateSavedState — rejects payloads that can't hydrate cleanly", ()
     ).toBeNull();
   });
 
+  it("rejects a non-empty output object (version 1 defines no output fields)", () => {
+    expect(
+      migrateSavedState({
+        version: 1,
+        trials: { A: { input: INPUT, output: { junk: 1 } } },
+        selectedTrialLetter: "A",
+      }),
+    ).toBeNull();
+  });
+
   it("rejects a trial whose input is missing its seed or has the wrong seed type", () => {
     const cases = [
       {}, // no seed
