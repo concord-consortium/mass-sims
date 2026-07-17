@@ -5,9 +5,11 @@ import { type RefObject, useLayoutEffect } from "react";
  *
  * A `ResizeObserver` measures the panel width and writes interpolated sizes (gap, paddings, caret,
  * icon sizes) as CSS custom properties on the panel root; the SCSS only *applies* them (its `var()`
- * fallbacks are the widest/Lato values, so first paint — before this runs — shows the full layout).
- * Because the grid's dropdown columns are already flexible (`minmax`), their widths scale on their
- * own; this smooths everything else so the layout no longer jumps at a breakpoint.
+ * fallbacks are the widest/Lato values — a sensible baseline if the JS never runs). The first
+ * `apply()` runs in a `useLayoutEffect`, before the browser paints, so on the client the interpolated
+ * sizes (not the fallbacks) are already in place at first paint. Because the grid's dropdown columns
+ * are already flexible (`minmax`), their widths scale on their own; this smooths everything else so
+ * the layout no longer jumps at a breakpoint.
  *
  * Two things can't be interpolated and stay discrete: the control font swaps to Roboto Condensed
  * (`data-nor-condensed`) and the "Temperature" header shortens to "Temp" (`data-nor-temp-short`),
