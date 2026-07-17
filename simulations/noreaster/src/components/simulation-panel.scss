@@ -23,8 +23,6 @@
 }
 
 .noreaster-simulation-panel {
-  // Named query container so the controls respond to the *panel* width, not the viewport.
-  container: noreaster-sim-panel / inline-size;
   display: flex;
   flex-direction: column;
   height: 100%;

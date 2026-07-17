@@ -60,7 +60,7 @@
   flex-shrink: 0; // keep the segmented switch at its natural width
   font-family: tokens.$font-family-base;
   font-size: tokens.$font-size-base;
-  height: 44px;
+  height: tokens.$touch-target-min;
 
   // Keyboard focus ring on the whole control (RAC marks the inner button data-focus-visible).
   &:has(.map-view-button[data-focus-visible]) {
