@@ -27,6 +27,29 @@ test("loads the sim shell", async () => {
   await expect(sim.trialsListbox).toBeVisible();
 });
 
+test("Simulation panel: renders the air-mass selectors, map, and control bar", async () => {
+  // Five inert air-mass dropdowns (Land: Pathway/Humidity/Temperature; Ocean: Pathway/Humidity).
+  for (const field of [
+    "Pathway for Land Air Mass",
+    "Humidity for Land Air Mass",
+    "Temperature for Land Air Mass",
+    "Pathway for Ocean Air Mass",
+    "Humidity for Ocean Air Mass",
+  ]) {
+    await expect(sim.dropdown(field)).toBeVisible();
+  }
+  await expect(sim.mapImage).toBeVisible();
+  await expect(sim.mapViewToggle).toBeVisible();
+  await expect(sim.runButton).toBeVisible();
+  await expect(sim.resetTrialButton).toBeVisible();
+});
+
+test("Simulation panel: controls are in their default states (Street; Run/Reset disabled)", async () => {
+  await expect(sim.mapViewToggle).not.toBeChecked();
+  await expect(sim.runButton).toHaveAttribute("aria-disabled", "true");
+  await expect(sim.resetTrialButton).toHaveAttribute("aria-disabled", "true");
+});
+
 test("About modal: opens via button, closes via close button, closes via Escape", async () => {
   await sim.openAbout();
   await sim.closeAboutViaButton();

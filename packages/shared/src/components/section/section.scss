@@ -18,7 +18,10 @@
     flex-shrink: 0;
     height: tokens.$section-chip-height;
     margin-top: calc((#{tokens.$section-chip-height} + #{tokens.$border-strong-width}) / -2);
-    max-width: calc(100% - #{tokens.$space-3 * 2});
+    // Span up to the full panel width so the title + instruction render in full at every width.
+    //`overflow: hidden` stays for the pill corners; the chip-text keeps its ellipsis as a safety
+    // net for over-long text.
+    max-width: 100%;
     overflow: hidden;
     position: relative;
     z-index: 11;
@@ -47,6 +50,8 @@
     padding: 0 tokens.$space-3;
   }
 
+  // Single line; the ellipsis is a dormant safety net that only shows for over-long text (current
+  // titles/instructions fit every width and render in full).
   .chip-text {
     overflow: hidden;
     text-overflow: ellipsis;

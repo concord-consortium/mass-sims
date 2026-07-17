@@ -1,19 +1,52 @@
-// Page object for the `noreaster` sim. The Simulation panel is an empty shell for now (its content
-// lands in a later story), so this exposes only the shared chrome (inherited from
-// SimulationFramePage) and the Trials panel.
+// Page object for the `noreaster` sim: the shared chrome (from SimulationFramePage), the Trials
+// panel, and the static Simulation panel (air-mass selectors, map, control bar).
 import type { Locator } from "@playwright/test";
 import { getSimUrl } from "../sims";
 import { SimulationFramePage } from "./simulation-frame-page";
 
 /**
- * Page object for the Nor'easter sim. The Simulation panel has no controls yet, so this adds only
- * the Trials-panel locators on top of the shared-chrome base and a `goto()` that navigates to the
- * Nor'easter preview URL sourced from the sims registry.
+ * Page object for the Nor'easter sim. Adds the Trials-panel locators and the Simulation-panel
+ * locators (dropdowns, map image, map-view toggle, Run / Reset Trial) on top of the shared-chrome
+ * base, plus a `goto()` that navigates to the Nor'easter preview URL from the sims registry.
  */
 export class NoreasterPage extends SimulationFramePage {
   /** Navigate to the Nor'easter preview server (URL derived from the sims registry). */
   async goto(): Promise<void> {
     await this.page.goto(getSimUrl("noreaster"));
+  }
+
+  // --- Simulation panel ---------------------------------------------------
+
+  /**
+   * An air-mass dropdown trigger by its field label, e.g. `dropdown("Pathway for Land Air Mass")`.
+   * react-aria names the trigger by its value (placeholder) then the field label, so match on the
+   * field label as a substring.
+   */
+  dropdown(field: string): Locator {
+    return this.page.getByRole("button", { name: new RegExp(field) });
+  }
+
+  /** The base map — an informative image named by its full description. */
+  get mapImage(): Locator {
+    return this.page.getByRole("img", { name: /Map of the eastern United States/ });
+  }
+
+  /** The Street ⇄ Satellite map-view toggle (a role="switch"). */
+  get mapViewToggle(): Locator {
+    return this.page.getByRole("switch", { name: /Map view/ });
+  }
+
+  /** The Run button. */
+  get runButton(): Locator {
+    return this.page.getByRole("button", { name: "Run", exact: true });
+  }
+
+  /**
+   * The control-bar Reset Trial button. `exact` so it doesn't also match a Trials-panel per-trial
+   * reset ("Reset trial A", a case-insensitive substring of it).
+   */
+  get resetTrialButton(): Locator {
+    return this.page.getByRole("button", { name: "Reset Trial", exact: true });
   }
 
   // --- Trials panel -------------------------------------------------------

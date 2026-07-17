@@ -44,6 +44,12 @@
 
     &.simulation-area {
       background: theme.$title-bar;
+
+      // Drop the shared content's bottom padding so the map stage (flex:1) reclaims that space and
+      // the control bar sits flush at the panel bottom — matches the demo/spec's taller map area.
+      .content {
+        padding-bottom: 0;
+      }
     }
 
     &.data-area {
@@ -61,6 +67,36 @@
 
     .instruction {
       background: theme.$surface;
+    }
+  }
+
+  // Air-mass dropdown triggers (shared <Select>), recolored to the sim theme.
+  .select .react-aria-Button {
+    background: theme.$surface;
+    border-color: theme.$border;
+
+    &[data-hovered],
+    &[data-focus-visible] {
+      background: theme.$hover;
+    }
+
+    &[data-pressed] {
+      background: theme.$active;
+    }
+
+    // While open, the trigger rests in its default color (the open list + rotated caret already
+    // signal "active"), overriding react-aria's data-pressed which it holds for the whole open state.
+    &[aria-expanded="true"] {
+      background: theme.$surface;
+    }
+    &[aria-expanded="true"][data-hovered] {
+      background: theme.$hover;
+    }
+
+    // Suppress the browser's native pointer focus ring; react-aria's modality-based
+    // data-focus-visible still supplies the keyboard ring (matches bananas).
+    &:not([data-focus-visible]) {
+      outline: none;
     }
   }
 
@@ -86,6 +122,23 @@
       &:active {
         background: theme.$active;
       }
+    }
+  }
+}
+
+// The select popover is portaled to <body>, so it lives outside `.simulation-frame`.
+.select-popover {
+  background: theme.$surface;
+  border-color: theme.$border;
+
+  .react-aria-ListBoxItem {
+    &[data-hovered],
+    &[data-focused] {
+      background: theme.$hover;
+    }
+
+    &[data-selected] {
+      background: theme.$active;
     }
   }
 }

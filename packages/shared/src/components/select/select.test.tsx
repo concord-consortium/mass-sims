@@ -67,6 +67,38 @@ describe("Select", () => {
     expect(getByRole("button")).toBeDisabled();
   });
 
+  // When a label is a ReactNode whose rendered text alone wouldn't announce the intended name
+  // (e.g. an icon carrying a number + short text), an option's `textValue` overrides the accessible
+  // name. Consumers rely on this to expose names like "1 N/NW" while showing icon + "N/NW".
+  it("uses an option's textValue as its accessible name for rich (icon+text) labels", () => {
+    const iconOptions = [
+      {
+        id: "nnw",
+        label: (
+          <>
+            <svg aria-hidden="true" viewBox="0 0 24 24" />
+            <span>N/NW</span>
+          </>
+        ),
+        textValue: "1 N/NW",
+      },
+      {
+        id: "w",
+        label: (
+          <>
+            <svg aria-hidden="true" viewBox="0 0 24 24" />
+            <span>W</span>
+          </>
+        ),
+        textValue: "4 W",
+      },
+    ];
+    const { getByRole } = render(<Select options={iconOptions} />);
+    fireEvent.click(getByRole("button"));
+    expect(getByRole("option", { name: "1 N/NW" })).toBeInTheDocument();
+    expect(getByRole("option", { name: "4 W" })).toBeInTheDocument();
+  });
+
   // The non-modal popover (chosen so sibling controls stay hoverable while the list is open)
   // drops react-aria's built-in click-outside/toggle close, which CloseOnOutsidePointer restores.
   describe("CloseOnOutsidePointer", () => {

@@ -6,3 +6,16 @@ $tab: #b3d9ff; // section chip background
 $hover: #d3e8fd; // interactive hover fill
 $active: #9cc9f7; // interactive active fill
 $trial-label-bg: #d3e8fd; // trial letter-badge background (unselected)
+$trial-label-selected-text: #fff; // active-trial badge letter (white on the $heading fill)
+
+// Simulation-panel-specific colors (air-mass selectors, map, control bar). Sim-scoped; the shared
+// tokens stay authoritative for the generic scale (spacing, radius, typography, focus).
+$icon-color: $heading; // air-mass / dropdown / pill / compass icons (currentColor source)
+$temp-warm: #ef4444;
+$temp-cool: #2196f3;
+$arrow-neutral: #8a929c;
+$map-bg: #ebebeb; // stage background behind the 2:1 map
+$pill-bg: rgba(255, 255, 255, 0.92); // map pathway-pill background
+$marker-text: #333; // Boston label + pathway-pill text
+$btn-border-disabled: rgba($border, 0.35);
+$switch-thumb: #fffdf2;

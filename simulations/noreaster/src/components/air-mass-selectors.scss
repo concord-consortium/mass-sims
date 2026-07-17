@@ -1,0 +1,179 @@
+@use "@concord-consortium/mass-sims-shared/styles/tokens" as tokens;
+@use "../theme" as theme;
+
+// The air-mass selector grid. Column 0 (the air-mass label) sizes to its content; the three dropdown
+// columns are flexible (`minmax`) — capped at the demo's widest (Lato) widths but shrinking to fit
+// narrower panels. The gap / paddings / icon + caret sizes are interpolated continuously by
+// use-nor-scaling.ts (custom properties on the panel; the `var()` fallbacks here are the widest/Lato
+// values). Only the font swap + short "Temp" header are discrete (panel `[data-nor-*]` flags below).
+
+.nor-air-mass-selectors {
+  flex-shrink: 0;
+  padding: 0 10px 10px;
+}
+
+.nor-controls-grid {
+  align-items: end;
+  display: grid;
+  gap: 5px var(--nor-col-gap, 10px);
+  grid-template-columns: auto minmax(0, 126px) minmax(0, 127px) minmax(0, 123px);
+
+  // Row-3 cells sit 1px lower, matching the demo's per-cell margin-top.
+  > *:nth-child(n + 9) {
+    margin-top: 1px;
+  }
+
+  .nor-col-header {
+    color: theme.$marker-text;
+    font-family: tokens.$font-family-base;
+    font-size: tokens.$font-size-base;
+    font-weight: 700;
+    line-height: tokens.$line-height-sm;
+    text-align: center;
+  }
+
+  // The Temperature header renders both forms; the short one shows only in the condensed layout.
+  .nor-col-header-short {
+    display: none;
+  }
+
+  .nor-air-mass {
+    align-items: center;
+    display: flex;
+    gap: var(--nor-am-gap, #{tokens.$space-2});
+    min-height: tokens.$touch-target-min;
+  }
+
+  .nor-air-mass-icon {
+    align-items: center;
+    color: theme.$icon-color;
+    display: flex;
+    flex-shrink: 0;
+    height: var(--nor-am-icon, 24px);
+    justify-content: center;
+    width: var(--nor-am-icon, 24px);
+
+    svg {
+      display: block;
+      height: var(--nor-am-icon, 24px);
+      width: var(--nor-am-icon, 24px);
+    }
+  }
+
+  .nor-air-mass-label {
+    color: theme.$marker-text;
+    font-family: tokens.$font-family-base;
+    font-size: tokens.$font-size-base;
+    font-weight: 700;
+    line-height: tokens.$line-height-sm;
+    white-space: nowrap;
+  }
+
+  // Each dropdown fills its column. Its react-aria label (rendered as span.react-aria-Label) carries
+  // the accessible name but is visually hidden — the visible column header + air-mass row label do
+  // the labeling on screen.
+  .nor-select {
+    width: 100%;
+
+    .react-aria-Label {
+      border: 0;
+      clip-path: inset(50%);
+      height: 1px;
+      margin: -1px;
+      // `clip` (not `hidden`): still hides the label + keeps it in the a11y tree, but leaves
+      // overflow-x != "hidden" so the /__preview clipped-text detector doesn't false-positive on
+      // this intentionally sr-only field label (which would otherwise bury real clip warnings).
+      overflow: clip;
+      padding: 0;
+      position: absolute;
+      white-space: nowrap;
+      width: 1px;
+    }
+
+    .react-aria-Button {
+      min-width: 0; // allow the trigger to shrink inside its flexible (minmax) column
+      padding-left: var(--nor-trigger-pad-x, 10px);
+      padding-right: var(--nor-trigger-pad-x, 10px);
+      width: 100%;
+    }
+
+    // The placeholder / value never overflows a shrunk trigger — it clips rather than pushing the
+    // caret out (the condensed font keeps "Select…" fitting at the narrowest target).
+    .react-aria-SelectValue {
+      overflow: hidden;
+    }
+
+    .select-caret {
+      height: var(--nor-caret, 24px);
+      width: var(--nor-caret, 24px);
+    }
+  }
+
+  // Ocean Temperature: a static, non-interactive pill. Rounded, no border color, surface fill.
+  .nor-temp-display {
+    align-items: center;
+    background: theme.$surface;
+    border: 2px solid transparent;
+    border-radius: 999px;
+    box-sizing: border-box;
+    color: theme.$marker-text;
+    display: flex;
+    font-family: tokens.$font-family-base;
+    font-size: tokens.$font-size-base;
+    font-weight: 700;
+    justify-content: center;
+    line-height: tokens.$line-height-sm;
+    min-height: tokens.$touch-target-min;
+    padding: tokens.$space-2 10px;
+  }
+
+  .nor-temp-display-label {
+    flex: 1;
+    text-align: center;
+  }
+}
+
+// ---- Discrete swaps (driven by use-nor-scaling.ts, toggled once at the fitting threshold) ----
+// Roboto Condensed once the Lato controls stop fitting.
+.noreaster-simulation-panel[data-nor-condensed] {
+  .nor-col-header,
+  .nor-air-mass-label,
+  .nor-temp-display,
+  .nor-select .react-aria-SelectValue {
+    font-family: tokens.$font-family-condensed;
+  }
+}
+
+// "Temperature" → "Temp" once the full word stops fitting its column.
+.noreaster-simulation-panel[data-nor-temp-short] {
+  .nor-col-header-full {
+    display: none;
+  }
+  .nor-col-header-short {
+    display: inline;
+  }
+}
+
+// Option content lives in the popover, which react-aria portals to <body> — so these rules are
+// global (not scoped under .nor-controls-grid). The leading icon holder in each option row.
+.select-popover {
+  .react-aria-ListBoxItem {
+    gap: tokens.$space-2;
+  }
+
+  .nor-dd-icon {
+    align-items: center;
+    color: theme.$icon-color;
+    display: flex;
+    flex-shrink: 0;
+    height: 24px;
+    justify-content: center;
+    width: 24px;
+
+    svg {
+      display: block;
+      height: 24px;
+      width: 24px;
+    }
+  }
+}

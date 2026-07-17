@@ -1,0 +1,128 @@
+@use "@concord-consortium/mass-sims-shared/styles/tokens" as tokens;
+@use "../theme" as theme;
+
+// The bar's gap / button padding / icon sizes interpolate continuously (custom properties from
+// use-nor-scaling.ts; the var() fallbacks here are the widest/Lato values), so all three controls
+// stay on one row and shrink smoothly as the panel narrows — matching the demo. flex-shrink:0 keeps
+// the buttons at their (interpolated) natural width so labels never clip.
+.control-bar {
+  display: flex;
+  flex-shrink: 0;
+  gap: var(--nor-cb-gap, 10px);
+  justify-content: center;
+  padding: 10px;
+
+  // ---- Run / Reset Trial buttons (shared <Button> = .button) ----
+  .control-button {
+    align-items: center;
+    background: theme.$surface;
+    border-color: theme.$border;
+    display: flex;
+    flex-shrink: 0; // never squish below the label — it would clip "Reset Trial"
+    gap: var(--nor-cb-btn-gap, 4px);
+    padding: 8px var(--nor-cb-btn-pad-r, 12px) 8px var(--nor-cb-btn-pad-l, 8px);
+    white-space: nowrap;
+
+    &[data-hovered]:not([aria-disabled="true"]),
+    &:focus-visible:not([aria-disabled="true"]) {
+      background: theme.$hover;
+    }
+
+    &[data-pressed]:not([aria-disabled="true"]) {
+      background: theme.$active;
+    }
+
+    &[aria-disabled="true"] {
+      border-color: theme.$btn-border-disabled;
+    }
+  }
+
+  .control-button-icon {
+    color: theme.$heading;
+    display: block;
+    flex-shrink: 0;
+    height: var(--nor-cb-icon, 24px);
+    width: var(--nor-cb-icon, 24px);
+  }
+}
+
+// ---- Street ⇄ Satellite map-view toggle ----
+// SwitchField renders the outer `.map-view-toggle` div (the bordered button); SwitchButton renders
+// the `.map-view-button` label wrapping the hidden switch input + our segmented markup.
+.map-view-toggle {
+  align-items: center;
+  background: theme.$surface;
+  border: 2px solid theme.$border;
+  border-radius: 6px;
+  box-sizing: border-box;
+  color: theme.$marker-text;
+  display: inline-flex;
+  flex-shrink: 0; // keep the segmented switch at its natural width
+  font-family: tokens.$font-family-base;
+  font-size: tokens.$font-size-base;
+  height: 44px;
+
+  // Keyboard focus ring on the whole control (RAC marks the inner button data-focus-visible).
+  &:has(.map-view-button[data-focus-visible]) {
+    outline: tokens.$focus-outline;
+    outline-offset: tokens.$focus-outline-offset;
+  }
+
+  .map-view-button {
+    align-items: center;
+    cursor: pointer;
+    display: flex;
+    gap: var(--nor-toggle-gap, 6px);
+    height: 100%;
+    padding: 0 var(--nor-toggle-pad-x, 10px);
+  }
+
+  .map-view-state {
+    flex: 1;
+    font-weight: 400;
+    line-height: tokens.$line-height-sm;
+    text-align: center;
+
+    // Reserve the bold width so the (locked) active label never reflows its neighbors.
+    &[data-text]::after {
+      content: attr(data-text);
+      display: block;
+      font-weight: 700;
+      height: 0;
+      overflow: hidden;
+      visibility: hidden;
+    }
+  }
+
+  .map-view-state--active {
+    font-weight: 700;
+  }
+
+  // Track + thumb in the Street (off) state. The toggle is locked here, so no `.on` variant.
+  .map-view-track {
+    background: theme.$hover;
+    border-radius: 12px;
+    box-shadow: inset 0 0 0 2px theme.$border;
+    flex-shrink: 0;
+    height: 24px;
+    position: relative;
+    width: 44px;
+  }
+
+  .map-view-thumb {
+    background: theme.$switch-thumb;
+    border-radius: 50%;
+    box-shadow: 0 0 0 2px theme.$border;
+    height: 20px;
+    left: 2px;
+    position: absolute;
+    top: 2px;
+    width: 20px;
+  }
+}
+
+// Condense the toggle labels to Roboto Condensed once the controls stop fitting (in step with the
+// grid + buttons), so Street|track|Satellite takes less width and the row stays on one line.
+.noreaster-simulation-panel[data-nor-condensed] .map-view-toggle {
+  font-family: tokens.$font-family-condensed;
+}
