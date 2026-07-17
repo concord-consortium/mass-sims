@@ -90,6 +90,7 @@ const COLUMN_HEADERS = ["", "Pathway", "Humidity"] as const;
 function OceanTempDisplay() {
   return (
     <div className="nor-temp-display">
+      <span className="sr-only">Temperature for Ocean Air Mass</span>
       <span className="nor-temp-display-label">–</span>
     </div>
   );

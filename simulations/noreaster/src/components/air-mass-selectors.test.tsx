@@ -72,5 +72,9 @@ describe("AirMassSelectors (default state)", () => {
     expect(tempDisplay).toHaveTextContent("–");
     // Convention: sims carry no scattered live regions — this ambient display is not a status region.
     expect(tempDisplay).not.toHaveAttribute("role", "status");
+    // An sr-only field label gives it AT parity with the sibling dropdowns.
+    expect(tempDisplay?.querySelector(".sr-only")).toHaveTextContent(
+      "Temperature for Ocean Air Mass",
+    );
   });
 });
