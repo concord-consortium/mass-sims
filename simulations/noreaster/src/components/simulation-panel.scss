@@ -1,0 +1,30 @@
+@use "@concord-consortium/mass-sims-shared/styles/tokens" as tokens;
+@use "../theme" as theme;
+
+// The active-trial letter badge, anchored to the Simulation section's top-left corner (the section
+// establishes the positioning context). White letter on the dark heading fill.
+.active-trial-badge {
+  align-items: center;
+  background: theme.$heading;
+  border-radius: tokens.$radius-sm;
+  color: theme.$trial-label-selected-text;
+  display: flex;
+  font-family: tokens.$font-family-base;
+  font-size: tokens.$font-size-lg;
+  font-weight: 700;
+  height: 28px;
+  justify-content: center;
+  left: tokens.$space-1;
+  line-height: 1;
+  position: absolute;
+  top: tokens.$space-1;
+  width: 28px;
+  z-index: 1;
+}
+
+.noreaster-simulation-panel {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}

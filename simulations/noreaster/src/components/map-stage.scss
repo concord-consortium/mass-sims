@@ -1,0 +1,176 @@
+@use "@concord-consortium/mass-sims-shared/styles/tokens" as tokens;
+@use "../theme" as theme;
+
+// The map "stage" fills the remaining vertical space in the panel. The map itself is an aspect-locked
+// (2:1) box sized to COVER the stage — it always fills the full width (never letterboxed), cropping
+// whichever dimension overflows (top/bottom on a wide stage, sides on a tall one, e.g. AP 2-column).
+// `height: max(100cqh, 50cqw)` picks the covering height using the stage's own size (container-query
+// units), so it's pure CSS with no resize JS. Overlays are absolutely-positioned children of the map
+// box, placed with `calc(<pct>% + <px>)` from the demo's `_position*` geometry — top-left anchored,
+// constant px nudges, no centering translate.
+
+$shadow: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.35));
+
+.nor-stage {
+  background: theme.$map-bg;
+  container-type: size; // enables cqw/cqh for the covering map below
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  position: relative;
+}
+
+.nor-map {
+  aspect-ratio: 2 / 1; // 2667 / 1334 ≈ 2:1
+  // Cover: at least the full stage height AND at least the full width (50cqw → 2:1 → 100% width).
+  height: max(100cqh, 50cqw);
+  left: 50%;
+  position: absolute;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: auto;
+}
+
+.nor-map-img {
+  display: block;
+  height: 100%;
+  width: 100%;
+}
+
+// ---- Pathway arrows (neutral / pre-run state) ----
+// Each arrow's SVG is sized so 1 user unit = mapHeight / 265 (the demo's `scale(sh/265)`): the
+// element height is `<viewBoxHeight> / 265` of the map height, with width from the aspect ratio.
+.nor-arrow {
+  color: theme.$arrow-neutral; // body path (currentColor); the white halo path stays white
+  filter: $shadow;
+  position: absolute;
+
+  svg {
+    display: block;
+    height: 100%;
+    width: 100%;
+  }
+
+  &[data-arrow="1"] {
+    aspect-ratio: 154.966 / 155.722;
+    height: calc(155.722 / 265 * 100%);
+    left: calc(16.025% - 12px);
+    top: calc(-16.981% + 21px);
+  }
+  &[data-arrow="2"] {
+    aspect-ratio: 138.936 / 135.581;
+    height: calc(135.581 / 265 * 100%);
+    left: calc(54.908% - 25px);
+    top: calc(71.698% + 14px);
+  }
+  &[data-arrow="3"] {
+    aspect-ratio: 127.718 / 171.879;
+    height: calc(171.879 / 265 * 100%);
+    left: calc(60.382% - 36px);
+    top: calc(-20.755% + 31px);
+  }
+  &[data-arrow="4"] {
+    aspect-ratio: 218.554 / 54.93;
+    height: calc(54.93 / 265 * 100%);
+    left: calc(-2.472% - 3px);
+    top: calc(58.113% - 17px);
+  }
+}
+
+// ---- Pathway pills (circled number + direction) ----
+.nor-pill {
+  align-items: center;
+  background: theme.$pill-bg;
+  border-radius: 16px;
+  color: theme.$marker-text;
+  display: flex;
+  filter: $shadow;
+  font-family: tokens.$font-family-base;
+  font-size: tokens.$font-size-base;
+  font-weight: 700;
+  gap: 4px;
+  line-height: tokens.$line-height-sm;
+  padding: 2px 8px 2px 2px;
+  position: absolute;
+  white-space: nowrap;
+  z-index: 1;
+
+  .nor-pill-icon {
+    color: theme.$icon-color;
+    display: block;
+    flex-shrink: 0;
+    height: 24px;
+    width: 24px;
+  }
+
+  &[data-pathway="1"] {
+    left: calc(10.5% + 23px);
+    top: calc(10.9% + 37px);
+  }
+  &[data-pathway="4"] {
+    left: calc(1.3% + 81px);
+    top: calc(47.2% + 3px);
+  }
+  &[data-pathway="2"] {
+    left: calc(77.5% - 98px);
+    top: 83.7%;
+  }
+  &[data-pathway="3"] {
+    left: calc(85% - 86px);
+    top: calc(10.9% + 49px);
+  }
+}
+
+// ---- Boston marker (dot + label) ----
+.nor-boston {
+  align-items: center;
+  display: flex;
+  gap: 4px;
+  left: calc(36% + 75.5px);
+  pointer-events: none;
+  position: absolute;
+  top: calc(16% + 8px);
+}
+
+.nor-boston-dot {
+  background: #fff;
+  border: 2px solid theme.$marker-text;
+  border-radius: 50%;
+  box-shadow: 0 0 0 2px #fff;
+  flex-shrink: 0;
+  height: 8px;
+  width: 8px;
+}
+
+.nor-boston-label {
+  color: theme.$marker-text;
+  filter: $shadow;
+  font-family: tokens.$font-family-condensed;
+  font-size: tokens.$font-size-base;
+  font-weight: 500;
+  left: -2px;
+  paint-order: stroke fill;
+  position: relative;
+  top: -6px;
+  white-space: nowrap;
+  -webkit-text-stroke: 4px #fff; // white halo so the label reads over the map
+}
+
+// ---- Compass rose (pinned to the stage's bottom-left corner) ----
+.nor-compass {
+  bottom: 8px;
+  color: theme.$icon-color; // ring/star (currentColor); the white halo stays white
+  height: 74px;
+  left: 8px;
+  pointer-events: none;
+  position: absolute;
+  transform: scale(0.95);
+  transform-origin: left bottom;
+  width: 72px;
+
+  svg {
+    display: block;
+    height: 100%;
+    width: 100%;
+  }
+}

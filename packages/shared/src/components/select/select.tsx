@@ -49,6 +49,15 @@ function CloseOnOutsidePointer() {
 export interface SelectOption<K extends Key = string> {
   id: K;
   label: ReactNode;
+  /**
+   * Overrides the option's accessible name AND type-ahead string. Needed when `label` is a
+   * ReactNode whose rendered text wouldn't announce the intended name — e.g. an icon + short text
+   * where extra context (like a number conveyed only by the icon) must reach assistive tech.
+   * Forwarded to `ListBoxItem` as both `textValue` (react-aria's type-to-select string) and
+   * `aria-label` (which actually sets the option's accessible name — `textValue` alone does not).
+   * When omitted, react-aria derives the name from the rendered text, so existing usage is unaffected.
+   */
+  textValue?: string;
 }
 
 export interface SelectProps<K extends Key = string> {
@@ -124,7 +133,20 @@ export function Select<K extends Key = string>({
       */}
       <Popover className="select-popover" offset={0} isNonModal>
         <ListBox items={options}>
-          {(item: SelectOption<K>) => <ListBoxItem id={item.id}>{item.label}</ListBoxItem>}
+          {(item: SelectOption<K>) => (
+            // Only set textValue / aria-label when a value is supplied — options without one (the
+            // common case) render EXACTLY as a bare <ListBoxItem>, so react-aria derives the
+            // type-to-select textValue from the children as usual. textValue drives type-to-select;
+            // aria-label sets the accessible name (textValue alone does not).
+            <ListBoxItem
+              id={item.id}
+              {...(item.textValue != null
+                ? { textValue: item.textValue, "aria-label": item.textValue }
+                : {})}
+            >
+              {item.label}
+            </ListBoxItem>
+          )}
         </ListBox>
       </Popover>
     </AriaSelect>
