@@ -29,7 +29,7 @@ import "./app.scss";
  * Simulation panel's own hooks, NOT in MST; the two layers do different jobs.
  */
 export const App = observer(function App() {
-  const rootStore = useMemo(() => createRootStore({ rng: Math.random }), []);
+  const rootStore = useMemo(() => createRootStore(), []);
 
   // AP saved-state sync: restore on init, push on change. Standalone-safe — outside AP,
   // useInitMessage stays null and setInteractiveState is a no-op. See infra-plan §3.

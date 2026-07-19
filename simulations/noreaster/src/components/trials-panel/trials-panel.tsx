@@ -38,7 +38,7 @@ export const TrialsPanel = observer(function TrialsPanel() {
   // option selected and tabbable (never a listbox with no tab stop), positions the reset over that
   // card (cards are fixed-height, so the CSS reads `--selected-index`), and stops reset from
   // narrating or targeting a letter that isn't there. In the normal case these equal the selection.
-  // `activeTrial` is resettable once it has a recorded output.
+  // `activeTrial` is resettable once it has any progress (a selection or a recorded outcome).
   const selectedIndex = Math.max(0, store.trialLetters.indexOf(selectedLetter));
   const selectedOptionLetter = store.trialLetters[selectedIndex] ?? selectedLetter;
   const activeTrial = store.activeTrial;
@@ -115,7 +115,7 @@ export const TrialsPanel = observer(function TrialsPanel() {
           selected card by index via `--selected-index` (see trials-panel.scss). */}
       <TrialResetButton
         letter={selectedOptionLetter}
-        disabled={activeTrial.output === null}
+        disabled={!activeTrial.canReset}
         onReset={handleReset}
         tabIndex={nav.resetTabIndex}
         style={{ "--selected-index": selectedIndex } as CSSProperties}

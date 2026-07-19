@@ -10,6 +10,15 @@ import { MAX_TRIALS } from "../../testdata/noreaster-testdata";
 //   - assertions favor visible/role-based checks.
 // It runs once per viewport project (1044 / 1024 / 989 / 767) from the four-width matrix.
 
+// The five air-mass selector field labels (Land: Pathway/Humidity/Temperature; Ocean: Pathway/Humidity).
+const AIR_MASS_FIELDS = [
+  "Pathway for Land Air Mass",
+  "Humidity for Land Air Mass",
+  "Temperature for Land Air Mass",
+  "Pathway for Ocean Air Mass",
+  "Humidity for Ocean Air Mass",
+];
+
 let sim: NoreasterPage;
 
 test.beforeEach(async ({ page }) => {
@@ -28,14 +37,7 @@ test("loads the sim shell", async () => {
 });
 
 test("Simulation panel: renders the air-mass selectors, map, and control bar", async () => {
-  // Five inert air-mass dropdowns (Land: Pathway/Humidity/Temperature; Ocean: Pathway/Humidity).
-  for (const field of [
-    "Pathway for Land Air Mass",
-    "Humidity for Land Air Mass",
-    "Temperature for Land Air Mass",
-    "Pathway for Ocean Air Mass",
-    "Humidity for Ocean Air Mass",
-  ]) {
+  for (const field of AIR_MASS_FIELDS) {
     await expect(sim.dropdown(field)).toBeVisible();
   }
   await expect(sim.mapImage).toBeVisible();
@@ -50,6 +52,49 @@ test("Simulation panel: controls are in their default states (Street; Run/Reset 
   await expect(sim.resetTrialButton).toHaveAttribute("aria-disabled", "true");
 });
 
+test("Run flow: complete setup → Run locks the selectors + becomes Replay → Reset restores defaults", async () => {
+  // Run is disabled and there's no prompt until the setup is complete.
+  await expect(sim.runButton).toHaveAttribute("aria-disabled", "true");
+  await expect(sim.runPrompt).toHaveCount(0);
+
+  await sim.completeSetup();
+  // Setup complete → Run enables and the on-map "Click Run…" prompt appears.
+  await expect(sim.runButton).not.toHaveAttribute("aria-disabled", "true");
+  await expect(sim.runPrompt).toBeVisible();
+
+  await sim.runButton.click();
+  // On Run: every selector locks to a read-only pill (the dropdown buttons are gone), Run becomes
+  // Replay, the prompt hides, and Reset is enabled.
+  await expect(sim.replayButton).toBeVisible();
+  await expect(sim.runButton).toHaveCount(0);
+  for (const field of AIR_MASS_FIELDS) {
+    await expect(sim.dropdown(field)).toHaveCount(0);
+  }
+  await expect(sim.runPrompt).toHaveCount(0);
+  await expect(sim.resetTrialButton).not.toHaveAttribute("aria-disabled", "true");
+
+  await sim.resetTrialButton.click();
+  // Reset restores the default state: every dropdown returns, Replay reverts to a disabled Run.
+  for (const field of AIR_MASS_FIELDS) {
+    await expect(sim.dropdown(field)).toBeVisible();
+  }
+  await expect(sim.replayButton).toHaveCount(0);
+  await expect(sim.runButton).toHaveAttribute("aria-disabled", "true");
+});
+
+test("Map view toggle: switches the Street ⇄ Satellite basemap", async () => {
+  await expect(sim.mapViewToggle).not.toBeChecked();
+  await expect(sim.mapStage).toHaveAttribute("data-map-view", "street");
+
+  await sim.toggleMapView();
+  await expect(sim.mapViewToggle).toBeChecked();
+  await expect(sim.mapStage).toHaveAttribute("data-map-view", "satellite");
+
+  await sim.toggleMapView();
+  await expect(sim.mapViewToggle).not.toBeChecked();
+  await expect(sim.mapStage).toHaveAttribute("data-map-view", "street");
+});
+
 test("About modal: opens via button, closes via close button, closes via Escape", async () => {
   await sim.openAbout();
   await sim.closeAboutViaButton();
@@ -62,7 +107,7 @@ test("About modal: not open on initial load", async () => {
 });
 
 test("Reload warning does NOT fire on clean state", async () => {
-  // Fresh load, no trial run → output is null → no beforeunload prompt.
+  // Fresh load, no selection made → the trial has no progress (canReset false) → no beforeunload prompt.
   await sim.assertReloadWarning(false);
 });
 

@@ -37,13 +37,44 @@ $shadow: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.35));
   width: 100%;
 }
 
+// Satellite basemap: layered over the street map, faded in when the stage is in satellite view. It
+// sits above the street <img> but below the arrows/pills (which follow it in the DOM), so overlays
+// stay on top of whichever basemap shows.
+.nor-map-img--satellite {
+  inset: 0;
+  opacity: 0;
+  position: absolute;
+  transition: opacity 0.3s ease;
+}
+
+.nor-stage[data-map-view="satellite"] .nor-map-img--satellite {
+  opacity: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .nor-map-img--satellite {
+    transition: none;
+  }
+}
+
 // ---- Pathway arrows (neutral / pre-run state) ----
 // Each arrow's SVG is sized so 1 user unit = mapHeight / 265 (the demo's `scale(sh/265)`): the
 // element height is `<viewBoxHeight> / 265` of the map height, with width from the aspect ratio.
 .nor-arrow {
-  color: theme.$arrow-neutral; // body path (currentColor); the white halo path stays white
+  color: theme.$arrow-neutral; // data-tint="neutral" (or unset) → default arrow color
   filter: $shadow;
   position: absolute;
+
+  // Selection tint (see selection-tint.ts). The white halo path stays white (its own fill).
+  &[data-tint="selected-neutral"] {
+    color: theme.$heading;
+  }
+  &[data-tint="warm"] {
+    color: theme.$temp-warm;
+  }
+  &[data-tint="cool"] {
+    color: theme.$temp-cool;
+  }
 
   svg {
     display: block;
@@ -75,6 +106,14 @@ $shadow: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.35));
     left: calc(-2.472% - 3px);
     top: calc(58.113% - 17px);
   }
+}
+
+// A dimmed arrow / pill — the non-selected sibling once its air mass's pathway is chosen. Faded, and
+// the drop-shadow drops out so a ghosted overlay doesn't cast a shadow.
+.nor-arrow[data-dimmed],
+.nor-pill[data-dimmed] {
+  filter: none;
+  opacity: 0.35;
 }
 
 // ---- Pathway pills (circled number + direction) ----
@@ -154,6 +193,29 @@ $shadow: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.35));
   top: -6px;
   white-space: nowrap;
   -webkit-text-stroke: 4px #fff; // white halo so the label reads over the map
+}
+
+// ---- Pre-run prompt pill ("Click Run …"), pinned to the stage's top-center ----
+// Positioned against `.nor-stage` (not `.nor-map`) so it stays put as the map crops/scales.
+.nor-prompt {
+  background: theme.$surface;
+  border: 2px solid theme.$border;
+  border-radius: 999px;
+  color: theme.$marker-text;
+  font-family: tokens.$font-family-base;
+  font-size: tokens.$font-size-base;
+  left: 50%;
+  line-height: tokens.$line-height-sm;
+  max-width: calc(100% - 16px);
+  overflow: hidden;
+  padding: 6px 12px;
+  position: absolute;
+  text-align: center;
+  text-overflow: ellipsis;
+  top: 8px;
+  transform: translateX(-50%);
+  white-space: nowrap;
+  z-index: 2; // above the pathway pills (z-index 1)
 }
 
 // ---- Compass rose (pinned to the stage's bottom-left corner) ----

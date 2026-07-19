@@ -3,6 +3,13 @@ import {
   type TrialLetter,
   toVersionedSavedState,
 } from "@concord-consortium/mass-sims-shared";
+import {
+  HUMIDITIES,
+  LAND_PATHWAYS,
+  LAND_TEMPERATURES,
+  OCEAN_PATHWAYS,
+  OUTCOMES,
+} from "../model/weather";
 import type { RootStoreSnapshotOut } from "./root-store";
 import type { TrialState } from "./trial-model";
 
@@ -10,30 +17,78 @@ export const SAVED_STATE_VERSION = 1;
 
 const VALID_LETTERS = new Set<string>(TRIAL_LETTERS_DEFAULT);
 
+// One membership set per field, sourced from the same value arrays the MST enumerations use, so the
+// validator's accepted set can't drift from what `applySnapshot` will accept.
+const LAND_PATHWAY_SET = new Set<string>(LAND_PATHWAYS);
+const OCEAN_PATHWAY_SET = new Set<string>(OCEAN_PATHWAYS);
+const HUMIDITY_SET = new Set<string>(HUMIDITIES);
+const LAND_TEMPERATURE_SET = new Set<string>(LAND_TEMPERATURES);
+const OUTCOME_SET = new Set<string>(OUTCOMES);
+
+// The exact set of keys a persisted trial must carry — the five selections plus the recorded outcome.
+const TRIAL_KEYS = [
+  "landPathway",
+  "landHumidity",
+  "landTemperature",
+  "oceanPathway",
+  "oceanHumidity",
+  "outcome",
+] as const;
+
 function isObject(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
-/** A `SimInput` — carries the deterministic-identity seed. */
-function isSimInput(value: unknown): boolean {
-  return isObject(value) && typeof value.seed === "string";
-}
-/** A `SimOutput` — no fields are defined yet, so version 1 accepts only an empty object. */
-function isSimOutput(value: unknown): boolean {
-  return isObject(value) && Object.keys(value).length === 0;
+/** A field value is hydratable when it is `null` or one of its enumeration's members. */
+function isNullableMember(value: unknown, allowed: Set<string>): boolean {
+  return value === null || (typeof value === "string" && allowed.has(value));
 }
 
 /**
- * Whether a persisted trial value can hydrate into a `TrialModel`. `input` / `output` are stored as
- * `types.frozen`, so MST does NOT validate their inner shape — a malformed `input` would otherwise
- * hydrate a broken trial rather than falling back to the seeded store, so the field shapes are
- * checked explicitly here. `input` is required; `output` is nullable but must match when set.
+ * Whether a persisted trial value can hydrate into a `TrialModel`. The fields are `types.enumeration`,
+ * so an out-of-range value would THROW in `applySnapshot` rather than fall back to the fresh store —
+ * hence membership is gated up front. Three checks:
+ *
+ *  1. Exact keys — the object carries exactly `TRIAL_KEYS` (no missing, no extra). Rejects the old
+ *     seed-only shape and any obsolete/malformed trial.
+ *  2. Per-field membership — each selection is `null` or a valid value; `outcome` is `null` or a
+ *     valid `Outcome`.
+ *  3. Cross-field invariant — a recorded `outcome` is only valid when ALL five selections are set.
+ *     (Otherwise the trial would hydrate `locked` — lock derives from `outcome` — while `setupComplete`
+ *     is false: read-only incomplete inputs with a disabled Replay.)
+ *
+ * A historically recorded outcome is NOT recomputed/compared here — MAS-39 will change the
+ * setup→outcome mapping, and re-deriving would rewrite old trials. Only structural consistency is
+ * validated, not the outcome's value.
  */
 function isHydratableTrial(value: unknown): boolean {
   if (!isObject(value)) return false;
-  const { input, output } = value;
-  if (!isSimInput(input)) return false;
-  if (output != null && !isSimOutput(output)) return false;
+
+  // 1. Exact keys.
+  if (Object.keys(value).length !== TRIAL_KEYS.length) return false;
+  for (const key of TRIAL_KEYS) {
+    if (!(key in value)) return false;
+  }
+
+  // 2. Per-field membership.
+  if (!isNullableMember(value.landPathway, LAND_PATHWAY_SET)) return false;
+  if (!isNullableMember(value.landHumidity, HUMIDITY_SET)) return false;
+  if (!isNullableMember(value.landTemperature, LAND_TEMPERATURE_SET)) return false;
+  if (!isNullableMember(value.oceanPathway, OCEAN_PATHWAY_SET)) return false;
+  if (!isNullableMember(value.oceanHumidity, HUMIDITY_SET)) return false;
+  if (!isNullableMember(value.outcome, OUTCOME_SET)) return false;
+
+  // 3. Cross-field invariant: an outcome requires a complete setup.
+  if (value.outcome !== null) {
+    const setupComplete =
+      value.landPathway !== null &&
+      value.landHumidity !== null &&
+      value.landTemperature !== null &&
+      value.oceanPathway !== null &&
+      value.oceanHumidity !== null;
+    if (!setupComplete) return false;
+  }
+
   return true;
 }
 

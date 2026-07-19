@@ -1,4 +1,4 @@
-import { render } from "@testing-library/react";
+import { fireEvent, render } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
 // The shared Select/Button import useLogEvent (→ lara's log transport); mock it so mounting the
@@ -13,7 +13,7 @@ import { SimulationPanel } from "./simulation-panel";
 // control-bar.test.tsx, and map-stage.test.tsx; this asserts the panel wires the store + composes
 // the three regions in order.
 function renderPanel() {
-  const store = createRootStore({ rng: Math.random });
+  const store = createRootStore();
   const utils = render(
     <RootStoreProvider store={store}>
       <SimulationPanel />
@@ -44,5 +44,20 @@ describe("SimulationPanel (composition)", () => {
     expect(stage?.compareDocumentPosition(controlBar as Node)).toBe(
       Node.DOCUMENT_POSITION_FOLLOWING,
     );
+  });
+
+  it("threads the map-view state: toggling the switch flips the stage's basemap", () => {
+    const { container, getByRole } = renderPanel();
+    const stage = container.querySelector(".nor-stage");
+    const toggle = getByRole("switch", { name: "Map view: Street" });
+    expect(stage).toHaveAttribute("data-map-view", "street");
+    expect(toggle).not.toBeChecked();
+
+    fireEvent.click(toggle);
+    expect(stage).toHaveAttribute("data-map-view", "satellite");
+    expect(getByRole("switch", { name: "Map view: Satellite" })).toBeChecked();
+
+    fireEvent.click(toggle);
+    expect(stage).toHaveAttribute("data-map-view", "street");
   });
 });

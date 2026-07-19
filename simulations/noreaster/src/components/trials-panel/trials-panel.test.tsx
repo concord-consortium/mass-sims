@@ -12,7 +12,6 @@ vi.mock("@concord-consortium/mass-sims-shared", async (importOriginal) => ({
   useLogEvent: () => logEvent,
 }));
 
-import type { SimOutput } from "../../model/types";
 import {
   createRootStore,
   type RootStoreInstance,
@@ -20,8 +19,10 @@ import {
 } from "../../stores/root-store";
 import { TrialsPanel } from "./trials-panel";
 
-// A recorded output has no fields yet — an empty object is enough to enable the reset affordance.
-const OUTPUT: SimOutput = {};
+// Any single selection gives a trial "progress" (`canReset`), which enables its reset affordance.
+function giveProgress(store: RootStoreInstance) {
+  store.activeTrial.setLandHumidity("Dry");
+}
 
 function renderPanel(store: RootStoreInstance) {
   // Under the shared <Announcer> so reset / max-trials narration can be asserted.
@@ -61,7 +62,7 @@ describe("TrialsPanel — listbox structure", () => {
 
   it("the listbox owns ONLY option cards — the + New card and reset are outside it", () => {
     const store = storeWith(3);
-    store.activeTrial.setOutput(OUTPUT); // enable the reset so it renders as a button
+    giveProgress(store); // enable the reset so it renders as a button
     const { getByRole } = renderPanel(store);
     const listbox = getByRole("listbox", { name: "Trials" });
     expect(within(listbox).getAllByRole("option")).toHaveLength(3);
@@ -117,9 +118,9 @@ describe("TrialsPanel — narration", () => {
   });
 
   it("announces 'Trial A reset.' when the panel reset is pressed", () => {
-    // Seed A with output so its (selected-trial) reset is enabled.
+    // Give A progress so its (selected-trial) reset is enabled.
     const store = storeWith(1);
-    act(() => store.activeTrial.setOutput(OUTPUT));
+    act(() => giveProgress(store));
     const { getByRole, region } = renderPanel(store);
     fireEvent.click(getByRole("button", { name: "Reset trial A" }));
     expect(region).toHaveTextContent("Trial A reset.");
@@ -174,7 +175,7 @@ describe("TrialsPanel — trial-list logging", () => {
 
   it("logs trial_reset for the selected trial via the panel reset button", () => {
     const store = storeWith(1);
-    store.activeTrial.setOutput(OUTPUT); // give A progress so reset is enabled
+    giveProgress(store); // give A progress so reset is enabled
     const { getByRole } = renderPanel(store);
     logEvent.mockReset();
     fireEvent.click(getByRole("button", { name: "Reset trial A" }));
@@ -232,7 +233,7 @@ describe("TrialsPanel — keyboard-nav wiring", () => {
 
   it("moving to the + New card shifts the single tab stop off the cards and the reset", () => {
     const store = storeWith(3);
-    store.activeTrial.setOutput(OUTPUT); // reset enabled so it renders as a button
+    giveProgress(store); // reset enabled so it renders as a button
     const { getAllByRole, getByRole } = renderPanel(store);
     fireEvent.keyDown(getAllByRole("option")[0], { key: "End" }); // → + New
     expect(getByRole("button", { name: "Add new trial" })).toHaveAttribute("tabindex", "0");

@@ -53,6 +53,31 @@ describe("Nor'easter App", () => {
     expect(addSpy).not.toHaveBeenCalledWith("beforeunload", expect.any(Function));
     addSpy.mockRestore();
   });
+
+  it("shows the on-map Run prompt once setup is complete, and hides it after Run", () => {
+    const { getByRole, container } = render(<App />);
+    const choose = (field: RegExp, option: string) => {
+      fireEvent.click(getByRole("button", { name: field }));
+      fireEvent.click(getByRole("option", { name: option }));
+    };
+
+    // Not complete yet → no prompt.
+    expect(container.querySelector(".nor-prompt")).toBeNull();
+
+    // Complete all five selections → the prompt appears.
+    choose(/Pathway for Land Air Mass/, "1 N/NW");
+    choose(/Humidity for Land Air Mass/, "Dry");
+    choose(/Temperature for Land Air Mass/, "Cold");
+    choose(/Pathway for Ocean Air Mass/, "2 S/SE");
+    choose(/Humidity for Ocean Air Mass/, "Humid");
+    expect(container.querySelector(".nor-prompt")).toHaveTextContent(
+      "Click Run to see if a nor’easter forms",
+    );
+
+    // Run → the prompt is gone (the trial has run).
+    fireEvent.click(getByRole("button", { name: "Run" }));
+    expect(container.querySelector(".nor-prompt")).toBeNull();
+  });
 });
 
 describe("Nor'easter App — AP saved state", () => {
@@ -69,8 +94,15 @@ describe("Nor'easter App — AP saved state", () => {
 
   it("restores trials + selectedTrialLetter from a runtime init message's interactiveState", () => {
     // Current versioned wire shape: `{ version, trials (letter-keyed), selectedTrialLetter }`.
-    const trialA = { input: { seed: "saved-A" }, output: null };
-    const trialB = { input: { seed: "saved-B" }, output: null };
+    const trialA = {
+      landPathway: null,
+      landHumidity: null,
+      landTemperature: null,
+      oceanPathway: null,
+      oceanHumidity: null,
+      outcome: null,
+    };
+    const trialB = { ...trialA, oceanPathway: "NE" };
     useInitMessageMock.mockReturnValue({
       mode: "runtime",
       interactiveState: { version: 1, trials: { A: trialA, B: trialB }, selectedTrialLetter: "B" },
@@ -90,8 +122,15 @@ describe("Nor'easter App — AP saved state", () => {
     // A corrupt/dangling selectedTrialLetter ("C") that names no present trial must NOT discard the
     // student's trials — the normalization reaction re-selects the first present trial instead. The
     // restored B (which a fresh store would not have) proves the saved state was applied, not reset.
-    const trialA = { input: { seed: "saved-A" }, output: null };
-    const trialB = { input: { seed: "saved-B" }, output: null };
+    const trialA = {
+      landPathway: null,
+      landHumidity: null,
+      landTemperature: null,
+      oceanPathway: null,
+      oceanHumidity: null,
+      outcome: null,
+    };
+    const trialB = { ...trialA, oceanPathway: "NE" };
     useInitMessageMock.mockReturnValue({
       mode: "runtime",
       interactiveState: { version: 1, trials: { A: trialA, B: trialB }, selectedTrialLetter: "C" },
