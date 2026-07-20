@@ -61,6 +61,14 @@ const PROPS: readonly [string, number, number][] = [
   ["--nor-toggle-gap", 4, 6],
 ];
 
+// Props also mirrored onto the document root for the portaled popover (see apply). Kept as one list so
+// apply() and the effect cleanup that clears them can't drift.
+const ROOT_PROPS: readonly [string, number, number][] = [
+  ["--nor-dd-icon", 22, 24], // option icon (same as the trigger's)
+  ["--nor-opt-padl", 7, 10], // option left padding
+  ["--nor-opt-gap", 4, 8], // option icon↔text gap
+];
+
 function apply(panel: HTMLElement) {
   const pw = panel.clientWidth;
   if (pw <= 0) return; // no layout yet (e.g. jsdom) — leave the SCSS Lato fallbacks in place
@@ -77,9 +85,18 @@ function apply(panel: HTMLElement) {
   // Single values, not per-column — only one popover is open at a time.
   const root = document.documentElement;
   root.toggleAttribute("data-nor-condensed", condensed);
-  root.style.setProperty("--nor-dd-icon", px(22, 24));
-  root.style.setProperty("--nor-opt-padl", px(7, 10));
-  root.style.setProperty("--nor-opt-gap", px(4, 8));
+  for (const [name, a, b] of ROOT_PROPS) {
+    root.style.setProperty(name, px(a, b));
+  }
+}
+
+/** Remove everything apply() writes onto the document root — the panel's own props unmount with it. */
+function clearRoot() {
+  const root = document.documentElement;
+  root.removeAttribute("data-nor-condensed");
+  for (const [name] of ROOT_PROPS) {
+    root.style.removeProperty(name);
+  }
 }
 
 /** Observe the panel and keep its scaling custom properties / condensed flags in sync with width. */
@@ -93,6 +110,9 @@ export function useNorScaling(panelRef: RefObject<HTMLElement | null>) {
       typeof ResizeObserver !== "undefined" ? new ResizeObserver(() => apply(panel)) : null;
     observer?.observe(panel);
 
-    return () => observer?.disconnect();
+    return () => {
+      observer?.disconnect();
+      clearRoot();
+    };
   }, [panelRef]);
 }
