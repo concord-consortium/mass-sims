@@ -158,13 +158,26 @@ export const AirMassSelectors = observer(function AirMassSelectors() {
   const letter = ui.selectedTrialLetter;
   const locked = trial.locked;
 
+  // Announce the incomplete → complete transition once (any of the five selectors can be the one that
+  // completes the setup), so a screen-reader user learns the setup is ready to run without navigating
+  // back to the now-enabled Run button. The <Announcer> enqueues, so on the ocean pathway this plays
+  // after that field's derived-temperature line.
+  const announceSetup =
+    <K,>(setter: (value: K) => void) =>
+    (value: K) => {
+      const wasComplete = trial.setupComplete;
+      setter(value);
+      if (!wasComplete && trial.setupComplete) {
+        announce("Air masses set up. Run to see if a nor’easter forms.");
+      }
+    };
+
   // The Ocean pathway is the only selection with a derived consequence (the non-editable Ocean
-  // Temperature). Announce that derived value through the shared <Announcer> so it isn't a silent
-  // visual-only change (matches the demo's updateOceanTemp narration).
-  const setOceanPathway = (value: OceanPathway) => {
+  // Temperature); announce that derived value too (matches the demo's updateOceanTemp narration).
+  const setOceanPathway = announceSetup((value: OceanPathway) => {
     trial.setOceanPathway(value);
     announce(`Temperature for Ocean Air Mass: ${trial.oceanTemperature}`);
-  };
+  });
 
   return (
     <div className="nor-air-mass-selectors">
@@ -203,7 +216,7 @@ export const AirMassSelectors = observer(function AirMassSelectors() {
           label="Pathway for Land Air Mass"
           options={LAND_PATHWAY}
           value={trial.landPathway}
-          onChange={trial.setLandPathway}
+          onChange={announceSetup(trial.setLandPathway)}
           locked={locked}
           airMass="land"
           attribute="pathway"
@@ -213,7 +226,7 @@ export const AirMassSelectors = observer(function AirMassSelectors() {
           label="Humidity for Land Air Mass"
           options={HUMIDITY}
           value={trial.landHumidity}
-          onChange={trial.setLandHumidity}
+          onChange={announceSetup(trial.setLandHumidity)}
           locked={locked}
           airMass="land"
           attribute="humidity"
@@ -223,7 +236,7 @@ export const AirMassSelectors = observer(function AirMassSelectors() {
           label="Temperature for Land Air Mass"
           options={LAND_TEMPERATURE}
           value={trial.landTemperature}
-          onChange={trial.setLandTemperature}
+          onChange={announceSetup(trial.setLandTemperature)}
           locked={locked}
           airMass="land"
           attribute="temperature"
@@ -259,7 +272,7 @@ export const AirMassSelectors = observer(function AirMassSelectors() {
           label="Humidity for Ocean Air Mass"
           options={HUMIDITY}
           value={trial.oceanHumidity}
-          onChange={trial.setOceanHumidity}
+          onChange={announceSetup(trial.setOceanHumidity)}
           locked={locked}
           airMass="ocean"
           attribute="humidity"

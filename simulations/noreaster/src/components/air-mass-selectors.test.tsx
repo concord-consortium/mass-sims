@@ -126,6 +126,30 @@ describe("AirMassSelectors — derived Ocean Temperature", () => {
   });
 });
 
+describe("AirMassSelectors — setup-complete announcement", () => {
+  it("announces that the setup is ready to run when the final selection completes it", () => {
+    const store = createRootStore();
+    // Pre-fill four fields directly (no component onChange, so no narration yet)...
+    const t = store.activeTrial;
+    t.setLandHumidity("Dry");
+    t.setLandTemperature("Cold");
+    t.setOceanPathway("S/SE");
+    t.setOceanHumidity("Humid");
+    const { getByRole, region } = renderWith(store);
+    // ...then make the fifth selection through the UI, which fires the completion announcement.
+    fireEvent.click(getByRole("button", { name: /Pathway for Land Air Mass/ }));
+    fireEvent.click(getByRole("option", { name: "1 N/NW" }));
+    expect(region).toHaveTextContent(/Air masses set up/);
+  });
+
+  it("does not announce completion while the setup is still incomplete", () => {
+    const { getByRole, region } = renderWith();
+    fireEvent.click(getByRole("button", { name: /Pathway for Land Air Mass/ }));
+    fireEvent.click(getByRole("option", { name: "1 N/NW" }));
+    expect(region).not.toHaveTextContent(/Air masses set up/);
+  });
+});
+
 describe("AirMassSelectors — locked (post-run) state", () => {
   it("replaces the dropdowns with read-only pills that keep the field name in their accessible label", () => {
     const store = createRootStore();
