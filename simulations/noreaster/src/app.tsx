@@ -5,6 +5,7 @@ import {
   SimulationFrame,
   TRIAL_LETTERS_DEFAULT,
   useReloadWarning,
+  useReportHeight,
 } from "@concord-consortium/mass-sims-shared";
 import { reaction } from "mobx";
 import { observer } from "mobx-react-lite";
@@ -38,6 +39,10 @@ export const App = observer(function App() {
   const initMsg = useInitMessage<SavedState>();
   // Embedded = running inside AP (or any iframe host).
   const isEmbedded = initMsg !== null || inIframe();
+
+  // Tell the host (Activity Player) our render height so it doesn't leave white space below the
+  // embedded sim. No-op when standalone.
+  useReportHeight(isEmbedded);
 
   // Defensive normalization: if `selectedTrialLetter` ever names a trial that doesn't exist (e.g. a
   // restored saved state whose active letter wasn't among its trials), re-select the first available

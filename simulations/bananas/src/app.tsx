@@ -7,6 +7,7 @@ import {
   TRIAL_LETTERS_DEFAULT as TRIAL_LETTERS,
   useLogEvent,
   useReloadWarning,
+  useReportHeight,
 } from "@concord-consortium/mass-sims-shared";
 import { reaction } from "mobx";
 import { observer } from "mobx-react-lite";
@@ -31,6 +32,10 @@ export const App = observer(function App({ rng = Math.random }: AppProps = {}) {
   const initMsg = useInitMessage<SavedState>();
   // Embedded = running inside AP (or any iframe host).
   const isEmbedded = initMsg !== null || inIframe();
+
+  // Tell the host (Activity Player) our render height so it doesn't leave white space below the
+  // embedded sim. No-op when standalone.
+  useReportHeight(isEmbedded);
 
   // About / info modal open & close logging. Memoized so the SimulationFrame's notification effect
   // isn't re-subscribed on every App re-render (logEvent itself is a stable callback).
