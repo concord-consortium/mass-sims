@@ -1,14 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { emptyTrialSnapshot, TrialModel, type TrialModelInstance } from "./trial-model";
-
-/** Apply the one setup that yields a strong nor'easter (N/NW + Cold + Dry land, S/SE + Humid ocean). */
-function configureStrong(trial: TrialModelInstance) {
-  trial.setLandPathway("N/NW");
-  trial.setLandHumidity("Dry");
-  trial.setLandTemperature("Cold");
-  trial.setOceanPathway("S/SE");
-  trial.setOceanHumidity("Humid");
-}
+import { configureStrong } from "./test-helpers";
+import { emptyTrialSnapshot, TrialModel } from "./trial-model";
 
 describe("TrialModel", () => {
   it("starts fully unconfigured (no selections, not run, nothing to reset)", () => {

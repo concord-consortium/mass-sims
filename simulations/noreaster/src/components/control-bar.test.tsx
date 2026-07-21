@@ -9,17 +9,8 @@ const { log } = vi.hoisted(() => ({ log: vi.fn() }));
 vi.mock("@concord-consortium/lara-interactive-api", () => ({ log }));
 
 import { createRootStore, type RootStoreInstance, RootStoreProvider } from "../stores/root-store";
+import { configureStrong } from "../stores/test-helpers";
 import { ControlBar } from "./control-bar";
-
-/** Configure the active trial with a complete setup (this one maps to a strong nor'easter). */
-function configure(store: RootStoreInstance) {
-  const t = store.activeTrial;
-  t.setLandPathway("N/NW");
-  t.setLandHumidity("Dry");
-  t.setLandTemperature("Cold");
-  t.setOceanPathway("S/SE");
-  t.setOceanHumidity("Humid");
-}
 
 function renderBar(store: RootStoreInstance = createRootStore()) {
   const onToggleMapView = vi.fn();
@@ -43,7 +34,7 @@ describe("ControlBar — Run gating", () => {
 
   it("enables Run once all five selections are made", () => {
     const store = createRootStore();
-    configure(store);
+    configureStrong(store.activeTrial);
     const { getByRole } = renderBar(store);
     expect(getByRole("button", { name: "Run" })).not.toHaveAttribute("aria-disabled", "true");
   });
@@ -52,7 +43,7 @@ describe("ControlBar — Run gating", () => {
 describe("ControlBar — Run / Replay", () => {
   it("on Run: records the outcome, relabels to Replay, enables Reset, logs + announces", () => {
     const store = createRootStore();
-    configure(store);
+    configureStrong(store.activeTrial);
     const { getByRole, region } = renderBar(store);
     fireEvent.click(getByRole("button", { name: "Run" }));
 
@@ -72,7 +63,7 @@ describe("ControlBar — Run / Replay", () => {
 
   it("Replay re-runs the current trial and reports replay: true", () => {
     const store = createRootStore();
-    configure(store);
+    configureStrong(store.activeTrial);
     store.activeTrial.run();
     const { getByRole } = renderBar(store);
     log.mockClear();
@@ -93,7 +84,7 @@ describe("ControlBar — Reset Trial", () => {
 
   it("restores the trial: Replay → Run, Run disabled again, logs + announces", () => {
     const store = createRootStore();
-    configure(store);
+    configureStrong(store.activeTrial);
     store.activeTrial.run();
     const { getByRole, region } = renderBar(store);
     fireEvent.click(getByRole("button", { name: "Reset Trial" }));

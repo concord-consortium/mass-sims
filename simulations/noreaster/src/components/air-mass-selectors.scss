@@ -1,6 +1,24 @@
 @use "@concord-consortium/mass-sims-shared/styles/tokens" as tokens;
 @use "../theme" as theme;
 
+// A flex box sized to --nor-dd-icon that centers its (block-sized) SVG. Shared by the trigger value,
+// the read-only pill, and the portaled popover options.
+@mixin nor-dd-icon {
+  align-items: center;
+  color: theme.$icon-color;
+  display: flex;
+  flex-shrink: 0;
+  height: var(--nor-dd-icon, 24px);
+  justify-content: center;
+  width: var(--nor-dd-icon, 24px);
+
+  svg {
+    display: block;
+    height: var(--nor-dd-icon, 24px);
+    width: var(--nor-dd-icon, 24px);
+  }
+}
+
 // The air-mass selector grid. Column widths, gaps, paddings, and icon/caret sizes are interpolated by
 // use-nor-scaling.ts (custom properties on the panel; the `var()` fallbacks here are the Lato values).
 // Only the font swap and short "Temp" header are discrete (panel `[data-nor-*]` flags, below).
@@ -145,18 +163,7 @@
       overflow: hidden;
 
       .nor-dd-icon {
-        align-items: center;
-        color: theme.$icon-color;
-        display: flex;
-        flex-shrink: 0;
-        height: var(--nor-dd-icon, 24px);
-        width: var(--nor-dd-icon, 24px);
-
-        svg {
-          display: block;
-          height: var(--nor-dd-icon, 24px);
-          width: var(--nor-dd-icon, 24px);
-        }
+        @include nor-dd-icon;
       }
     }
 
@@ -189,19 +196,7 @@
     padding: tokens.$space-2 var(--nor-pad-r, 10px);
 
     .nor-dd-icon {
-      align-items: center;
-      color: theme.$icon-color;
-      display: flex;
-      flex-shrink: 0;
-      height: var(--nor-dd-icon, 24px);
-      justify-content: center;
-      width: var(--nor-dd-icon, 24px);
-
-      svg {
-        display: block;
-        height: var(--nor-dd-icon, 24px);
-        width: var(--nor-dd-icon, 24px);
-      }
+      @include nor-dd-icon;
     }
   }
 
@@ -264,19 +259,7 @@
   }
 
   .nor-dd-icon {
-    align-items: center;
-    color: theme.$icon-color;
-    display: flex;
-    flex-shrink: 0;
-    height: var(--nor-dd-icon, 24px);
-    justify-content: center;
-    width: var(--nor-dd-icon, 24px);
-
-    svg {
-      display: block;
-      height: var(--nor-dd-icon, 24px);
-      width: var(--nor-dd-icon, 24px);
-    }
+    @include nor-dd-icon;
   }
 }
 

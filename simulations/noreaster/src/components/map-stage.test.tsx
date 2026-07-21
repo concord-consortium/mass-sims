@@ -2,6 +2,7 @@ import { act, render, within } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { describe, expect, it } from "vitest";
 import { createRootStore, type RootStoreInstance, RootStoreProvider } from "../stores/root-store";
+import { configureStrong } from "../stores/test-helpers";
 import { MapStage, type MapView } from "./map-stage";
 
 function renderStage(mapView: MapView = "street", store: RootStoreInstance = createRootStore()) {
@@ -49,15 +50,6 @@ describe("MapStage — structure", () => {
 });
 
 describe("MapStage — pre-run prompt", () => {
-  function configure(store: RootStoreInstance) {
-    const t = store.activeTrial;
-    t.setLandPathway("N/NW");
-    t.setLandHumidity("Dry");
-    t.setLandTemperature("Cold");
-    t.setOceanPathway("S/SE");
-    t.setOceanHumidity("Humid");
-  }
-
   it("is absent until the setup is complete", () => {
     const { container } = renderStage();
     expect(container.querySelector(".nor-prompt")).toBeNull();
@@ -66,7 +58,7 @@ describe("MapStage — pre-run prompt", () => {
   it("appears once the setup is complete and the trial hasn't run", () => {
     const store = createRootStore();
     const { container } = renderStage("street", store);
-    act(() => configure(store));
+    act(() => configureStrong(store.activeTrial));
     expect(container.querySelector(".nor-prompt")).toHaveTextContent(
       "Click Run to see if a nor’easter forms",
     );
@@ -76,7 +68,7 @@ describe("MapStage — pre-run prompt", () => {
     const store = createRootStore();
     const { container } = renderStage("street", store);
     act(() => {
-      configure(store);
+      configureStrong(store.activeTrial);
       store.activeTrial.run();
     });
     expect(container.querySelector(".nor-prompt")).toBeNull();

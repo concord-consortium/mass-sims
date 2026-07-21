@@ -3,17 +3,8 @@ import { getSnapshot } from "mobx-state-tree";
 import { createElement } from "react";
 import { describe, expect, it } from "vitest";
 import { createRootStore, RootStoreProvider, useStores } from "./root-store";
+import { runStrong } from "./test-helpers";
 import type { TrialModelInstance } from "./trial-model";
-
-/** Configure + run a trial so it has a recorded outcome (a strong nor'easter). */
-function runStrong(trial: TrialModelInstance) {
-  trial.setLandPathway("N/NW");
-  trial.setLandHumidity("Dry");
-  trial.setLandTemperature("Cold");
-  trial.setOceanPathway("S/SE");
-  trial.setOceanHumidity("Humid");
-  trial.run();
-}
 
 describe("createRootStore", () => {
   it("seeds a single unconfigured trial A, selected", () => {

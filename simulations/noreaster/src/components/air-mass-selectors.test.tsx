@@ -10,7 +10,7 @@ vi.mock("@concord-consortium/lara-interactive-api", () => ({ log }));
 
 import type { RootStoreInstance } from "../stores/root-store";
 import { createRootStore, RootStoreProvider } from "../stores/root-store";
-import type { TrialModelInstance } from "../stores/trial-model";
+import { configureStrong } from "../stores/test-helpers";
 import { AirMassSelectors } from "./air-mass-selectors";
 
 function renderWith(store: RootStoreInstance = createRootStore()) {
@@ -22,15 +22,6 @@ function renderWith(store: RootStoreInstance = createRootStore()) {
   const utils = render(<AirMassSelectors />, { wrapper });
   const region = utils.container.querySelector('[aria-live="polite"]') as HTMLElement;
   return { store, region, ...utils };
-}
-
-/** Configure the active trial with a complete, valid setup (this one maps to a strong nor'easter). */
-function configure(trial: TrialModelInstance) {
-  trial.setLandPathway("N/NW");
-  trial.setLandHumidity("Dry");
-  trial.setLandTemperature("Cold");
-  trial.setOceanPathway("S/SE");
-  trial.setOceanHumidity("Humid");
 }
 
 describe("AirMassSelectors — structure (default state)", () => {
@@ -138,7 +129,7 @@ describe("AirMassSelectors — derived Ocean Temperature", () => {
 describe("AirMassSelectors — locked (post-run) state", () => {
   it("replaces the dropdowns with read-only pills that keep the field name in their accessible label", () => {
     const store = createRootStore();
-    configure(store.activeTrial);
+    configureStrong(store.activeTrial);
     store.activeTrial.run();
     const { queryByRole, getByText } = renderWith(store);
     // No comboboxes remain once locked.

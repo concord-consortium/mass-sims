@@ -7,16 +7,7 @@ import {
   type SavedState,
   toSavedState,
 } from "./saved-state";
-import type { TrialModelInstance } from "./trial-model";
-
-// A complete, valid set of the five selections (this one maps to a strong nor'easter).
-const COMPLETE = {
-  landPathway: "N/NW",
-  landHumidity: "Dry",
-  landTemperature: "Cold",
-  oceanPathway: "S/SE",
-  oceanHumidity: "Humid",
-} as const;
+import { runStrong, STRONG_SETUP } from "./test-helpers";
 
 /** A full persisted trial object (all six keys), defaulting to unconfigured; override as needed. */
 function trial(overrides: Record<string, unknown> = {}): Record<string, unknown> {
@@ -31,21 +22,11 @@ function trial(overrides: Record<string, unknown> = {}): Record<string, unknown>
   };
 }
 
-/** Configure + run a trial through the store so it carries a recorded outcome. */
-function runStrong(t: TrialModelInstance) {
-  t.setLandPathway("N/NW");
-  t.setLandHumidity("Dry");
-  t.setLandTemperature("Cold");
-  t.setOceanPathway("S/SE");
-  t.setOceanHumidity("Humid");
-  t.run();
-}
-
 describe("migrateSavedState — current versioned shape", () => {
   it("passes a valid versioned state through unchanged (configured + run trial)", () => {
     const state = {
       version: 1,
-      trials: { A: trial({ ...COMPLETE, outcome: "strong" }) },
+      trials: { A: trial({ ...STRONG_SETUP, outcome: "strong" }) },
       selectedTrialLetter: "A",
     };
     expect(migrateSavedState(state)).toEqual(state);
@@ -111,7 +92,7 @@ describe("migrateSavedState — rejects payloads that can't hydrate cleanly", ()
     expect(
       migrateSavedState({
         version: 1,
-        trials: { A: trial({ ...COMPLETE, outcome: "strong", extra: 1 }) },
+        trials: { A: trial({ ...STRONG_SETUP, outcome: "strong", extra: 1 }) },
         selectedTrialLetter: "A",
       }),
     ).toBeNull();
@@ -140,7 +121,7 @@ describe("migrateSavedState — rejects payloads that can't hydrate cleanly", ()
     // a future (MAS-39) mapping might have produced. It must survive migration unchanged.
     const state = {
       version: 1,
-      trials: { A: trial({ ...COMPLETE, outcome: "fair" }) },
+      trials: { A: trial({ ...STRONG_SETUP, outcome: "fair" }) },
       selectedTrialLetter: "A",
     };
     const migrated = migrateSavedState(state);
