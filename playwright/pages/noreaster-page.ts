@@ -82,6 +82,18 @@ export class NoreasterPage extends SimulationFramePage {
     return this.page.getByRole("button", { name: "Reset Trial", exact: true });
   }
 
+  // --- Data panel ---------------------------------------------------------
+
+  /** The Data panel's "Weather Outcome" subsection heading. */
+  get weatherOutcomeHeading(): Locator {
+    return this.page.getByRole("heading", { name: "Weather Outcome" });
+  }
+
+  /** A Weather-Outcome attribute row header by its full name, e.g. `attributeRow("Sky")`. */
+  attributeRow(name: string): Locator {
+    return this.page.getByRole("rowheader", { name });
+  }
+
   // --- Trials panel -------------------------------------------------------
   // A single-select listbox: role="listbox" container, cards as role="option" with roving tabindex.
 

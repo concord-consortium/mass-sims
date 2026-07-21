@@ -19,6 +19,16 @@ const AIR_MASS_FIELDS = [
   "Humidity for Ocean Air Mass",
 ];
 
+// The six Weather-Outcome attribute rows (full names — the accessible name at every width).
+const WEATHER_ATTRIBUTES = [
+  "Sky",
+  "Pressure",
+  "Wind",
+  "Precipitation Type",
+  "Precipitation Amount",
+  "Storm Intensity",
+];
+
 let sim: NoreasterPage;
 
 test.beforeEach(async ({ page }) => {
@@ -80,6 +90,13 @@ test("Run flow: complete setup → Run locks the selectors + becomes Replay → 
   }
   await expect(sim.replayButton).toHaveCount(0);
   await expect(sim.runButton).toHaveAttribute("aria-disabled", "true");
+});
+
+test("Data panel: renders the 'Weather Outcome' header and the six attribute rows", async () => {
+  await expect(sim.weatherOutcomeHeading).toBeVisible();
+  for (const attribute of WEATHER_ATTRIBUTES) {
+    await expect(sim.attributeRow(attribute)).toBeVisible();
+  }
 });
 
 test("Map view toggle: switches the Street ⇄ Satellite basemap", async () => {
