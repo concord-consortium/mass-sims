@@ -34,15 +34,16 @@ const WEATHER_ATTRIBUTES: readonly WeatherAttribute[] = [
 ];
 
 const PLACEHOLDER = "–";
+const TITLE = "Weather Outcome";
 
 export function NoreasterDataPanel() {
   return (
     <div className="noreaster-data-panel">
-      <DataSubsection title="Weather Outcome">
+      <DataSubsection title={TITLE}>
         {/* Outcome description pill — empty default state. */}
         <div className="wo-pill">{PLACEHOLDER}</div>
-
         <table className="wo-table">
+          <caption className="sr-only">{TITLE}</caption>
           <tbody>
             {WEATHER_ATTRIBUTES.map(({ key, label, short }) => (
               <tr key={key}>

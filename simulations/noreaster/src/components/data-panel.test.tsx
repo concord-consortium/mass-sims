@@ -18,6 +18,11 @@ describe("NoreasterDataPanel — static layout", () => {
     expect(getByRole("heading", { level: 3, name: "Weather Outcome" })).toBeInTheDocument();
   });
 
+  it("gives the table an accessible name (caption) for screen-reader table navigation", () => {
+    const { getByRole } = render(<NoreasterDataPanel />);
+    expect(getByRole("table", { name: "Weather Outcome" })).toBeInTheDocument();
+  });
+
   it("renders the outcome pill in its empty default state (en-dash placeholder)", () => {
     const { container } = render(<NoreasterDataPanel />);
     const pill = container.querySelector(".wo-pill");
