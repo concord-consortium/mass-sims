@@ -7,7 +7,6 @@ import {
   UiStore,
 } from "@concord-consortium/mass-sims-shared";
 import {
-  getEnv,
   getSnapshot,
   type Instance,
   type SnapshotIn,
@@ -15,7 +14,7 @@ import {
   types,
 } from "mobx-state-tree";
 import { createContext, createElement, type ReactNode, useContext } from "react";
-import { emptyTrialSnapshot, makeSeed, TrialModel, type TrialModelInstance } from "./trial-model";
+import { emptyTrialSnapshot, TrialModel, type TrialModelInstance } from "./trial-model";
 
 export const RootStore = types
   .model("Root", {
@@ -24,8 +23,7 @@ export const RootStore = types
   })
   .actions((self) => ({
     addTrial(): string | null {
-      const { rng } = getEnv<{ rng: () => number }>(self);
-      return addTrialToMap(self.trials, () => TrialModel.create(emptyTrialSnapshot(makeSeed(rng))));
+      return addTrialToMap(self.trials, () => TrialModel.create(emptyTrialSnapshot()));
     },
     resetTrial(letter?: string) {
       const target = letter ?? self.ui.selectedTrialLetter;
@@ -44,7 +42,7 @@ export const RootStore = types
       return listTrialLetters(self.trials);
     },
     get hasAnyProgress(): boolean {
-      return anyTrialHasProgress(self.trials, (trial) => trial.output !== null);
+      return anyTrialHasProgress(self.trials, (trial) => trial.canReset);
     },
   }));
 
@@ -53,19 +51,15 @@ export type RootStoreSnapshotIn = SnapshotIn<typeof RootStore>;
 export type RootStoreSnapshotOut = SnapshotOut<typeof RootStore>;
 
 /**
- * Create a root store seeded with a single empty trial "A". The `rng` is passed as MST's
- * *environment* (the second `create` argument) rather than a stored property; actions read it via
- * `getEnv(self)`. Production omits `rng` (defaults to `Math.random`); tests pass a seeded PRNG for
- * determinism.
+ * Create a root store seeded with a single empty (unconfigured) trial "A". No RNG environment is
+ * needed: a Nor'easter trial's outcome is fully determined by its air-mass selections (no
+ * randomness), and a trial's identity is its letter.
  */
-export function createRootStore({ rng = Math.random }: { rng?: () => number } = {}) {
-  return RootStore.create(
-    {
-      trials: { A: emptyTrialSnapshot(makeSeed(rng)) },
-      ui: { selectedTrialLetter: "A" },
-    },
-    { rng },
-  );
+export function createRootStore() {
+  return RootStore.create({
+    trials: { A: emptyTrialSnapshot() },
+    ui: { selectedTrialLetter: "A" },
+  });
 }
 
 const RootStoreContext = createContext<RootStoreInstance | null>(null);

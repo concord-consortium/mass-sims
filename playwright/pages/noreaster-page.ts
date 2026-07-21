@@ -1,5 +1,3 @@
-// Page object for the `noreaster` sim: the shared chrome (from SimulationFramePage), the Trials
-// panel, and the static Simulation panel (air-mass selectors, map, control bar).
 import type { Locator } from "@playwright/test";
 import { getSimUrl } from "../sims";
 import { SimulationFramePage } from "./simulation-frame-page";
@@ -39,6 +37,41 @@ export class NoreasterPage extends SimulationFramePage {
   /** The Run button. */
   get runButton(): Locator {
     return this.page.getByRole("button", { name: "Run", exact: true });
+  }
+
+  /** The Run button once the trial has been run (it relabels to Replay). */
+  get replayButton(): Locator {
+    return this.page.getByRole("button", { name: "Replay", exact: true });
+  }
+
+  /** The on-map "Click Run…" prompt pill, shown once the setup is complete (pre-run). */
+  get runPrompt(): Locator {
+    return this.page.locator(".nor-prompt");
+  }
+
+  /** The map stage — carries `data-map-view` ("street" | "satellite"). */
+  get mapStage(): Locator {
+    return this.page.locator(".nor-stage");
+  }
+
+  /** Open an air-mass dropdown by its field label and pick an option by its accessible name. */
+  async selectOption(field: string, optionName: string): Promise<void> {
+    await this.dropdown(field).click();
+    await this.page.getByRole("option", { name: optionName, exact: true }).click();
+  }
+
+  /** Complete all five air-mass selections (a strong-nor'easter setup). */
+  async completeSetup(): Promise<void> {
+    await this.selectOption("Pathway for Land Air Mass", "1 N/NW");
+    await this.selectOption("Humidity for Land Air Mass", "Dry");
+    await this.selectOption("Temperature for Land Air Mass", "Cold");
+    await this.selectOption("Pathway for Ocean Air Mass", "2 S/SE");
+    await this.selectOption("Humidity for Ocean Air Mass", "Humid");
+  }
+
+  /** Toggle the map view by clicking the visible switch button (not the hidden input). */
+  async toggleMapView(): Promise<void> {
+    await this.page.locator(".map-view-button").click();
   }
 
   /**

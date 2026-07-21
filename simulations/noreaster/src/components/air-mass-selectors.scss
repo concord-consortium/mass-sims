@@ -1,26 +1,72 @@
 @use "@concord-consortium/mass-sims-shared/styles/tokens" as tokens;
 @use "../theme" as theme;
 
-// The air-mass selector grid. Column 0 (the air-mass label) sizes to its content; the three dropdown
-// columns are flexible (`minmax`) — capped at the demo's widest (Lato) widths but shrinking to fit
-// narrower panels. The gap / paddings / icon + caret sizes are interpolated continuously by
-// use-nor-scaling.ts (custom properties on the panel; the `var()` fallbacks here are the widest/Lato
-// values). Only the font swap + short "Temp" header are discrete (panel `[data-nor-*]` flags below).
+// A flex box sized to --nor-dd-icon that centers its (block-sized) SVG. Shared by the trigger value,
+// the read-only pill, and the portaled popover options.
+@mixin nor-dd-icon {
+  align-items: center;
+  color: theme.$icon-color;
+  display: flex;
+  flex-shrink: 0;
+  height: var(--nor-dd-icon, 24px);
+  justify-content: center;
+  width: var(--nor-dd-icon, 24px);
+
+  svg {
+    display: block;
+    height: var(--nor-dd-icon, 24px);
+    width: var(--nor-dd-icon, 24px);
+  }
+}
+
+// The air-mass selector grid. Column widths, gaps, paddings, and icon/caret sizes are interpolated by
+// use-nor-scaling.ts (custom properties on the panel; the `var()` fallbacks here are the Lato values).
+// Only the font swap and short "Temp" header are discrete (panel `[data-nor-*]` flags, below).
 
 .nor-air-mass-selectors {
   flex-shrink: 0;
-  padding: 0 10px 10px;
+  // Padding shares the col-gap's pair, so the last-column-to-edge gap matches the inter-column gaps.
+  padding: 0 var(--nor-top-pad, 10px) 10px;
 }
 
 .nor-controls-grid {
   align-items: end;
   display: grid;
   gap: 5px var(--nor-col-gap, 10px);
-  grid-template-columns: auto minmax(0, 126px) minmax(0, 127px) minmax(0, 123px);
+  // Label column: floor is its interpolated width, `auto` max stretches to absorb surplus on panels
+  // wider than the demo's (the AP layout isn't width-capped like the demo). Dropdown columns cap at
+  // their var and shrink via the `0` floor when tight, filling the grid so the last column never
+  // escapes the panel edge. (The condensed width overrides the label track — see below.)
+  grid-template-columns:
+    minmax(var(--nor-am-col, 95px), auto)
+    minmax(0, var(--nor-dd-col-1, 126px))
+    minmax(0, var(--nor-dd-col-2, 127px))
+    minmax(0, var(--nor-dd-col-3, 123px));
 
   // Row-3 cells sit 1px lower, matching the demo's per-cell margin-top.
   > *:nth-child(n + 9) {
     margin-top: 1px;
+  }
+
+  // Alias each column's per-column props onto the shared --nor-gap / --nor-padl the trigger + pill
+  // read (fallbacks are the Lato-end values, for the no-JS baseline).
+  .nor-col-0 {
+    --nor-gap: var(--nor-gap-0, 6px);
+    --nor-padl: var(--nor-padl-0, 10px);
+  }
+  .nor-col-1 {
+    --nor-gap: var(--nor-gap-1, 6px);
+    --nor-padl: var(--nor-padl-1, 10px);
+  }
+  .nor-col-2 {
+    --nor-gap: var(--nor-gap-2, 6px);
+    --nor-padl: var(--nor-padl-2, 10px);
+  }
+
+  // A placeholder has no icon, so it's padded in more than a value would be — override the per-column
+  // left padding (this out-specifies the `.nor-col-N` rule above).
+  .nor-select.nor-placeholder {
+    --nor-padl: var(--nor-ph-padl, 10px);
   }
 
   .nor-col-header {
@@ -46,12 +92,20 @@
 
   .nor-air-mass-icon {
     align-items: center;
-    color: theme.$icon-color;
+    color: theme.$icon-color; // data-tint="neutral" (or unset) → default icon color
     display: flex;
     flex-shrink: 0;
     height: var(--nor-am-icon, 24px);
     justify-content: center;
     width: var(--nor-am-icon, 24px);
+
+    &[data-tint="warm"] {
+      color: theme.$temp-warm;
+    }
+
+    &[data-tint="cool"] {
+      color: theme.$temp-cool;
+    }
 
     svg {
       display: block;
@@ -73,6 +127,7 @@
   // the accessible name but is visually hidden — the visible column header + air-mass row label do
   // the labeling on screen.
   .nor-select {
+    min-width: 0; // shrink inside the minmax(0) track rather than forcing the column wider
     width: 100%;
 
     .react-aria-Label {
@@ -91,16 +146,25 @@
     }
 
     .react-aria-Button {
-      min-width: 0; // allow the trigger to shrink inside its flexible (minmax) column
-      padding-left: var(--nor-trigger-pad-x, 10px);
-      padding-right: var(--nor-trigger-pad-x, 10px);
+      gap: 0; // value sits flush to the caret (like the demo), keeping room for the value
+      min-width: 0; // let the trigger shrink inside its minmax(0) column
+      padding-left: var(--nor-padl, 10px); // per-column; right padding is shared
+      padding-right: var(--nor-pad-r, 10px);
       width: 100%;
     }
 
-    // The placeholder / value never overflows a shrunk trigger — it clips rather than pushing the
-    // caret out (the condensed font keeps "Select…" fitting at the narrowest target).
+    // A chosen value renders `icon + text`. Lay it out as a flex row and size the icon so the SVG
+    // doesn't inflate the line box (else the trigger grows taller once a value is picked); overflow
+    // clips the value in the rare too-narrow case rather than pushing the caret out.
     .react-aria-SelectValue {
+      align-items: center;
+      display: flex;
+      gap: var(--nor-gap, #{tokens.$space-1});
       overflow: hidden;
+
+      .nor-dd-icon {
+        @include nor-dd-icon;
+      }
     }
 
     .select-caret {
@@ -109,8 +173,10 @@
     }
   }
 
-  // Ocean Temperature: a static, non-interactive pill. Rounded, no border color, surface fill.
-  .nor-temp-display {
+  // A read-only value pill: the derived Ocean Temperature, and every selector once the trial is run.
+  // Its icon / gap / horizontal padding use the same interpolated props as the triggers, so it shrinks
+  // in step with its column rather than spilling past the panel edge.
+  .nor-value-pill {
     align-items: center;
     background: theme.$surface;
     border: 2px solid transparent;
@@ -121,26 +187,54 @@
     font-family: tokens.$font-family-base;
     font-size: tokens.$font-size-base;
     font-weight: 700;
+    gap: var(--nor-gap, #{tokens.$space-1});
     justify-content: center;
     line-height: tokens.$line-height-sm;
     min-height: tokens.$touch-target-min;
-    padding: tokens.$space-2 10px;
+    min-width: 0; // shrink inside the minmax(0) track rather than spilling past the column
+    overflow: hidden;
+    padding: tokens.$space-2 var(--nor-pad-r, 10px);
+
+    .nor-dd-icon {
+      @include nor-dd-icon;
+    }
   }
 
-  .nor-temp-display-label {
-    flex: 1;
-    text-align: center;
+  .nor-value-pill-label {
+    text-align: center; // centers the bare "–"; an icon + value center as a group via the pill
   }
 }
 
 // ---- Discrete swaps (driven by use-nor-scaling.ts, toggled once at the fitting threshold) ----
-// Roboto Condensed once the Lato controls stop fitting.
+// Values + labels drop from Lato 700 to Roboto Condensed 500 (the demo's lighter condensed weight).
+// The column headers stay Lato 700 at every width, so they're deliberately excluded.
 .noreaster-simulation-panel[data-nor-condensed] {
-  .nor-col-header,
   .nor-air-mass-label,
-  .nor-temp-display,
+  .nor-value-pill {
+    font-family: tokens.$font-family-condensed;
+    font-weight: 500;
+  }
+
+  // Only a *chosen* value takes the 500 weight; a placeholder stays at the shared 400 (select.scss).
+  // Without the exclusion this rule out-specifies that one and "Select…" renders too heavy.
   .nor-select .react-aria-SelectValue {
     font-family: tokens.$font-family-condensed;
+
+    &:not([data-placeholder="true"]) {
+      font-weight: 500;
+    }
+  }
+
+  // At the narrowest width the panel is over budget, so the label uses `minmax(var, max-content)`: it
+  // holds the demo's width as a floor but grows to fit its content rather than overlapping the Pathway
+  // dropdown, while the dropdown columns take the rest. (`auto` max here would instead steal their room;
+  // no condensed deployment width has surplus, so max-content opens no right-edge gap.)
+  .nor-controls-grid {
+    grid-template-columns:
+      minmax(var(--nor-am-col, 95px), max-content)
+      minmax(0, var(--nor-dd-col-1, 126px))
+      minmax(0, var(--nor-dd-col-2, 127px))
+      minmax(0, var(--nor-dd-col-3, 123px));
   }
 }
 
@@ -154,26 +248,23 @@
   }
 }
 
-// Option content lives in the popover, which react-aria portals to <body> — so these rules are
-// global (not scoped under .nor-controls-grid). The leading icon holder in each option row.
+// The popover is portaled to <body>, so these rules are global and read the props use-nor-scaling
+// mirrors onto :root (the panel's own props don't reach it). Sizing tracks the triggers so an option
+// lines up with the value it becomes when chosen.
 .select-popover {
-  .react-aria-ListBoxItem {
-    gap: tokens.$space-2;
+  // `:root` prefix so this out-specifies the shared `padding: 10px` shorthand regardless of load order.
+  :root & .react-aria-ListBoxItem {
+    gap: var(--nor-opt-gap, #{tokens.$space-2});
+    padding-left: var(--nor-opt-padl, 10px);
   }
 
   .nor-dd-icon {
-    align-items: center;
-    color: theme.$icon-color;
-    display: flex;
-    flex-shrink: 0;
-    height: 24px;
-    justify-content: center;
-    width: 24px;
-
-    svg {
-      display: block;
-      height: 24px;
-      width: 24px;
-    }
+    @include nor-dd-icon;
   }
+}
+
+// Condense the option font + weight to match the triggers, via the root's mirrored condensed flag.
+:root[data-nor-condensed] .select-popover .react-aria-ListBoxItem {
+  font-family: tokens.$font-family-condensed;
+  font-weight: 500;
 }

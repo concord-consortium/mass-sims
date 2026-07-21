@@ -1,56 +1,113 @@
 import { describe, expect, it } from "vitest";
-import type { SimOutput } from "../model/types";
-import { emptyTrialSnapshot, makeSeed, TrialModel } from "./trial-model";
-
-// A recorded output has no fields yet (the Nor'easter model story adds them), so it's an empty
-// object — enough to flip the trial into the "has run" state.
-const OUTPUT: SimOutput = {};
+import { configureStrong } from "./test-helpers";
+import { emptyTrialSnapshot, TrialModel } from "./trial-model";
 
 describe("TrialModel", () => {
-  it("starts with no output (not yet run)", () => {
-    const trial = TrialModel.create(emptyTrialSnapshot("seed-1"));
-    expect(trial.output).toBeNull();
-    expect(trial.hasOutput).toBe(false);
+  it("starts fully unconfigured (no selections, not run, nothing to reset)", () => {
+    const trial = TrialModel.create(emptyTrialSnapshot());
+    expect(trial.landPathway).toBeNull();
+    expect(trial.oceanPathway).toBeNull();
+    expect(trial.outcome).toBeNull();
+    expect(trial.setupComplete).toBe(false);
+    expect(trial.hasRun).toBe(false);
+    expect(trial.locked).toBe(false);
+    expect(trial.canReset).toBe(false);
+    expect(trial.oceanTemperature).toBeNull();
+    expect(trial.setup).toBeNull();
   });
 
-  it("records output via setOutput", () => {
-    const trial = TrialModel.create(emptyTrialSnapshot("seed-1"));
-    trial.setOutput(OUTPUT);
-    expect(trial.output).toEqual(OUTPUT);
-    expect(trial.hasOutput).toBe(true);
+  it("setters write their field", () => {
+    const trial = TrialModel.create(emptyTrialSnapshot());
+    trial.setLandPathway("W");
+    trial.setLandHumidity("Humid");
+    trial.setLandTemperature("Warm");
+    trial.setOceanPathway("NE");
+    trial.setOceanHumidity("Dry");
+    expect(trial.landPathway).toBe("W");
+    expect(trial.landHumidity).toBe("Humid");
+    expect(trial.landTemperature).toBe("Warm");
+    expect(trial.oceanPathway).toBe("NE");
+    expect(trial.oceanHumidity).toBe("Dry");
   });
 
-  it("reset clears output but keeps input (and its seed)", () => {
-    const trial = TrialModel.create(emptyTrialSnapshot("seed-keep"));
-    trial.setOutput(OUTPUT);
+  it("canReset flips true after any single selection", () => {
+    const trial = TrialModel.create(emptyTrialSnapshot());
+    trial.setLandHumidity("Dry");
+    expect(trial.canReset).toBe(true);
+    expect(trial.setupComplete).toBe(false);
+  });
+
+  it("setupComplete requires all five selections", () => {
+    const trial = TrialModel.create(emptyTrialSnapshot());
+    trial.setLandPathway("N/NW");
+    trial.setLandHumidity("Dry");
+    trial.setLandTemperature("Cold");
+    trial.setOceanPathway("S/SE");
+    expect(trial.setupComplete).toBe(false); // ocean humidity still missing
+    trial.setOceanHumidity("Humid");
+    expect(trial.setupComplete).toBe(true);
+    expect(trial.setup).toEqual({
+      landPathway: "N/NW",
+      landHumidity: "Dry",
+      landTemperature: "Cold",
+      oceanPathway: "S/SE",
+      oceanHumidity: "Humid",
+    });
+  });
+
+  it("derives ocean temperature from the ocean pathway (null → Warm/Cool)", () => {
+    const trial = TrialModel.create(emptyTrialSnapshot());
+    expect(trial.oceanTemperature).toBeNull();
+    trial.setOceanPathway("S/SE");
+    expect(trial.oceanTemperature).toBe("Warm");
+    trial.setOceanPathway("NE");
+    expect(trial.oceanTemperature).toBe("Cool");
+  });
+
+  it("run() records the outcome and locks the trial", () => {
+    const trial = TrialModel.create(emptyTrialSnapshot());
+    configureStrong(trial);
+    expect(trial.hasRun).toBe(false);
+    trial.run();
+    expect(trial.outcome).toBe("strong");
+    expect(trial.hasRun).toBe(true);
+    expect(trial.locked).toBe(true);
+    expect(trial.canReset).toBe(true);
+  });
+
+  it("run() is a no-op until the setup is complete", () => {
+    const trial = TrialModel.create(emptyTrialSnapshot());
+    trial.setLandPathway("N/NW");
+    trial.run();
+    expect(trial.outcome).toBeNull();
+    expect(trial.hasRun).toBe(false);
+  });
+
+  it("selection setters no-op once locked (post-run read-only)", () => {
+    const trial = TrialModel.create(emptyTrialSnapshot());
+    configureStrong(trial);
+    trial.run();
+    trial.setLandPathway("W"); // was N/NW
+    trial.setOceanHumidity("Dry"); // was Humid
+    expect(trial.landPathway).toBe("N/NW");
+    expect(trial.oceanHumidity).toBe("Humid");
+  });
+
+  it("reset() clears every field and unlocks", () => {
+    const trial = TrialModel.create(emptyTrialSnapshot());
+    configureStrong(trial);
+    trial.run();
     trial.reset();
-    expect(trial.output).toBeNull();
-    expect(trial.input.seed).toBe(emptyTrialSnapshot("seed-keep").input.seed);
-  });
-
-  it("setInput replaces the input wholesale", () => {
-    const trial = TrialModel.create(emptyTrialSnapshot("seed-1"));
-    trial.setInput({ seed: "seed-2" });
-    expect(trial.input.seed).toBe("seed-2");
-  });
-});
-
-describe("makeSeed", () => {
-  it("is deterministic for a given RNG sequence", () => {
-    const seqA = [0.1, 0.2, 0.3];
-    const seqB = [0.1, 0.2, 0.3];
-    const rngA = () => seqA.shift() ?? 0;
-    const rngB = () => seqB.shift() ?? 0;
-    expect(makeSeed(rngA)).toBe(makeSeed(rngB));
-  });
-
-  it("varies as the RNG advances", () => {
-    const seq = [0.111111, 0.999999];
-    const rng = () => seq.shift() ?? 0;
-    expect(makeSeed(rng)).not.toBe(makeSeed(rng));
-  });
-
-  it("prefixes the seed with 'trial-'", () => {
-    expect(makeSeed(() => 0.5)).toMatch(/^trial-/);
+    expect(trial.landPathway).toBeNull();
+    expect(trial.landHumidity).toBeNull();
+    expect(trial.landTemperature).toBeNull();
+    expect(trial.oceanPathway).toBeNull();
+    expect(trial.oceanHumidity).toBeNull();
+    expect(trial.outcome).toBeNull();
+    expect(trial.locked).toBe(false);
+    expect(trial.canReset).toBe(false);
+    // Editable again after reset.
+    trial.setLandPathway("W");
+    expect(trial.landPathway).toBe("W");
   });
 });
