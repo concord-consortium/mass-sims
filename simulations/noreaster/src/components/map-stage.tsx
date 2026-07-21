@@ -5,7 +5,7 @@ import Arrow2 from "../assets/icons/arrow-2.svg?react";
 import Arrow3 from "../assets/icons/arrow-3.svg?react";
 import Arrow4 from "../assets/icons/arrow-4.svg?react";
 import CompassRose from "../assets/icons/compass-rose.svg?react";
-import mapSatellite from "../assets/map/map-satellite.png";
+import mapSatellite from "../assets/map/map-satellite.jpg";
 import mapStreet from "../assets/map/map-street.png";
 import { useStores } from "../stores/root-store";
 import { PathwayNumber } from "./icons/pathway-number";
