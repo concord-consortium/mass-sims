@@ -1,4 +1,4 @@
-import { fireEvent, render } from "@testing-library/react";
+import { fireEvent, render, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // Mock the lara-interactive-api surface used for AP saved-state sync. vi.hoisted
@@ -31,6 +31,15 @@ describe("Nor'easter App", () => {
     expect(getByRole("region", { name: "Trials" })).toBeInTheDocument();
     expect(getByRole("region", { name: "Simulation" })).toBeInTheDocument();
     expect(getByRole("region", { name: "Data" })).toBeInTheDocument();
+  });
+
+  it("renders the Data panel's 'Weather Outcome' layout inside the Data region", () => {
+    const { getByRole } = render(<App />);
+    const dataRegion = getByRole("region", { name: "Data" });
+    expect(dataRegion.querySelector(".noreaster-data-panel")).toBeInTheDocument();
+    expect(
+      within(dataRegion).getByRole("heading", { level: 3, name: "Weather Outcome" }),
+    ).toBeInTheDocument();
   });
 
   it("loads with an empty trial A and a New card (no B yet)", () => {

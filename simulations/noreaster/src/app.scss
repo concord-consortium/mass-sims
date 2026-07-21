@@ -53,7 +53,7 @@
     }
 
     &.data-area {
-      background: theme.$surface;
+      background: tokens.$color-surface;
     }
 
     .chip {

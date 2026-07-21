@@ -1,0 +1,124 @@
+@use "@concord-consortium/mass-sims-shared/styles/tokens" as tokens;
+@use "../theme" as theme;
+
+.noreaster-data-panel {
+  // Named query container so the label swap responds to the *panel* width, not the viewport.
+  container: noreaster-data-panel / inline-size;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+
+  .data-subsection {
+    justify-content: flex-start;
+    padding-top: 0;
+  }
+
+  // Stack the pill above the table, full width (the shared default is a centered row).
+  .data-subsection > .body {
+    align-items: stretch;
+    flex-direction: column;
+    justify-content: flex-start;
+    width: 100%;
+  }
+
+  .data-subsection > h3 {
+    margin: 3px 0 5px;
+  }
+
+  .wo-pill {
+    background: theme.$title-bar;
+    border-radius: tokens.$radius-pill;
+    color: tokens.$color-text;
+    font-family: tokens.$font-family-base;
+    font-size: tokens.$font-size-base;
+    line-height: tokens.$line-height-sm;
+    margin: 1px 0 2px;
+    padding: 8px 0;
+    text-align: center;
+  }
+
+  .wo-table {
+    border-collapse: collapse;
+    width: 100%;
+  }
+
+  // Row header cell (the attribute). Stays a real table cell — border-collapse merges its top border
+  // with the value cell's into one continuous divider. Takes the row's slack so the value hugs the
+  // right edge.
+  .wo-row-header {
+    color: tokens.$color-text;
+    font-family: tokens.$font-family-base;
+    font-size: tokens.$font-size-base;
+    font-weight: 700;
+    line-height: 24px;
+    padding: 10px 0;
+    text-align: left;
+    vertical-align: top;
+    width: 100%;
+  }
+
+  .wo-attr {
+    align-items: center;
+    display: flex;
+    gap: tokens.$space-2;
+  }
+
+  // Stand-in icon disc — the demo's placeholder circle (filled with the title-bar blue). `color` is set
+  // so the real `currentColor` weather icon inherits the icon tint once it replaces the disc.
+  .wo-icon {
+    background: theme.$title-bar;
+    border-radius: 50%;
+    color: theme.$icon-color;
+    flex-shrink: 0;
+    height: 24px;
+    width: 24px;
+  }
+
+  .wo-value {
+    color: tokens.$color-text;
+    font-family: tokens.$font-family-base;
+    font-size: tokens.$font-size-base;
+    font-weight: 400;
+    line-height: 24px;
+    padding: 10px 0;
+    text-align: right;
+    vertical-align: top;
+    white-space: nowrap;
+  }
+
+  .wo-table tr + tr .wo-row-header,
+  .wo-table tr + tr .wo-value {
+    border-top: 1px solid theme.$border;
+  }
+
+  // --- Responsive label swap (Precipitation Type/Amount → Precip Type/Amount) ------------------------
+  // Default (wide): show the full label. The short label stays hidden.
+  .wo-label-short {
+    display: none;
+  }
+
+  // Narrow column: swap to the condensed labels so the long two-word attributes still fit on one line
+  // beside their value. Breakpoint tuned against the four target widths.
+  @container noreaster-data-panel (max-width: 244px) {
+    .wo-label-full {
+      display: none;
+    }
+    .wo-label-short {
+      display: inline;
+    }
+  }
+
+  // Fallback for browsers without container queries — swap by viewport at the narrower target widths,
+  // matching the bananas Data panel's fallback approach.
+  @supports not (container-type: inline-size) {
+    @media (max-width: 1026px) {
+      .wo-label-full {
+        display: none;
+      }
+      .wo-label-short {
+        display: inline;
+      }
+    }
+  }
+}

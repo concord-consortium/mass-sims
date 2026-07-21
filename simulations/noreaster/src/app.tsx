@@ -11,6 +11,7 @@ import { observer } from "mobx-react-lite";
 import { applySnapshot, getSnapshot, onSnapshot } from "mobx-state-tree";
 import { useEffect, useMemo } from "react";
 import { AboutContent } from "./components/about";
+import { NoreasterDataPanel } from "./components/data-panel";
 import { SimulationPanel } from "./components/simulation-panel";
 import { TrialsPanel } from "./components/trials-panel/trials-panel";
 import { createRootStore, RootStoreProvider, type RootStoreSnapshotOut } from "./stores/root-store";
@@ -21,8 +22,9 @@ import "./app.scss";
 /**
  * Nor'easter simulation shell.
  *
- * The Data panel is an empty section shell for now; the Simulation panel holds the air-mass
- * selectors, map, and control bar. The Trials column runs on the shared trial-list infrastructure.
+ * The Data panel shows the static "Weather Outcome" layout (placeholders, no data wiring yet); the
+ * Simulation panel holds the air-mass selectors, map, and control bar. The Trials column runs on the
+ * shared trial-list infrastructure.
  *
  * TWO-LAYER STATE MODEL: MST owns the trial LIST — what trials exist, which is selected, each trial's
  * recorded input/output. The per-frame transient run state of a running trial belongs in the (future)
@@ -111,8 +113,9 @@ export const App = observer(function App() {
             <SimulationPanel />
           </SimulationFrame.Simulation>
 
-          {/* Empty section shell — the Data panel content is not built yet. */}
-          <SimulationFrame.Data />
+          <SimulationFrame.Data>
+            <NoreasterDataPanel />
+          </SimulationFrame.Data>
         </SimulationFrame>
       </Announcer>
     </RootStoreProvider>
