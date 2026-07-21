@@ -1,8 +1,10 @@
 // Weather-outcome model: pure (no React, no MST, no side effects). Maps a completed air-mass setup to
-// a weather outcome. STAND-IN for the MAS-39 "weather outcomes model" story — ships the current v1.13
-// 3-outcome logic so the panel works today. The stable seam is the `evaluateOutcome(setup)` API (and
-// `OUTCOME_BANNER`); MAS-39 will widen it to 6 outcomes and carry the Data-panel attribute rows. If it
-// lands first, delete this file and import from its module — the `AirMassSetup`/`Outcome` contract matches.
+// a weather outcome, data-driven: classification AND the displayed values are data, not code. The
+// stable seam the rest of the sim depends on is the `evaluateOutcome(setup)` API.
+//
+// This file owns the CLASSIFIER (setup → outcome). The OUTPUTS (outcome → Data-panel values +
+// metadata) live in `outcome-values.ts`; consumers import from whichever they need. The two files have
+// no runtime coupling — `outcome-values.ts` only imports the `Outcome` TYPE from here.
 
 // Values are declared once as runtime arrays with the types derived from them, so the MST enumerations
 // (trial-model) and the saved-state validator share one source and can't drift.
@@ -17,8 +19,15 @@ export const HUMIDITIES = ["Dry", "Humid"] as const;
 export const LAND_TEMPERATURES = ["Cold", "Warm"] as const;
 /** Ocean air-mass temperature values — DERIVED from the ocean pathway (never user-selected). */
 export const OCEAN_TEMPERATURES = ["Warm", "Cool"] as const;
-/** Weather outcome values. v1.13 stand-in has three; MAS-39 widens this to six. */
-export const OUTCOMES = ["strong", "moderate", "fair"] as const;
+/** Weather outcome values, in the approved display order. */
+export const OUTCOMES = [
+  "strong",
+  "moderate",
+  "weakCoastal",
+  "humidNoStorm",
+  "dryFront",
+  "fair",
+] as const;
 
 export type LandPathway = (typeof LAND_PATHWAYS)[number];
 export type OceanPathway = (typeof OCEAN_PATHWAYS)[number];
@@ -32,11 +41,11 @@ export type Outcome = (typeof OUTCOMES)[number];
  * intentionally absent: it is derived from the ocean pathway and does not influence the outcome.
  */
 export interface AirMassSetup {
-  landPathway: LandPathway;
-  landHumidity: Humidity;
-  landTemperature: LandTemperature;
-  oceanPathway: OceanPathway;
-  oceanHumidity: Humidity;
+  readonly landPathway: LandPathway;
+  readonly landHumidity: Humidity;
+  readonly landTemperature: LandTemperature;
+  readonly oceanPathway: OceanPathway;
+  readonly oceanHumidity: Humidity;
 }
 
 /**
@@ -49,29 +58,308 @@ export function deriveOceanTemperature(pathway: OceanPathway | null): OceanTempe
   return pathway === "NE" ? "Cool" : "Warm";
 }
 
-/**
- * Determine the weather outcome for a completed setup (v1.13). A nor'easter forms only from a
- * Cold + Dry land air mass meeting a Humid ocean air mass on the S/SE pathway: an N/NW land pathway
- * makes it strong, a W land pathway makes it moderate. Every other combination is fair weather — so
- * all 32 possible setups resolve to a defined outcome.
- */
-export function evaluateOutcome(setup: AirMassSetup): Outcome {
-  const { landPathway, landHumidity, landTemperature, oceanPathway, oceanHumidity } = setup;
-  if (
-    landTemperature === "Cold" &&
-    landHumidity === "Dry" &&
-    oceanPathway === "S/SE" &&
-    oceanHumidity === "Humid"
-  ) {
-    if (landPathway === "N/NW") return "strong";
-    if (landPathway === "W") return "moderate";
-  }
-  return "fair";
+/** A classifier row: a complete setup and its approved outcome. */
+export interface SetupRow extends AirMassSetup {
+  readonly outcome: Outcome;
 }
 
-/** Human-readable banner for each outcome (curly apostrophe, matching the design copy). */
-export const OUTCOME_BANNER: Record<Outcome, string> = {
-  strong: "Strong nor’easter",
-  moderate: "Moderate nor’easter",
-  fair: "Fair weather",
-};
+/**
+ * The approved "All 32 combinations" tab, verbatim — THE classifier. `evaluateOutcome(setup)` is a
+ * lookup into this table, so reclassifying a setup is a one-line data edit here; nothing else changes.
+ * Outputs are NOT duplicated here — they live in OUTCOME_VALUES/OUTCOME_METADATA keyed by outcome.
+ *
+ * The physical logic behind these rows (a documentation + in-test oracle, not code):
+ *   landColdDry = landTemperature === "Cold" && landHumidity === "Dry"
+ *   oceanHumid  = oceanHumidity === "Humid"
+ *   oceanWarm   = oceanPathway === "S/SE"  // S/SE (2) → warm Gulf Stream; NE (3) → cool
+ *   landColdDry && oceanHumid && oceanWarm  → landPathway === "N/NW" ? strong : moderate
+ *   landColdDry && oceanHumid && !oceanWarm → weakCoastal
+ *   landColdDry && !oceanHumid              → dryFront
+ *   !landColdDry && oceanHumid && oceanWarm → humidNoStorm
+ *   otherwise                               → fair
+ *
+ * PROVENANCE — transcribed verbatim from the approved Google Sheet "Nor'easter Simulation — Outcomes
+ *   Table" (approved 7/20), tab "All 32 combinations" (gid 1610996882):
+ *   https://docs.google.com/spreadsheets/d/1SXTg3XJMAgzAXLpBxE1hnqJJ1G-aGLJwnMc51rvTAsQ/edit?gid=1610996882
+ *   Read from the live sheet on 2026-07-21. Distribution: strong 1, moderate 1, weakCoastal 2,
+ *   humidNoStorm 6, dryFront 4, fair 18 (= 32).
+ */
+export const SETUP_OUTCOMES: readonly SetupRow[] = [
+  // Land N/NW
+  {
+    landPathway: "N/NW",
+    landHumidity: "Dry",
+    landTemperature: "Cold",
+    oceanPathway: "S/SE",
+    oceanHumidity: "Dry",
+    outcome: "dryFront",
+  },
+  {
+    landPathway: "N/NW",
+    landHumidity: "Dry",
+    landTemperature: "Cold",
+    oceanPathway: "S/SE",
+    oceanHumidity: "Humid",
+    outcome: "strong",
+  },
+  {
+    landPathway: "N/NW",
+    landHumidity: "Dry",
+    landTemperature: "Cold",
+    oceanPathway: "NE",
+    oceanHumidity: "Dry",
+    outcome: "dryFront",
+  },
+  {
+    landPathway: "N/NW",
+    landHumidity: "Dry",
+    landTemperature: "Cold",
+    oceanPathway: "NE",
+    oceanHumidity: "Humid",
+    outcome: "weakCoastal",
+  },
+  {
+    landPathway: "N/NW",
+    landHumidity: "Humid",
+    landTemperature: "Cold",
+    oceanPathway: "S/SE",
+    oceanHumidity: "Dry",
+    outcome: "fair",
+  },
+  {
+    landPathway: "N/NW",
+    landHumidity: "Humid",
+    landTemperature: "Cold",
+    oceanPathway: "S/SE",
+    oceanHumidity: "Humid",
+    outcome: "humidNoStorm",
+  },
+  {
+    landPathway: "N/NW",
+    landHumidity: "Humid",
+    landTemperature: "Cold",
+    oceanPathway: "NE",
+    oceanHumidity: "Dry",
+    outcome: "fair",
+  },
+  {
+    landPathway: "N/NW",
+    landHumidity: "Humid",
+    landTemperature: "Cold",
+    oceanPathway: "NE",
+    oceanHumidity: "Humid",
+    outcome: "fair",
+  },
+  {
+    landPathway: "N/NW",
+    landHumidity: "Dry",
+    landTemperature: "Warm",
+    oceanPathway: "S/SE",
+    oceanHumidity: "Dry",
+    outcome: "fair",
+  },
+  {
+    landPathway: "N/NW",
+    landHumidity: "Dry",
+    landTemperature: "Warm",
+    oceanPathway: "S/SE",
+    oceanHumidity: "Humid",
+    outcome: "humidNoStorm",
+  },
+  {
+    landPathway: "N/NW",
+    landHumidity: "Dry",
+    landTemperature: "Warm",
+    oceanPathway: "NE",
+    oceanHumidity: "Dry",
+    outcome: "fair",
+  },
+  {
+    landPathway: "N/NW",
+    landHumidity: "Dry",
+    landTemperature: "Warm",
+    oceanPathway: "NE",
+    oceanHumidity: "Humid",
+    outcome: "fair",
+  },
+  {
+    landPathway: "N/NW",
+    landHumidity: "Humid",
+    landTemperature: "Warm",
+    oceanPathway: "S/SE",
+    oceanHumidity: "Dry",
+    outcome: "fair",
+  },
+  {
+    landPathway: "N/NW",
+    landHumidity: "Humid",
+    landTemperature: "Warm",
+    oceanPathway: "S/SE",
+    oceanHumidity: "Humid",
+    outcome: "humidNoStorm",
+  },
+  {
+    landPathway: "N/NW",
+    landHumidity: "Humid",
+    landTemperature: "Warm",
+    oceanPathway: "NE",
+    oceanHumidity: "Dry",
+    outcome: "fair",
+  },
+  {
+    landPathway: "N/NW",
+    landHumidity: "Humid",
+    landTemperature: "Warm",
+    oceanPathway: "NE",
+    oceanHumidity: "Humid",
+    outcome: "fair",
+  },
+  // Land W
+  {
+    landPathway: "W",
+    landHumidity: "Dry",
+    landTemperature: "Cold",
+    oceanPathway: "S/SE",
+    oceanHumidity: "Dry",
+    outcome: "dryFront",
+  },
+  {
+    landPathway: "W",
+    landHumidity: "Dry",
+    landTemperature: "Cold",
+    oceanPathway: "S/SE",
+    oceanHumidity: "Humid",
+    outcome: "moderate",
+  },
+  {
+    landPathway: "W",
+    landHumidity: "Dry",
+    landTemperature: "Cold",
+    oceanPathway: "NE",
+    oceanHumidity: "Dry",
+    outcome: "dryFront",
+  },
+  {
+    landPathway: "W",
+    landHumidity: "Dry",
+    landTemperature: "Cold",
+    oceanPathway: "NE",
+    oceanHumidity: "Humid",
+    outcome: "weakCoastal",
+  },
+  {
+    landPathway: "W",
+    landHumidity: "Humid",
+    landTemperature: "Cold",
+    oceanPathway: "S/SE",
+    oceanHumidity: "Dry",
+    outcome: "fair",
+  },
+  {
+    landPathway: "W",
+    landHumidity: "Humid",
+    landTemperature: "Cold",
+    oceanPathway: "S/SE",
+    oceanHumidity: "Humid",
+    outcome: "humidNoStorm",
+  },
+  {
+    landPathway: "W",
+    landHumidity: "Humid",
+    landTemperature: "Cold",
+    oceanPathway: "NE",
+    oceanHumidity: "Dry",
+    outcome: "fair",
+  },
+  {
+    landPathway: "W",
+    landHumidity: "Humid",
+    landTemperature: "Cold",
+    oceanPathway: "NE",
+    oceanHumidity: "Humid",
+    outcome: "fair",
+  },
+  {
+    landPathway: "W",
+    landHumidity: "Dry",
+    landTemperature: "Warm",
+    oceanPathway: "S/SE",
+    oceanHumidity: "Dry",
+    outcome: "fair",
+  },
+  {
+    landPathway: "W",
+    landHumidity: "Dry",
+    landTemperature: "Warm",
+    oceanPathway: "S/SE",
+    oceanHumidity: "Humid",
+    outcome: "humidNoStorm",
+  },
+  {
+    landPathway: "W",
+    landHumidity: "Dry",
+    landTemperature: "Warm",
+    oceanPathway: "NE",
+    oceanHumidity: "Dry",
+    outcome: "fair",
+  },
+  {
+    landPathway: "W",
+    landHumidity: "Dry",
+    landTemperature: "Warm",
+    oceanPathway: "NE",
+    oceanHumidity: "Humid",
+    outcome: "fair",
+  },
+  {
+    landPathway: "W",
+    landHumidity: "Humid",
+    landTemperature: "Warm",
+    oceanPathway: "S/SE",
+    oceanHumidity: "Dry",
+    outcome: "fair",
+  },
+  {
+    landPathway: "W",
+    landHumidity: "Humid",
+    landTemperature: "Warm",
+    oceanPathway: "S/SE",
+    oceanHumidity: "Humid",
+    outcome: "humidNoStorm",
+  },
+  {
+    landPathway: "W",
+    landHumidity: "Humid",
+    landTemperature: "Warm",
+    oceanPathway: "NE",
+    oceanHumidity: "Dry",
+    outcome: "fair",
+  },
+  {
+    landPathway: "W",
+    landHumidity: "Humid",
+    landTemperature: "Warm",
+    oceanPathway: "NE",
+    oceanHumidity: "Humid",
+    outcome: "fair",
+  },
+];
+
+/** The stable signature of a setup — its five selections, order-fixed — used as the lookup key. */
+const sig = (s: AirMassSetup) =>
+  `${s.landPathway}|${s.landHumidity}|${s.landTemperature}|${s.oceanPathway}|${s.oceanHumidity}`;
+
+const SETUP_INDEX: ReadonlyMap<string, Outcome> = new Map(
+  SETUP_OUTCOMES.map((r) => [sig(r), r.outcome]),
+);
+
+/**
+ * Determine the weather outcome for a completed setup — a lookup into the approved `SETUP_OUTCOMES`
+ * table. Throws on an unmapped setup (a data gap); `weather.test.ts` sweeps all 32 setups, so a
+ * missing row would fail there rather than reach production.
+ */
+export function evaluateOutcome(setup: AirMassSetup): Outcome {
+  const outcome = SETUP_INDEX.get(sig(setup));
+  if (!outcome) throw new Error(`No approved outcome for setup ${sig(setup)}`);
+  return outcome;
+}

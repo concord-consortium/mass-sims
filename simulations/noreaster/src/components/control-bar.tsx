@@ -4,7 +4,7 @@ import type { FunctionComponent, SVGProps } from "react";
 import { SwitchButton, SwitchField } from "react-aria-components";
 import ResetIcon from "../assets/icons/reset.svg?react";
 import RunIcon from "../assets/icons/run.svg?react";
-import { OUTCOME_BANNER } from "../model/weather";
+import { OUTCOME_BANNER } from "../model/outcome-values";
 import { useStores } from "../stores/root-store";
 import type { MapView } from "./map-stage";
 

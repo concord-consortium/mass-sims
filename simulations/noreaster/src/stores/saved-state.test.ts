@@ -22,6 +22,17 @@ function trial(overrides: Record<string, unknown> = {}): Record<string, unknown>
   };
 }
 
+// A complete setup the model classifies as `humidNoStorm`. Used to show the validator gates structure
+// (enum membership + the cross-field invariant that an outcome needs a complete setup) and never
+// recomputes the outcome — so a persisted outcome that disagrees with the model is kept as-is.
+const HUMID_NO_STORM_SETUP = {
+  landPathway: "N/NW",
+  landHumidity: "Humid",
+  landTemperature: "Cold",
+  oceanPathway: "S/SE",
+  oceanHumidity: "Humid",
+} as const;
+
 describe("migrateSavedState — current versioned shape", () => {
   it("passes a valid versioned state through unchanged (configured + run trial)", () => {
     const state = {
@@ -116,12 +127,13 @@ describe("migrateSavedState — rejects payloads that can't hydrate cleanly", ()
     ).toBeNull();
   });
 
-  it("preserves a historically recorded outcome (does NOT recompute it)", () => {
-    // This complete setup evaluates to "strong" today, but the persisted outcome is "fair" — a value
-    // a future (MAS-39) mapping might have produced. It must survive migration unchanged.
+  it("preserves a persisted outcome as-is, even when it disagrees with the model (does NOT recompute)", () => {
+    // The model classifies this setup as "humidNoStorm", but the trial is persisted with "fair". The
+    // validator gates structure only — it never re-derives the outcome — so the stored "fair" survives
+    // migration unchanged rather than being rewritten to the computed value.
     const state = {
       version: 1,
-      trials: { A: trial({ ...STRONG_SETUP, outcome: "fair" }) },
+      trials: { A: trial({ ...HUMID_NO_STORM_SETUP, outcome: "fair" }) },
       selectedTrialLetter: "A",
     };
     const migrated = migrateSavedState(state);
