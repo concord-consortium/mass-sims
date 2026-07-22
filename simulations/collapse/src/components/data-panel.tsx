@@ -1,5 +1,11 @@
 import { DataSubsection } from "@concord-consortium/mass-sims-shared";
-import { hillsideErosionPct, isCollapsed, roofErosionPct } from "../model/collapse";
+import {
+  CARBONATE_MAX,
+  carbonateMgPerL,
+  isCollapsed,
+  ROOF_MAX_INCHES,
+  roofErosionInches,
+} from "../model/collapse";
 import type { SimInput } from "../model/types";
 import { ErosionMeter } from "./erosion-meter";
 import "./data-panel.scss";
@@ -20,8 +26,8 @@ export function DataPanel({ input, year }: DataPanelProps) {
     );
   }
 
-  const roof = roofErosionPct(input, year);
-  const hill = hillsideErosionPct(input, year);
+  const roof = roofErosionInches(input, year);
+  const carbonate = carbonateMgPerL(input);
   const collapsed = isCollapsed(input, year);
 
   return (
@@ -29,12 +35,28 @@ export function DataPanel({ input, year }: DataPanelProps) {
       <DataSubsection title="Erosion">
         <div className="erosion-content">
           <div className="erosion-meters">
-            <ErosionMeter label="Cave roof eroded" value={roof} color="#7a5c3a" />
-            <ErosionMeter label="Hillside eroded" value={hill} color="#9a8050" />
+            <ErosionMeter
+              label="Cave roof eroded"
+              value={roof}
+              max={ROOF_MAX_INCHES}
+              color="#7a5c3a"
+            />
           </div>
           <p className={`outcome ${collapsed ? "outcome-collapsed" : ""}`}>
             {collapsed ? "Roof collapsed — car fell into the cave." : "Roof intact."}
           </p>
+        </div>
+      </DataSubsection>
+
+      <DataSubsection title="Groundwater">
+        <div className="erosion-meters">
+          <ErosionMeter
+            label="Carbonate in groundwater"
+            value={carbonate}
+            max={CARBONATE_MAX}
+            unit="mg/L"
+            color="#3a86c8"
+          />
         </div>
       </DataSubsection>
     </div>

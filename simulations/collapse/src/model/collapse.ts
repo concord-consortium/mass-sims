@@ -1,4 +1,24 @@
-import type { SimInput, SimOutput, SimTransient } from "./types";
+import type { Location, SimInput, SimOutput, SimTransient } from "./types";
+
+// ---- Locations ---------------------------------------------------------------------------
+// Bowling Green sits over a shallow soluble-limestone karst (part of the Mammoth Cave system): a cave
+// whose roof can dissolve and fail. Louisville sits on the Ohio River floodplain — thick soil over solid
+// granite, with no shallow cave — so the roof-collapse mechanism isn't present there, regardless of the
+// weather or soil setting. `karst` is what gates roof erosion / collapse below.
+export const LOCATIONS = {
+  "bowling-green": {
+    name: "Bowling Green",
+    karst: true,
+    blurb:
+      "Over the Mammoth Cave karst — a shallow limestone cave whose roof can dissolve and fail.",
+  },
+  louisville: {
+    name: "Louisville",
+    karst: false,
+    blurb:
+      "On the Ohio River floodplain — thick soil over solid granite, with no shallow cave to collapse.",
+  },
+} as const satisfies Record<Location, { name: string; karst: boolean; blurb: string }>;
 
 // ---- Timeline ----------------------------------------------------------------------------
 // A ~2000-year span ending in 2014 (the year of the real collapse). Two scripted events:
@@ -17,13 +37,10 @@ export const RAINFALL = {
   dry: { inchesPerYear: 15, rainyDays: 30 },
 } as const;
 
-// Peak erosion at 2014 (mock magnitudes). Roof: limestone karsts; dry is 1/10 of wet; bedrock
-// never karsts. Hillside: wind drives surface erosion; calm is near zero. Wind never affects
-// the roof; wetness/soil never affect the hillside.
+// Peak erosion at 2014 (mock magnitudes). Roof: limestone karsts; dry is 1/10 of wet; granite
+// never karsts.
 const ROOF_PEAK_WET = 100;
 const ROOF_PEAK_DRY = 10;
-const HILL_PEAK_WINDY = 35;
-const HILL_PEAK_CALM = 2;
 
 const clampPct = (n: number) => Math.max(0, Math.min(100, n));
 /** 0 at START_YEAR → 1 at END_YEAR. */
@@ -36,15 +53,26 @@ function clamp01(n: number): number {
 
 /** Cave-roof erosion (karsting) at a given year, 0–100. */
 export function roofErosionPct(input: SimInput, year: number): number {
-  if (input.soil !== "limestone") return 0; // bedrock never karsts, however wet
+  if (!LOCATIONS[input.location].karst) return 0; // no shallow soluble cave at this location
+  if (input.soil !== "limestone") return 0; // granite never karsts, however wet
   const peak = input.wetness === "wet" ? ROOF_PEAK_WET : ROOF_PEAK_DRY;
   return clampPct(timeProgress(year) * peak);
 }
 
-/** Hillside (surface) erosion at a given year, 0–100. Driven only by wind. */
-export function hillsideErosionPct(input: SimInput, year: number): number {
-  const peak = input.wind === "windy" ? HILL_PEAK_WINDY : HILL_PEAK_CALM;
-  return clampPct(timeProgress(year) * peak);
+// ---- Erosion in inches (mock magnitudes, shown in the Data panel) -------------------------
+export const ROOF_MAX_INCHES = 240; // depth of cave-roof rock removed at full dissolution
+
+/** Cave-roof erosion at a given year, in inches. */
+export function roofErosionInches(input: SimInput, year: number): number {
+  return (roofErosionPct(input, year) / 100) * ROOF_MAX_INCHES;
+}
+
+// ---- Carbonate dissolved in groundwater (mg/L, mock) --------------------------------------
+// Soluble limestone karst dissolves into the groundwater → lots of carbonate; elsewhere it stays at a
+// low background level (no soluble rock in the water's path).
+export const CARBONATE_MAX = 300;
+export function carbonateMgPerL(input: SimInput): number {
+  return LOCATIONS[input.location].karst && input.soil === "limestone" ? 250 : 20;
 }
 
 /** The dome + car are present from 1992 onward. */
@@ -52,9 +80,17 @@ export function domeVisible(year: number): boolean {
   return year >= DOME_YEAR;
 }
 
-/** The roof fails (and the car drops) only when wet + limestone, at/after 2014. */
+/**
+ * The roof fails (and the car drops) only at a karst location (Bowling Green), when wet + limestone,
+ * at/after 2014. Louisville never collapses — there is no shallow cave to fail.
+ */
 export function isCollapsed(input: SimInput, year: number): boolean {
-  return year >= COLLAPSE_YEAR && input.soil === "limestone" && input.wetness === "wet";
+  return (
+    LOCATIONS[input.location].karst &&
+    year >= COLLAPSE_YEAR &&
+    input.soil === "limestone" &&
+    input.wetness === "wet"
+  );
 }
 
 export function initialTransient(): SimTransient {
@@ -66,6 +102,5 @@ export function finalizeTrial(input: SimInput): SimOutput {
   return {
     collapsed: isCollapsed(input, END_YEAR),
     roofErosionPct: roofErosionPct(input, END_YEAR),
-    hillsideErosionPct: hillsideErosionPct(input, END_YEAR),
   };
 }

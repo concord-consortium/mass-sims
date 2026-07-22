@@ -15,9 +15,11 @@ import type { RecordedTrial, SimInput } from "./model/types";
 import "./app.scss";
 
 const TRIAL_LIMIT = 10; // Matches TrialCard's A–J letter cap.
-const DEFAULT_SETTINGS: SimInput = { wetness: "wet", wind: "calm", soil: "limestone" };
-const RAINSTORM_MS = 10_000; // Each rainstorm runs for 10 seconds, then stops on its own.
-
+const DEFAULT_SETTINGS: SimInput = {
+  location: "bowling-green",
+  wetness: "wet",
+  soil: "limestone",
+};
 function makeTrialId(): string {
   return Math.random().toString(36).slice(2, 10);
 }
@@ -26,9 +28,9 @@ function makeEmptyTrial(input: SimInput = DEFAULT_SETTINGS): RecordedTrial {
 }
 
 const SETTING_LABELS = {
+  location: { "bowling-green": "Bowling Green", louisville: "Louisville" },
   wetness: { wet: "Wet", dry: "Dry" },
-  wind: { windy: "Windy", calm: "Calm" },
-  soil: { limestone: "Limestone", bedrock: "Bedrock" },
+  soil: { limestone: "Limestone", granite: "Granite" },
 } as const;
 
 /**
@@ -42,7 +44,6 @@ export function App() {
     return { trials: [first], selectedId: first.id };
   });
   const [year, setYear] = useState(START_YEAR);
-  const [rainstormActive, setRainstormActive] = useState(false);
 
   // AP saved-state sync: restore on init, push on change (standalone-safe — see infra-plan §3).
   const initMsg = useInitMessage<SavedState>();
@@ -100,7 +101,6 @@ export function App() {
     if (isPlaying) {
       pause();
     } else {
-      setRainstormActive(false);
       play();
     }
   }, [isPlaying, play, pause]);
@@ -113,24 +113,8 @@ export function App() {
     [pause],
   );
 
-  // A rainstorm pauses the timeline and runs for a fixed 10s, then stops itself. Starting it
-  // while one is already running is a no-op (the button is disabled meanwhile).
-  const startRainstorm = useCallback(() => {
-    pause();
-    setRainstormActive(true);
-  }, [pause]);
-
-  // Auto-stop the rainstorm after RAINSTORM_MS. Any state change that clears rainstormActive
-  // (reset / select / new trial) also cancels the timer via this effect's cleanup.
-  useEffect(() => {
-    if (!rainstormActive) return;
-    const id = setTimeout(() => setRainstormActive(false), RAINSTORM_MS);
-    return () => clearTimeout(id);
-  }, [rainstormActive]);
-
   const resetSelected = useCallback(() => {
     pause();
-    setRainstormActive(false);
     setYear(START_YEAR);
     setState((prev) => ({
       ...prev,
@@ -143,7 +127,6 @@ export function App() {
   const selectTrial = useCallback(
     (id: string) => {
       pause();
-      setRainstormActive(false);
       const t = trials.find((x) => x.id === id);
       // Show recorded trials at their outcome year; empty trials at the start.
       setYear(t?.output ? END_YEAR : START_YEAR);
@@ -162,7 +145,6 @@ export function App() {
       }));
       if (id === selectedId) {
         pause();
-        setRainstormActive(false);
         setYear(START_YEAR);
       }
     },
@@ -171,7 +153,6 @@ export function App() {
 
   const addTrial = useCallback(() => {
     pause();
-    setRainstormActive(false);
     setYear(START_YEAR);
     setState((prev) => {
       if (prev.trials.length >= TRIAL_LIMIT) return prev;
@@ -189,9 +170,11 @@ export function App() {
       infoModalContent={
         <p>
           A mock simulation of the karst sinkhole that collapsed part of the National Corvette
-          Museum in Bowling Green, Kentucky in 2014, above the Mammoth Cave system. Choose a climate
-          and soil, then watch ~2000 years pass: in a wet climate over soluble limestone, rainwater
-          slowly dissolves the cave roof until it fails.
+          Museum in Bowling Green, Kentucky in 2014, above the Mammoth Cave system. Choose a
+          location, climate, and soil, then watch ~2000 years pass: in Bowling Green, a wet climate
+          over soluble limestone slowly dissolves the cave roof until it fails. Compare Louisville,
+          on the Ohio River floodplain, where thick soil over solid granite leaves no shallow cave
+          to collapse.
         </p>
       }
     >
@@ -205,8 +188,8 @@ export function App() {
             onReset={() => resetTrial(trial.id)}
             resetDisabled={trial.output === null}
           >
+            <span>{SETTING_LABELS.location[trial.input.location]}</span>
             <span>{SETTING_LABELS.wetness[trial.input.wetness]}</span>
-            <span>{SETTING_LABELS.wind[trial.input.wind]}</span>
             <span>{SETTING_LABELS.soil[trial.input.soil]}</span>
             {trial.output ? (
               <span className={trial.output.collapsed ? "trial-collapsed" : "trial-intact"}>
@@ -230,18 +213,16 @@ export function App() {
         ) : null}
       </SimulationFrame.Trials>
 
-      <SimulationFrame.Simulation instruction="Set climate & soil, then press Play (or drag the Year slider)">
+      <SimulationFrame.Simulation instruction="Set location, climate & soil, then press Play (or drag the Year slider)">
         <SimulationView
           input={selected.input}
           year={year}
           isPlaying={isPlaying}
-          rainstormActive={rainstormActive}
           inputsLocked={inputsLocked}
           trialLabel={selectedLetter}
           onChangeInput={changeInput}
           onPlayPause={handlePlayPause}
           onScrubYear={scrubYear}
-          onStartRainstorm={startRainstorm}
           onReset={resetSelected}
         />
       </SimulationFrame.Simulation>

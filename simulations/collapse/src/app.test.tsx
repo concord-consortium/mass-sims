@@ -58,13 +58,13 @@ describe("Collapse App", () => {
   it("restores trials + selectedId from a runtime init message", () => {
     const trialA = {
       id: "saved-A",
-      input: { wetness: "wet", wind: "calm", soil: "limestone" },
-      output: { collapsed: true, roofErosionPct: 100, hillsideErosionPct: 2 },
+      input: { location: "bowling-green", wetness: "wet", soil: "limestone" },
+      output: { collapsed: true, roofErosionPct: 100 },
       finalTransient: { year: 2014 },
     };
     const trialB = {
       id: "saved-B",
-      input: { wetness: "dry", wind: "windy", soil: "bedrock" },
+      input: { location: "bowling-green", wetness: "dry", soil: "granite" },
       output: null,
       finalTransient: null,
     };

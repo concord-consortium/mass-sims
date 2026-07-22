@@ -6,13 +6,16 @@
 // SimulationFrame layout and shared controls/charts with representative behavior.
 
 export type Wetness = "wet" | "dry";
-export type Wind = "windy" | "calm";
-export type Soil = "limestone" | "bedrock";
+export type Soil = "limestone" | "granite";
+// Bowling Green sits over the shallow Mammoth Cave karst (collapse is possible); Louisville sits on the
+// Ohio River floodplain — thick soil over solid granite, with no shallow cave to collapse. See LOCATIONS
+// in model/collapse.ts.
+export type Location = "bowling-green" | "louisville";
 
-/** The climate/soil configuration the student chooses for a trial. */
+/** The location/climate/soil configuration the student chooses for a trial. */
 export interface SimInput {
+  location: Location;
   wetness: Wetness;
-  wind: Wind;
   soil: Soil;
 }
 
@@ -22,8 +25,6 @@ export interface SimOutput {
   collapsed: boolean;
   /** Cave-roof erosion at 2014, 0–100. */
   roofErosionPct: number;
-  /** Hillside erosion at 2014, 0–100. */
-  hillsideErosionPct: number;
 }
 
 /** Per-frame state: where we are on the 2000-year timeline. */
