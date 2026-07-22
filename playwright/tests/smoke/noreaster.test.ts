@@ -99,6 +99,29 @@ test("Data panel: renders the 'Weather Outcome' header and the six attribute row
   }
 });
 
+test("Data panel: fills on Run and clears on Reset Trial", async () => {
+  // Default (unrun) state: the pill shows the en-dash placeholder.
+  await expect(sim.outcomePill).toHaveText("–");
+
+  await sim.completeSetup(); // strong nor'easter
+  await sim.runButton.click();
+
+  // Filled: the pill shows the banner and a distinctive strong value renders.
+  await expect(sim.outcomePill).toHaveText("Strong nor’easter");
+  await expect(sim.outcomeValue("From the NE, 45–60 mph")).toBeVisible();
+
+  await sim.resetTrialButton.click();
+  // Reset clears the panel back to the placeholder.
+  await expect(sim.outcomePill).toHaveText("–");
+});
+
+test("Data panel: shows a different outcome (Fair weather)", async () => {
+  await sim.completeSetup("fair");
+  await sim.runButton.click();
+  await expect(sim.outcomePill).toHaveText("Fair weather");
+  await expect(sim.outcomeValue("Sunny and fair")).toBeVisible();
+});
+
 test("Map view toggle: switches the Street ⇄ Satellite basemap", async () => {
   await expect(sim.mapViewToggle).not.toBeChecked();
   await expect(sim.mapStage).toHaveAttribute("data-map-view", "street");
