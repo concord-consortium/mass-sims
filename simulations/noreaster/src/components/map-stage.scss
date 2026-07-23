@@ -2,18 +2,16 @@
 @use "../theme" as theme;
 
 // The map "stage" fills the remaining vertical space in the panel. The map itself is an aspect-locked
-// (2:1) box sized to COVER the stage — it always fills the full width (never letterboxed), cropping
-// whichever dimension overflows (top/bottom on a wide stage, sides on a tall one, e.g. AP 2-column).
-// `height: max(100cqh, 50cqw)` picks the covering height using the stage's own size (container-query
-// units), so it's pure CSS with no resize JS. Overlays are absolutely-positioned children of the map
-// box, placed with `calc(<pct>% + <px>)` from the demo's `_position*` geometry — top-left anchored,
-// constant px nudges, no centering translate.
+// (2:1) box whose HEIGHT always equals the stage height, so it keeps its size as the panel narrows —
+//the stage just crops more off the sides (center-cropped by the stage's overflow). Width follows from
+// the aspect ratio; no container-query units or resize JS. Overlays are absolutely-positioned
+// children of the map box, placed with `calc(<pct>% + <px>)` — top-left anchored, constant px nudges,
+//no centering translate.
 
 $shadow: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.35));
 
 .nor-stage {
   background: theme.$map-bg;
-  container-type: size; // enables cqw/cqh for the covering map below
   flex: 1;
   min-height: 0;
   overflow: hidden;
@@ -22,8 +20,7 @@ $shadow: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.35));
 
 .nor-map {
   aspect-ratio: 2 / 1; // 2667 / 1334 ≈ 2:1
-  // Cover: at least the full stage height AND at least the full width (50cqw → 2:1 → 100% width).
-  height: max(100cqh, 50cqw);
+  height: 100%;
   left: 50%;
   position: absolute;
   top: 50%;
@@ -195,8 +192,19 @@ $shadow: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.35));
   -webkit-text-stroke: 4px #fff; // white halo so the label reads over the map
 }
 
-// ---- Pre-run prompt pill ("Click Run …"), pinned to the stage's top-center ----
-// Positioned against `.nor-stage` (not `.nor-map`) so it stays put as the map crops/scales.
+// ---- Pre-run prompt pill ("Click Run …"), straddling the top edge of the stage ----
+// Positioned against `.nor-stage` (not `.nor-map`) so it stays put as the map crops. Its top sits at
+// the section/map boundary; the blue backdrop below carries the title-bar color ~18px down behind it.
+.nor-prompt-backdrop {
+  background: theme.$title-bar;
+  height: 18px;
+  left: 0;
+  position: absolute;
+  right: 0;
+  top: 0;
+  z-index: 1; // above the map/arrows, below the prompt pill
+}
+
 .nor-prompt {
   background: theme.$surface;
   border: 2px solid theme.$border;
@@ -212,10 +220,10 @@ $shadow: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.35));
   position: absolute;
   text-align: center;
   text-overflow: ellipsis;
-  top: 8px;
+  top: 0;
   transform: translateX(-50%);
   white-space: nowrap;
-  z-index: 2; // above the pathway pills (z-index 1)
+  z-index: 2; // above the pathway pills (z-index 1) and the backdrop
 }
 
 // ---- Compass rose (pinned to the stage's bottom-left corner) ----
