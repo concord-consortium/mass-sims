@@ -2,7 +2,7 @@
 @use "../theme" as theme;
 
 .noreaster-data-panel {
-  // Named query container so the label swap responds to the *panel* width, not the viewport.
+  // Named query container for the pill-condense query below — responds to the *panel* width, not the viewport.
   container: noreaster-data-panel / inline-size;
   box-sizing: border-box;
   display: flex;
@@ -38,34 +38,52 @@
     text-align: center;
   }
 
+  // Filled state: the outcome banner is bold; the empty-state "–" keeps the default weight.
+  .wo-pill--filled {
+    font-weight: 700;
+  }
+
+  // The description list (`<dl>`). Reset its default block margins.
   .wo-table {
-    border-collapse: collapse;
+    margin: 0;
     width: 100%;
   }
 
-  // Row header cell (the attribute). Stays a real table cell — border-collapse merges its top border
-  // with the value cell's into one continuous divider. Takes the row's slack so the value hugs the
-  // right edge.
+  // Each attribute row (a `dt`/`dd` pair grouped in a `div`). `flow-root` contains the floated `dt`; the
+  // top-border rule below draws the continuous divider between rows.
+  .wo-row {
+    display: flow-root;
+    padding: 10px 0;
+  }
+
+  .wo-row + .wo-row {
+    border-top: 1px solid theme.$border;
+  }
+
+  // Row header (icon + attribute label). Floats left so the value flows to its right and wraps below it
+  // when the row is tight.
   .wo-row-header {
+    align-items: center;
     color: tokens.$color-text;
+    display: flex;
+    float: left;
     font-family: tokens.$font-family-base;
     font-size: tokens.$font-size-base;
     font-weight: 700;
-    line-height: 24px;
-    padding: 10px 0;
-    text-align: left;
-    vertical-align: top;
-    width: 100%;
-  }
-
-  .wo-attr {
-    align-items: center;
-    display: flex;
     gap: tokens.$space-2;
+    line-height: 24px;
+    margin-right: tokens.$space-2;
+    max-width: 100%;
   }
 
-  // Stand-in icon disc — the demo's placeholder circle (filled with the title-bar blue). `color` is set
-  // so the real `currentColor` weather icon inherits the icon tint once it replaces the disc.
+  // Keep the attribute label on one line; the condensable ones swap to a short form (`.wo-row--condensed`,
+  // below) rather than wrapping.
+  .wo-label {
+    white-space: nowrap;
+  }
+
+  // Stand-in icon disc — a placeholder circle (filled with the title-bar blue). `color` is set so the
+  // real `currentColor` weather icon inherits the icon tint once it replaces the disc.
   .wo-icon {
     background: theme.$title-bar;
     border-radius: 50%;
@@ -75,32 +93,41 @@
     width: 24px;
   }
 
+  // Filled state: drop the disc so the real weather SVG shows through; the slot keeps its `color` so the
+  // currentColor art inherits the tint.
+  .wo-icon--filled {
+    background: none;
+  }
+
+  // The weather SVGs are 24×24; block display avoids an inline baseline gap under the icon.
+  .wo-icon svg {
+    display: block;
+    height: 24px;
+    width: 24px;
+  }
+
+  // Value (`dd`). Right-aligned; flows to the right of the floated term and wraps onto lines below it when
+  // tight. `line-height` matches the term so a one-line value aligns with the label; `margin: 0` clears
+  // the `dd` indent.
   .wo-value {
     color: tokens.$color-text;
+    display: block;
     font-family: tokens.$font-family-base;
     font-size: tokens.$font-size-base;
     font-weight: 400;
     line-height: 24px;
-    padding: 10px 0;
+    margin: 0;
     text-align: right;
-    vertical-align: top;
-    white-space: nowrap;
   }
 
-  .wo-table tr + tr .wo-row-header,
-  .wo-table tr + tr .wo-value {
-    border-top: 1px solid theme.$border;
-  }
-
-  // --- Responsive label swap (Precipitation Type/Amount → Precip Type/Amount) ------------------------
-  // Default (wide): show the full label. The short label stays hidden.
+  // --- Condensable label swap (Precipitation Type/Amount → Precip Type/Amount) ------------------------
+  // Default: show the full label. `useCondensedLabels` (use-condensed-labels.ts) adds `.wo-row--condensed`
+  // to a row when its full label would wrap the value, which swaps in the short form.
   .wo-label-short {
     display: none;
   }
 
-  // Narrow column: swap to the condensed labels so the long two-word attributes still fit on one line
-  // beside their value. Breakpoint tuned against the four target widths.
-  @container noreaster-data-panel (max-width: 244px) {
+  .wo-row--condensed {
     .wo-label-full {
       display: none;
     }
@@ -109,16 +136,12 @@
     }
   }
 
-  // Fallback for browsers without container queries — swap by viewport at the narrower target widths,
-  // matching the bananas Data panel's fallback approach.
-  @supports not (container-type: inline-size) {
-    @media (max-width: 1026px) {
-      .wo-label-full {
-        display: none;
-      }
-      .wo-label-short {
-        display: inline;
-      }
+  // Outcome-pill condense (width-driven): below ~155px the filled banner swaps to the condensed face at
+  // weight 500 so the longest banner (~153px in Lato 700) still fits on one line.
+  @container noreaster-data-panel (max-width: 155px) {
+    .wo-pill--filled {
+      font-family: tokens.$font-family-condensed;
+      font-weight: 500;
     }
   }
 }

@@ -161,14 +161,21 @@ $titlebar-about-leading-space: 5px;   // margin-left on the About button → CC�
   // Full Width) and proportionally shrinks below — down to 767 px AP 2-col with the instructions
   // panel visible. `minmax(0, …fr)` lets the children actually shrink rather than refusing to dip
   // below their content's intrinsic width. See ui-design-plan.md §7.
+  //
+  // The ratio is per-sim overridable: a sim sets the `--sim-frame-*` custom properties on
+  // `.simulation-frame` (they inherit down here) to change its columns without touching the shared
+  // default — e.g. Nor'easter uses 525 : 304 with a 390 px Simulation min.
   .sim-main {
     grid-area: content;
     display: grid;
     grid-template-areas: "trials simulation data";
     grid-template-columns:
       tokens.$column-trials-width
-      minmax(0, #{tokens.$column-simulation-flex}fr)
-      minmax(0, #{tokens.$column-data-flex}fr);
+      minmax(
+        var(--sim-frame-simulation-min, 0),
+        var(--sim-frame-simulation-flex, #{tokens.$column-simulation-flex}fr)
+      )
+      minmax(0, var(--sim-frame-data-flex, #{tokens.$column-data-flex}fr));
     grid-template-rows: minmax(0, 1fr);
     column-gap: tokens.$column-gap;
     min-height: 0; // let the panels' internal scroll regions size within the content row

@@ -2,6 +2,11 @@ import type { Locator } from "@playwright/test";
 import { getSimUrl } from "../sims";
 import { SimulationFramePage } from "./simulation-frame-page";
 
+/** An anchored, regex-escaped matcher for Playwright's substring-by-default `hasText`. */
+function exactText(text: string): RegExp {
+  return new RegExp(`^${text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}$`);
+}
+
 /**
  * Page object for the Nor'easter sim. Adds the Trials-panel locators and the Simulation-panel
  * locators (dropdowns, map image, map-view toggle, Run / Reset Trial) on top of the shared-chrome
@@ -60,13 +65,18 @@ export class NoreasterPage extends SimulationFramePage {
     await this.page.getByRole("option", { name: optionName, exact: true }).click();
   }
 
-  /** Complete all five air-mass selections (a strong-nor'easter setup). */
-  async completeSetup(): Promise<void> {
+  /**
+   * Complete all five air-mass selections for a given outcome (default: a strong nor'easter). `"fair"`
+   * picks a Humid-land setup that yields Fair weather — a visibly different Data-panel outcome.
+   */
+  async completeSetup(kind: "strong" | "fair" = "strong"): Promise<void> {
+    const landHumidity = kind === "fair" ? "Humid" : "Dry";
+    const oceanHumidity = kind === "fair" ? "Dry" : "Humid";
     await this.selectOption("Pathway for Land Air Mass", "1 N/NW");
-    await this.selectOption("Humidity for Land Air Mass", "Dry");
+    await this.selectOption("Humidity for Land Air Mass", landHumidity);
     await this.selectOption("Temperature for Land Air Mass", "Cold");
     await this.selectOption("Pathway for Ocean Air Mass", "2 S/SE");
-    await this.selectOption("Humidity for Ocean Air Mass", "Humid");
+    await this.selectOption("Humidity for Ocean Air Mass", oceanHumidity);
   }
 
   /** Toggle the map view by clicking the visible switch button (not the hidden input). */
@@ -89,9 +99,25 @@ export class NoreasterPage extends SimulationFramePage {
     return this.page.getByRole("heading", { name: "Weather Outcome" });
   }
 
-  /** A Weather-Outcome attribute row header by its full name, e.g. `attributeRow("Sky")`. */
+  /**
+   * A Weather-Outcome attribute row (a description-list term) by its full name, e.g. `attributeRow("Sky")`.
+   * Filters the terms by text content (not accessible name) so it matches at every width — the full
+   * label is always in the DOM even when the condensed form is the one shown. Substring (not exact) on
+   * purpose: a condensable term holds both the full and short label spans, so its text is e.g.
+   * "Precipitation TypePrecip Type" — an anchored match would find nothing.
+   */
   attributeRow(name: string): Locator {
-    return this.page.getByRole("rowheader", { name });
+    return this.page.getByRole("term").filter({ hasText: name });
+  }
+
+  /** The outcome "pill" — its banner once run, the "–" placeholder otherwise. */
+  get outcomePill(): Locator {
+    return this.page.locator(".wo-pill");
+  }
+
+  /** A Data-panel value by its exact visible text, e.g. `outcomeValue("Sunny and fair")`. */
+  outcomeValue(text: string): Locator {
+    return this.page.locator(".wo-value").filter({ hasText: exactText(text) });
   }
 
   // --- Trials panel -------------------------------------------------------

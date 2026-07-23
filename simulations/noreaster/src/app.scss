@@ -6,6 +6,12 @@
 .simulation-frame {
   background: theme.$surface;
 
+  // Column proportions for Nor'easter (Simulation 525 : Data 304, Simulation min 390 px), set via the
+  // frame's `--sim-frame-*` override hooks (they inherit down to `.sim-main`).
+  --sim-frame-simulation-flex: 525fr;
+  --sim-frame-data-flex: 304fr;
+  --sim-frame-simulation-min: 390px;
+
   &.standalone {
     border-color: theme.$border;
   }
@@ -54,6 +60,11 @@
 
     &.data-area {
       background: theme.$data-panel-surface;
+
+      .content {
+        padding-right: 10px;
+        padding-left: 10px;
+      }
     }
 
     .chip {

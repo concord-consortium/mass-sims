@@ -1,30 +1,79 @@
-import type { AirMassSetup } from "../model/weather";
+import type { AirMassSetup, Outcome } from "../model/weather";
 import type { TrialModelInstance } from "./trial-model";
 
 /**
- * The one setup that yields a strong nor'easter: N/NW + Cold + Dry land meeting a S/SE + Humid ocean.
- * Kept in one place so every spec that depends on this setup → outcome mapping updates in lockstep if
- * the weather model changes.
+ * One complete air-mass setup per outcome — one of the combinations the weather model's `SETUP_OUTCOMES`
+ * maps to that outcome, so the trial evaluates to it (a spec asserts the mapping, so drift is caught).
  */
-export const STRONG_SETUP: AirMassSetup = {
-  landPathway: "N/NW",
-  landHumidity: "Dry",
-  landTemperature: "Cold",
-  oceanPathway: "S/SE",
-  oceanHumidity: "Humid",
+export const SETUPS: Record<Outcome, AirMassSetup> = {
+  strong: {
+    landPathway: "N/NW",
+    landHumidity: "Dry",
+    landTemperature: "Cold",
+    oceanPathway: "S/SE",
+    oceanHumidity: "Humid",
+  },
+  moderate: {
+    landPathway: "W",
+    landHumidity: "Dry",
+    landTemperature: "Cold",
+    oceanPathway: "S/SE",
+    oceanHumidity: "Humid",
+  },
+  weakCoastal: {
+    landPathway: "N/NW",
+    landHumidity: "Dry",
+    landTemperature: "Cold",
+    oceanPathway: "NE",
+    oceanHumidity: "Humid",
+  },
+  humidNoStorm: {
+    landPathway: "N/NW",
+    landHumidity: "Humid",
+    landTemperature: "Cold",
+    oceanPathway: "S/SE",
+    oceanHumidity: "Humid",
+  },
+  dryFront: {
+    landPathway: "N/NW",
+    landHumidity: "Dry",
+    landTemperature: "Cold",
+    oceanPathway: "S/SE",
+    oceanHumidity: "Dry",
+  },
+  fair: {
+    landPathway: "N/NW",
+    landHumidity: "Humid",
+    landTemperature: "Cold",
+    oceanPathway: "S/SE",
+    oceanHumidity: "Dry",
+  },
 };
 
-/** Apply {@link STRONG_SETUP} to a trial via its setters (completes the setup, does not run). */
+/** The setup that yields a strong nor'easter — a named export several specs reference directly. */
+export const STRONG_SETUP: AirMassSetup = SETUPS.strong;
+
+/** Apply a setup to a trial via its setters (completes the setup, does not run). */
+export function configure(trial: TrialModelInstance, setup: AirMassSetup): void {
+  trial.setLandPathway(setup.landPathway);
+  trial.setLandHumidity(setup.landHumidity);
+  trial.setLandTemperature(setup.landTemperature);
+  trial.setOceanPathway(setup.oceanPathway);
+  trial.setOceanHumidity(setup.oceanHumidity);
+}
+
+/** Configure + run a trial so it carries a recorded outcome. */
+export function runSetup(trial: TrialModelInstance, setup: AirMassSetup): void {
+  configure(trial, setup);
+  trial.run();
+}
+
+/** Apply {@link STRONG_SETUP} to a trial (completes the setup, does not run). */
 export function configureStrong(trial: TrialModelInstance): void {
-  trial.setLandPathway(STRONG_SETUP.landPathway);
-  trial.setLandHumidity(STRONG_SETUP.landHumidity);
-  trial.setLandTemperature(STRONG_SETUP.landTemperature);
-  trial.setOceanPathway(STRONG_SETUP.oceanPathway);
-  trial.setOceanHumidity(STRONG_SETUP.oceanHumidity);
+  configure(trial, STRONG_SETUP);
 }
 
 /** Configure + run a trial so it carries a recorded (strong) outcome. */
 export function runStrong(trial: TrialModelInstance): void {
-  configureStrong(trial);
-  trial.run();
+  runSetup(trial, STRONG_SETUP);
 }
