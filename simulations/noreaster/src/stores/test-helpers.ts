@@ -2,8 +2,8 @@ import type { AirMassSetup, Outcome } from "../model/weather";
 import type { TrialModelInstance } from "./trial-model";
 
 /**
- * One complete air-mass setup per outcome, each drawn from the weather model's `SETUP_OUTCOMES` so the
- * trial evaluates to that outcome (the specs assert it).
+ * One complete air-mass setup per outcome — one of the combinations the weather model's `SETUP_OUTCOMES`
+ * maps to that outcome, so the trial evaluates to it (a spec asserts the mapping, so drift is caught).
  */
 export const SETUPS: Record<Outcome, AirMassSetup> = {
   strong: {
