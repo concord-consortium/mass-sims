@@ -3,10 +3,10 @@ import {
   type AirMassSetup,
   deriveOceanTemperature,
   evaluateOutcome,
-  type Humidity,
-  type LandPathway,
-  type LandTemperature,
-  type OceanPathway,
+  HUMIDITIES,
+  LAND_PATHWAYS,
+  LAND_TEMPERATURES,
+  OCEAN_PATHWAYS,
   OUTCOMES,
   type Outcome,
 } from "./weather";
@@ -20,10 +20,23 @@ const NOR_BASE: Omit<AirMassSetup, "landPathway"> = {
   oceanHumidity: "Humid",
 };
 
-const LAND_PATHWAYS: LandPathway[] = ["N/NW", "W"];
-const OCEAN_PATHWAYS: OceanPathway[] = ["S/SE", "NE"];
-const HUMIDITIES: Humidity[] = ["Dry", "Humid"];
-const LAND_TEMPERATURES: LandTemperature[] = ["Cold", "Warm"];
+// The physical rules documented above `SETUP_OUTCOMES`, encoded independently as a test oracle. The
+// table is a 32-row hand transcription, so its likeliest error is a transposed pair — which leaves the
+// distribution intact and would pass a counts-only check. Asserting every row against these rules pins
+// each one, catching that. (The oracle is the classification rationale; a deliberate non-rule
+// reclassification would update both the table and this function.)
+function oracle(setup: AirMassSetup): Outcome {
+  const landColdDry = setup.landTemperature === "Cold" && setup.landHumidity === "Dry";
+  const oceanHumid = setup.oceanHumidity === "Humid";
+  const oceanWarm = setup.oceanPathway === "S/SE"; // S/SE (2) → warm Gulf Stream; NE (3) → cool
+  if (landColdDry && oceanHumid && oceanWarm) {
+    return setup.landPathway === "N/NW" ? "strong" : "moderate";
+  }
+  if (landColdDry && oceanHumid) return "weakCoastal";
+  if (landColdDry) return "dryFront";
+  if (oceanHumid && oceanWarm) return "humidNoStorm";
+  return "fair";
+}
 
 describe("OUTCOMES", () => {
   it("lists the six outcomes in the approved display order", () => {
@@ -93,7 +106,7 @@ describe("evaluateOutcome", () => {
     ).toBe("fair");
   });
 
-  it("resolves all 32 possible setups to one of the six outcomes with the approved distribution", () => {
+  it("classifies every possible setup per the physical rules, with the approved distribution", () => {
     const counts: Record<Outcome, number> = {
       strong: 0,
       moderate: 0,
@@ -108,14 +121,16 @@ describe("evaluateOutcome", () => {
         for (const landTemperature of LAND_TEMPERATURES) {
           for (const oceanPathway of OCEAN_PATHWAYS) {
             for (const oceanHumidity of HUMIDITIES) {
-              const outcome = evaluateOutcome({
+              const setup: AirMassSetup = {
                 landPathway,
                 landHumidity,
                 landTemperature,
                 oceanPathway,
                 oceanHumidity,
-              });
-              expect(OUTCOMES).toContain(outcome);
+              };
+              const outcome = evaluateOutcome(setup);
+              // Primary: every row matches the rule oracle (pins all setups individually).
+              expect(outcome, JSON.stringify(setup)).toBe(oracle(setup));
               counts[outcome]++;
               total++;
             }
@@ -123,7 +138,15 @@ describe("evaluateOutcome", () => {
         }
       }
     }
-    expect(total).toBe(32);
+    // The domain is the product of the real enumerations — grows automatically if one gains a value.
+    expect(total).toBe(
+      LAND_PATHWAYS.length *
+        HUMIDITIES.length *
+        LAND_TEMPERATURES.length *
+        OCEAN_PATHWAYS.length *
+        HUMIDITIES.length,
+    );
+    // Secondary: the approved distribution across the whole domain.
     expect(counts).toEqual({
       strong: 1,
       moderate: 1,

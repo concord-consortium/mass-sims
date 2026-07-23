@@ -3,8 +3,8 @@ import type { TrialModelInstance } from "./trial-model";
 
 /**
  * The one setup that yields a strong nor'easter: N/NW + Cold + Dry land meeting a S/SE + Humid ocean.
- * Kept in one place so the specs that depend on this setup → outcome mapping update in lockstep when
- * MAS-39 revises the weather model.
+ * Kept in one place so every spec that depends on this setup → outcome mapping updates in lockstep if
+ * the weather model changes.
  */
 export const STRONG_SETUP: AirMassSetup = {
   landPathway: "N/NW",
