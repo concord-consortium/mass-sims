@@ -20,8 +20,8 @@ export interface WeatherIconSet {
 }
 
 /**
- * Outcome → its six weather icons, per the design spec. Exhaustive over `Outcome` by construction — a
- * new outcome key forces a new row.
+ * Outcome → its six weather icons. Exhaustive over `Outcome` by construction — a new outcome key
+ * forces a new row.
  */
 export const OUTCOME_ICONS: Record<Outcome, WeatherIconSet> = {
   strong: {
