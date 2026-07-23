@@ -57,9 +57,12 @@ function isNullableMember(value: unknown, allowed: Set<string>): boolean {
  *     (Otherwise the trial would hydrate `locked` — lock derives from `outcome` — while `setupComplete`
  *     is false: read-only incomplete inputs with a disabled Replay.)
  *
- * A historically recorded outcome is NOT recomputed/compared here — MAS-39 will change the
- * setup→outcome mapping, and re-deriving would rewrite old trials. Only structural consistency is
- * validated, not the outcome's value.
+ * A recorded outcome is NOT recomputed or compared here — only structural consistency is validated,
+ * never the outcome's value. Re-deriving it would let a change to the setup→outcome model silently
+ * rewrite an already-persisted outcome, so the stored value is always trusted as-is. The full setup
+ * is persisted alongside it, so if the model or trial shape ever changes in a breaking way, a future
+ * version can re-derive or remap outcomes in its `migrateSavedState` branch (bump `SAVED_STATE_VERSION`)
+ * — a deliberate, reviewed migration rather than an implicit side effect of loading.
  */
 function isHydratableTrial(value: unknown): boolean {
   if (!isObject(value)) return false;
