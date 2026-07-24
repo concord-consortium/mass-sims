@@ -189,9 +189,10 @@
     font-size: tokens.$font-size-base;
     font-weight: 700;
     gap: var(--nor-gap, #{tokens.$space-1});
-    height: 38px;
     justify-content: center;
     line-height: tokens.$line-height-sm;
+    // The demo's pill height; min-height (not height) so the value grows under text zoom rather than clip.
+    min-height: 38px;
     min-width: 0; // shrink inside the minmax(0) track rather than spilling past the column
     overflow: hidden;
     padding: 0 var(--nor-pad-r, 10px);

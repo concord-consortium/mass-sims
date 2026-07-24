@@ -53,7 +53,8 @@
       background: theme.$title-bar;
 
       // Drop the shared content's bottom padding so the map stage (flex:1) reclaims that space and
-      // the control bar sits flush at the panel bottom.
+      // the control bar sits flush at the panel bottom; the 10px top (2px under the shared 12px) lands
+      // the air-mass grid at the demo's chip-to-content gap.
       .content {
         padding-bottom: 0;
         padding-top: 10px;

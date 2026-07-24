@@ -53,6 +53,7 @@ describe("MapStage — pre-run prompt", () => {
   it("is absent until the setup is complete", () => {
     const { container } = renderStage();
     expect(container.querySelector(".nor-prompt")).toBeNull();
+    expect(container.querySelector(".nor-prompt-backdrop")).toBeNull();
   });
 
   it("appears once the setup is complete and the trial hasn't run", () => {
@@ -62,6 +63,8 @@ describe("MapStage — pre-run prompt", () => {
     expect(container.querySelector(".nor-prompt")).toHaveTextContent(
       "Click Run to see if a nor’easter forms",
     );
+    // The blue backdrop that bleeds behind the pill's top is part of the prompt.
+    expect(container.querySelector(".nor-prompt-backdrop")).not.toBeNull();
   });
 
   it("disappears once the trial has been run", () => {
@@ -72,6 +75,7 @@ describe("MapStage — pre-run prompt", () => {
       store.activeTrial.run();
     });
     expect(container.querySelector(".nor-prompt")).toBeNull();
+    expect(container.querySelector(".nor-prompt-backdrop")).toBeNull();
   });
 });
 
