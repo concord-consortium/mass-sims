@@ -127,8 +127,12 @@
   }
 }
 
-// Condense the toggle labels to Roboto Condensed once the controls stop fitting (in step with the
-// grid + buttons), so Street|track|Satellite takes less width and the row stays on one line.
-.noreaster-simulation-panel[data-nor-condensed] .map-view-toggle {
-  font-family: tokens.$font-family-condensed;
+// Condense every control-bar label together once the controls stop fitting — the toggle and the
+// Run / Reset buttons all switch to Roboto Condensed as a set, per the demo (which never condenses
+// only some buttons in a group).
+.noreaster-simulation-panel[data-nor-condensed] {
+  .map-view-toggle,
+  .control-button {
+    font-family: tokens.$font-family-condensed;
+  }
 }
