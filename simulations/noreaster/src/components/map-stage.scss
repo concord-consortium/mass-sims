@@ -20,7 +20,11 @@ $shadow: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.35));
 
 .nor-map {
   aspect-ratio: 2 / 1; // 2667 / 1334 ≈ 2:1
-  height: 100%;
+  // A constant size (never scales with width), but a hair taller than the stage so its width always
+  // covers the widest target: at 1044 the stage reaches ~2.05:1, so a 2:1 map at exactly 100% height
+  // leaves ~7px of letterbox each side. 103% over-scans just enough to cover that, cropping a few px
+  // off the map's top/bottom (empty margin) instead — the same size at every width, no scaling.
+  height: 103%;
   left: 50%;
   position: absolute;
   top: 50%;
