@@ -3,10 +3,10 @@
 
 // The map "stage" fills the remaining vertical space in the panel. The map itself is an aspect-locked
 // (2:1) box whose HEIGHT always equals the stage height, so it keeps its size as the panel narrows —
-//the stage just crops more off the sides (center-cropped by the stage's overflow). Width follows from
+// the stage just crops more off the sides (center-cropped by the stage's overflow). Width follows from
 // the aspect ratio; no container-query units or resize JS. Overlays are absolutely-positioned
 // children of the map box, placed with `calc(<pct>% + <px>)` — top-left anchored, constant px nudges,
-//no centering translate.
+// no centering translate.
 
 $shadow: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.35));
 
