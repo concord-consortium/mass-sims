@@ -115,13 +115,16 @@ export const MapStage = observer(function MapStage({ mapView = "street" }: { map
         <CompassRose />
       </span>
 
-      {/* Pre-run prompt: shown once the setup is complete and the trial hasn't been run (matches the
-          demo). Not aria-hidden — it's a genuine text cue; the actionable state is also conveyed by
-          the Run button enabling. */}
+      {/* Pre-run prompt: shown once the setup is complete and the trial hasn't been run. The backdrop
+          bleeds the section's blue down behind the pill's top; the pill itself is not aria-hidden —
+          it's a genuine text cue, and the state is also conveyed by Run enabling. */}
       {trial.setupComplete && !trial.hasRun ? (
-        <div className="nor-prompt">
-          Click <strong>Run</strong> to see if a nor’easter forms
-        </div>
+        <>
+          <div className="nor-prompt-backdrop" aria-hidden="true" />
+          <div className="nor-prompt">
+            Click <strong>Run</strong> to see if a nor’easter forms
+          </div>
+        </>
       ) : null}
     </div>
   );

@@ -168,6 +168,7 @@
     }
 
     .select-caret {
+      color: theme.$icon-color;
       height: var(--nor-caret, 24px);
       width: var(--nor-caret, 24px);
     }
@@ -178,8 +179,8 @@
   // in step with its column rather than spilling past the panel edge.
   .nor-value-pill {
     align-items: center;
+    align-self: center;
     background: theme.$surface;
-    border: 2px solid transparent;
     border-radius: 999px;
     box-sizing: border-box;
     color: theme.$marker-text;
@@ -188,12 +189,12 @@
     font-size: tokens.$font-size-base;
     font-weight: 700;
     gap: var(--nor-gap, #{tokens.$space-1});
+    height: 38px;
     justify-content: center;
     line-height: tokens.$line-height-sm;
-    min-height: tokens.$touch-target-min;
     min-width: 0; // shrink inside the minmax(0) track rather than spilling past the column
     overflow: hidden;
-    padding: tokens.$space-2 var(--nor-pad-r, 10px);
+    padding: 0 var(--nor-pad-r, 10px);
 
     .nor-dd-icon {
       @include nor-dd-icon;
