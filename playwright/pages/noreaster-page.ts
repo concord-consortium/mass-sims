@@ -7,6 +7,20 @@ function exactText(text: string): RegExp {
   return new RegExp(`^${text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}$`);
 }
 
+/** The outcome kinds `completeSetup` can produce — each a model outcome key. */
+type SetupKind = "strong" | "fair" | "windy" | "humidNoStorm";
+
+/**
+ * The two humidity picks that steer each kind. All four share N/NW · Cold land + S/SE ocean, so only
+ * land + ocean humidity differ — one row per reachable outcome.
+ */
+const SETUP_HUMIDITY: Record<SetupKind, { land: string; ocean: string }> = {
+  strong: { land: "Dry", ocean: "Humid" },
+  fair: { land: "Humid", ocean: "Dry" },
+  windy: { land: "Dry", ocean: "Dry" },
+  humidNoStorm: { land: "Humid", ocean: "Humid" },
+};
+
 /**
  * Page object for the Nor'easter sim. Adds the Trials-panel locators and the Simulation-panel
  * locators (dropdowns, map image, map-view toggle, Run / Reset Trial) on top of the shared-chrome
@@ -66,18 +80,12 @@ export class NoreasterPage extends SimulationFramePage {
   }
 
   /**
-   * Complete all five air-mass selections for a given outcome (default: a strong nor'easter). All four
-   * kinds share N/NW · Cold land + S/SE ocean and differ only by the two humidity picks, so each yields
-   * a visibly different Data-panel outcome: strong, Fair weather, Windy (no storm), or Humid (no storm).
+   * Complete all five air-mass selections for a given outcome (default: a strong nor'easter). Each kind
+   * yields a visibly different Data-panel outcome, matching the pill banners the specs assert:
+   * "Strong nor’easter", "Fair weather", "Windy, no storm", or "Humid, no storm".
    */
-  async completeSetup(kind: "strong" | "fair" | "windy" | "humid" = "strong"): Promise<void> {
-    const humidity: Record<typeof kind, { land: string; ocean: string }> = {
-      strong: { land: "Dry", ocean: "Humid" },
-      fair: { land: "Humid", ocean: "Dry" },
-      windy: { land: "Dry", ocean: "Dry" },
-      humid: { land: "Humid", ocean: "Humid" },
-    };
-    const { land, ocean } = humidity[kind];
+  async completeSetup(kind: SetupKind = "strong"): Promise<void> {
+    const { land, ocean } = SETUP_HUMIDITY[kind];
     await this.selectOption("Pathway for Land Air Mass", "1 N/NW");
     await this.selectOption("Humidity for Land Air Mass", land);
     await this.selectOption("Temperature for Land Air Mass", "Cold");
@@ -114,6 +122,11 @@ export class NoreasterPage extends SimulationFramePage {
    */
   attributeRow(name: string): Locator {
     return this.page.getByRole("term").filter({ hasText: name });
+  }
+
+  /** All Weather-Outcome attribute rows (the description-list terms) — for asserting the row count. */
+  get attributeRows(): Locator {
+    return this.page.getByRole("term");
   }
 
   /** The outcome "pill" — its banner once run, the "–" placeholder otherwise. */

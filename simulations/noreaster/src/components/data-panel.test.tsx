@@ -6,7 +6,7 @@ import { createRootStore, type RootStoreInstance, RootStoreProvider } from "../s
 import { runSetup, SETUPS } from "../stores/test-helpers";
 import { NoreasterDataPanel } from "./data-panel";
 
-// The five weather attributes in their rendered order, with the two condensable long labels flagged.
+// The five weather attributes in their rendered order.
 const ATTRIBUTES = ["Sky", "Wind", "Precipitation Type", "Precipitation Amount", "Storm Intensity"];
 
 // The panel reads the active trial via `useStores()`, so it must render inside a `RootStoreProvider`. A

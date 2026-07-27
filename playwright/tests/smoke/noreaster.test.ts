@@ -93,6 +93,7 @@ test("Run flow: complete setup → Run locks the selectors + becomes Replay → 
 
 test("Data panel: renders the 'Weather Outcome' header and the five attribute rows", async () => {
   await expect(sim.weatherOutcomeHeading).toBeVisible();
+  await expect(sim.attributeRows).toHaveCount(WEATHER_ATTRIBUTES.length);
   for (const attribute of WEATHER_ATTRIBUTES) {
     await expect(sim.attributeRow(attribute)).toBeVisible();
   }
@@ -122,12 +123,20 @@ test("Data panel: shows a different outcome (Fair weather)", async () => {
   await expect(sim.outcomeValue("Variable, 0–10 mph")).toBeVisible();
 });
 
-test("Data panel: shows the renamed 'Windy, no storm' outcome", async () => {
+test("Data panel: shows the 'Windy, no storm' outcome", async () => {
   await sim.completeSetup("windy");
   await sim.runButton.click();
   await expect(sim.outcomePill).toHaveText("Windy, no storm");
   await expect(sim.outcomeValue("Clear, breezy")).toBeVisible();
   await expect(sim.outcomeValue("From the NW, 15–25 mph")).toBeVisible();
+});
+
+test("Data panel: shows the 'Humid, no storm' outcome", async () => {
+  await sim.completeSetup("humidNoStorm");
+  await sim.runButton.click();
+  await expect(sim.outcomePill).toHaveText("Humid, no storm");
+  await expect(sim.outcomeValue("From the S/SE, 5–15 mph")).toBeVisible();
+  await expect(sim.outcomeValue("Scattered rain")).toBeVisible();
 });
 
 test("Map view toggle: switches the Street ⇄ Satellite basemap", async () => {

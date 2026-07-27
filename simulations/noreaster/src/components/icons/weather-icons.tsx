@@ -4,6 +4,10 @@ import type { ComponentType, SVGProps } from "react";
 // `color: theme.$icon-color` — EXCEPT the deliberately fixed fills in the source SVGs:
 // `sky-sunny` and the sun in `sky-clearing-breezy` are gold (#B08C00), and `wind-variable`
 // uses `currentColor`-based gradients. Do not normalize those fills.
+//
+// svgr keeps svgo OFF (per the shared build), so SVG element ids are inlined verbatim, not uniquified.
+// Keep any gradient ids collision-safe (e.g. `wind-variable`'s `wv-*` prefix) — a duplicate id shared by
+// two icons rendered together would cross-reference the wrong <defs>.
 import PrecipAmountHeavy from "../../assets/icons/weather/precip-amount-heavy.svg?react";
 import PrecipAmountLight from "../../assets/icons/weather/precip-amount-light.svg?react";
 import PrecipAmountModerate from "../../assets/icons/weather/precip-amount-moderate.svg?react";
@@ -33,6 +37,10 @@ import WindVariable from "../../assets/icons/weather/wind-variable.svg?react";
  * The weather-icon registry: `ICONS[family][key]` → the SVG React component. `OUTCOME_ICONS`
  * (outcome-icons.ts) references these keys, and the `IconKey` type below makes an invalid `(family, key)`
  * pair a compile error.
+ *
+ * A key names the icon ART, not the current label — some are historic on purpose (matching the
+ * prototype's registry): `sky.clearingBreezy` now backs "Clear, breezy" and `precipType.strayShower`
+ * backs "Scattered rain".
  */
 export const ICONS = {
   sky: {

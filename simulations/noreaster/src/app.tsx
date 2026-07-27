@@ -23,9 +23,9 @@ import "./app.scss";
 /**
  * Nor'easter simulation shell.
  *
- * The Data panel shows the "Weather Outcome" table, populated from the active trial's recorded outcome; the
- * Simulation panel holds the air-mass selectors, map, and control bar. The Trials column runs on the
- * shared trial-list infrastructure.
+ * The Data panel shows the "Weather Outcome" table, populated from the active trial's recorded
+ * outcome; the Simulation panel holds the air-mass selectors, map, and control bar. The Trials
+ * column runs on the shared trial-list infrastructure.
  *
  * TWO-LAYER STATE MODEL: MST owns the trial LIST — what trials exist, which is selected, each trial's
  * recorded input/output. The per-frame transient run state of a running trial belongs in the (future)

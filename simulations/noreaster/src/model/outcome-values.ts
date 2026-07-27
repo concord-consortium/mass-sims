@@ -2,9 +2,9 @@
 // (no React, no MST, no side effects). Paired with the classifier in `weather.ts`, which maps a setup
 // to an `Outcome`; this file maps an `Outcome` to what the Data panel shows for it.
 //
-// PROVENANCE — transcribed verbatim from the approved Google Sheet
-//   "Nor'easter Simulation — Outcomes Table", tab "Data outputs per outcome":
-//   https://docs.google.com/spreadsheets/d/1SXTg3XJMAgzAXLpBxE1hnqJJ1G-aGLJwnMc51rvTAsQ/
+// PROVENANCE — transcribed verbatim from the approved Google Sheet "Nor'easter Simulation — Outcomes
+//   Table" (approved 7/20; content-team 7/24 revisions applied), tab "All 32 combinations" (gid 1610996882):
+//   https://docs.google.com/spreadsheets/d/1SXTg3XJMAgzAXLpBxE1hnqJJ1G-aGLJwnMc51rvTAsQ/edit?gid=1610996882
 //   Read from the live sheet on 2026-07-27. The exact glyphs are intentional (curly apostrophe ’,
 //   en-dash – in the wind ranges, ~ in "~80%", the comma in "Windy, no storm"/"Humid, no storm").
 //   Editing an approved value later is a one-line change here — bump the read date above when you do.

@@ -83,6 +83,8 @@ export interface SetupRow extends AirMassSetup {
  *   https://docs.google.com/spreadsheets/d/1SXTg3XJMAgzAXLpBxE1hnqJJ1G-aGLJwnMc51rvTAsQ/edit?gid=1610996882
  *   Read from the live sheet on 2026-07-21. Distribution: strong 1, moderate 1, weakCoastal 2,
  *   humidNoStorm 6, windy 4, fair 18 (= 32).
+ *   Note: the `outcome` values below are local identifiers, not sheet text — the sheet's
+ *   "Windy, no storm" (the four rows it labels so) is our `windy` key.
  */
 export const SETUP_OUTCOMES: readonly SetupRow[] = [
   // Land N/NW
