@@ -82,13 +82,19 @@ test("Run flow: complete setup → Run locks the selectors + becomes Replay → 
   await expect(sim.runPrompt).toHaveCount(0);
   await expect(sim.resetTrialButton).not.toHaveAttribute("aria-disabled", "true");
 
+  // The selected trial's card body now shows the two-line outcome banner (single-sourced label).
+  await expect(sim.trialCardOutcome("A")).toContainText("Strong");
+  await expect(sim.trialCardOutcome("A")).toContainText("nor’easter");
+
   await sim.resetTrialButton.click();
-  // Reset restores the default state: every dropdown returns, Replay reverts to a disabled Run.
+  // Reset restores the default state: every dropdown returns, Replay reverts to a disabled Run, and
+  // the card body clears (its outcome banner is gone).
   for (const field of AIR_MASS_FIELDS) {
     await expect(sim.dropdown(field)).toBeVisible();
   }
   await expect(sim.replayButton).toHaveCount(0);
   await expect(sim.runButton).toHaveAttribute("aria-disabled", "true");
+  await expect(sim.trialCardOutcome("A")).toHaveCount(0);
 });
 
 test("Data panel: renders the 'Weather Outcome' header and the five attribute rows", async () => {

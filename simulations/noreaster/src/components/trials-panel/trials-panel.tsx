@@ -14,6 +14,7 @@ import {
 import { observer } from "mobx-react-lite";
 import type { CSSProperties } from "react";
 import { useStores } from "../../stores/root-store";
+import { TrialCardBody, trialAriaLabel } from "./trial-card-body";
 
 // `.new-trial-card` and `.max-trials-notice` are styled here, not by the shared components — those
 // ship no SCSS because the `+ New` card is themed per sim.
@@ -24,7 +25,8 @@ import "./trials-panel.scss";
  * `<TrialCard>` each), plus a `+ New` card or a "max reached" notice as siblings *outside* the
  * listbox, and a single panel-level reset button for the selected trial (also outside the listbox —
  * a listbox must not own focusable non-options). `observer`-wrapped so the card list and selection
- * track store mutations. Cards carry no per-trial body yet.
+ * track store mutations. Each card renders a `<TrialCardBody>` (the air-mass sections + outcome
+ * banner) and carries an enriched `trialAriaLabel` as its accessible name.
  */
 export const TrialsPanel = observer(function TrialsPanel() {
   const store = useStores();
@@ -98,7 +100,7 @@ export const TrialsPanel = observer(function TrialsPanel() {
         onKeyDown={nav.onKeyDown}
         onFocus={nav.onFocus}
       >
-        {Array.from(store.trials.keys()).map((letter) => {
+        {Array.from(store.trials.entries()).map(([letter, trial]) => {
           const selected = letter === selectedOptionLetter;
           return (
             <TrialCard
@@ -107,7 +109,10 @@ export const TrialsPanel = observer(function TrialsPanel() {
               selected={selected}
               tabIndex={selected ? nav.selectedCardTabIndex : -1}
               onSelect={() => navigateTo(letter)}
-            />
+              ariaLabel={trialAriaLabel(letter, trial)}
+            >
+              <TrialCardBody trial={trial} />
+            </TrialCard>
           );
         })}
       </div>

@@ -9,6 +9,11 @@
   gap: tokens.$column-gap;
   position: relative;
   width: 100%;
+  // Nor'easter cards are taller than the shared default to fit the two air-mass sections + outcome
+  // banner. This one declaration retunes the shared card wrapper height, the panel reset position
+  // (both read this custom property — see shared trial-card.scss / mixins.scss), and the local
+  // `.new-trial-card` height below.
+  --trial-card-height: 213px;
 
   // The listbox holds only the option cards; the `+ New`/notice + reset are siblings outside it.
   // A flex column with `$column-gap` between cards (and the outer panel repeats that gap between
@@ -80,7 +85,7 @@
 }
 
 // "New trial" card — sim-owned (the shared TrialCard has no add variant); matches the TrialCard
-// 120 × 136 footprint.
+// footprint (`$trial-card-width` × the panel's `--trial-card-height`).
 .new-trial-card {
   align-items: center;
   background: transparent;
@@ -95,7 +100,8 @@
   font-size: tokens.$font-size-base;
   font-weight: 700;
   gap: tokens.$space-1;
-  height: tokens.$trial-card-height;
+  // Match the (retuned) card wrapper height so the `+ New` card is the same size as the trial cards.
+  height: var(--trial-card-height, #{tokens.$trial-card-height});
   justify-content: center;
   width: tokens.$trial-card-width;
 
@@ -120,13 +126,108 @@
   font-weight: 700;
 }
 
-// Trial card body (the shared <TrialCard>'s children, inside its `.body`): stacks the avg / σ rows.
+// Trial card body. It mounts inside the shared <TrialCard>'s `.body` frame, which is centered with a
+// 4px inset; this child counters that with left alignment, 5px gaps, and a 5px left pad on top of the
+// frame's 4px inset.
 .trial-card-body {
-  align-items: center;
+  align-items: stretch;
   display: flex;
   flex-direction: column;
-  gap: 1px;
+  gap: 5px;
+  padding-left: 5px;
+  text-align: left;
   width: 100%;
+
+  // Each air-mass section: [glyph | gap | row-icon | gap | label] × three rows (pathway/humidity/temp).
+  .ntrc-am-section {
+    align-items: center;
+    display: grid;
+    grid-template-columns: 24px 8px 18px 5px 1fr;
+    grid-template-rows: repeat(3, 18px);
+    row-gap: 1.5px;
+  }
+
+  // The land/ocean glyph spans all three rows in the first column; tinted by its air mass's temperature
+  // via the shared `data-tint` convention (default = icon color, warm = red, cold/cool = blue).
+  .ntrc-am-icon {
+    align-self: start;
+    color: theme.$icon-color;
+    grid-column: 1;
+    grid-row: 1 / span 3;
+    height: 24px;
+    margin-top: -3px;
+    width: 24px;
+
+    &[data-tint="warm"] {
+      color: theme.$temp-warm;
+    }
+
+    &[data-tint="cool"] {
+      color: theme.$temp-cool;
+    }
+
+    svg {
+      display: block;
+      height: 24px;
+      width: 24px;
+    }
+  }
+
+  // Per-row icon (pathway number / humidity / temperature), always the neutral icon color.
+  .ntrc-row-icon {
+    color: theme.$icon-color;
+    grid-column: 3;
+    height: 18px;
+    width: 18px;
+
+    svg {
+      display: block;
+      height: 18px;
+      width: 18px;
+    }
+  }
+
+  .ntrc-label {
+    color: theme.$marker-text;
+    font-family: tokens.$font-family-condensed;
+    font-size: tokens.$font-size-base;
+    font-weight: 400;
+    grid-column: 5;
+    line-height: 18px;
+  }
+
+  // Fixed grid-row per field, so a missing row leaves its slot empty rather than shifting the others
+  // up. The pathway label is the heavier 500 weight; the rest stay 400.
+  .ntrc-pathway {
+    grid-row: 1;
+  }
+  .ntrc-label.ntrc-pathway {
+    font-weight: 500;
+  }
+  .ntrc-humidity {
+    grid-row: 2;
+  }
+  .ntrc-temperature {
+    grid-row: 3;
+  }
+
+  // The outcome banner: two explicit lines (see `outcomeLabelLines`), centered against the card. The
+  // negative margin re-centers it over the body's 5px left pad; each line is nowrap so only the
+  // explicit break applies (no unintended wrap at a narrow width).
+  .ntrc-outcome {
+    color: theme.$marker-text;
+    font-family: tokens.$font-family-condensed;
+    font-size: tokens.$font-size-base;
+    font-weight: 500;
+    line-height: 1.2;
+    margin-left: -5px;
+    text-align: center;
+  }
+
+  .ntrc-outcome-line {
+    display: block;
+    white-space: nowrap;
+  }
 }
 
 // "Max number of trials reached" notice — replaces the `+ New` card at the cap.
