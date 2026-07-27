@@ -15,9 +15,10 @@
 
 import type { Outcome } from "./weather";
 
-/** The 6 fields the Data panel renders (and only those). Readonly: these are shared singletons. */
+/** The 6 fields the Data panel renders for an outcome (the pill banner + the 5 attribute rows).
+ *  Readonly: these are shared singletons. */
 export interface OutcomeValues {
-  readonly label: string; // pill banner + the "Weather outcome" row
+  readonly label: string; // the outcome pill/banner; also OUTCOME_BANNER (run-complete announcement)
   readonly sky: string;
   readonly wind: string;
   readonly precipType: string;

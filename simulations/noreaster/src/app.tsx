@@ -23,7 +23,7 @@ import "./app.scss";
 /**
  * Nor'easter simulation shell.
  *
- * The Data panel shows the static "Weather Outcome" layout (placeholders, no data wiring yet); the
+ * The Data panel shows the "Weather Outcome" table, populated from the active trial's recorded outcome; the
  * Simulation panel holds the air-mass selectors, map, and control bar. The Trials column runs on the
  * shared trial-list infrastructure.
  *
