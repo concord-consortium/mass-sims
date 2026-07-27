@@ -2,7 +2,7 @@ import { expect, test } from "@playwright/test";
 import { NoreasterPage } from "../../pages/noreaster-page";
 
 // Nor'easter functional spec: NoreasterPage owns every locator, each test starts from a fresh `sim.goto()`,
-// runs once per viewport project). Covers trial-card body — per-trial content + independence, plus the
+// runs once per viewport project. Covers trial-card body — per-trial content + independence, plus the
 // layout facts jsdom can't prove (the custom footprint and the reset-button position math).
 
 // The Nor'easter trial-card footprint. Duplicates trials-panel.scss's `--trial-card-height` because a
@@ -69,8 +69,11 @@ test.describe("Trial card layout (browser-level)", () => {
   test("a trial card and the + New card match the panel's card height", async () => {
     const cardBox = await sim.trialCardWrapper("A").boundingBox();
     const newBox = await sim.newTrialCard.boundingBox();
-    expect(cardBox?.height).toBeCloseTo(CARD_HEIGHT, 0);
-    expect(newBox?.height).toBeCloseTo(CARD_HEIGHT, 0);
+    if (!cardBox || !newBox) {
+      throw new Error("expected bounding boxes for trial card A and + New card");
+    }
+    expect(cardBox.height).toBeCloseTo(CARD_HEIGHT, 0);
+    expect(newBox.height).toBeCloseTo(CARD_HEIGHT, 0);
   });
 
   test("the panel reset overhangs the selected (non-first) card, not the row above it", async () => {
