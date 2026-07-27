@@ -11,13 +11,12 @@ import { OUTCOMES } from "./weather";
 const VALUES_FIELDS: (keyof OutcomeValues)[] = [
   "label",
   "sky",
-  "pressure",
   "wind",
   "precipType",
   "precipAmount",
   "stormIntensity",
 ];
-const METADATA_FIELDS: (keyof OutcomeMetadata)[] = ["coastalFlooding", "commaCloud"];
+const METADATA_FIELDS: (keyof OutcomeMetadata)[] = ["coastalFlooding", "commaCloud", "pressure"];
 
 // The Record<Outcome, …> types already guarantee every outcome has a row and exactly the declared
 // fields (missing/extra keys don't compile), so those aren't re-checked at runtime. What the types
@@ -53,7 +52,7 @@ describe("OUTCOME_BANNER", () => {
       moderate: "Moderate nor’easter",
       weakCoastal: "Weak coastal storm",
       humidNoStorm: "Humid, no storm",
-      dryFront: "Dry front passes",
+      windy: "Windy, no storm",
       fair: "Fair weather",
     });
   });

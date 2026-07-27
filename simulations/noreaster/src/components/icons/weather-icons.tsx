@@ -2,7 +2,7 @@ import type { ComponentType, SVGProps } from "react";
 
 // Weather-outcome icons. Themed via `currentColor` — the consumer (`.wo-icon`) supplies
 // `color: theme.$icon-color` — EXCEPT the deliberately fixed fills in the source SVGs:
-// `sky-sunny` and the sun in `sky-clearing-breezy` are gold (#B08C00), and `wind-nw-gusty`
+// `sky-sunny` and the sun in `sky-clearing-breezy` are gold (#B08C00), and `wind-variable`
 // uses `currentColor`-based gradients. Do not normalize those fills.
 import PrecipAmountHeavy from "../../assets/icons/weather/precip-amount-heavy.svg?react";
 import PrecipAmountLight from "../../assets/icons/weather/precip-amount-light.svg?react";
@@ -13,11 +13,6 @@ import PrecipTypeLightRain from "../../assets/icons/weather/precip-type-light-ra
 import PrecipTypeNone from "../../assets/icons/weather/precip-type-none.svg?react";
 import PrecipTypeRain from "../../assets/icons/weather/precip-type-rain.svg?react";
 import PrecipTypeStrayShower from "../../assets/icons/weather/precip-type-stray-shower.svg?react";
-import PressureHigh from "../../assets/icons/weather/pressure-high.svg?react";
-import PressureLow from "../../assets/icons/weather/pressure-low.svg?react";
-import PressureNearNormal from "../../assets/icons/weather/pressure-near-normal.svg?react";
-import PressureRising from "../../assets/icons/weather/pressure-rising.svg?react";
-import PressureSlightlyLow from "../../assets/icons/weather/pressure-slightly-low.svg?react";
 import SkyClearingBreezy from "../../assets/icons/weather/sky-clearing-breezy.svg?react";
 import SkyCloudy from "../../assets/icons/weather/sky-cloudy.svg?react";
 import SkyOvercast from "../../assets/icons/weather/sky-overcast.svg?react";
@@ -30,9 +25,9 @@ import StormWeak from "../../assets/icons/weather/storm-weak.svg?react";
 import WindNeHigh from "../../assets/icons/weather/wind-ne-high.svg?react";
 import WindNeLow from "../../assets/icons/weather/wind-ne-low.svg?react";
 import WindNeMedium from "../../assets/icons/weather/wind-ne-medium.svg?react";
-import WindNone from "../../assets/icons/weather/wind-none.svg?react";
-import WindNwGusty from "../../assets/icons/weather/wind-nw-gusty.svg?react";
+import WindNwLow from "../../assets/icons/weather/wind-nw-low.svg?react";
 import WindSseLight from "../../assets/icons/weather/wind-sse-light.svg?react";
+import WindVariable from "../../assets/icons/weather/wind-variable.svg?react";
 
 /**
  * The weather-icon registry: `ICONS[family][key]` → the SVG React component. `OUTCOME_ICONS`
@@ -47,20 +42,13 @@ export const ICONS = {
     overcastHazy: SkyOvercastHazy,
     clearingBreezy: SkyClearingBreezy,
   },
-  pressure: {
-    high: PressureHigh,
-    low: PressureLow,
-    slightlyLow: PressureSlightlyLow,
-    nearNormal: PressureNearNormal,
-    rising: PressureRising,
-  },
   wind: {
     neHigh: WindNeHigh,
     neMedium: WindNeMedium,
     neLow: WindNeLow,
-    nwGusty: WindNwGusty,
+    nwLow: WindNwLow,
     sseLight: WindSseLight,
-    none: WindNone,
+    variable: WindVariable,
   },
   precipType: {
     rain: PrecipTypeRain,
@@ -83,7 +71,7 @@ export const ICONS = {
   },
 } as const;
 
-/** An icon family (`"sky"`, `"pressure"`, …). */
+/** An icon family (`"sky"`, `"wind"`, …). */
 export type IconFamily = keyof typeof ICONS;
 
 /** The valid icon keys for a given family — correlated, so a wrong key is a compile error. */

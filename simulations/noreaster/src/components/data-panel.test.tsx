@@ -6,15 +6,8 @@ import { createRootStore, type RootStoreInstance, RootStoreProvider } from "../s
 import { runSetup, SETUPS } from "../stores/test-helpers";
 import { NoreasterDataPanel } from "./data-panel";
 
-// The six weather attributes in their rendered order, with the two condensable long labels flagged.
-const ATTRIBUTES = [
-  "Sky",
-  "Pressure",
-  "Wind",
-  "Precipitation Type",
-  "Precipitation Amount",
-  "Storm Intensity",
-];
+// The five weather attributes in their rendered order, with the two condensable long labels flagged.
+const ATTRIBUTES = ["Sky", "Wind", "Precipitation Type", "Precipitation Amount", "Storm Intensity"];
 
 // The panel reads the active trial via `useStores()`, so it must render inside a `RootStoreProvider`. A
 // fresh store seeds one unconfigured trial (outcome `null`) → the empty/default state these specs assert.
@@ -44,7 +37,7 @@ describe("NoreasterDataPanel — static layout", () => {
     expect(pill).toHaveTextContent("–");
   });
 
-  it("renders all six attributes as description terms, in order", () => {
+  it("renders all five attributes as description terms, in order", () => {
     const { getAllByRole } = renderPanel();
     const terms = getAllByRole("term");
     expect(terms).toHaveLength(ATTRIBUTES.length);
@@ -101,7 +94,7 @@ describe("NoreasterDataPanel — filled state", () => {
   // The Data-panel value cells in row order, so the values array below lines up with the rendered `dd`s.
   const valuesInOrder = (o: (typeof OUTCOMES)[number]) => {
     const v = OUTCOME_VALUES[o];
-    return [v.sky, v.pressure, v.wind, v.precipType, v.precipAmount, v.stormIntensity];
+    return [v.sky, v.wind, v.precipType, v.precipAmount, v.stormIntensity];
   };
 
   for (const outcome of OUTCOMES) {

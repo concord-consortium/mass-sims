@@ -66,17 +66,23 @@ export class NoreasterPage extends SimulationFramePage {
   }
 
   /**
-   * Complete all five air-mass selections for a given outcome (default: a strong nor'easter). `"fair"`
-   * picks a Humid-land setup that yields Fair weather — a visibly different Data-panel outcome.
+   * Complete all five air-mass selections for a given outcome (default: a strong nor'easter). All four
+   * kinds share N/NW · Cold land + S/SE ocean and differ only by the two humidity picks, so each yields
+   * a visibly different Data-panel outcome: strong, Fair weather, Windy (no storm), or Humid (no storm).
    */
-  async completeSetup(kind: "strong" | "fair" = "strong"): Promise<void> {
-    const landHumidity = kind === "fair" ? "Humid" : "Dry";
-    const oceanHumidity = kind === "fair" ? "Dry" : "Humid";
+  async completeSetup(kind: "strong" | "fair" | "windy" | "humid" = "strong"): Promise<void> {
+    const humidity: Record<typeof kind, { land: string; ocean: string }> = {
+      strong: { land: "Dry", ocean: "Humid" },
+      fair: { land: "Humid", ocean: "Dry" },
+      windy: { land: "Dry", ocean: "Dry" },
+      humid: { land: "Humid", ocean: "Humid" },
+    };
+    const { land, ocean } = humidity[kind];
     await this.selectOption("Pathway for Land Air Mass", "1 N/NW");
-    await this.selectOption("Humidity for Land Air Mass", landHumidity);
+    await this.selectOption("Humidity for Land Air Mass", land);
     await this.selectOption("Temperature for Land Air Mass", "Cold");
     await this.selectOption("Pathway for Ocean Air Mass", "2 S/SE");
-    await this.selectOption("Humidity for Ocean Air Mass", oceanHumidity);
+    await this.selectOption("Humidity for Ocean Air Mass", ocean);
   }
 
   /** Toggle the map view by clicking the visible switch button (not the hidden input). */
@@ -115,7 +121,7 @@ export class NoreasterPage extends SimulationFramePage {
     return this.page.locator(".wo-pill");
   }
 
-  /** A Data-panel value by its exact visible text, e.g. `outcomeValue("Sunny and fair")`. */
+  /** A Data-panel value by its exact visible text, e.g. `outcomeValue("Sunny")`. */
   outcomeValue(text: string): Locator {
     return this.page.locator(".wo-value").filter({ hasText: exactText(text) });
   }
