@@ -19,10 +19,9 @@ const AIR_MASS_FIELDS = [
   "Humidity for Ocean Air Mass",
 ];
 
-// The six Weather-Outcome attribute rows (full names — the accessible name at every width).
+// The five Weather-Outcome attribute rows (full names — the accessible name at every width).
 const WEATHER_ATTRIBUTES = [
   "Sky",
-  "Pressure",
   "Wind",
   "Precipitation Type",
   "Precipitation Amount",
@@ -92,8 +91,9 @@ test("Run flow: complete setup → Run locks the selectors + becomes Replay → 
   await expect(sim.runButton).toHaveAttribute("aria-disabled", "true");
 });
 
-test("Data panel: renders the 'Weather Outcome' header and the six attribute rows", async () => {
+test("Data panel: renders the 'Weather Outcome' header and the five attribute rows", async () => {
   await expect(sim.weatherOutcomeHeading).toBeVisible();
+  await expect(sim.attributeRows).toHaveCount(WEATHER_ATTRIBUTES.length);
   for (const attribute of WEATHER_ATTRIBUTES) {
     await expect(sim.attributeRow(attribute)).toBeVisible();
   }
@@ -119,7 +119,24 @@ test("Data panel: shows a different outcome (Fair weather)", async () => {
   await sim.completeSetup("fair");
   await sim.runButton.click();
   await expect(sim.outcomePill).toHaveText("Fair weather");
-  await expect(sim.outcomeValue("Sunny and fair")).toBeVisible();
+  await expect(sim.outcomeValue("Sunny")).toBeVisible();
+  await expect(sim.outcomeValue("Variable, 0–10 mph")).toBeVisible();
+});
+
+test("Data panel: shows the 'Windy, no storm' outcome", async () => {
+  await sim.completeSetup("windy");
+  await sim.runButton.click();
+  await expect(sim.outcomePill).toHaveText("Windy, no storm");
+  await expect(sim.outcomeValue("Clear, breezy")).toBeVisible();
+  await expect(sim.outcomeValue("From the NW, 15–25 mph")).toBeVisible();
+});
+
+test("Data panel: shows the 'Humid, no storm' outcome", async () => {
+  await sim.completeSetup("humidNoStorm");
+  await sim.runButton.click();
+  await expect(sim.outcomePill).toHaveText("Humid, no storm");
+  await expect(sim.outcomeValue("From the S/SE, 5–15 mph")).toBeVisible();
+  await expect(sim.outcomeValue("Scattered rain")).toBeVisible();
 });
 
 test("Map view toggle: switches the Street ⇄ Satellite basemap", async () => {

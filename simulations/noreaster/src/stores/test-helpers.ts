@@ -34,7 +34,7 @@ export const SETUPS: Record<Outcome, AirMassSetup> = {
     oceanPathway: "S/SE",
     oceanHumidity: "Humid",
   },
-  dryFront: {
+  windy: {
     landPathway: "N/NW",
     landHumidity: "Dry",
     landTemperature: "Cold",

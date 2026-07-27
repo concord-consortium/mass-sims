@@ -33,7 +33,7 @@ function oracle(setup: AirMassSetup): Outcome {
     return setup.landPathway === "N/NW" ? "strong" : "moderate";
   }
   if (landColdDry && oceanHumid) return "weakCoastal";
-  if (landColdDry) return "dryFront";
+  if (landColdDry) return "windy";
   if (oceanHumid && oceanWarm) return "humidNoStorm";
   return "fair";
 }
@@ -45,7 +45,7 @@ describe("OUTCOMES", () => {
       "moderate",
       "weakCoastal",
       "humidNoStorm",
-      "dryFront",
+      "windy",
       "fair",
     ]);
   });
@@ -70,9 +70,9 @@ describe("evaluateOutcome", () => {
     );
   });
 
-  it("returns 'dryFront' for Cold/Dry land + a Dry ocean (no moisture to work with)", () => {
+  it("returns 'windy' for Cold/Dry land + a Dry ocean (no moisture to work with)", () => {
     expect(evaluateOutcome({ ...NOR_BASE, landPathway: "N/NW", oceanHumidity: "Dry" })).toBe(
-      "dryFront",
+      "windy",
     );
     expect(
       evaluateOutcome({
@@ -81,7 +81,7 @@ describe("evaluateOutcome", () => {
         oceanPathway: "NE",
         oceanHumidity: "Dry",
       }),
-    ).toBe("dryFront");
+    ).toBe("windy");
   });
 
   it("returns 'humidNoStorm' for a not-Cold/Dry land + S/SE/Humid ocean", () => {
@@ -112,7 +112,7 @@ describe("evaluateOutcome", () => {
       moderate: 0,
       weakCoastal: 0,
       humidNoStorm: 0,
-      dryFront: 0,
+      windy: 0,
       fair: 0,
     };
     let total = 0;
@@ -152,7 +152,7 @@ describe("evaluateOutcome", () => {
       moderate: 1,
       weakCoastal: 2,
       humidNoStorm: 6,
-      dryFront: 4,
+      windy: 4,
       fair: 18,
     });
   });

@@ -25,7 +25,7 @@ export const OUTCOMES = [
   "moderate",
   "weakCoastal",
   "humidNoStorm",
-  "dryFront",
+  "windy",
   "fair",
 ] as const;
 
@@ -74,7 +74,7 @@ export interface SetupRow extends AirMassSetup {
  *   oceanWarm   = oceanPathway === "S/SE"  // S/SE (2) → warm Gulf Stream; NE (3) → cool
  *   landColdDry && oceanHumid && oceanWarm  → landPathway === "N/NW" ? strong : moderate
  *   landColdDry && oceanHumid && !oceanWarm → weakCoastal
- *   landColdDry && !oceanHumid              → dryFront
+ *   landColdDry && !oceanHumid              → windy
  *   !landColdDry && oceanHumid && oceanWarm → humidNoStorm
  *   otherwise                               → fair
  *
@@ -82,7 +82,9 @@ export interface SetupRow extends AirMassSetup {
  *   Table" (approved 7/20), tab "All 32 combinations" (gid 1610996882):
  *   https://docs.google.com/spreadsheets/d/1SXTg3XJMAgzAXLpBxE1hnqJJ1G-aGLJwnMc51rvTAsQ/edit?gid=1610996882
  *   Read from the live sheet on 2026-07-21. Distribution: strong 1, moderate 1, weakCoastal 2,
- *   humidNoStorm 6, dryFront 4, fair 18 (= 32).
+ *   humidNoStorm 6, windy 4, fair 18 (= 32).
+ *   Note: the `outcome` values below are local identifiers, not sheet text — the sheet's
+ *   "Windy, no storm" (the four rows it labels so) is our `windy` key.
  */
 export const SETUP_OUTCOMES: readonly SetupRow[] = [
   // Land N/NW
@@ -92,7 +94,7 @@ export const SETUP_OUTCOMES: readonly SetupRow[] = [
     landTemperature: "Cold",
     oceanPathway: "S/SE",
     oceanHumidity: "Dry",
-    outcome: "dryFront",
+    outcome: "windy",
   },
   {
     landPathway: "N/NW",
@@ -108,7 +110,7 @@ export const SETUP_OUTCOMES: readonly SetupRow[] = [
     landTemperature: "Cold",
     oceanPathway: "NE",
     oceanHumidity: "Dry",
-    outcome: "dryFront",
+    outcome: "windy",
   },
   {
     landPathway: "N/NW",
@@ -221,7 +223,7 @@ export const SETUP_OUTCOMES: readonly SetupRow[] = [
     landTemperature: "Cold",
     oceanPathway: "S/SE",
     oceanHumidity: "Dry",
-    outcome: "dryFront",
+    outcome: "windy",
   },
   {
     landPathway: "W",
@@ -237,7 +239,7 @@ export const SETUP_OUTCOMES: readonly SetupRow[] = [
     landTemperature: "Cold",
     oceanPathway: "NE",
     oceanHumidity: "Dry",
-    outcome: "dryFront",
+    outcome: "windy",
   },
   {
     landPathway: "W",

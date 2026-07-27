@@ -12,7 +12,6 @@ import type { IconKey } from "./icons/weather-icons";
  */
 export interface WeatherIconSet {
   sky: IconKey<"sky">;
-  pressure: IconKey<"pressure">;
   wind: IconKey<"wind">;
   precipType: IconKey<"precipType">;
   precipAmount: IconKey<"precipAmount">;
@@ -20,13 +19,12 @@ export interface WeatherIconSet {
 }
 
 /**
- * Outcome → its six weather icons. Exhaustive over `Outcome` by construction — a new outcome key
+ * Outcome → its five weather icons. Exhaustive over `Outcome` by construction — a new outcome key
  * forces a new row.
  */
 export const OUTCOME_ICONS: Record<Outcome, WeatherIconSet> = {
   strong: {
     sky: "overcast",
-    pressure: "low",
     wind: "neHigh",
     precipType: "rain",
     precipAmount: "heavy",
@@ -34,7 +32,6 @@ export const OUTCOME_ICONS: Record<Outcome, WeatherIconSet> = {
   },
   moderate: {
     sky: "overcast",
-    pressure: "low",
     wind: "neMedium",
     precipType: "rain",
     precipAmount: "moderate",
@@ -42,7 +39,6 @@ export const OUTCOME_ICONS: Record<Outcome, WeatherIconSet> = {
   },
   weakCoastal: {
     sky: "cloudy",
-    pressure: "slightlyLow",
     wind: "neLow",
     precipType: "lightRain",
     precipAmount: "light",
@@ -50,24 +46,21 @@ export const OUTCOME_ICONS: Record<Outcome, WeatherIconSet> = {
   },
   humidNoStorm: {
     sky: "overcastHazy",
-    pressure: "nearNormal",
     wind: "sseLight",
     precipType: "strayShower",
     precipAmount: "trace",
     stormIntensity: "none",
   },
-  dryFront: {
+  windy: {
     sky: "clearingBreezy",
-    pressure: "rising",
-    wind: "nwGusty",
+    wind: "nwLow",
     precipType: "none",
     precipAmount: "none",
     stormIntensity: "none",
   },
   fair: {
     sky: "sunny",
-    pressure: "high",
-    wind: "none",
+    wind: "variable",
     precipType: "none",
     precipAmount: "none",
     stormIntensity: "none",

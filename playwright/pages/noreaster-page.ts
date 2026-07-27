@@ -7,6 +7,20 @@ function exactText(text: string): RegExp {
   return new RegExp(`^${text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}$`);
 }
 
+/** The outcome kinds `completeSetup` can produce — each a model outcome key. */
+type SetupKind = "strong" | "fair" | "windy" | "humidNoStorm";
+
+/**
+ * The two humidity picks that steer each kind. All four share N/NW · Cold land + S/SE ocean, so only
+ * land + ocean humidity differ — one row per reachable outcome.
+ */
+const SETUP_HUMIDITY: Record<SetupKind, { land: string; ocean: string }> = {
+  strong: { land: "Dry", ocean: "Humid" },
+  fair: { land: "Humid", ocean: "Dry" },
+  windy: { land: "Dry", ocean: "Dry" },
+  humidNoStorm: { land: "Humid", ocean: "Humid" },
+};
+
 /**
  * Page object for the Nor'easter sim. Adds the Trials-panel locators and the Simulation-panel
  * locators (dropdowns, map image, map-view toggle, Run / Reset Trial) on top of the shared-chrome
@@ -66,17 +80,17 @@ export class NoreasterPage extends SimulationFramePage {
   }
 
   /**
-   * Complete all five air-mass selections for a given outcome (default: a strong nor'easter). `"fair"`
-   * picks a Humid-land setup that yields Fair weather — a visibly different Data-panel outcome.
+   * Complete all five air-mass selections for a given outcome (default: a strong nor'easter). Each kind
+   * yields a visibly different Data-panel outcome, matching the pill banners the specs assert:
+   * "Strong nor’easter", "Fair weather", "Windy, no storm", or "Humid, no storm".
    */
-  async completeSetup(kind: "strong" | "fair" = "strong"): Promise<void> {
-    const landHumidity = kind === "fair" ? "Humid" : "Dry";
-    const oceanHumidity = kind === "fair" ? "Dry" : "Humid";
+  async completeSetup(kind: SetupKind = "strong"): Promise<void> {
+    const { land, ocean } = SETUP_HUMIDITY[kind];
     await this.selectOption("Pathway for Land Air Mass", "1 N/NW");
-    await this.selectOption("Humidity for Land Air Mass", landHumidity);
+    await this.selectOption("Humidity for Land Air Mass", land);
     await this.selectOption("Temperature for Land Air Mass", "Cold");
     await this.selectOption("Pathway for Ocean Air Mass", "2 S/SE");
-    await this.selectOption("Humidity for Ocean Air Mass", oceanHumidity);
+    await this.selectOption("Humidity for Ocean Air Mass", ocean);
   }
 
   /** Toggle the map view by clicking the visible switch button (not the hidden input). */
@@ -110,12 +124,17 @@ export class NoreasterPage extends SimulationFramePage {
     return this.page.getByRole("term").filter({ hasText: name });
   }
 
+  /** All Weather-Outcome attribute rows (the description-list terms) — for asserting the row count. */
+  get attributeRows(): Locator {
+    return this.page.getByRole("term");
+  }
+
   /** The outcome "pill" — its banner once run, the "–" placeholder otherwise. */
   get outcomePill(): Locator {
     return this.page.locator(".wo-pill");
   }
 
-  /** A Data-panel value by its exact visible text, e.g. `outcomeValue("Sunny and fair")`. */
+  /** A Data-panel value by its exact visible text, e.g. `outcomeValue("Sunny")`. */
   outcomeValue(text: string): Locator {
     return this.page.locator(".wo-value").filter({ hasText: exactText(text) });
   }

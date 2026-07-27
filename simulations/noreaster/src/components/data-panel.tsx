@@ -41,11 +41,6 @@ interface AttributeRow {
 
 const WEATHER_ATTRIBUTES: readonly AttributeRow[] = [
   { label: "Sky", value: (v) => v.sky, icon: (i) => <WeatherIcon family="sky" icon={i.sky} /> },
-  {
-    label: "Pressure",
-    value: (v) => v.pressure,
-    icon: (i) => <WeatherIcon family="pressure" icon={i.pressure} />,
-  },
   { label: "Wind", value: (v) => v.wind, icon: (i) => <WeatherIcon family="wind" icon={i.wind} /> },
   {
     label: "Precipitation Type",

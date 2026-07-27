@@ -7,7 +7,6 @@ import { OUTCOME_ICONS, type WeatherIconSet } from "./outcome-icons";
 // per-outcome check below resolve each icon key against the right ICONS family.
 const FIELD_FAMILY: Record<keyof WeatherIconSet, keyof typeof ICONS> = {
   sky: "sky",
-  pressure: "pressure",
   wind: "wind",
   precipType: "precipType",
   precipAmount: "precipAmount",
