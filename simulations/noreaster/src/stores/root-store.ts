@@ -4,7 +4,6 @@ import {
   canAddTrial as computeCanAddTrial,
   trialLetters as listTrialLetters,
   activeTrial as resolveActiveTrial,
-  UiStore,
 } from "@concord-consortium/mass-sims-shared";
 import {
   getSnapshot,
@@ -15,6 +14,7 @@ import {
 } from "mobx-state-tree";
 import { createContext, createElement, type ReactNode, useContext } from "react";
 import { emptyTrialSnapshot, TrialModel, type TrialModelInstance } from "./trial-model";
+import { UiStore } from "./ui-store";
 
 export const RootStore = types
   .model("Root", {

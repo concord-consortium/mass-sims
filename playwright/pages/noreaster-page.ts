@@ -134,6 +134,14 @@ export class NoreasterPage extends SimulationFramePage {
     return this.page.locator(".wo-pill");
   }
 
+  /**
+   * The decorative weather-scene layer. Its `data-scene` attribute holds the outcome key once run and
+   * `"default"` otherwise — the observable seam for asserting the scene tracks Run/Reset end-to-end.
+   */
+  get weatherScene(): Locator {
+    return this.page.locator(".wo-scene");
+  }
+
   /** A Data-panel value by its exact visible text, e.g. `outcomeValue("Sunny")`. */
   outcomeValue(text: string): Locator {
     return this.page.locator(".wo-value").filter({ hasText: exactText(text) });

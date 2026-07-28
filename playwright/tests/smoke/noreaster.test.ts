@@ -145,6 +145,67 @@ test("Data panel: shows the 'Humid, no storm' outcome", async () => {
   await expect(sim.outcomeValue("Scattered rain")).toBeVisible();
 });
 
+test("Data panel: the weather scene tracks the outcome and clears on Reset", async () => {
+  // Default (unrun): no scene.
+  await expect(sim.weatherScene).toHaveAttribute("data-scene", "default");
+
+  await sim.completeSetup(); // strong nor'easter
+  await sim.runButton.click();
+  await expect(sim.weatherScene).toHaveAttribute("data-scene", "strong");
+
+  await sim.resetTrialButton.click();
+  // Reset removes the scene at once (no frozen frame) — back to default.
+  await expect(sim.weatherScene).toHaveAttribute("data-scene", "default");
+});
+
+test("Data panel: the weather scene reflects the fair-weather outcome", async () => {
+  await sim.completeSetup("fair");
+  await sim.runButton.click();
+  await expect(sim.weatherScene).toHaveAttribute("data-scene", "fair");
+});
+
+test("Data panel: the weather scene reflects the humid-no-storm outcome", async () => {
+  await sim.completeSetup("humidNoStorm");
+  await sim.runButton.click();
+  await expect(sim.weatherScene).toHaveAttribute("data-scene", "humidNoStorm");
+});
+
+test("Data panel weather scene: a fresh run applies the 0.6s opacity fade (normal motion)", async () => {
+  // Default context is no-preference (normal motion). Assert the fade rule actually resolves — nothing else
+  // verifies the transition itself, so it could be removed or mistyped and every other test would still pass.
+  await sim.completeSetup(); // strong
+  await sim.runButton.click();
+  await expect(sim.weatherScene).toHaveAttribute("data-animate", "fade");
+  const applied = await sim.weatherScene.evaluate((el) => {
+    const s = getComputedStyle(el);
+    return {
+      reduceMatches: matchMedia("(prefers-reduced-motion: reduce)").matches,
+      property: s.transitionProperty,
+      duration: s.transitionDuration,
+    };
+  });
+  expect(applied).toEqual({ reduceMatches: false, property: "opacity", duration: "0.6s" });
+});
+
+test("Data panel weather scene: reduced motion themes the scene but suppresses the fade", async ({
+  page,
+}) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
+
+  await sim.completeSetup(); // strong
+  await sim.runButton.click();
+  // The backdrop still themes under reduced motion…
+  await expect(sim.weatherScene).toHaveAttribute("data-scene", "strong");
+  // …and this is a fresh finalization, so the panel still asks for the fade…
+  await expect(sim.weatherScene).toHaveAttribute("data-animate", "fade");
+  // …but CSS suppresses it: with reduced motion emulated, the computed transition is `none`.
+  const applied = await sim.weatherScene.evaluate((el) => ({
+    reduceMatches: matchMedia("(prefers-reduced-motion: reduce)").matches,
+    transitionProperty: getComputedStyle(el).transitionProperty,
+  }));
+  expect(applied).toEqual({ reduceMatches: true, transitionProperty: "none" });
+});
+
 test("Map view toggle: switches the Street ⇄ Satellite basemap", async () => {
   await expect(sim.mapViewToggle).not.toBeChecked();
   await expect(sim.mapStage).toHaveAttribute("data-map-view", "street");

@@ -111,6 +111,7 @@ export const ControlBar = observer(function ControlBar({
     const outcome = trial.outcome;
     // Run is gated on `setupComplete`, so `run()` always records an outcome — the guard just narrows.
     if (!outcome) return;
+    ui.markRunCompleted();
     logEvent("simulation_run", { trial: letter, replay, outcome });
     announce(`Simulation complete: ${OUTCOME_BANNER[outcome]}`);
   };
