@@ -20,12 +20,15 @@ import { chromium } from "@playwright/test";
 // noreaster's preview (production build) port — NOT :8080, which is the dev server.
 const BASE_URL = process.argv[2] ?? "http://localhost:8082/";
 const SAMPLE_MS = Number(process.argv[3] ?? 4000);
-// A bad sampleMs would otherwise fail silently: `Infinity` makes the in-page rAF sampler run forever, while
-// NaN / 0 / negative resolve it immediately with empty metrics and a table of NaNs that still exits 0.
+
+// Validate the sampleMs arg up front, since a bad value fails silently rather than erroring: `Infinity`
+// makes the in-page rAF sampler run forever, while NaN / 0 / negative resolve it immediately with empty
+// metrics and a table of NaNs that still exits 0.
 if (!Number.isFinite(SAMPLE_MS) || SAMPLE_MS <= 0) {
   console.error(`Invalid sampleMs "${process.argv[3]}" — must be a finite positive number of ms.`);
   process.exit(1);
 }
+
 const THROTTLE_RATES = [4, 6];
 
 // Field labels + the five picks per outcome (mirrors the e2e page object / test fixtures).
