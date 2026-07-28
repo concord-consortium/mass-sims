@@ -24,6 +24,16 @@ function giveProgress(store: RootStoreInstance) {
   store.activeTrial.setLandHumidity("Dry");
 }
 
+// Configure a trial with the strong-nor'easter setup and run it (all five fields set → outcome recorded).
+function runStrong(trial: RootStoreInstance["activeTrial"]) {
+  trial.setLandPathway("N/NW");
+  trial.setLandHumidity("Dry");
+  trial.setLandTemperature("Cold");
+  trial.setOceanPathway("S/SE");
+  trial.setOceanHumidity("Humid");
+  trial.run();
+}
+
 function renderPanel(store: RootStoreInstance) {
   // Under the shared <Announcer> so reset / max-trials narration can be asserted.
   const wrapper = ({ children }: { children: ReactNode }) => (
@@ -128,8 +138,64 @@ describe("TrialsPanel — narration", () => {
 });
 
 describe("TrialsPanel — card labelling", () => {
-  it("labels a card with just its trial letter (no per-trial data yet)", () => {
+  it("labels an empty card with just its trial letter", () => {
     const { getByRole } = renderPanel(storeWith(1));
+    expect(getByRole("option", { name: /^Trial A/ }).getAttribute("aria-label")).toBe("Trial A");
+  });
+
+  it("enriches the accessible name with the settings + outcome once a trial is run", () => {
+    const store = storeWith(1);
+    act(() => runStrong(store.activeTrial));
+    const { getByRole } = renderPanel(store);
+    expect(getByRole("option", { name: /^Trial A/ }).getAttribute("aria-label")).toBe(
+      "Trial A. Land: N/NW, Dry, Cold. Ocean: S/SE, Humid, Warm. Strong nor’easter",
+    );
+  });
+});
+
+describe("TrialsPanel — card body", () => {
+  it("shows a run trial's outcome banner in its card body", () => {
+    const store = storeWith(1);
+    act(() => runStrong(store.activeTrial));
+    const { getByRole } = renderPanel(store);
+    const cardA = getByRole("option", { name: /^Trial A/ });
+    const banner = cardA.querySelector(".nor-card-outcome") as HTMLElement;
+    expect(banner).toBeInTheDocument();
+    // Two explicit lines (the recombination into the canonical label is covered in trial-card-body.test).
+    expect(within(banner).getByText("Strong")).toBeInTheDocument();
+    expect(within(banner).getByText("nor’easter")).toBeInTheDocument();
+  });
+
+  it("reflects each trial independently — a run A and a partial B differ", () => {
+    const store = storeWith(2); // A, B (A selected)
+    act(() => {
+      runStrong(store.activeTrial); // A
+      store.ui.selectTrial("B");
+      store.activeTrial.setLandHumidity("Dry"); // B — a partial
+      store.ui.selectTrial("A");
+    });
+    const { getByRole } = renderPanel(store);
+    const cardA = getByRole("option", { name: /^Trial A/ });
+    const cardB = getByRole("option", { name: /^Trial B/ });
+    // A is run: it has an outcome banner and both air-mass sections.
+    expect(cardA.querySelector(".nor-card-outcome")).toBeInTheDocument();
+    expect(cardA.querySelectorAll(".nor-card-am-section")).toHaveLength(2);
+    // B is a partial: one section, no banner.
+    expect(cardB.querySelector(".nor-card-outcome")).toBeNull();
+    expect(cardB.querySelectorAll(".nor-card-am-section")).toHaveLength(1);
+  });
+
+  it("clears the card body when the trial is reset", () => {
+    const store = storeWith(1);
+    act(() => runStrong(store.activeTrial));
+    const { getByRole } = renderPanel(store);
+    const cardA = getByRole("option", { name: /^Trial A/ });
+    expect(cardA.querySelector(".nor-card-outcome")).toBeInTheDocument();
+
+    fireEvent.click(getByRole("button", { name: "Reset trial A" }));
+    // The body empties: no sections, no banner, and the name falls back to the bare letter.
+    expect(cardA.querySelectorAll(".nor-card-am-section")).toHaveLength(0);
+    expect(cardA.querySelector(".nor-card-outcome")).toBeNull();
     expect(getByRole("option", { name: /^Trial A/ }).getAttribute("aria-label")).toBe("Trial A");
   });
 });

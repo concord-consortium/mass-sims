@@ -1,22 +1,24 @@
 import { Select, type SelectOption, useAnnounce } from "@concord-consortium/mass-sims-shared";
 import { observer } from "mobx-react-lite";
 import type { ReactNode } from "react";
-import AirMassLandIcon from "../assets/icons/air-mass-land.svg?react";
-import AirMassOceanIcon from "../assets/icons/air-mass-ocean.svg?react";
-import HumidityDryIcon from "../assets/icons/humidity-dry.svg?react";
-import HumidityHumidIcon from "../assets/icons/humidity-humid.svg?react";
-import TempColdIcon from "../assets/icons/temp-cold.svg?react";
-import TempCoolIcon from "../assets/icons/temp-cool.svg?react";
-import TempWarmIcon from "../assets/icons/temp-warm.svg?react";
-import type {
-  Humidity,
-  LandPathway,
-  LandTemperature,
-  OceanPathway,
-  OceanTemperature,
+import {
+  HUMIDITIES,
+  type Humidity,
+  LAND_PATHWAYS,
+  LAND_TEMPERATURES,
+  type LandPathway,
+  type LandTemperature,
+  OCEAN_PATHWAYS,
+  type OceanPathway,
 } from "../model/weather";
 import { useStores } from "../stores/root-store";
-import { PathwayNumber } from "./icons/pathway-number";
+import {
+  airMassIcon,
+  humidityIcon,
+  PATHWAY_NUMBER,
+  pathwayNumber,
+  tempIcon,
+} from "./icons/air-mass-icons";
 import { tempTint } from "./selection-tint";
 
 import "./air-mass-selectors.scss";
@@ -47,28 +49,27 @@ function toSelectOptions<K extends string>(options: readonly NorOption<K>[]): Se
   }));
 }
 
-// Pathway → number map, NOT sequential with option order (N/NW→1, W→4, S/SE→2, NE→3). The circled
-// number is decorative; the number reaches assistive tech via the option's textValue.
-const LAND_PATHWAY: readonly NorOption<LandPathway>[] = [
-  { value: "N/NW", icon: <PathwayNumber num={1} />, textValue: "1 N/NW" },
-  { value: "W", icon: <PathwayNumber num={4} />, textValue: "4 W" },
-];
-const OCEAN_PATHWAY: readonly NorOption<OceanPathway>[] = [
-  { value: "S/SE", icon: <PathwayNumber num={2} />, textValue: "2 S/SE" },
-  { value: "NE", icon: <PathwayNumber num={3} />, textValue: "3 NE" },
-];
-const HUMIDITY: readonly NorOption<Humidity>[] = [
-  { value: "Dry", icon: <HumidityDryIcon /> },
-  { value: "Humid", icon: <HumidityHumidIcon /> },
-];
-const LAND_TEMPERATURE: readonly NorOption<LandTemperature>[] = [
-  { value: "Cold", icon: <TempColdIcon /> },
-  { value: "Warm", icon: <TempWarmIcon /> },
-];
-const OCEAN_TEMP_ICON: Record<OceanTemperature, ReactNode> = {
-  Warm: <TempWarmIcon />,
-  Cool: <TempCoolIcon />,
-};
+// Option lists are built from the shared value→icon module (icons/air-mass-icons) so there's one
+// source for every mapping. The pathway number is non-sequential with the option order (N/NW→1, W→4,
+// S/SE→2, NE→3); the circled number is decorative, so it reaches assistive tech via the `textValue`.
+const LAND_PATHWAY: readonly NorOption<LandPathway>[] = LAND_PATHWAYS.map((value) => ({
+  value,
+  icon: pathwayNumber(value),
+  textValue: `${PATHWAY_NUMBER[value]} ${value}`,
+}));
+const OCEAN_PATHWAY: readonly NorOption<OceanPathway>[] = OCEAN_PATHWAYS.map((value) => ({
+  value,
+  icon: pathwayNumber(value),
+  textValue: `${PATHWAY_NUMBER[value]} ${value}`,
+}));
+const HUMIDITY: readonly NorOption<Humidity>[] = HUMIDITIES.map((value) => ({
+  value,
+  icon: humidityIcon(value),
+}));
+const LAND_TEMPERATURE: readonly NorOption<LandTemperature>[] = LAND_TEMPERATURES.map((value) => ({
+  value,
+  icon: tempIcon(value),
+}));
 
 // Column headers (the first is blank, above the air-mass labels). Temperature is rendered separately
 // (below) so it can swap to a short "Temp" variant in the condensed layout.
@@ -204,7 +205,7 @@ export const AirMassSelectors = observer(function AirMassSelectors() {
             data-tint={tempTint(trial.landTemperature)}
             aria-hidden="true"
           >
-            <AirMassLandIcon />
+            {airMassIcon("land")}
           </span>
           <span className="nor-air-mass-label">
             Land
@@ -250,7 +251,7 @@ export const AirMassSelectors = observer(function AirMassSelectors() {
             data-tint={tempTint(trial.oceanTemperature)}
             aria-hidden="true"
           >
-            <AirMassOceanIcon />
+            {airMassIcon("ocean")}
           </span>
           <span className="nor-air-mass-label">
             Ocean
@@ -281,9 +282,7 @@ export const AirMassSelectors = observer(function AirMassSelectors() {
         <NorValuePill
           label="Temperature for Ocean Air Mass"
           value={trial.oceanTemperature}
-          icon={
-            trial.oceanTemperature !== null ? OCEAN_TEMP_ICON[trial.oceanTemperature] : undefined
-          }
+          icon={trial.oceanTemperature !== null ? tempIcon(trial.oceanTemperature) : undefined}
           col={2}
         />
       </div>

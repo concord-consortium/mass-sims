@@ -148,8 +148,8 @@ export class NoreasterPage extends SimulationFramePage {
   }
 
   /**
-   * A trial option by its letter, e.g. trialOption("A"). Cards are role="option" with the accessible
-   * name "Trial A" (no per-trial data yet), so match on the leading "Trial X".
+   * A trial option by its letter, e.g. trialOption("A"). Cards are role="option" whose accessible name
+   * starts with "Trial A" (then any configured settings + outcome), so match on the leading "Trial X".
    */
   trialOption(letter: string): Locator {
     return this.page.getByRole("option", { name: new RegExp(`^Trial ${letter}\\b`) });
@@ -162,6 +162,39 @@ export class NoreasterPage extends SimulationFramePage {
 
   trialResetButton(letter: string): Locator {
     return this.page.getByRole("button", { name: `Reset trial ${letter}` });
+  }
+
+  /**
+   * The fixed-footprint wrapper of a trial card (the element that owns the card height), filtered to
+   * the card whose option is the given letter. Used for layout (bounding-box) assertions.
+   */
+  trialCardWrapper(letter: string): Locator {
+    return this.page.locator(".trial-card-wrapper").filter({ has: this.trialOption(letter) });
+  }
+
+  /** The air-mass sections (Land / Ocean grids) within a trial card's body. */
+  trialCardSections(letter: string): Locator {
+    return this.trialOption(letter).locator(".nor-card-am-section");
+  }
+
+  /** The two-line outcome banner within a trial card's body (absent until the trial is run). */
+  trialCardOutcome(letter: string): Locator {
+    return this.trialOption(letter).locator(".nor-card-outcome");
+  }
+
+  /** The trials-panel root — the element that declares the `--trial-card-height` custom property. */
+  get trialsPanelRoot(): Locator {
+    return this.page.locator(".noreaster-trials-panel");
+  }
+
+  /**
+   * The resolved `--trial-card-height` custom property (e.g. `"213px"`), read off the panel root, so a
+   * layout assertion can check the card boxes against the height the sim actually declares.
+   */
+  async cardHeightProperty(): Promise<string> {
+    return this.trialsPanelRoot.evaluate((el) =>
+      getComputedStyle(el).getPropertyValue("--trial-card-height").trim(),
+    );
   }
 
   /** The "Max number of trials reached" notice that replaces "+ New" at the cap. */

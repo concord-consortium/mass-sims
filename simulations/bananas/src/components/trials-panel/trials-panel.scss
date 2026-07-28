@@ -93,7 +93,7 @@
   flex-direction: column;
   flex-shrink: 0;
   gap: 2px;
-  height: tokens.$trial-card-height;
+  height: var(--trial-card-height, #{tokens.$trial-card-height});
   justify-content: center;
   width: tokens.$trial-card-width;
 

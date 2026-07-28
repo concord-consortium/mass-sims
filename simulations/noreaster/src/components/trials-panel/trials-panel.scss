@@ -9,6 +9,11 @@
   gap: tokens.$column-gap;
   position: relative;
   width: 100%;
+  // Nor'easter cards are taller than the shared default to fit the two air-mass sections + outcome
+  // banner. This one declaration retunes the shared card wrapper height, the panel reset position
+  // (both read this custom property — see shared trial-card.scss / mixins.scss), and the local
+  // `.new-trial-card` height below.
+  --trial-card-height: 213px;
 
   // The listbox holds only the option cards; the `+ New`/notice + reset are siblings outside it.
   // A flex column with `$column-gap` between cards (and the outer panel repeats that gap between
@@ -80,7 +85,7 @@
 }
 
 // "New trial" card — sim-owned (the shared TrialCard has no add variant); matches the TrialCard
-// 120 × 136 footprint.
+// footprint (`$trial-card-width` × the panel's `--trial-card-height`).
 .new-trial-card {
   align-items: center;
   background: transparent;
@@ -95,7 +100,10 @@
   font-size: tokens.$font-size-base;
   font-weight: 700;
   gap: tokens.$space-1;
-  height: tokens.$trial-card-height;
+  // Match the card wrapper height so the `+ New` card is the same size as the trial cards. The custom
+  // property is inherited from the `.noreaster-trials-panel` ancestor that declares it (this element is
+  // a DOM descendant, though not a nested selector here) — token fallback if a sim doesn't override it.
+  height: var(--trial-card-height, #{tokens.$trial-card-height});
   justify-content: center;
   width: tokens.$trial-card-width;
 
@@ -120,13 +128,115 @@
   font-weight: 700;
 }
 
-// Trial card body (the shared <TrialCard>'s children, inside its `.body`): stacks the avg / σ rows.
+// Trial card body. It mounts inside the shared <TrialCard>'s `.body` frame, which is centered with a
+// 4px inset; this child counters that with left alignment, gaps, and a left pad on top of the frame's
+// 4px inset. The px figures below are this card's own geometry (transcribed from the prototype, not
+// design tokens). The negative offsets cancel: the banner's `-$pad` re-centers it over the pad, and the
+// glyph's `-3px` top aligns it to the first row.
 .trial-card-body {
-  align-items: center;
+  $glyph: 24px; // land / ocean air-mass glyph (col 1, spans 3 rows)
+  $row: 18px; // per-row height, and the row-icon + label line box
+  $pad: 5px; // left inset; the outcome banner re-centers by -$pad
+
+  align-items: stretch;
   display: flex;
   flex-direction: column;
-  gap: 1px;
+  gap: $pad;
+  padding-left: $pad;
+  text-align: left;
   width: 100%;
+
+  // Each air-mass section: [glyph | gap | row-icon | gap | label] × three rows (pathway/humidity/temp).
+  .nor-card-am-section {
+    align-items: center;
+    display: grid;
+    grid-template-columns: $glyph 8px $row 5px 1fr;
+    grid-template-rows: repeat(3, $row);
+    row-gap: 1.5px;
+  }
+
+  // The land/ocean glyph spans all three rows in the first column; tinted by its air mass's temperature
+  // via the shared `data-tint` convention (default = icon color, warm = red, cold/cool = blue). The
+  // negative top nudges it up to sit level with the first row rather than the grid's centered start.
+  .nor-card-am-icon {
+    align-self: start;
+    color: theme.$icon-color;
+    grid-column: 1;
+    grid-row: 1 / span 3;
+    height: $glyph;
+    margin-top: -3px;
+    width: $glyph;
+
+    &[data-tint="warm"] {
+      color: theme.$temp-warm;
+    }
+
+    &[data-tint="cool"] {
+      color: theme.$temp-cool;
+    }
+
+    svg {
+      display: block;
+      height: $glyph;
+      width: $glyph;
+    }
+  }
+
+  // Per-row icon (pathway number / humidity / temperature), always the neutral icon color.
+  .nor-card-row-icon {
+    color: theme.$icon-color;
+    grid-column: 3;
+    height: $row;
+    width: $row;
+
+    svg {
+      display: block;
+      height: $row;
+      width: $row;
+    }
+  }
+
+  .nor-card-label {
+    color: theme.$marker-text;
+    font-family: tokens.$font-family-condensed;
+    font-size: tokens.$font-size-base;
+    font-weight: 400;
+    grid-column: 5;
+    line-height: $row;
+  }
+
+  // Fixed grid-row per field, so a missing row leaves its slot empty rather than shifting the others
+  // up. The pathway label is the heavier 500 weight; the rest stay 400.
+  .nor-card-pathway {
+    grid-row: 1;
+  }
+  .nor-card-label.nor-card-pathway {
+    font-weight: 500;
+  }
+  .nor-card-humidity {
+    grid-row: 2;
+  }
+  .nor-card-temperature {
+    grid-row: 3;
+  }
+
+  // The outcome banner: two explicit lines (see `outcomeLabelLines`), centered against the card. The
+  // negative margin cancels the body's left pad so it centers over the whole card; each line is nowrap
+  // so only the explicit break applies (no unintended wrap at a narrow width).
+  .nor-card-outcome {
+    color: theme.$marker-text;
+    font-family: tokens.$font-family-condensed;
+    font-size: tokens.$font-size-base;
+    font-weight: 500;
+    line-height: 1.2;
+    margin-left: -$pad;
+    text-align: center;
+  }
+
+  .nor-card-outcome-line {
+    display: block;
+    white-space: nowrap;
+  }
 }
 
 // "Max number of trials reached" notice — replaces the `+ New` card at the cap.

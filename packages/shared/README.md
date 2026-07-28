@@ -87,6 +87,14 @@ keyboard-focusable-when-overflowing ring), `className?`, `children`. Generates i
 | `tabIndex?` | `number` | Roving tabindex: selected → `0`, others → `-1`. |
 | `children` | `ReactNode` | Sim-specific per-card body. |
 
+> **Card height — the `--trial-card-height` custom property.** The card footprint defaults to
+> `tokens.$trial-card-height` (136px). A sim with a taller card body (e.g. Nor'easter, 213px) overrides it
+> by declaring `--trial-card-height` **once** on its trials-panel root — that single declaration retunes
+> the shared `.trial-card-wrapper` height **and** the panel-reset position (`trial-reset-position` in
+> `mixins.scss` reads the same property, so the reset stays aligned over the selected card). The sim's own
+> `.new-trial-card` must also read `var(--trial-card-height, #{tokens.$trial-card-height})` so the `+ New`
+> card tracks the cards (the starter template already does).
+
 **`<TrialResetButton>`** — the reset affordance for the selected trial, rendered by the sim **outside**
 the listbox (a listbox must not own focusable non-options). Props: `letter: string` (for the accessible
 name), `onReset: () => void`, `disabled?: boolean`, `tabIndex?: number`, `className?`, `style?`. Uses
