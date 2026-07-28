@@ -136,9 +136,9 @@
     }
   }
 
-  // Outcome-pill condense (width-driven): below ~155px the filled banner swaps to the condensed face at
-  // weight 500 so the longest banner (~153px in Lato 700) still fits on one line.
-  @container noreaster-data-panel (max-width: 155px) {
+  // Outcome-pill condense (width-driven): below ~180px the filled banner swaps to the condensed face at
+  // weight 500 so the longest banner still fits on one line.
+  @container noreaster-data-panel (max-width: 180px) {
     .wo-pill--filled {
       font-family: tokens.$font-family-condensed;
       font-weight: 500;
