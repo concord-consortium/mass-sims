@@ -449,6 +449,11 @@ function parseSVGCurvePoints(d: string): Point[] {
   return pts;
 }
 
+// `WIND_SVG_PAIRS` parsed to sampled polylines once at module load — deterministic, reused across scenes.
+const WIND_PARSED_PAIRS: Point[][][] = WIND_SVG_PAIRS.map((pair) =>
+  pair.map((d) => parseSVGCurvePoints(d)),
+);
+
 interface Curl {
   rawPts: Point[];
   baseOx: number;
@@ -488,7 +493,7 @@ function createWindyPlayer(): WeatherPlayer {
     { ox: base - 95, oy: half - 50 },
     { ox: base - 175, oy: half - 70 },
   ];
-  const parsedPairs = WIND_SVG_PAIRS.map((pair) => pair.map((d) => parseSVGCurvePoints(d)));
+  const parsedPairs = WIND_PARSED_PAIRS;
   const curls: Curl[] = [];
   for (let wp = 0; wp < windPositions.length; wp++) {
     const initPair = Math.floor(Math.random() * parsedPairs.length);
@@ -801,7 +806,12 @@ export function createWeatherPlayer(scene: SceneSpec): WeatherPlayer | null {
       return createWindyPlayer();
     case "haze":
       return createHazePlayer();
-    default:
+    case "none":
       return null;
+    default: {
+      // Exhaustiveness guard: a new `SceneSpec` variant makes this a compile error until it's handled.
+      const _exhaustive: never = scene;
+      return _exhaustive;
+    }
   }
 }
