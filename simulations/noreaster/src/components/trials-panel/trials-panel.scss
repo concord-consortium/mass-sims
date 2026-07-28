@@ -100,7 +100,9 @@
   font-size: tokens.$font-size-base;
   font-weight: 700;
   gap: tokens.$space-1;
-  // Match the (retuned) card wrapper height so the `+ New` card is the same size as the trial cards.
+  // Match the card wrapper height so the `+ New` card is the same size as the trial cards. The custom
+  // property is inherited from the `.noreaster-trials-panel` ancestor that declares it (this element is
+  // a DOM descendant, though not a nested selector here) — token fallback if a sim doesn't override it.
   height: var(--trial-card-height, #{tokens.$trial-card-height});
   justify-content: center;
   width: tokens.$trial-card-width;
@@ -127,36 +129,43 @@
 }
 
 // Trial card body. It mounts inside the shared <TrialCard>'s `.body` frame, which is centered with a
-// 4px inset; this child counters that with left alignment, 5px gaps, and a 5px left pad on top of the
-// frame's 4px inset.
+// 4px inset; this child counters that with left alignment, gaps, and a left pad on top of the frame's
+// 4px inset. The px figures below are this card's own geometry (transcribed from the prototype, not
+// design tokens). The negative offsets cancel: the banner's `-$pad` re-centers it over the pad, and the
+// glyph's `-3px` top aligns it to the first row.
 .trial-card-body {
+  $glyph: 24px; // land / ocean air-mass glyph (col 1, spans 3 rows)
+  $row: 18px; // per-row height, and the row-icon + label line box
+  $pad: 5px; // left inset; the outcome banner re-centers by -$pad
+
   align-items: stretch;
   display: flex;
   flex-direction: column;
-  gap: 5px;
-  padding-left: 5px;
+  gap: $pad;
+  padding-left: $pad;
   text-align: left;
   width: 100%;
 
   // Each air-mass section: [glyph | gap | row-icon | gap | label] × three rows (pathway/humidity/temp).
-  .ntrc-am-section {
+  .nor-card-am-section {
     align-items: center;
     display: grid;
-    grid-template-columns: 24px 8px 18px 5px 1fr;
-    grid-template-rows: repeat(3, 18px);
+    grid-template-columns: $glyph 8px $row 5px 1fr;
+    grid-template-rows: repeat(3, $row);
     row-gap: 1.5px;
   }
 
   // The land/ocean glyph spans all three rows in the first column; tinted by its air mass's temperature
-  // via the shared `data-tint` convention (default = icon color, warm = red, cold/cool = blue).
-  .ntrc-am-icon {
+  // via the shared `data-tint` convention (default = icon color, warm = red, cold/cool = blue). The
+  // negative top nudges it up to sit level with the first row rather than the grid's centered start.
+  .nor-card-am-icon {
     align-self: start;
     color: theme.$icon-color;
     grid-column: 1;
     grid-row: 1 / span 3;
-    height: 24px;
+    height: $glyph;
     margin-top: -3px;
-    width: 24px;
+    width: $glyph;
 
     &[data-tint="warm"] {
       color: theme.$temp-warm;
@@ -168,63 +177,63 @@
 
     svg {
       display: block;
-      height: 24px;
-      width: 24px;
+      height: $glyph;
+      width: $glyph;
     }
   }
 
   // Per-row icon (pathway number / humidity / temperature), always the neutral icon color.
-  .ntrc-row-icon {
+  .nor-card-row-icon {
     color: theme.$icon-color;
     grid-column: 3;
-    height: 18px;
-    width: 18px;
+    height: $row;
+    width: $row;
 
     svg {
       display: block;
-      height: 18px;
-      width: 18px;
+      height: $row;
+      width: $row;
     }
   }
 
-  .ntrc-label {
+  .nor-card-label {
     color: theme.$marker-text;
     font-family: tokens.$font-family-condensed;
     font-size: tokens.$font-size-base;
     font-weight: 400;
     grid-column: 5;
-    line-height: 18px;
+    line-height: $row;
   }
 
   // Fixed grid-row per field, so a missing row leaves its slot empty rather than shifting the others
   // up. The pathway label is the heavier 500 weight; the rest stay 400.
-  .ntrc-pathway {
+  .nor-card-pathway {
     grid-row: 1;
   }
-  .ntrc-label.ntrc-pathway {
+  .nor-card-label.nor-card-pathway {
     font-weight: 500;
   }
-  .ntrc-humidity {
+  .nor-card-humidity {
     grid-row: 2;
   }
-  .ntrc-temperature {
+  .nor-card-temperature {
     grid-row: 3;
   }
 
   // The outcome banner: two explicit lines (see `outcomeLabelLines`), centered against the card. The
-  // negative margin re-centers it over the body's 5px left pad; each line is nowrap so only the
-  // explicit break applies (no unintended wrap at a narrow width).
-  .ntrc-outcome {
+  // negative margin cancels the body's left pad so it centers over the whole card; each line is nowrap
+  // so only the explicit break applies (no unintended wrap at a narrow width).
+  .nor-card-outcome {
     color: theme.$marker-text;
     font-family: tokens.$font-family-condensed;
     font-size: tokens.$font-size-base;
     font-weight: 500;
     line-height: 1.2;
-    margin-left: -5px;
+    margin-left: -$pad;
     text-align: center;
   }
 
-  .ntrc-outcome-line {
+  .nor-card-outcome-line {
     display: block;
     white-space: nowrap;
   }

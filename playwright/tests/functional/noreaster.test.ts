@@ -5,10 +5,6 @@ import { NoreasterPage } from "../../pages/noreaster-page";
 // runs once per viewport project. Covers trial-card body — per-trial content + independence, plus the
 // layout facts jsdom can't prove (the custom footprint and the reset-button position math).
 
-// The Nor'easter trial-card footprint. Duplicates trials-panel.scss's `--trial-card-height` because a
-// browser-level assertion needs the value in TS (jsdom can't read SCSS) — keep the two in sync.
-const CARD_HEIGHT = 213;
-
 /** Do two vertical boxes overlap on the y-axis? */
 function overlapsVertically(
   a: { y: number; height: number },
@@ -37,11 +33,13 @@ test.describe("Trial cards — content and independence", () => {
     await expect(sim.trialCardSections("B")).toHaveCount(1);
     await expect(sim.trialCardOutcome("B")).toHaveCount(0);
 
-    // Reset A via its panel reset: A's body empties while B's content is preserved.
+    // Reset A via its panel reset: A's body empties (and its accessible name falls back to the bare
+    // letter) while B's content is preserved.
     await sim.selectTrial("A");
     await sim.trialResetButton("A").click();
     await expect(sim.trialCardOutcome("A")).toHaveCount(0);
     await expect(sim.trialCardSections("A")).toHaveCount(0);
+    await expect(sim.trialOption("A")).toHaveAttribute("aria-label", "Trial A");
     await expect(sim.trialCardSections("B")).toHaveCount(1);
   });
 
@@ -57,6 +55,13 @@ test.describe("Trial cards — content and independence", () => {
     await expect(sim.trialCardOutcome("A")).toContainText("Strong");
     await expect(sim.trialCardOutcome("B")).toContainText("Fair");
 
+    // The visible body isn't exposed to assistive tech, so the enriched card name is the only channel —
+    // assert it carries A's full settings + outcome in a real browser (the exact-string unit test can't).
+    await expect(sim.trialOption("A")).toHaveAttribute(
+      "aria-label",
+      "Trial A. Land: N/NW, Dry, Cold. Ocean: S/SE, Humid, Warm. Strong nor’easter",
+    );
+
     // Selecting a card loads its recorded outcome into the Data panel.
     await sim.selectTrial("A");
     await expect(sim.outcomePill).toHaveText("Strong nor’easter");
@@ -66,14 +71,18 @@ test.describe("Trial cards — content and independence", () => {
 });
 
 test.describe("Trial card layout (browser-level)", () => {
-  test("a trial card and the + New card match the panel's card height", async () => {
+  test("a trial card and the + New card match the panel's declared card height", async () => {
+    const declared = await sim.cardHeightProperty();
+    expect(declared).not.toBe(""); // the sim declares the override (else the shared default applies)
+    const expectedHeight = Number.parseFloat(declared);
+
     const cardBox = await sim.trialCardWrapper("A").boundingBox();
     const newBox = await sim.newTrialCard.boundingBox();
     if (!cardBox || !newBox) {
       throw new Error("expected bounding boxes for trial card A and + New card");
     }
-    expect(cardBox.height).toBeCloseTo(CARD_HEIGHT, 0);
-    expect(newBox.height).toBeCloseTo(CARD_HEIGHT, 0);
+    expect(cardBox.height).toBeCloseTo(expectedHeight, 0);
+    expect(newBox.height).toBeCloseTo(expectedHeight, 0);
   });
 
   test("the panel reset overhangs the selected (non-first) card, not the row above it", async () => {

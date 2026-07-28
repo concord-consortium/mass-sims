@@ -22,10 +22,10 @@ export function outcomeLabelLines(label: string): [string, string] {
 }
 
 /**
- * The trial card's accessible name — the ONLY channel to assistive tech, since the visible body is
- * `aria-hidden`. `"Trial X"`, then a `Land:`/`Ocean:` clause per air mass with any field set (each
- * listing only its set fields; ocean includes the derived temperature), then the `OUTCOME_VALUES`
- * label once run.
+ * The trial card's accessible name — the only channel to assistive tech for a card's settings + outcome
+ * (the visible body isn't exposed; see `TrialCardBody`). `"Trial X"`, then a `Land:`/`Ocean:` clause per
+ * air mass with any field set (each listing only its set fields; ocean includes the derived
+ * temperature), then the `OUTCOME_VALUES` label once run.
  */
 export function trialAriaLabel(letter: string, trial: TrialModelInstance): string {
   const parts = [`Trial ${letter}`];
@@ -50,8 +50,8 @@ function AmRow({
 }) {
   return (
     <>
-      <span className={`ntrc-row-icon ntrc-${field}`}>{icon}</span>
-      <span className={`ntrc-label ntrc-${field}`}>{label}</span>
+      <span className={`nor-card-row-icon nor-card-${field}`}>{icon}</span>
+      <span className={`nor-card-label nor-card-${field}`}>{label}</span>
     </>
   );
 }
@@ -73,8 +73,8 @@ function AmSection({
   temperature: LandTemperature | OceanTemperature | null;
 }) {
   return (
-    <div className="ntrc-am-section">
-      <span className="ntrc-am-icon" data-tint={tempTint(temperature)}>
+    <div className="nor-card-am-section">
+      <span className="nor-card-am-icon" data-tint={tempTint(temperature)}>
         {airMassIcon(airMass)}
       </span>
       {pathway ? <AmRow field="pathway" icon={pathwayNumber(pathway)} label={pathway} /> : null}
@@ -89,7 +89,7 @@ function AmSection({
 /**
  * The visible body of a Nor'easter trial card (the shared `<TrialCard>`'s `children`): the Land and
  * Ocean air-mass sections and, once run, the two-line outcome banner. An empty trial renders nothing
- * (letter badge only). `aria-hidden` — the accessible name is the enriched `trialAriaLabel`.
+ * (letter badge only).
  *
  * The banner indexes `OUTCOME_VALUES` on `trial.outcome` itself (not the separate `hasRun` getter,
  * which TypeScript won't narrow from), so "banner iff outcome" is explicit without a `!` assertion.
@@ -105,7 +105,7 @@ export const TrialCardBody = observer(function TrialCardBody({
   const [outcomeLine1, outcomeLine2] = outcomeLabel ? outcomeLabelLines(outcomeLabel) : ["", ""];
 
   return (
-    <div className="trial-card-body" aria-hidden="true">
+    <div className="trial-card-body">
       {landHasData ? (
         <AmSection
           airMass="land"
@@ -123,9 +123,9 @@ export const TrialCardBody = observer(function TrialCardBody({
         />
       ) : null}
       {outcomeLabel ? (
-        <div className="ntrc-outcome">
-          <span className="ntrc-outcome-line">{outcomeLine1}</span>
-          <span className="ntrc-outcome-line">{outcomeLine2}</span>
+        <div className="nor-card-outcome">
+          <span className="nor-card-outcome-line">{outcomeLine1}</span>
+          <span className="nor-card-outcome-line">{outcomeLine2}</span>
         </div>
       ) : null}
     </div>

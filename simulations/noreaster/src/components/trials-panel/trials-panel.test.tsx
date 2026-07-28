@@ -159,7 +159,7 @@ describe("TrialsPanel — card body", () => {
     act(() => runStrong(store.activeTrial));
     const { getByRole } = renderPanel(store);
     const cardA = getByRole("option", { name: /^Trial A/ });
-    const banner = cardA.querySelector(".ntrc-outcome") as HTMLElement;
+    const banner = cardA.querySelector(".nor-card-outcome") as HTMLElement;
     expect(banner).toBeInTheDocument();
     // Two explicit lines (the recombination into the canonical label is covered in trial-card-body.test).
     expect(within(banner).getByText("Strong")).toBeInTheDocument();
@@ -178,11 +178,11 @@ describe("TrialsPanel — card body", () => {
     const cardA = getByRole("option", { name: /^Trial A/ });
     const cardB = getByRole("option", { name: /^Trial B/ });
     // A is run: it has an outcome banner and both air-mass sections.
-    expect(cardA.querySelector(".ntrc-outcome")).toBeInTheDocument();
-    expect(cardA.querySelectorAll(".ntrc-am-section")).toHaveLength(2);
+    expect(cardA.querySelector(".nor-card-outcome")).toBeInTheDocument();
+    expect(cardA.querySelectorAll(".nor-card-am-section")).toHaveLength(2);
     // B is a partial: one section, no banner.
-    expect(cardB.querySelector(".ntrc-outcome")).toBeNull();
-    expect(cardB.querySelectorAll(".ntrc-am-section")).toHaveLength(1);
+    expect(cardB.querySelector(".nor-card-outcome")).toBeNull();
+    expect(cardB.querySelectorAll(".nor-card-am-section")).toHaveLength(1);
   });
 
   it("clears the card body when the trial is reset", () => {
@@ -190,12 +190,12 @@ describe("TrialsPanel — card body", () => {
     act(() => runStrong(store.activeTrial));
     const { getByRole } = renderPanel(store);
     const cardA = getByRole("option", { name: /^Trial A/ });
-    expect(cardA.querySelector(".ntrc-outcome")).toBeInTheDocument();
+    expect(cardA.querySelector(".nor-card-outcome")).toBeInTheDocument();
 
     fireEvent.click(getByRole("button", { name: "Reset trial A" }));
     // The body empties: no sections, no banner, and the name falls back to the bare letter.
-    expect(cardA.querySelectorAll(".ntrc-am-section")).toHaveLength(0);
-    expect(cardA.querySelector(".ntrc-outcome")).toBeNull();
+    expect(cardA.querySelectorAll(".nor-card-am-section")).toHaveLength(0);
+    expect(cardA.querySelector(".nor-card-outcome")).toBeNull();
     expect(getByRole("option", { name: /^Trial A/ }).getAttribute("aria-label")).toBe("Trial A");
   });
 });

@@ -1,4 +1,4 @@
-import { render, within } from "@testing-library/react";
+import { act, render, within } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import { OUTCOME_VALUES } from "../../model/outcome-values";
 import { type AirMassSetup, OUTCOMES, type Outcome } from "../../model/weather";
@@ -97,37 +97,37 @@ describe("TrialCardBody", () => {
     const { container } = render(<TrialCardBody trial={makeTrial()} />);
     const body = container.querySelector(".trial-card-body") as HTMLElement;
     expect(body).toBeInTheDocument();
-    expect(body.querySelectorAll(".ntrc-am-section")).toHaveLength(0);
-    expect(body.querySelector(".ntrc-outcome")).toBeNull();
+    expect(body.querySelectorAll(".nor-card-am-section")).toHaveLength(0);
+    expect(body.querySelector(".nor-card-outcome")).toBeNull();
   });
 
   it("renders one section with only the set field rows for a land-only partial", () => {
     const trial = makeTrial({ landHumidity: "Dry" });
     const { container } = render(<TrialCardBody trial={trial} />);
-    const sections = container.querySelectorAll(".ntrc-am-section");
+    const sections = container.querySelectorAll(".nor-card-am-section");
     expect(sections).toHaveLength(1); // land only — no ocean section
     const section = sections[0] as HTMLElement;
     // The air-mass glyph is present (the section has data), and only the humidity row's label shows.
-    expect(section.querySelector(".ntrc-am-icon")).toBeInTheDocument();
+    expect(section.querySelector(".nor-card-am-icon")).toBeInTheDocument();
     expect(within(section).getByText("Dry")).toBeInTheDocument();
-    expect(section.querySelectorAll(".ntrc-label")).toHaveLength(1);
+    expect(section.querySelectorAll(".nor-card-label")).toHaveLength(1);
   });
 
   it("renders both sections with the derived ocean temperature and no banner before a run", () => {
     const trial = makeTrial(STRONG_SETUP);
     const { container } = render(<TrialCardBody trial={trial} />);
-    expect(container.querySelectorAll(".ntrc-am-section")).toHaveLength(2);
+    expect(container.querySelectorAll(".nor-card-am-section")).toHaveLength(2);
     // Ocean pathway S/SE derives a "Warm" temperature row.
     expect(within(container).getByText("Warm")).toBeInTheDocument();
-    expect(container.querySelector(".ntrc-outcome")).toBeNull();
+    expect(container.querySelector(".nor-card-outcome")).toBeNull();
   });
 
   it("shows the two-line outcome banner (sourced from OUTCOME_VALUES) once run", () => {
     const trial = makeTrial(STRONG_SETUP);
     trial.run();
     const { container } = render(<TrialCardBody trial={trial} />);
-    const banner = container.querySelector(".ntrc-outcome") as HTMLElement;
-    const lines = Array.from(banner.querySelectorAll(".ntrc-outcome-line")).map(
+    const banner = container.querySelector(".nor-card-outcome") as HTMLElement;
+    const lines = Array.from(banner.querySelectorAll(".nor-card-outcome-line")).map(
       (n) => n.textContent,
     );
     // The rendered lines are the single-source label split — not a re-typed copy.
@@ -136,8 +136,13 @@ describe("TrialCardBody", () => {
     expect(`${lines[0]} ${lines[1]}`).toBe(OUTCOME_VALUES.strong.label);
   });
 
-  it("marks the body aria-hidden (the card's name carries the settings instead)", () => {
-    const { container } = render(<TrialCardBody trial={makeTrial(STRONG_SETUP)} />);
-    expect(container.querySelector(".trial-card-body")).toHaveAttribute("aria-hidden", "true");
+  it("reacts to a field set on an already-mounted card (this is why it's an observer)", () => {
+    const trial = makeTrial();
+    const { container } = render(<TrialCardBody trial={trial} />);
+    expect(container.querySelectorAll(".nor-card-am-section")).toHaveLength(0);
+    // Mutate AFTER mount: without the observer wrapper the rendered body would not update.
+    act(() => trial.setLandHumidity("Dry"));
+    expect(container.querySelectorAll(".nor-card-am-section")).toHaveLength(1);
+    expect(within(container).getByText("Dry")).toBeInTheDocument();
   });
 });
