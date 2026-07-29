@@ -27,20 +27,22 @@ test.describe("Trial cards — content and independence", () => {
     await sim.runButton.click();
     await expect(sim.trialCardOutcome("A")).toContainText("Strong");
 
-    // Add B and give it a partial configuration: one air-mass section, no banner (not yet run).
+    // Add B and give it a partial configuration: one populated air mass (the land glyph), no banner.
     await sim.addTrial();
     await sim.selectOption("Pathway for Land Air Mass", "1 N/NW");
-    await expect(sim.trialCardSections("B")).toHaveCount(1);
+    await expect(sim.trialCardGlyphs("B")).toHaveCount(1); // only the land air mass populated
+    await expect(sim.trialCardSections("B")).toHaveCount(2); // both sections render (Land + empty Ocean)
     await expect(sim.trialCardOutcome("B")).toHaveCount(0);
 
-    // Reset A via its panel reset: A's body empties (and its accessible name falls back to the bare
-    // letter) while B's content is preserved.
+    // Reset A via its panel reset: A's body empties (no glyphs/sections, and its accessible name falls
+    // back to the bare letter) while B's content is preserved.
     await sim.selectTrial("A");
     await sim.trialResetButton("A").click();
     await expect(sim.trialCardOutcome("A")).toHaveCount(0);
-    await expect(sim.trialCardSections("A")).toHaveCount(0);
+    await expect(sim.trialCardGlyphs("A")).toHaveCount(0);
+    await expect(sim.trialCardSections("A")).toHaveCount(0); // empty trial → no sections
     await expect(sim.trialOption("A")).toHaveAttribute("aria-label", "Trial A");
-    await expect(sim.trialCardSections("B")).toHaveCount(1);
+    await expect(sim.trialCardGlyphs("B")).toHaveCount(1);
   });
 
   test("A and B hold independent outcomes; selecting each loads its state", async () => {
@@ -71,6 +73,26 @@ test.describe("Trial cards — content and independence", () => {
 });
 
 test.describe("Trial card layout (browser-level)", () => {
+  test("an ocean-only trial reserves the empty Land slot on top", async () => {
+    // A childless Land section must still occupy its row height (from `.nor-card-am-section`'s fixed
+    // grid rows) so the Ocean section stays in the bottom slot. jsdom has no layout, so this can only
+    // be proven in a real browser.
+    await sim.selectOption("Pathway for Ocean Air Mass", "2 S/SE");
+    await sim.selectOption("Humidity for Ocean Air Mass", "Humid");
+
+    const sections = sim.trialCardSections("A");
+    await expect(sections).toHaveCount(2);
+    const landBox = await sections.nth(0).boundingBox();
+    const oceanBox = await sections.nth(1).boundingBox();
+    if (!landBox || !oceanBox)
+      throw new Error("expected bounding boxes for the Land and Ocean sections");
+
+    // The empty Land slot (top) has real height ≈ the populated Ocean section, and sits above it.
+    expect(landBox.height).toBeGreaterThan(0);
+    expect(landBox.height).toBeCloseTo(oceanBox.height, 0);
+    expect(landBox.y).toBeLessThan(oceanBox.y);
+  });
+
   test("a trial card and the + New card match the panel's declared card height", async () => {
     const declared = await sim.cardHeightProperty();
     expect(declared).not.toBe(""); // the sim declares the override (else the shared default applies)

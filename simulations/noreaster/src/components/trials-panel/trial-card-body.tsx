@@ -57,9 +57,10 @@ function AmRow({
 }
 
 /**
- * One air-mass section: the tinted land/ocean glyph spanning all three rows, plus a pathway / humidity /
- * temperature row per set field. Rendered only when the air mass has a selection, so the glyph always has
- * a value to tint by.
+ * One air-mass section: a fixed three-row grid holding a pathway / humidity / temperature row for each
+ * set field, plus the tinted land/ocean glyph — shown only when the air mass has a selection (`hasData`),
+ * so an unconfigured section renders empty but keeps its height. (The caller always renders both sections
+ * to keep the Land-top / Ocean-below order — see `TrialCardBody`.)
  */
 function AmSection({
   airMass,
@@ -72,11 +73,14 @@ function AmSection({
   humidity: Humidity | null;
   temperature: LandTemperature | OceanTemperature | null;
 }) {
+  const hasData = !!(pathway || humidity || temperature);
   return (
     <div className="nor-card-am-section">
-      <span className="nor-card-am-icon" data-tint={tempTint(temperature)}>
-        {airMassIcon(airMass)}
-      </span>
+      {hasData ? (
+        <span className="nor-card-am-icon" data-tint={tempTint(temperature)}>
+          {airMassIcon(airMass)}
+        </span>
+      ) : null}
       {pathway ? <AmRow field="pathway" icon={pathwayNumber(pathway)} label={pathway} /> : null}
       {humidity ? <AmRow field="humidity" icon={humidityIcon(humidity)} label={humidity} /> : null}
       {temperature ? (
@@ -88,8 +92,9 @@ function AmSection({
 
 /**
  * The visible body of a Nor'easter trial card (the shared `<TrialCard>`'s `children`): the Land and
- * Ocean air-mass sections and, once run, the two-line outcome banner. An empty trial renders nothing
- * (letter badge only).
+ * Ocean air-mass sections and, once run, the two-line outcome banner. Once the trial has any selection
+ * BOTH sections render together — Land on top, Ocean below — so the layout is stable no matter which air
+ * mass was configured first. An empty trial renders nothing (letter badge only).
  *
  * The banner indexes `OUTCOME_VALUES` on `trial.outcome` itself (not the separate `hasRun` getter,
  * which TypeScript won't narrow from), so "banner iff outcome" is explicit without a `!` assertion.
@@ -99,28 +104,26 @@ export const TrialCardBody = observer(function TrialCardBody({
 }: {
   trial: TrialModelInstance;
 }) {
-  const landHasData = !!(trial.landPathway || trial.landHumidity || trial.landTemperature);
-  const oceanHasData = !!(trial.oceanPathway || trial.oceanHumidity);
   const outcomeLabel = trial.outcome ? OUTCOME_VALUES[trial.outcome].label : null;
   const [outcomeLine1, outcomeLine2] = outcomeLabel ? outcomeLabelLines(outcomeLabel) : ["", ""];
 
   return (
     <div className="trial-card-body">
-      {landHasData ? (
-        <AmSection
-          airMass="land"
-          pathway={trial.landPathway}
-          humidity={trial.landHumidity}
-          temperature={trial.landTemperature}
-        />
-      ) : null}
-      {oceanHasData ? (
-        <AmSection
-          airMass="ocean"
-          pathway={trial.oceanPathway}
-          humidity={trial.oceanHumidity}
-          temperature={trial.oceanTemperature}
-        />
+      {trial.hasAnySelection ? (
+        <>
+          <AmSection
+            airMass="land"
+            pathway={trial.landPathway}
+            humidity={trial.landHumidity}
+            temperature={trial.landTemperature}
+          />
+          <AmSection
+            airMass="ocean"
+            pathway={trial.oceanPathway}
+            humidity={trial.oceanHumidity}
+            temperature={trial.oceanTemperature}
+          />
+        </>
       ) : null}
       {outcomeLabel ? (
         <div className="nor-card-outcome">

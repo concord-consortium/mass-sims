@@ -101,16 +101,35 @@ describe("TrialCardBody", () => {
     expect(body.querySelector(".nor-card-outcome")).toBeNull();
   });
 
-  it("renders one section with only the set field rows for a land-only partial", () => {
+  it("renders Land (top) with content and Ocean (bottom) as an empty slot for a land-only partial", () => {
     const trial = makeTrial({ landHumidity: "Dry" });
     const { container } = render(<TrialCardBody trial={trial} />);
     const sections = container.querySelectorAll(".nor-card-am-section");
-    expect(sections).toHaveLength(1); // land only — no ocean section
-    const section = sections[0] as HTMLElement;
-    // The air-mass glyph is present (the section has data), and only the humidity row's label shows.
-    expect(section.querySelector(".nor-card-am-icon")).toBeInTheDocument();
-    expect(within(section).getByText("Dry")).toBeInTheDocument();
-    expect(section.querySelectorAll(".nor-card-label")).toHaveLength(1);
+    expect(sections).toHaveLength(2); // both always render — Land first, Ocean second
+    const landSection = sections[0] as HTMLElement;
+    const oceanSection = sections[1] as HTMLElement;
+    // Land (top) shows its glyph + only the humidity row; Ocean (bottom) is an empty reserved slot.
+    expect(landSection.querySelector(".nor-card-am-icon")).toBeInTheDocument();
+    expect(within(landSection).getByText("Dry")).toBeInTheDocument();
+    expect(landSection.querySelectorAll(".nor-card-label")).toHaveLength(1);
+    expect(oceanSection.querySelector(".nor-card-am-icon")).toBeNull();
+    expect(oceanSection.querySelectorAll(".nor-card-label")).toHaveLength(0);
+  });
+
+  it("keeps an empty Land slot on top when only the ocean is configured (order-independent layout)", () => {
+    // Configuring the ocean first must still show Land (empty) on top and Ocean below — the ocean
+    // selections must not float to the top of the card.
+    const trial = makeTrial({ oceanPathway: "S/SE", oceanHumidity: "Humid" });
+    const { container } = render(<TrialCardBody trial={trial} />);
+    const sections = container.querySelectorAll(".nor-card-am-section");
+    expect(sections).toHaveLength(2);
+    const landSection = sections[0] as HTMLElement;
+    const oceanSection = sections[1] as HTMLElement;
+    expect(landSection.querySelector(".nor-card-am-icon")).toBeNull(); // empty top slot
+    expect(landSection.querySelectorAll(".nor-card-label")).toHaveLength(0);
+    expect(oceanSection.querySelector(".nor-card-am-icon")).toBeInTheDocument();
+    expect(within(oceanSection).getByText("S/SE")).toBeInTheDocument();
+    expect(within(oceanSection).getByText("Warm")).toBeInTheDocument(); // derived ocean temperature
   });
 
   it("renders both sections with the derived ocean temperature and no banner before a run", () => {
@@ -140,9 +159,11 @@ describe("TrialCardBody", () => {
     const trial = makeTrial();
     const { container } = render(<TrialCardBody trial={trial} />);
     expect(container.querySelectorAll(".nor-card-am-section")).toHaveLength(0);
-    // Mutate AFTER mount: without the observer wrapper the rendered body would not update.
+    // Mutate AFTER mount: without the observer wrapper the rendered body would not update. Assert the
+    // 0 → 2 section transition (both sections appear) plus the new label, so a regression that rendered
+    // only the touched air mass would fail.
     act(() => trial.setLandHumidity("Dry"));
-    expect(container.querySelectorAll(".nor-card-am-section")).toHaveLength(1);
+    expect(container.querySelectorAll(".nor-card-am-section")).toHaveLength(2);
     expect(within(container).getByText("Dry")).toBeInTheDocument();
   });
 });

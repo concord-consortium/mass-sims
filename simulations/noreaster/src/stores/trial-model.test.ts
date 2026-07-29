@@ -11,6 +11,7 @@ describe("TrialModel", () => {
     expect(trial.setupComplete).toBe(false);
     expect(trial.hasRun).toBe(false);
     expect(trial.locked).toBe(false);
+    expect(trial.hasAnySelection).toBe(false);
     expect(trial.canReset).toBe(false);
     expect(trial.oceanTemperature).toBeNull();
     expect(trial.setup).toBeNull();
@@ -30,9 +31,10 @@ describe("TrialModel", () => {
     expect(trial.oceanHumidity).toBe("Dry");
   });
 
-  it("canReset flips true after any single selection", () => {
+  it("hasAnySelection / canReset flip true after any single selection", () => {
     const trial = TrialModel.create(emptyTrialSnapshot());
     trial.setLandHumidity("Dry");
+    expect(trial.hasAnySelection).toBe(true);
     expect(trial.canReset).toBe(true);
     expect(trial.setupComplete).toBe(false);
   });
