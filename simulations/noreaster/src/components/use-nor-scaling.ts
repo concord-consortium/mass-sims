@@ -14,15 +14,15 @@ import { type RefObject, useLayoutEffect } from "react";
  * once the header stops fitting its column.
  */
 
-// Panel-width interpolation range: t = 0 at (or below) MIN, t = 1 at (or above) MAX.
-const PW_MIN = 376; // narrowest target panel (AP 2-column)
-const PW_MAX = 520; // widest panel at which the full Lato layout fits comfortably
-
 // Dropdown-column Lato widths (must match the `--nor-dd-col-*` t=1 values in PROPS) and the panel width
 // at which the full Lato grid exactly fills: 2×top-pad(10) + label(95) + 3×col-gap(10) + dropdown caps.
 // Above it, apply() hands the surplus to the dropdown columns instead of the label column.
 const DD_COL_LATO = [126, 127, 123];
 const GRID_FILL_LATO = 2 * 10 + 95 + 3 * 10 + DD_COL_LATO[0] + DD_COL_LATO[1] + DD_COL_LATO[2]; // 521
+
+// Panel-width interpolation range: t = 0 at (or below) MIN, t = 1 at (or above) MAX.
+const PW_MIN = 376; // narrowest target panel (AP 2-column)
+const PW_MAX = GRID_FILL_LATO; // full Lato fits exactly here; below it, condense
 
 // "Temperature" → "Temp" once the header stops fitting its column (independent of the font swap — the
 // headers stay Lato at every width).

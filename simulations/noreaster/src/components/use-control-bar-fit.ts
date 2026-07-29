@@ -85,7 +85,8 @@ function sizeControlBar(bar: HTMLElement) {
   const minUsed = minW.reduce((a, b) => a + b, 0) + numGaps * csGap.min;
 
   // Interpolate by bt; the font stays condensed.
-  const bt = Math.max(0, Math.min(1, (avail - minUsed) / (fullUsed - minUsed)));
+  const denom = fullUsed - minUsed;
+  const bt = denom > 0 ? Math.max(0, Math.min(1, (avail - minUsed) / denom)) : 0;
   const lerp = (p: Pair) => p.min + bt * (p.full - p.min);
   bar.style.gap = `${lerp(csGap)}px`;
   toggleHit.style.padding = `0 ${lerp(togglePad)}px`;
