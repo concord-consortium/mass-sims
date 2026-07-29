@@ -1,12 +1,13 @@
 @use "@concord-consortium/mass-sims-shared/styles/tokens" as tokens;
 @use "../theme" as theme;
 
-// The map "stage" fills the remaining vertical space in the panel. The map itself is an aspect-locked
-// (2:1) box whose HEIGHT always equals the stage height, so it keeps its size as the panel narrows —
-// the stage just crops more off the sides (center-cropped by the stage's overflow). Width follows from
-// the aspect ratio; no container-query units or resize JS. Overlays are absolutely-positioned
-// children of the map box, placed with `calc(<pct>% + <px>)` — top-left anchored, constant px nudges,
-// no centering translate.
+// The map "stage" fills the remaining vertical space. Two independent layers:
+//   1. Display basemaps (.nor-map-img) — the art at its true ratio (1400/667 ≈ 2.099:1), height-filling
+//      & centered. Wider than 2:1, so it covers the full stage width (aspect ≤ ~2.05), cropping only the
+//      sides — no letterbox.
+//   2. Overlay frame (.nor-map) — a fixed 2:1 box (the 2667/1334 footprint) at stage height, centered.
+//      Arrows/pills/Boston are % children of THIS box, so their fractions hold as the display art widens.
+// Overlays: `calc(<pct>% + <px>)`, top-left anchored, constant px nudges, no centering translate.
 
 $shadow: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.35));
 
@@ -18,33 +19,22 @@ $shadow: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.35));
   position: relative;
 }
 
-.nor-map {
-  aspect-ratio: 2 / 1; // 2667 / 1334 ≈ 2:1
-  // A constant size (never scales with width), but a hair taller than the stage so its width always
-  // covers the widest target: at 1044 the stage reaches ~2.05:1, so a 2:1 map at exactly 100% height
-  // leaves ~7px of letterbox each side. 103% over-scans just enough to cover that, cropping a few px
-  // off the map's top/bottom (empty margin) instead — the same size at every width, no scaling.
-  height: 103%;
+// Display basemaps: the art at its true 1400/667 ratio, height-filling & centered (behind the overlay
+// frame). Height = stage height; width follows the ratio and is cropped by the stage — no letterbox.
+.nor-map-img {
+  height: 100%;
   left: 50%;
+  max-width: none; // track the true ratio, not an inherited img max-width
   position: absolute;
-  top: 50%;
-  transform: translate(-50%, -50%);
+  top: 0;
+  transform: translateX(-50%);
   width: auto;
 }
 
-.nor-map-img {
-  display: block;
-  height: 100%;
-  width: 100%;
-}
-
-// Satellite basemap: layered over the street map, faded in when the stage is in satellite view. It
-// sits above the street <img> but below the arrows/pills (which follow it in the DOM), so overlays
-// stay on top of whichever basemap shows.
+// Satellite basemap: shares .nor-map-img geometry; crossfades in via satellite view. Precedes the
+// overlay frame in the DOM, so overlays stay on top.
 .nor-map-img--satellite {
-  inset: 0;
   opacity: 0;
-  position: absolute;
   transition: opacity 0.3s ease;
 }
 
@@ -56,6 +46,18 @@ $shadow: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.35));
   .nor-map-img--satellite {
     transition: none;
   }
+}
+
+// Overlay reference frame: the 2:1 footprint at stage height, centered — fixed, independent of the
+// wider display art, so its % children hold their map positions as the art widens.
+.nor-map {
+  aspect-ratio: 2 / 1; // 2667/1334 footprint
+  height: 100%;
+  left: 50%;
+  position: absolute;
+  top: 0;
+  transform: translateX(-50%);
+  width: auto;
 }
 
 // ---- Pathway arrows (neutral / pre-run state) ----
@@ -165,33 +167,33 @@ $shadow: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.35));
 .nor-boston {
   align-items: center;
   display: flex;
+  filter: $shadow; // on the group so the label's halo sits behind the dot
   gap: 4px;
-  left: calc(36% + 75.5px);
+  left: calc(36% + 74.5px);
   pointer-events: none;
   position: absolute;
-  top: calc(16% + 8px);
+  top: calc(16% + 5.25px);
 }
 
 .nor-boston-dot {
   background: #fff;
-  border: 2px solid theme.$marker-text;
+  border: 3px solid theme.$marker-text;
   border-radius: 50%;
   box-shadow: 0 0 0 2px #fff;
   flex-shrink: 0;
-  height: 8px;
-  width: 8px;
+  height: 10px;
+  width: 10px;
 }
 
 .nor-boston-label {
   color: theme.$marker-text;
-  filter: $shadow;
   font-family: tokens.$font-family-condensed;
-  font-size: tokens.$font-size-base;
-  font-weight: 500;
-  left: -2px;
+  font-size: 21px; // marker size (no token)
+  font-weight: 700;
+  left: 0.5px;
   paint-order: stroke fill;
   position: relative;
-  top: -6px;
+  top: -7px;
   white-space: nowrap;
   -webkit-text-stroke: 4px #fff; // white halo so the label reads over the map
 }

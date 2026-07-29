@@ -9,18 +9,24 @@ import { type RefObject, useLayoutEffect } from "react";
  * first paint. Interpolating everything in lock-step, rather than snapping at a breakpoint, is what
  * keeps a chosen value fitting its trigger at every width.
  *
- * Two things stay discrete: the font swaps to Roboto Condensed (`data-nor-condensed`) and
- * "Temperature" shortens to "Temp" (`data-nor-temp-short`), each toggled once where Lato / the full
- * word stops fitting.
+ * Two things stay discrete: the font swaps to Roboto Condensed (`data-nor-condensed`) once the panel
+ * drops below its calibrated max (t < 1), and "Temperature" shortens to "Temp" (`data-nor-temp-short`)
+ * once the header stops fitting its column.
  */
 
 // Panel-width interpolation range: t = 0 at (or below) MIN, t = 1 at (or above) MAX.
 const PW_MIN = 376; // narrowest target panel (AP 2-column)
 const PW_MAX = 520; // widest panel at which the full Lato layout fits comfortably
 
-// Panel widths at which the discrete swaps flip (measured — see the hook's docstring).
-const CONDENSE_BELOW = 452; // Lato controls stop fitting → Roboto Condensed
-const TEMP_SHORT_BELOW = 430; // condensed "Temperature" stops fitting its column → "Temp"
+// Dropdown-column Lato widths (must match the `--nor-dd-col-*` t=1 values in PROPS) and the panel width
+// at which the full Lato grid exactly fills: 2×top-pad(10) + label(95) + 3×col-gap(10) + dropdown caps.
+// Above it, apply() hands the surplus to the dropdown columns instead of the label column.
+const DD_COL_LATO = [126, 127, 123];
+const GRID_FILL_LATO = 2 * 10 + 95 + 3 * 10 + DD_COL_LATO[0] + DD_COL_LATO[1] + DD_COL_LATO[2]; // 521
+
+// "Temperature" → "Temp" once the header stops fitting its column (independent of the font swap — the
+// headers stay Lato at every width).
+const TEMP_SHORT_BELOW = 430;
 
 /** One interpolated custom property: `[cssVar, valueAtT0, valueAtT1]`, emitted as `<n>px`. */
 // Values interpolate condensed → Lato. Some are per-column (pathway=0, humidity=1, temperature=2):
@@ -51,14 +57,7 @@ const PROPS: readonly [string, number, number][] = [
   ["--nor-padl-2", 1, 10],
   ["--nor-am-gap", 5, 8],
   ["--nor-am-icon", 22, 24],
-  // Control bar
-  ["--nor-cb-gap", 6, 10],
-  ["--nor-cb-icon", 22, 24],
-  ["--nor-cb-btn-pad-l", 6, 8],
-  ["--nor-cb-btn-pad-r", 8, 12],
-  ["--nor-cb-btn-gap", 2, 4],
-  ["--nor-toggle-pad-x", 6, 10],
-  ["--nor-toggle-gap", 4, 6],
+  // The control bar scales independently, on its own fit test — see use-control-bar-fit.ts.
 ];
 
 // Props also mirrored onto the document root for the portaled popover (see apply). Kept as one list so
@@ -77,7 +76,20 @@ function apply(panel: HTMLElement) {
   for (const [name, a, b] of PROPS) {
     panel.style.setProperty(name, px(a, b));
   }
-  const condensed = pw < CONDENSE_BELOW;
+  // AP Full Width surplus: above the calibrated max, hand the extra width to the dropdown columns
+  // (proportional to their Lato widths), overriding the Lato-capped values PROPS set. The label column
+  // holds its content width (max-content), so the right margin stays put. Zero in every in-range width.
+  const surplus = Math.max(0, pw - GRID_FILL_LATO);
+  if (surplus > 0) {
+    const ddSum = DD_COL_LATO[0] + DD_COL_LATO[1] + DD_COL_LATO[2];
+    DD_COL_LATO.forEach((w, i) => {
+      const width = Math.round((w + (surplus * w) / ddSum) * 100) / 100;
+      panel.style.setProperty(`--nor-dd-col-${i + 1}`, `${width}px`);
+    });
+  }
+  // Condense once the panel drops below its calibrated max (t < 1) — early, so labels never clip.
+  // Dropdown/pill values and the air-mass labels share this flag; only pw ≥ PW_MAX stays Lato.
+  const condensed = t < 1;
   panel.toggleAttribute("data-nor-condensed", condensed);
   panel.toggleAttribute("data-nor-temp-short", pw < TEMP_SHORT_BELOW);
   // The popover is portaled to <body>, so mirror onto the document root what its options need: the

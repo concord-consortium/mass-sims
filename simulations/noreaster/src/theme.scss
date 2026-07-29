@@ -6,8 +6,7 @@ $heading: #1e3f6e; // title text, section titles, icons, selected badges
 $tab: #b3d9ff; // section chip background
 $hover: #d3e8fd; // interactive hover fill
 $active: #9cc9f7; // interactive active fill
-$trial-label-bg: #d3e8fd; // trial letter-badge background (unselected)
-$trial-label-selected-text: #fff; // active-trial badge letter (white on the $heading fill)
+$trial-label-bg: #d3e8fd; // trial letter-badge background (unselected) + active-trial badge letter
 
 // Simulation-panel-specific colors (air-mass selectors, map, control bar). Sim-scoped; the shared
 // tokens stay authoritative for the generic scale (spacing, radius, typography, focus).

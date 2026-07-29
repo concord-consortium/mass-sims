@@ -2,12 +2,12 @@
 @use "../theme" as theme;
 
 // The active-trial letter badge, anchored to the Simulation section's top-left corner (the section
-// establishes the positioning context). White letter on the dark heading fill.
+// establishes the positioning context).
 .active-trial-badge {
   align-items: center;
   background: theme.$heading;
   border-radius: tokens.$radius-sm;
-  color: theme.$trial-label-selected-text;
+  color: theme.$trial-label-bg;
   display: flex;
   font-family: tokens.$font-family-base;
   font-size: tokens.$font-size-lg;

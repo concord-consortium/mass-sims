@@ -11,7 +11,17 @@ vi.mock("@concord-consortium/lara-interactive-api", () => ({ log }));
 import type { RootStoreInstance } from "../stores/root-store";
 import { createRootStore, RootStoreProvider } from "../stores/root-store";
 import { configureStrong } from "../stores/test-helpers";
-import { AirMassSelectors } from "./air-mass-selectors";
+import { AirMassSelectors, pillShift } from "./air-mass-selectors";
+
+describe("pillShift", () => {
+  it("nudges value pills left per column, keeping valueless pills centered", () => {
+    expect(pillShift(0, "N/NW")).toBe(0); // pathway
+    expect(pillShift(1, "Dry")).toBe(2); // humidity
+    expect(pillShift(1, "Humid")).toBe(1); // humidity
+    expect(pillShift(2, "Warm")).toBe(3); // temperature (land + derived ocean)
+    expect(pillShift(2, null)).toBe(0); // bare "–" stays centered
+  });
+});
 
 function renderWith(store: RootStoreInstance = createRootStore()) {
   const wrapper = ({ children }: { children: ReactNode }) => (
