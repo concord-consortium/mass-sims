@@ -57,9 +57,10 @@ function AmRow({
 }
 
 /**
- * One air-mass section: the tinted land/ocean glyph plus a pathway / humidity / temperature row per set
- * field. The section is a fixed three-row grid that's always rendered (so Land holds the top slot and
- * Ocean the bottom regardless of selection order).
+ * One air-mass section: a fixed three-row grid holding a pathway / humidity / temperature row for each
+ * set field, plus the tinted land/ocean glyph — shown only when the air mass has a selection (`hasData`),
+ * so an unconfigured section renders empty but keeps its height. (The caller always renders both sections
+ * to keep the Land-top / Ocean-below order — see `TrialCardBody`.)
  */
 function AmSection({
   airMass,
@@ -103,19 +104,12 @@ export const TrialCardBody = observer(function TrialCardBody({
 }: {
   trial: TrialModelInstance;
 }) {
-  const hasAnyData = !!(
-    trial.landPathway ||
-    trial.landHumidity ||
-    trial.landTemperature ||
-    trial.oceanPathway ||
-    trial.oceanHumidity
-  );
   const outcomeLabel = trial.outcome ? OUTCOME_VALUES[trial.outcome].label : null;
   const [outcomeLine1, outcomeLine2] = outcomeLabel ? outcomeLabelLines(outcomeLabel) : ["", ""];
 
   return (
     <div className="trial-card-body">
-      {hasAnyData ? (
+      {trial.hasAnySelection ? (
         <>
           <AmSection
             airMass="land"

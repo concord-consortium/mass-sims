@@ -159,8 +159,11 @@ describe("TrialCardBody", () => {
     const trial = makeTrial();
     const { container } = render(<TrialCardBody trial={trial} />);
     expect(container.querySelectorAll(".nor-card-am-section")).toHaveLength(0);
-    // Mutate AFTER mount: without the observer wrapper the rendered body would not update.
+    // Mutate AFTER mount: without the observer wrapper the rendered body would not update. Assert the
+    // 0 → 2 section transition (both sections appear) plus the new label, so a regression that rendered
+    // only the touched air mass would fail.
     act(() => trial.setLandHumidity("Dry"));
+    expect(container.querySelectorAll(".nor-card-am-section")).toHaveLength(2);
     expect(within(container).getByText("Dry")).toBeInTheDocument();
   });
 });

@@ -58,16 +58,24 @@ export const TrialModel = types
     get locked(): boolean {
       return self.outcome !== null;
     },
-    /** Reset is enabled once anything is set (any selection, or a recorded outcome). */
-    get canReset(): boolean {
+    /**
+     * Any of the five air-mass selections made (ignoring the recorded outcome) — the single source for
+     * "this trial has input". The trial-card body renders its air-mass sections iff this is true. Ocean
+     * temperature is deliberately absent: it's derived from `oceanPathway` (already a term here), never
+     * set on its own, so including it would be redundant.
+     */
+    get hasAnySelection(): boolean {
       return !!(
         self.landPathway ||
         self.landHumidity ||
         self.landTemperature ||
         self.oceanPathway ||
-        self.oceanHumidity ||
-        self.outcome
+        self.oceanHumidity
       );
+    },
+    /** Reset is enabled once anything is set (any selection, or a recorded outcome). */
+    get canReset(): boolean {
+      return this.hasAnySelection || self.outcome !== null;
     },
     /** The complete, validated setup — defined only once `setupComplete`. Feeds the outcomes model. */
     get setup(): AirMassSetup | null {

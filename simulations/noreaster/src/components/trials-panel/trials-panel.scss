@@ -148,6 +148,10 @@
   width: 100%;
 
   // Each air-mass section: [glyph | gap | row-icon | gap | label] × three rows (pathway/humidity/temp).
+  // The fixed `grid-template-rows` is load-bearing: an unconfigured section renders no children, and
+  // these explicit tracks are what give it height so it reserves its slot (keeping Land on top, Ocean
+  // below, regardless of selection order). Do NOT switch to `auto` rows or flex — that collapses the
+  // empty section, letting an ocean-only card float its content to the top.
   .nor-card-am-section {
     align-items: center;
     display: grid;
