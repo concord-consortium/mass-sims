@@ -1,0 +1,95 @@
+@use "@concord-consortium/mass-sims-shared/styles/tokens" as tokens;
+
+// Data-panel header weather scene. Positioning + the per-`data-scene` CSS backdrops + the appearance
+// (fade/instant) transition. The backdrop and particles are split: the BACKDROP is these CSS gradients, the
+// PARTICLES ride the transparent `<canvas>` on top. Colors are tuned to match the animation prototype.
+
+// Storm-gray backdrop base, shared by the four dark scenes; only the top-stop alpha differs per storm
+// intensity (1.00 / 0.90 / 0.80 / 0.70).
+$storm-gray: rgb(66, 79, 96);
+// Warm sunny backdrop, shared by `fair` / `windy`.
+$warm-top: rgba(255, 220, 100, 0.35);
+$warm-bottom: rgba(255, 235, 160, 0);
+// The section's INNER top-corner radius (outer panel radius minus its strong border), derived so a change to
+// either token can't let the backdrop bleed past the panel's rounded corner.
+$inner-radius: calc(#{tokens.$radius-lg} - #{tokens.$border-strong-width});
+
+// Vertical gradient ending at alpha 0 so it fades into the first table row — the fade is the gradient's own
+// transparent stop, not a separate mask.
+@mixin storm-backdrop($alpha) {
+  background: linear-gradient(
+    to bottom,
+    rgba($storm-gray, $alpha) 0%,
+    rgba($storm-gray, 0) 100%
+  );
+}
+
+.wo-scene {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  // The header region height, measured off the panel by `useWeatherAnimation` and written to the panel root.
+  // The 120px fallback mirrors `FALLBACK_SCENE_HEIGHT` in use-weather-animation.ts — keep them in sync.
+  height: var(--wo-scene-height, 120px);
+  z-index: 0;
+  border-radius: $inner-radius $inner-radius 0 0;
+  overflow: hidden;
+  pointer-events: none;
+
+  // Themed scene visible; `default` (no outcome) transparent so the panel's white shows. The default→theme
+  // transition is gated by `data-animate` below (fade vs. snap).
+  opacity: 1;
+
+  &[data-scene="default"] {
+    opacity: 0;
+  }
+
+  // The four storm-gray dark scenes (snow ×3 + haze), differing only in top-stop alpha.
+  &[data-scene="strong"] {
+    @include storm-backdrop(1);
+  }
+  &[data-scene="moderate"] {
+    @include storm-backdrop(0.9);
+  }
+  &[data-scene="weakCoastal"] {
+    @include storm-backdrop(0.8);
+  }
+  &[data-scene="humidNoStorm"] {
+    @include storm-backdrop(0.7);
+  }
+
+  // The warm sunny backdrop shared by `fair` and `windy`.
+  &[data-scene="fair"],
+  &[data-scene="windy"] {
+    background: linear-gradient(to bottom, $warm-top 0%, $warm-bottom 100%);
+  }
+
+  // `fade` = 0.6s ease-in on the finalization render; `instant` = no transition (restore / trial-switch /
+  // replay / Reset).
+  &[data-animate="fade"] {
+    transition: opacity 0.6s ease;
+  }
+  &[data-animate="instant"] {
+    transition: none;
+  }
+}
+
+// Fills the layer; the 400px artboard is cover-cropped right-aligned, so a panel narrower than 400px (every
+// target width) drops the LEFT of the artboard — the more so the narrower the panel.
+.wo-scene-canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: right top;
+}
+
+// Reduced motion suppresses the fade too (particles are separately never started, in the hook).
+// `[data-animate]` matches the specificity of the `[data-animate="fade"]` rule above and wins by source
+// order — a bare `.wo-scene` (0-1-0) would lose and the fade would still run.
+@media (prefers-reduced-motion: reduce) {
+  .wo-scene[data-animate] {
+    transition: none;
+  }
+}

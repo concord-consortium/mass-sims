@@ -6,31 +6,26 @@ import { useStores } from "../stores/root-store";
 import { WeatherIcon } from "./icons/weather-icons";
 import { OUTCOME_ICONS, type WeatherIconSet } from "./outcome-icons";
 import { useCondensedLabels } from "./use-condensed-labels";
+import { useJustFinalized } from "./use-just-finalized";
+import { WeatherScene } from "./weather-scene";
+import { sceneFor } from "./weather-scenes";
 
 import "./data-panel.scss";
 
 /**
- * Nor'easter Data panel — the "Weather Outcome" table, wired to the active trial's recorded outcome.
- *
- * Empty/default state (no recorded outcome — an unrun or freshly-reset trial): the pill and every value
- * show the en-dash placeholder and each icon slot is the stand-in disc. Once the trial has a recorded
- * outcome, the pill shows its banner and each row shows the outcome's value + weather icon (from the
- * model's `OUTCOME_VALUES` and the presentation `OUTCOME_ICONS`, both keyed by outcome). Clearing on
- * Reset Trial / on selecting an unrun trial is automatic — the panel is an `observer` on
- * `activeTrial.outcome`, so it re-renders to the empty branch when the outcome goes back to `null`.
- *
- * The heading comes from the shared `<DataSubsection>` (a real `<h3>` "Weather Outcome" under the Data
- * region's `<h2>`), matching the bananas Data panel's composition.
+ * Nor'easter Data panel — the "Weather Outcome" table for the active trial. With no recorded outcome (unrun
+ * or reset) every cell shows the placeholder and each icon slot is the stand-in disc; once run, the pill and
+ * rows show the outcome's values + icons from `OUTCOME_VALUES` / `OUTCOME_ICONS`. It's an `observer` on
+ * `activeTrial.outcome`, so filling and clearing are automatic. The heading is the shared `<DataSubsection>`.
  */
 
 const PLACEHOLDER = "–";
 const TITLE = "Weather Outcome";
 
 /**
- * One attribute row. `value`/`icon` are thunks that read this row's data from the outcome's value/icon
- * sets — each `icon` thunk names a literal icon family + key, so the pairing is type-checked per row.
- * `short` is the condensed label shown when the full one would wrap the value; the row keeps the full
- * `label` as its accessible name.
+ * One attribute row. `value`/`icon` are thunks reading this row's data from the outcome sets (each `icon`
+ * names a literal family + key, so the pairing is type-checked). `short` is the condensed label used when the
+ * full one would wrap; the row keeps `label` as its accessible name.
  */
 interface AttributeRow {
   label: string;
@@ -63,28 +58,33 @@ const WEATHER_ATTRIBUTES: readonly AttributeRow[] = [
 ];
 
 export const NoreasterDataPanel = observer(function NoreasterDataPanel() {
-  const { activeTrial } = useStores();
+  const { activeTrial, ui } = useStores();
   const outcome = activeTrial.outcome;
   const values = outcome ? OUTCOME_VALUES[outcome] : null;
   const icons = outcome ? OUTCOME_ICONS[outcome] : null;
+  const animateAppearance = useJustFinalized(outcome, ui.runCompletedToken);
   const panelRef = useRef<HTMLDivElement>(null);
   useCondensedLabels(panelRef, outcome);
 
   return (
-    <div className="noreaster-data-panel" ref={panelRef}>
+    <div
+      className="noreaster-data-panel"
+      ref={panelRef}
+      data-scene-theme={sceneFor(outcome).dark ? "dark" : "light"}
+    >
+      <WeatherScene outcome={outcome} animate={animateAppearance} panelRef={panelRef} />
       <DataSubsection title={TITLE}>
-        {/* Outcome pill — the banner once run (bold, condensed at narrow widths), else the placeholder. */}
+        {/* The outcome banner once run, else the placeholder. */}
         <div className={`wo-pill${values ? " wo-pill--filled" : ""}`}>
           {values ? values.label : PLACEHOLDER}
         </div>
         <dl className="wo-table">
           {WEATHER_ATTRIBUTES.map(({ label, short, value, icon }) => (
             <div className="wo-row" key={label}>
-              {/* Condensable rows name the term by its FULL label (aria-label) with both visible spans
-                  aria-hidden, so swapping the visible text doesn't change what assistive tech reads.
-                  Simple rows name themselves from their text. */}
+              {/* Condensable rows expose the FULL label via aria-label and hide both visible spans, so the
+                  a11y name doesn't change when the visible text swaps. Simple rows name themselves. */}
               <dt className="wo-row-header" {...(short ? { "aria-label": label } : {})}>
-                {/* Stand-in disc when empty; the real weather SVG (which clears the disc) once run. */}
+                {/* Stand-in disc when empty; the real weather SVG once run. */}
                 <span className={`wo-icon${icons ? " wo-icon--filled" : ""}`} aria-hidden="true">
                   {icons ? icon(icons) : null}
                 </span>

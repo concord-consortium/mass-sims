@@ -91,7 +91,7 @@ export const ControlBar = observer(function ControlBar({
   mapView,
   onToggleMapView,
 }: ControlBarProps) {
-  const { activeTrial: trial, resetTrial, ui } = useStores();
+  const { activeTrial: trial, resetTrial, runActiveTrial, ui } = useStores();
   const logEvent = useLogEvent();
   const announce = useAnnounce();
   const letter = ui.selectedTrialLetter;
@@ -107,7 +107,7 @@ export const ControlBar = observer(function ControlBar({
 
   const handleRun = () => {
     const replay = trial.hasRun; // captured before the run so Replay reports replay: true
-    trial.run();
+    runActiveTrial();
     const outcome = trial.outcome;
     // Run is gated on `setupComplete`, so `run()` always records an outcome — the guard just narrows.
     if (!outcome) return;

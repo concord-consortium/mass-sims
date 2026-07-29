@@ -127,6 +127,27 @@ describe("Nor'easter App — AP saved state", () => {
     );
   });
 
+  it("restores a run trial's weather scene INSTANTLY — no fade during saved-state hydration", () => {
+    // The outcome arrives async via app.tsx's hydrate effect. The `.volatile` runCompletedToken is never in
+    // the snapshot, so hydration isn't read as a fresh Run → the scene appears instantly, not faded.
+    const strongTrial = {
+      landPathway: "N/NW",
+      landHumidity: "Dry",
+      landTemperature: "Cold",
+      oceanPathway: "S/SE",
+      oceanHumidity: "Humid",
+      outcome: "strong",
+    };
+    useInitMessageMock.mockReturnValue({
+      mode: "runtime",
+      interactiveState: { version: 1, trials: { A: strongTrial }, selectedTrialLetter: "A" },
+    });
+    const { container } = render(<App />);
+    const scene = container.querySelector(".wo-scene");
+    expect(scene).toHaveAttribute("data-scene", "strong"); // themed
+    expect(scene).toHaveAttribute("data-animate", "instant"); // but instant, not faded
+  });
+
   it("keeps persisted trials and re-selects the first when the saved letter is absent", () => {
     // A corrupt/dangling selectedTrialLetter ("C") that names no present trial must NOT discard the
     // student's trials — the normalization reaction re-selects the first present trial instead. The

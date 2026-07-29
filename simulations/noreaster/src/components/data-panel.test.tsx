@@ -1,9 +1,10 @@
 import { act, render } from "@testing-library/react";
+import { StrictMode } from "react";
 import { describe, expect, it } from "vitest";
 import { OUTCOME_VALUES } from "../model/outcome-values";
 import { OUTCOMES } from "../model/weather";
 import { createRootStore, type RootStoreInstance, RootStoreProvider } from "../stores/root-store";
-import { runSetup, SETUPS } from "../stores/test-helpers";
+import { configure, runSetup, SETUPS } from "../stores/test-helpers";
 import { NoreasterDataPanel } from "./data-panel";
 
 // The five weather attributes in their rendered order.
@@ -167,5 +168,135 @@ describe("NoreasterDataPanel — filled state", () => {
     const values = [...container.querySelectorAll(".wo-value")].map((el) => el.textContent);
     expect(values).toEqual(valuesInOrder("fair"));
     expect(container.querySelectorAll(".wo-icon svg")).toHaveLength(ATTRIBUTES.length);
+  });
+});
+
+describe("NoreasterDataPanel — weather scene", () => {
+  // Wrapped in <StrictMode> ON PURPOSE: the app mounts under StrictMode (main.tsx), which double-invokes
+  // render in dev. The `data-animate` fade signal must survive that (and discarded concurrent renders) — a
+  // render-phase side-effect would consume the "just finalized" edge in the first pass and commit "instant"
+  // in the second, silently killing the fade in dev. These assertions guard exactly that.
+  function renderWithStore(store: RootStoreInstance) {
+    return render(
+      <StrictMode>
+        <RootStoreProvider store={store}>
+          <NoreasterDataPanel />
+        </RootStoreProvider>
+      </StrictMode>,
+    );
+  }
+
+  const OUTCOME_DARK: Record<(typeof OUTCOMES)[number], boolean> = {
+    strong: true,
+    moderate: true,
+    weakCoastal: true,
+    humidNoStorm: true,
+    windy: false,
+    fair: false,
+  };
+
+  // A real Run goes through `runActiveTrial()` (run + fade-signal bump in one action), which the panel's fade
+  // signal reads via the token — so the tests drive that same action.
+  function runActive(store: RootStoreInstance, outcome: (typeof OUTCOMES)[number]) {
+    act(() => {
+      configure(store.activeTrial, SETUPS[outcome]);
+      store.runActiveTrial();
+    });
+  }
+
+  const scene = (c: HTMLElement) => c.querySelector(".wo-scene");
+  const panel = (c: HTMLElement) => c.querySelector(".noreaster-data-panel");
+
+  it("tracks data-scene: default → the outcome key on Run → default on Reset", () => {
+    const store = createRootStore();
+    const { container } = renderWithStore(store);
+    expect(scene(container)).toHaveAttribute("data-scene", "default");
+
+    runActive(store, "strong");
+    expect(scene(container)).toHaveAttribute("data-scene", "strong");
+
+    act(() => store.resetTrial());
+    expect(scene(container)).toHaveAttribute("data-scene", "default");
+  });
+
+  it("sets data-scene-theme dark for the four storm-gray scenes and light otherwise (incl. default)", () => {
+    for (const outcome of OUTCOMES) {
+      const store = createRootStore();
+      runSetup(store.activeTrial, SETUPS[outcome]); // records the outcome; theme is token-independent
+      const { container, unmount } = renderWithStore(store);
+      expect(panel(container)).toHaveAttribute(
+        "data-scene-theme",
+        OUTCOME_DARK[outcome] ? "dark" : "light",
+      );
+      unmount();
+    }
+    // No outcome → light (no backdrop, no heading treatment).
+    const { container } = renderWithStore(createRootStore());
+    expect(panel(container)).toHaveAttribute("data-scene-theme", "light");
+  });
+
+  describe("data-animate provenance", () => {
+    it('is "fade" on the render where a run just finalized', () => {
+      const store = createRootStore();
+      const { container } = renderWithStore(store);
+      expect(scene(container)).toHaveAttribute("data-animate", "instant"); // nothing run yet
+
+      runActive(store, "strong");
+      expect(scene(container)).toHaveAttribute("data-scene", "strong");
+      expect(scene(container)).toHaveAttribute("data-animate", "fade");
+    });
+
+    it('is "instant" when switching from an unrun trial to a previously-run trial', () => {
+      const store = createRootStore();
+      runActive(store, "strong"); // trial A → strong (token bumped)
+      const b = store.addTrial() as string;
+      act(() => store.ui.selectTrial(b)); // now viewing the unrun B
+      const { container } = renderWithStore(store);
+      expect(scene(container)).toHaveAttribute("data-scene", "default");
+
+      act(() => store.ui.selectTrial("A")); // back to the already-run A — no token bump
+      expect(scene(container)).toHaveAttribute("data-scene", "strong");
+      expect(scene(container)).toHaveAttribute("data-animate", "instant");
+    });
+
+    it('is "instant" when switching between two already-run trials', () => {
+      const store = createRootStore();
+      runActive(store, "strong"); // A → strong
+      const b = store.addTrial() as string;
+      act(() => store.ui.selectTrial(b));
+      runActive(store, "fair"); // B → fair (now viewing B)
+      const { container } = renderWithStore(store);
+      expect(scene(container)).toHaveAttribute("data-scene", "fair");
+
+      act(() => store.ui.selectTrial("A")); // B → A, both run — no token bump
+      expect(scene(container)).toHaveAttribute("data-scene", "strong");
+      expect(scene(container)).toHaveAttribute("data-animate", "instant");
+    });
+
+    it('is "instant" on a Replay of the same outcome — never a re-fade', () => {
+      const store = createRootStore();
+      const { container } = renderWithStore(store);
+
+      runActive(store, "strong"); // Run → fade
+      expect(scene(container)).toHaveAttribute("data-animate", "fade");
+
+      // Replay: run again (same outcome), bumping the token. The outcome is unchanged, so no re-fade.
+      act(() => store.runActiveTrial());
+      expect(scene(container)).toHaveAttribute("data-animate", "instant");
+    });
+
+    it('is "instant" on Reset — the scene clears without fading out', () => {
+      const store = createRootStore();
+      const { container } = renderWithStore(store);
+
+      runActive(store, "strong"); // Run → fade
+      expect(scene(container)).toHaveAttribute("data-animate", "fade");
+
+      // Reset clears the outcome with no token bump, so `useJustFinalized` stays latched-false. If it ever
+      // re-armed on token change alone, the scene would fade OUT over 0.6s here instead of clearing instantly.
+      act(() => store.resetTrial());
+      expect(scene(container)).toHaveAttribute("data-scene", "default");
+      expect(scene(container)).toHaveAttribute("data-animate", "instant");
+    });
   });
 });
