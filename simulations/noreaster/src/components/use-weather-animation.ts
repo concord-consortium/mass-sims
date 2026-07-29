@@ -73,8 +73,10 @@ export function useWeatherAnimation(
     if (ctx && resized) ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   }, [panelRef, canvasRef]);
 
-  // Re-measure on mount and every scene/outcome change: the panel is `height:100%`, so an outcome reflows the
-  // header without resizing the panel (the RO wouldn't fire).
+  // Re-measure on every scene/outcome change: the panel is `height:100%`, so a new outcome reflows the header
+  // without resizing the panel (the RO wouldn't fire). Layout effect so the height lands before paint (no
+  // flash). Not the mount measure: this hook runs in a child of the ref-carrying panel, so `panelRef.current`
+  // is null on the mount commit — the passive effect below covers that.
   // biome-ignore lint/correctness/useExhaustiveDependencies: `scene` is a deliberate re-measure trigger — the effect reads the DOM header height, which reflows with the outcome even though `measure` doesn't reference `scene` (same pattern as `useCondensedLabels`).
   useLayoutEffect(() => {
     measure();
@@ -92,10 +94,15 @@ export function useWeatherAnimation(
     return clear;
   }, [scene]);
 
-  // Observe the panel (not the out-of-flow scene) for width changes. Guarded for jsdom (no `ResizeObserver`).
+  // Initial mount measure + width-resize re-measure, observing the panel (not the out-of-flow scene). Passive
+  // effects run after every ref is attached, so this — unlike the layout effect above — sees `panelRef.current`
+  // on mount. Measuring directly here (not only in the RO callback) also sizes the scene when `ResizeObserver`
+  // is absent.
   useEffect(() => {
     const panel = panelRef.current;
-    if (!panel || typeof ResizeObserver === "undefined") return;
+    if (!panel) return;
+    measure();
+    if (typeof ResizeObserver === "undefined") return;
     const observer = new ResizeObserver(() => measure());
     observer.observe(panel);
     return () => observer.disconnect();

@@ -1,14 +1,14 @@
 import { DataSubsection } from "@concord-consortium/mass-sims-shared";
 import { observer } from "mobx-react-lite";
-import { type ReactNode, useRef, useState } from "react";
+import { type ReactNode, useRef } from "react";
 import { OUTCOME_VALUES, type OutcomeValues } from "../model/outcome-values";
-import type { Outcome } from "../model/weather";
 import { useStores } from "../stores/root-store";
 import { WeatherIcon } from "./icons/weather-icons";
 import { OUTCOME_ICONS, type WeatherIconSet } from "./outcome-icons";
 import { useCondensedLabels } from "./use-condensed-labels";
+import { useJustFinalized } from "./use-just-finalized";
 import { WeatherScene } from "./weather-scene";
-import { NO_SCENE, SCENES } from "./weather-scenes";
+import { sceneFor } from "./weather-scenes";
 
 import "./data-panel.scss";
 
@@ -57,33 +57,11 @@ const WEATHER_ATTRIBUTES: readonly AttributeRow[] = [
   },
 ];
 
-/**
- * Whether the weather scene should fade in (vs. appear instantly) this render. Not inferable from `outcome`
- * alone — the same value arrives via Run, hydration, or trial-switch — so it keys off the `.volatile`
- * `runCompletedToken` that `handleRun` bumps only on a real Run: fade only when the token advanced AND the
- * outcome changed, so replay / hydration / trial-switch stay instant.
- */
-function useJustFinalized(outcome: Outcome | null, runCompletedToken: number): boolean {
-  // Adjust-state-during-render (not a render-phase ref mutation) so the "just finalized" edge is
-  // StrictMode/concurrent-safe and lands on the SAME commit as `data-scene` — the CSS fade only arms when
-  // opacity and `transition` change together.
-  const [seen, setSeen] = useState({ token: runCompletedToken, outcome, animate: false });
-  if (seen.token !== runCompletedToken || seen.outcome !== outcome) {
-    const freshFinalization =
-      runCompletedToken !== seen.token && outcome !== null && outcome !== seen.outcome;
-    setSeen({ token: runCompletedToken, outcome, animate: freshFinalization });
-  }
-  // Latched until the token/outcome next changes; don't reset it — flipping `data-animate` mid-fade sets
-  // `transition:none` and cancels the in-flight fade.
-  return seen.animate;
-}
-
 export const NoreasterDataPanel = observer(function NoreasterDataPanel() {
   const { activeTrial, ui } = useStores();
   const outcome = activeTrial.outcome;
   const values = outcome ? OUTCOME_VALUES[outcome] : null;
   const icons = outcome ? OUTCOME_ICONS[outcome] : null;
-  const scene = outcome ? SCENES[outcome] : NO_SCENE;
   const animateAppearance = useJustFinalized(outcome, ui.runCompletedToken);
   const panelRef = useRef<HTMLDivElement>(null);
   useCondensedLabels(panelRef, outcome);
@@ -92,14 +70,9 @@ export const NoreasterDataPanel = observer(function NoreasterDataPanel() {
     <div
       className="noreaster-data-panel"
       ref={panelRef}
-      data-scene-theme={scene.dark ? "dark" : "light"}
+      data-scene-theme={sceneFor(outcome).dark ? "dark" : "light"}
     >
-      <WeatherScene
-        scene={scene}
-        outcome={outcome}
-        animate={animateAppearance}
-        panelRef={panelRef}
-      />
+      <WeatherScene outcome={outcome} animate={animateAppearance} panelRef={panelRef} />
       <DataSubsection title={TITLE}>
         {/* The outcome banner once run, else the placeholder. */}
         <div className={`wo-pill${values ? " wo-pill--filled" : ""}`}>

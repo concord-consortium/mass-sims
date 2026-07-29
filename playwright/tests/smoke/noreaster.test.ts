@@ -154,8 +154,10 @@ test("Data panel: the weather scene tracks the outcome and clears on Reset", asy
   await expect(sim.weatherScene).toHaveAttribute("data-scene", "strong");
 
   await sim.resetTrialButton.click();
-  // Reset removes the scene at once (no frozen frame) — back to default.
+  // Reset removes the scene at once (no frozen frame) — back to default, and instant (no fade-OUT: Reset
+  // doesn't bump the run token, so the panel never re-arms the transition).
   await expect(sim.weatherScene).toHaveAttribute("data-scene", "default");
+  await expect(sim.weatherScene).toHaveAttribute("data-animate", "instant");
 });
 
 test("Data panel: the weather scene reflects the fair-weather outcome", async () => {

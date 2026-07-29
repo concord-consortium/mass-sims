@@ -493,13 +493,12 @@ function createWindyPlayer(): WeatherPlayer {
     { ox: base - 95, oy: half - 50 },
     { ox: base - 175, oy: half - 70 },
   ];
-  const parsedPairs = WIND_PARSED_PAIRS;
   const curls: Curl[] = [];
   for (let wp = 0; wp < windPositions.length; wp++) {
-    const initPair = Math.floor(Math.random() * parsedPairs.length);
+    const initPair = Math.floor(Math.random() * WIND_PARSED_PAIRS.length);
     for (let pi = 0; pi < 2; pi++) {
       curls.push({
-        rawPts: parsedPairs[initPair][pi],
+        rawPts: WIND_PARSED_PAIRS[initPair][pi],
         baseOx: windPositions[wp].ox,
         baseOy: windPositions[wp].oy,
         pts: null,
@@ -548,10 +547,10 @@ function createWindyPlayer(): WeatherPlayer {
         for (let si = 0; si < count && candidates.length > 0; si++) {
           const pick = candidates.splice(Math.floor(Math.random() * candidates.length), 1)[0];
           picked.push(pick);
-          const pairIdx = Math.floor(Math.random() * parsedPairs.length);
+          const pairIdx = Math.floor(Math.random() * WIND_PARSED_PAIRS.length);
           const ci0 = pick * 2;
-          curls[ci0].rawPts = parsedPairs[pairIdx][0];
-          curls[ci0 + 1].rawPts = parsedPairs[pairIdx][1];
+          curls[ci0].rawPts = WIND_PARSED_PAIRS[pairIdx][0];
+          curls[ci0 + 1].rawPts = WIND_PARSED_PAIRS[pairIdx][1];
           const speedVar = 0.75 + Math.random() * 0.75;
           curls[ci0].traceDur = 1.15 * speedVar;
           curls[ci0 + 1].traceDur = 1.15 * speedVar;
@@ -810,8 +809,10 @@ export function createWeatherPlayer(scene: SceneSpec): WeatherPlayer | null {
       return null;
     default: {
       // Exhaustiveness guard: a new `SceneSpec` variant makes this a compile error until it's handled.
+      // At runtime return the no-particle `null` (returning `scene` would hand back a bogus player object).
       const _exhaustive: never = scene;
-      return _exhaustive;
+      void _exhaustive;
+      return null;
     }
   }
 }

@@ -55,3 +55,8 @@ export const SCENES = {
 
 /** The scene for `outcome === null` — no backdrop, no particles (`data-scene="default"`). */
 export const NO_SCENE: SceneSpec = { player: "none", dark: false };
+
+/** The single resolution of outcome → scene. Callers pass `outcome` around, never a detachable `SceneSpec`. */
+export function sceneFor(outcome: Outcome | null): SceneSpec {
+  return outcome ? SCENES[outcome] : NO_SCENE;
+}

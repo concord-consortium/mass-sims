@@ -1,3 +1,5 @@
+@use "@concord-consortium/mass-sims-shared/styles/tokens" as tokens;
+
 // Data-panel header weather scene. Positioning + the per-`data-scene` CSS backdrops + the appearance
 // (fade/instant) transition. The backdrop and particles are split: the BACKDROP is these CSS gradients, the
 // PARTICLES ride the transparent `<canvas>` on top. Colors are tuned to match the animation prototype.
@@ -8,6 +10,9 @@ $storm-gray: rgb(66, 79, 96);
 // Warm sunny backdrop, shared by `fair` / `windy`.
 $warm-top: rgba(255, 220, 100, 0.35);
 $warm-bottom: rgba(255, 235, 160, 0);
+// The section's INNER top-corner radius (outer panel radius minus its strong border), derived so a change to
+// either token can't let the backdrop bleed past the panel's rounded corner.
+$inner-radius: calc(#{tokens.$radius-lg} - #{tokens.$border-strong-width});
 
 // Vertical gradient ending at alpha 0 so it fades into the first table row — the fade is the gradient's own
 // transparent stop, not a separate mask.
@@ -25,9 +30,10 @@ $warm-bottom: rgba(255, 235, 160, 0);
   left: 0;
   right: 0;
   // The header region height, measured off the panel by `useWeatherAnimation` and written to the panel root.
+  // The 120px fallback mirrors `FALLBACK_SCENE_HEIGHT` in use-weather-animation.ts — keep them in sync.
   height: var(--wo-scene-height, 120px);
   z-index: 0;
-  border-radius: 6px 6px 0 0;
+  border-radius: $inner-radius $inner-radius 0 0;
   overflow: hidden;
   pointer-events: none;
 
@@ -69,7 +75,8 @@ $warm-bottom: rgba(255, 235, 160, 0);
   }
 }
 
-// Fills the layer; the 400px backing store is cover-cropped right-aligned, so wider panels crop the left.
+// Fills the layer; the 400px artboard is cover-cropped right-aligned, so a panel narrower than 400px (every
+// target width) drops the LEFT of the artboard — the more so the narrower the panel.
 .wo-scene-canvas {
   display: block;
   width: 100%;

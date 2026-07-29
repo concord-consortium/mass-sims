@@ -1,5 +1,5 @@
 import { act, render } from "@testing-library/react";
-import { createElement, useRef } from "react";
+import { createElement, type RefObject, useRef } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { useWeatherAnimation } from "./use-weather-animation";
 import { NO_SCENE, SCENES, type SceneSpec } from "./weather-scenes";
@@ -142,17 +142,28 @@ afterEach(() => {
     null) as unknown as typeof HTMLCanvasElement.prototype.getContext;
 });
 
-// A harness that mounts the hook against real (jsdom) canvas + panel elements with two `.wo-row`s.
-function Harness({ scene }: { scene: SceneSpec }) {
+// Mirror the production tree: the panel owns `panelRef`, and a child component (like `WeatherScene`) calls the
+// hook and renders the canvas. The nesting matters — the child's mount commit runs before the parent's ref is
+// attached, so on mount `panelRef.current` is null inside a layout effect. A flatter harness would hide that.
+function SceneChild({
+  scene,
+  panelRef,
+}: {
+  scene: SceneSpec;
+  panelRef: RefObject<HTMLDivElement | null>;
+}) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const panelRef = useRef<HTMLDivElement>(null);
   useWeatherAnimation(canvasRef, panelRef, scene);
+  return createElement("canvas", { ref: canvasRef, "data-testid": "canvas" });
+}
+function Harness({ scene }: { scene: SceneSpec }) {
+  const panelRef = useRef<HTMLDivElement>(null);
   return createElement(
     "div",
     { className: "noreaster-data-panel", ref: panelRef, "data-testid": "panel" },
+    createElement(SceneChild, { scene, panelRef }),
     createElement("div", { className: "wo-row" }),
     createElement("div", { className: "wo-row", "data-testid": "row2" }),
-    createElement("canvas", { ref: canvasRef, "data-testid": "canvas" }),
   );
 }
 

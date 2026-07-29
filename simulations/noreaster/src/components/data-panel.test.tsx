@@ -195,13 +195,12 @@ describe("NoreasterDataPanel — weather scene", () => {
     fair: false,
   };
 
-  // A real Run in the app is `trial.run()` + the `ui.runCompletedToken` bump (control-bar.handleRun); the
-  // panel's fade signal reads that token, so the tests reproduce both together.
+  // A real Run goes through `runActiveTrial()` (run + fade-signal bump in one action), which the panel's fade
+  // signal reads via the token — so the tests drive that same action.
   function runActive(store: RootStoreInstance, outcome: (typeof OUTCOMES)[number]) {
     act(() => {
       configure(store.activeTrial, SETUPS[outcome]);
-      store.activeTrial.run();
-      store.ui.markRunCompleted();
+      store.runActiveTrial();
     });
   }
 
@@ -281,11 +280,22 @@ describe("NoreasterDataPanel — weather scene", () => {
       runActive(store, "strong"); // Run → fade
       expect(scene(container)).toHaveAttribute("data-animate", "fade");
 
-      // Replay: run again (same outcome) + bump the token. The outcome is unchanged, so no re-fade.
-      act(() => {
-        store.activeTrial.run();
-        store.ui.markRunCompleted();
-      });
+      // Replay: run again (same outcome), bumping the token. The outcome is unchanged, so no re-fade.
+      act(() => store.runActiveTrial());
+      expect(scene(container)).toHaveAttribute("data-animate", "instant");
+    });
+
+    it('is "instant" on Reset — the scene clears without fading out', () => {
+      const store = createRootStore();
+      const { container } = renderWithStore(store);
+
+      runActive(store, "strong"); // Run → fade
+      expect(scene(container)).toHaveAttribute("data-animate", "fade");
+
+      // Reset clears the outcome with no token bump, so `useJustFinalized` stays latched-false. If it ever
+      // re-armed on token change alone, the scene would fade OUT over 0.6s here instead of clearing instantly.
+      act(() => store.resetTrial());
+      expect(scene(container)).toHaveAttribute("data-scene", "default");
       expect(scene(container)).toHaveAttribute("data-animate", "instant");
     });
   });
