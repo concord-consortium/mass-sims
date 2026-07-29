@@ -24,7 +24,7 @@ $shadow: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.35));
 .nor-map-img {
   height: 100%;
   left: 50%;
-  max-width: none; // track the true ratio, not an inherited img max-width
+  max-width: none; // track the true ratio; defend against a host page's global `img { max-width }` reset
   position: absolute;
   top: 0;
   transform: translateX(-50%);

@@ -14,20 +14,6 @@ import { type RefObject, useLayoutEffect } from "react";
  * once the header stops fitting its column.
  */
 
-// Dropdown-column Lato widths (must match the `--nor-dd-col-*` t=1 values in PROPS) and the panel width
-// at which the full Lato grid exactly fills: 2×top-pad(10) + label(95) + 3×col-gap(10) + dropdown caps.
-// Above it, apply() hands the surplus to the dropdown columns instead of the label column.
-const DD_COL_LATO = [126, 127, 123];
-const GRID_FILL_LATO = 2 * 10 + 95 + 3 * 10 + DD_COL_LATO[0] + DD_COL_LATO[1] + DD_COL_LATO[2]; // 521
-
-// Panel-width interpolation range: t = 0 at (or below) MIN, t = 1 at (or above) MAX.
-const PW_MIN = 376; // narrowest target panel (AP 2-column)
-const PW_MAX = GRID_FILL_LATO; // full Lato fits exactly here; below it, condense
-
-// "Temperature" → "Temp" once the header stops fitting its column (independent of the font swap — the
-// headers stay Lato at every width).
-const TEMP_SHORT_BELOW = 430;
-
 /** One interpolated custom property: `[cssVar, valueAtT0, valueAtT1]`, emitted as `<n>px`. */
 // Values interpolate condensed → Lato. Some are per-column (pathway=0, humidity=1, temperature=2):
 // the icon↔value gap and left padding tighten per column, so each cell aliases its column's value onto
@@ -59,6 +45,38 @@ const PROPS: readonly [string, number, number][] = [
   ["--nor-am-icon", 22, 24],
   // The control bar scales independently, on its own fit test — see use-control-bar-fit.ts.
 ];
+
+// Look up a prop's Lato (t=1) value, so the calibration constants below stay derived from PROPS and
+// can't silently drift from it — a retune in PROPS flows straight through to the condense threshold.
+const latoValue = (name: string): number => {
+  const prop = PROPS.find(([n]) => n === name);
+  if (!prop) throw new Error(`unknown scaling prop: ${name}`);
+  return prop[2];
+};
+
+// Dropdown-column Lato widths, and the panel width at which the full Lato grid exactly fills:
+// 2×top-pad(10) + label(95) + 3×col-gap(10) + dropdown caps (= 521). Above it, apply() hands the
+// surplus to the dropdown columns instead of the label column.
+const DD_COL_LATO = [
+  latoValue("--nor-dd-col-1"),
+  latoValue("--nor-dd-col-2"),
+  latoValue("--nor-dd-col-3"),
+];
+const GRID_FILL_LATO =
+  2 * latoValue("--nor-top-pad") +
+  latoValue("--nor-am-col") +
+  3 * latoValue("--nor-col-gap") +
+  DD_COL_LATO[0] +
+  DD_COL_LATO[1] +
+  DD_COL_LATO[2];
+
+// Panel-width interpolation range: t = 0 at (or below) MIN, t = 1 at (or above) MAX.
+const PW_MIN = 376; // narrowest target panel (AP 2-column)
+const PW_MAX = GRID_FILL_LATO; // full Lato fits exactly here; below it, condense
+
+// "Temperature" → "Temp" once the header stops fitting its column (independent of the font swap — the
+// headers stay Lato at every width).
+const TEMP_SHORT_BELOW = 430;
 
 // Props also mirrored onto the document root for the portaled popover (see apply). Kept as one list so
 // apply() and the effect cleanup that clears them can't drift.
