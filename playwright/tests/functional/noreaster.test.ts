@@ -27,20 +27,20 @@ test.describe("Trial cards — content and independence", () => {
     await sim.runButton.click();
     await expect(sim.trialCardOutcome("A")).toContainText("Strong");
 
-    // Add B and give it a partial configuration: one air-mass section, no banner (not yet run).
+    // Add B and give it a partial configuration: one populated air mass (the land glyph), no banner.
     await sim.addTrial();
     await sim.selectOption("Pathway for Land Air Mass", "1 N/NW");
-    await expect(sim.trialCardSections("B")).toHaveCount(1);
+    await expect(sim.trialCardGlyphs("B")).toHaveCount(1);
     await expect(sim.trialCardOutcome("B")).toHaveCount(0);
 
-    // Reset A via its panel reset: A's body empties (and its accessible name falls back to the bare
-    // letter) while B's content is preserved.
+    // Reset A via its panel reset: A's body empties (no glyphs, and its accessible name falls back to
+    // the bare letter) while B's content is preserved.
     await sim.selectTrial("A");
     await sim.trialResetButton("A").click();
     await expect(sim.trialCardOutcome("A")).toHaveCount(0);
-    await expect(sim.trialCardSections("A")).toHaveCount(0);
+    await expect(sim.trialCardGlyphs("A")).toHaveCount(0);
     await expect(sim.trialOption("A")).toHaveAttribute("aria-label", "Trial A");
-    await expect(sim.trialCardSections("B")).toHaveCount(1);
+    await expect(sim.trialCardGlyphs("B")).toHaveCount(1);
   });
 
   test("A and B hold independent outcomes; selecting each loads its state", async () => {

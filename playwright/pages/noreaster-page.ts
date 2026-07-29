@@ -180,9 +180,14 @@ export class NoreasterPage extends SimulationFramePage {
     return this.page.locator(".trial-card-wrapper").filter({ has: this.trialOption(letter) });
   }
 
-  /** The air-mass sections (Land / Ocean grids) within a trial card's body. */
+  /** The air-mass sections (Land / Ocean grids) within a trial card's body — always 0 (empty) or 2. */
   trialCardSections(letter: string): Locator {
     return this.trialOption(letter).locator(".nor-card-am-section");
+  }
+
+  /** The air-mass glyphs within a trial card's body — one per POPULATED air mass, so a content count. */
+  trialCardGlyphs(letter: string): Locator {
+    return this.trialOption(letter).locator(".nor-card-am-icon");
   }
 
   /** The two-line outcome banner within a trial card's body (absent until the trial is run). */

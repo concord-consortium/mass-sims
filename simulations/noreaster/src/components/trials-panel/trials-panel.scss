@@ -89,7 +89,8 @@
 .new-trial-card {
   align-items: center;
   background: transparent;
-  border: 2px dashed theme.$border;
+  border: tokens.$border-strong;
+  border-color: theme.$border;
   border-radius: tokens.$radius-md;
   color: tokens.$color-text;
   cursor: pointer;

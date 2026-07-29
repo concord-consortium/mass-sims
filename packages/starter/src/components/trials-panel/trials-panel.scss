@@ -33,7 +33,7 @@
 .new-trial-card {
   align-items: center;
   background: transparent;
-  border: 2px dashed tokens.$color-border;
+  border: tokens.$border-strong;
   border-radius: tokens.$radius-md;
   color: tokens.$color-text;
   cursor: pointer;

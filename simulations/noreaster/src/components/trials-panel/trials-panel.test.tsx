@@ -177,12 +177,12 @@ describe("TrialsPanel — card body", () => {
     const { getByRole } = renderPanel(store);
     const cardA = getByRole("option", { name: /^Trial A/ });
     const cardB = getByRole("option", { name: /^Trial B/ });
-    // A is run: it has an outcome banner and both air-mass sections.
+    // A is run: an outcome banner and both air masses populated (two glyphs).
     expect(cardA.querySelector(".nor-card-outcome")).toBeInTheDocument();
-    expect(cardA.querySelectorAll(".nor-card-am-section")).toHaveLength(2);
-    // B is a partial: one section, no banner.
+    expect(cardA.querySelectorAll(".nor-card-am-icon")).toHaveLength(2);
+    // B is a partial: no banner, and only the land air mass populated (one glyph; ocean slot empty).
     expect(cardB.querySelector(".nor-card-outcome")).toBeNull();
-    expect(cardB.querySelectorAll(".nor-card-am-section")).toHaveLength(1);
+    expect(cardB.querySelectorAll(".nor-card-am-icon")).toHaveLength(1);
   });
 
   it("clears the card body when the trial is reset", () => {
