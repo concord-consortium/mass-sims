@@ -1,6 +1,6 @@
 import { Select, type SelectOption, useAnnounce } from "@concord-consortium/mass-sims-shared";
 import { observer } from "mobx-react-lite";
-import type { ReactNode } from "react";
+import type { CSSProperties, ReactNode } from "react";
 import {
   HUMIDITIES,
   type Humidity,
@@ -78,6 +78,18 @@ const COL_INDEX = { pathway: 0, humidity: 1, temperature: 2 } as const;
 type Attribute = keyof typeof COL_INDEX;
 
 /**
+ * Leftward nudge (px) for a value pill's icon+label. Per column: Temperature → 3, Humidity Dry → 2 /
+ * Humid → 1, Pathway → 0; a valueless `–` pill stays centered. Applied as asymmetric L/R padding around
+ * `--nor-pad-r` in the scss.
+ */
+export function pillShift(col: 0 | 1 | 2, value: string | null): number {
+  if (value === null) return 0;
+  if (col === 2) return 3;
+  if (col === 1) return value === "Dry" ? 2 : value === "Humid" ? 1 : 0;
+  return 0;
+}
+
+/**
  * A read-only value pill (icon + value) — used for a locked selector after a run and for the derived
  * Ocean Temperature. `value === null` shows the `–` placeholder (no icon). The accessible name pairs
  * the field label with the value ("Humidity for Ocean Air Mass: Humid") via an sr-only span, so a
@@ -89,15 +101,20 @@ function NorValuePill({
   value,
   icon,
   col,
+  ocean,
 }: {
   label: string;
   value: string | null;
   icon?: ReactNode;
   /** Grid column (0–2) — selects the per-column icon↔value gap via the `.nor-col-N` alias. */
   col: 0 | 1 | 2;
+  ocean?: boolean;
 }) {
   return (
-    <div className={`nor-value-pill nor-col-${col}`}>
+    <div
+      className={`nor-value-pill nor-col-${col}${ocean ? " nor-row-ocean" : ""}`}
+      style={{ "--nor-pill-shift": pillShift(col, value) } as CSSProperties}
+    >
       <span className="sr-only">{value === null ? label : `${label}: ${value}`}</span>
       {value !== null && icon ? (
         <span className="nor-dd-icon" aria-hidden="true">
@@ -135,13 +152,14 @@ function SelectorCell<K extends string>({
   trial,
 }: SelectorCellProps<K>) {
   const col = COL_INDEX[attribute];
+  const ocean = airMass === "ocean";
   if (locked) {
     const icon = value !== null ? options.find((o) => o.value === value)?.icon : undefined;
-    return <NorValuePill label={label} value={value} icon={icon} col={col} />;
+    return <NorValuePill label={label} value={value} icon={icon} col={col} ocean={ocean} />;
   }
   return (
     <Select
-      className={`nor-select nor-col-${col}${value === null ? " nor-placeholder" : ""}`}
+      className={`nor-select nor-col-${col}${value === null ? " nor-placeholder" : ""}${ocean ? " nor-row-ocean" : ""}`}
       label={label}
       options={toSelectOptions(options)}
       placeholder={PLACEHOLDER}
@@ -245,7 +263,7 @@ export const AirMassSelectors = observer(function AirMassSelectors() {
         />
 
         {/* Row 3 — Ocean Air Mass. Temperature is a derived read-only pill, not a dropdown. */}
-        <div className="nor-air-mass">
+        <div className="nor-air-mass nor-row-ocean">
           <span
             className="nor-air-mass-icon"
             data-tint={tempTint(trial.oceanTemperature)}
@@ -284,6 +302,7 @@ export const AirMassSelectors = observer(function AirMassSelectors() {
           value={trial.oceanTemperature}
           icon={trial.oceanTemperature !== null ? tempIcon(trial.oceanTemperature) : undefined}
           col={2}
+          ocean
         />
       </div>
     </div>

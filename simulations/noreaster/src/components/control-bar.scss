@@ -1,14 +1,13 @@
 @use "@concord-consortium/mass-sims-shared/styles/tokens" as tokens;
 @use "../theme" as theme;
 
-// The bar's gap / button padding / icon sizes interpolate continuously (custom properties from
-// use-nor-scaling.ts; the var() fallbacks here are the widest/Lato values), so all three controls
-// stay on one row and shrink smoothly as the panel narrows — matching the demo. flex-shrink:0 keeps
-// the buttons at their (interpolated) natural width so labels never clip.
+// Full-Lato values (widest state). use-control-bar-fit.ts overrides them inline once the controls stop
+// fitting — condensing the font, interpolating padding/gaps/icon, then setting explicit widths that fill
+// the bar. flex-shrink:0 keeps buttons at their width so labels never clip.
 .control-bar {
   display: flex;
   flex-shrink: 0;
-  gap: var(--nor-cb-gap, 10px);
+  gap: 10px;
   justify-content: center;
   padding: 10px;
 
@@ -19,8 +18,8 @@
     border-color: theme.$border;
     display: flex;
     flex-shrink: 0; // never squish below the label — it would clip "Reset Trial"
-    gap: var(--nor-cb-btn-gap, 4px);
-    padding: 8px var(--nor-cb-btn-pad-r, 12px) 8px var(--nor-cb-btn-pad-l, 8px);
+    gap: 4px;
+    padding: 8px 12px 8px 8px;
     white-space: nowrap;
 
     &[data-hovered]:not([aria-disabled="true"]),
@@ -41,8 +40,8 @@
     color: theme.$heading;
     display: block;
     flex-shrink: 0;
-    height: var(--nor-cb-icon, 24px);
-    width: var(--nor-cb-icon, 24px);
+    height: 24px;
+    width: 24px;
   }
 }
 
@@ -72,9 +71,9 @@
     align-items: center;
     cursor: pointer;
     display: flex;
-    gap: var(--nor-toggle-gap, 6px);
+    gap: 6px;
     height: 100%;
-    padding: 0 var(--nor-toggle-pad-x, 10px);
+    padding: 0 10px;
   }
 
   .map-view-state {
@@ -124,15 +123,5 @@
   .map-view-button[data-selected] .map-view-thumb {
     left: auto;
     right: 2px;
-  }
-}
-
-// Condense every control-bar label together once the controls stop fitting — the toggle and the
-// Run / Reset buttons all switch to Roboto Condensed as a set, per the demo (which never condenses
-// only some buttons in a group).
-.noreaster-simulation-panel[data-nor-condensed] {
-  .map-view-toggle,
-  .control-button {
-    font-family: tokens.$font-family-condensed;
   }
 }

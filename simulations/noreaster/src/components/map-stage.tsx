@@ -55,13 +55,15 @@ export const MapStage = observer(function MapStage({ mapView = "street" }: { map
 
   return (
     <div className="nor-stage" data-map-view={mapView}>
-      {/* Aspect-locked map box (2:1). Overlays are children positioned as % of this box, so they
-          track the same map feature as the map scales; see map-stage.scss. */}
-      <div className="nor-map">
-        <img className="nor-map-img" src={mapStreet} alt={MAP_DESCRIPTION} />
-        {/* Satellite basemap — decorative (same geography); crossfaded in via data-map-view. */}
-        <img className="nor-map-img nor-map-img--satellite" src={mapSatellite} alt="" />
+      {/* Display basemaps at the art's true ratio (1400/667), height-filling & centered; no letterbox.
+          The street <img> carries the informative alt; the satellite layer is decorative and crossfades
+          in via data-map-view. Both sit behind the overlay frame. */}
+      <img className="nor-map-img" src={mapStreet} alt={MAP_DESCRIPTION} />
+      <img className="nor-map-img nor-map-img--satellite" src={mapSatellite} alt="" />
 
+      {/* Overlay frame: a fixed 2:1 box at stage height, independent of the wider display art, so its %
+          children hold their map positions. See map-stage.scss. */}
+      <div className="nor-map">
         {ARROWS.map(({ num, Icon }) => {
           const { tint, dimmed } = arrowTint(
             num,

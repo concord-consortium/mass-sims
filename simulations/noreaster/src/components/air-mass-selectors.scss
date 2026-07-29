@@ -33,18 +33,19 @@
   align-items: end;
   display: grid;
   gap: 5px var(--nor-col-gap, 10px);
-  // Label column: floor is its interpolated width, `auto` max stretches to absorb surplus on panels
-  // wider than the demo's (the AP layout isn't width-capped like the demo). Dropdown columns cap at
-  // their var and shrink via the `0` floor when tight, filling the grid so the last column never
-  // escapes the panel edge. (The condensed width overrides the label track — see below.)
+  // Label column: `max-content` max holds its content width rather than absorbing surplus. Above the
+  // calibrated max, use-nor-scaling routes the surplus to the dropdown columns (--nor-dd-col-*) so they
+  // fill toward the right edge. Dropdown columns cap at their var and shrink via the `0` floor when
+  // tight, so the last column never escapes the panel edge.
   grid-template-columns:
-    minmax(var(--nor-am-col, 95px), auto)
+    minmax(var(--nor-am-col, 95px), max-content)
     minmax(0, var(--nor-dd-col-1, 126px))
     minmax(0, var(--nor-dd-col-2, 127px))
     minmax(0, var(--nor-dd-col-3, 123px));
 
-  // Row-3 cells sit 1px lower, matching the demo's per-cell margin-top.
-  > *:nth-child(n + 9) {
+  // Ocean-row cells sit 1px lower. By class, not `:nth-child`: pre-run each shared <Select> renders a
+  // hidden phantom sibling, so a positional selector would spill onto the land row.
+  .nor-row-ocean {
     margin-top: 1px;
   }
 
@@ -178,6 +179,7 @@
   // Its icon / gap / horizontal padding use the same interpolated props as the triggers, so it shrinks
   // in step with its column rather than spilling past the panel edge.
   .nor-value-pill {
+    --nor-pill-shift: 0; // leftward content nudge (px), set per pill in air-mass-selectors.tsx
     align-items: center;
     align-self: center;
     background: theme.$surface;
@@ -195,7 +197,14 @@
     min-height: 38px;
     min-width: 0; // shrink inside the minmax(0) track rather than spilling past the column
     overflow: hidden;
-    padding: 0 var(--nor-pad-r, 10px);
+    // Asymmetric L/R padding nudges the centered content left by --nor-pill-shift px, keeping the total
+    // horizontal padding at 2×--nor-pad-r.
+    padding: 0
+      calc(
+        var(--nor-pad-r, 10px) + var(--nor-pill-shift) * 1px +
+          min(0px, var(--nor-pad-r, 10px) - var(--nor-pill-shift) * 1px)
+      )
+      0 max(0px, var(--nor-pad-r, 10px) - var(--nor-pill-shift) * 1px);
 
     .nor-dd-icon {
       @include nor-dd-icon;
@@ -225,18 +234,6 @@
     &:not([data-placeholder="true"]) {
       font-weight: 500;
     }
-  }
-
-  // At the narrowest width the panel is over budget, so the label uses `minmax(var, max-content)`: it
-  // holds the demo's width as a floor but grows to fit its content rather than overlapping the Pathway
-  // dropdown, while the dropdown columns take the rest. (`auto` max here would instead steal their room;
-  // no condensed deployment width has surplus, so max-content opens no right-edge gap.)
-  .nor-controls-grid {
-    grid-template-columns:
-      minmax(var(--nor-am-col, 95px), max-content)
-      minmax(0, var(--nor-dd-col-1, 126px))
-      minmax(0, var(--nor-dd-col-2, 127px))
-      minmax(0, var(--nor-dd-col-3, 123px));
   }
 }
 

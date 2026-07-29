@@ -1,12 +1,13 @@
 import { Button, useAnnounce, useLogEvent } from "@concord-consortium/mass-sims-shared";
 import { observer } from "mobx-react-lite";
-import type { FunctionComponent, SVGProps } from "react";
+import { type FunctionComponent, type SVGProps, useRef } from "react";
 import { SwitchButton, SwitchField } from "react-aria-components";
 import ResetIcon from "../assets/icons/reset.svg?react";
 import RunIcon from "../assets/icons/run.svg?react";
 import { OUTCOME_BANNER } from "../model/outcome-values";
 import { useStores } from "../stores/root-store";
 import type { MapView } from "./map-stage";
+import { useControlBarFit } from "./use-control-bar-fit";
 
 import "./control-bar.scss";
 
@@ -96,6 +97,11 @@ export const ControlBar = observer(function ControlBar({
   const announce = useAnnounce();
   const letter = ui.selectedTrialLetter;
 
+  // Fit-based sizing; re-runs on Run↔Replay (changes button width, not bar width).
+  const barRef = useRef<HTMLDivElement>(null);
+  const runLabel = trial.hasRun ? "Replay" : "Run";
+  useControlBarFit(barRef, runLabel);
+
   const handleToggleMapView = () => {
     const view = mapView === "street" ? "satellite" : "street";
     logEvent("map_view_changed", { trial: letter, view });
@@ -122,10 +128,10 @@ export const ControlBar = observer(function ControlBar({
   };
 
   return (
-    <div className="control-bar">
+    <div className="control-bar" ref={barRef}>
       <MapViewToggle mapView={mapView} onToggle={handleToggleMapView} />
       <ControlButton
-        label={trial.hasRun ? "Replay" : "Run"}
+        label={runLabel}
         Icon={RunIcon}
         isDisabled={!trial.setupComplete}
         onPress={handleRun}
