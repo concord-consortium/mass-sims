@@ -97,7 +97,8 @@ export function useStormRun(
   const narratedRef = useRef(0); // index of the next staged narration line to speak
 
   // Commit the run + fire its analytics/narration, guarded by the captured `runId` so a stale call is a
-  // no-op. `finalizeRun` returns the committed run (or null when the id no longer matches).
+  // no-op. `simulation_run` is the run's COMPLETION event; its counterpart `simulation_run_started` fires
+  // on the Run press, so a run aborted before finalize logs the start but no `simulation_run`.
   const finalize = useCallback(() => {
     if (runId == null) return;
     const done = store.finalizeRun(runId);

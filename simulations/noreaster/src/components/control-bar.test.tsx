@@ -53,9 +53,14 @@ describe("ControlBar — Run / Replay (deferred)", () => {
     expect(store.ui.run?.outcome).toBe("strong");
     expect(store.ui.run?.replay).toBe(false);
     expect(store.activeTrial.outcome).toBeNull();
-    // Run is disabled while running; the `simulation_run` analytics + completion narration are the
-    // runner's job at finalize, not the control bar's.
     expect(getByRole("button", { name: "Run" })).toHaveAttribute("aria-disabled", "true");
+    // The run START is logged here (the attempt); the paired `simulation_run` completion is the runner's
+    // job at finalize, which the isolated bar (no runner mounted) never reaches.
+    expect(log).toHaveBeenCalledWith("simulation_run_started", {
+      trial: "A",
+      replay: false,
+      outcome: "strong",
+    });
     expect(log).not.toHaveBeenCalledWith("simulation_run", expect.anything());
   });
 
@@ -68,6 +73,11 @@ describe("ControlBar — Run / Replay (deferred)", () => {
     expect(store.ui.isRunning("A")).toBe(true);
     expect(store.ui.run?.replay).toBe(true);
     expect(store.ui.run?.outcome).toBe("strong");
+    expect(log).toHaveBeenCalledWith("simulation_run_started", {
+      trial: "A",
+      replay: true,
+      outcome: "strong",
+    });
   });
 
   it("Reset during a run cancels it, then clears the trial", () => {

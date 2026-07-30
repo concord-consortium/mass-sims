@@ -111,11 +111,21 @@ export const ControlBar = observer(function ControlBar({
     onToggleMapView();
   };
 
-  // Run starts the deferred run animation: the outcome commits when the animation finishes, not now. The
-  // runner (in the map stage) drives the clock and emits the `simulation_run` analytics + completion
-  // narration at finalize — so they are deliberately absent here.
+  // Run starts the deferred run animation: the outcome commits when the animation finishes, not now.
+  // Log `simulation_run_started` on every press (the attempt); the runner emits the paired `simulation_run`
+  // completion event at finalize. A run aborted before finalize (Reset, trial switch, hydration) logs the
+  // start but no completion — so count `simulation_run_started` for attempts, `simulation_run` for
+  // completions.
   const handleRun = () => {
-    beginRun();
+    if (beginRun() == null) return; // setup incomplete — no run armed
+    const run = ui.run;
+    if (run) {
+      logEvent("simulation_run_started", {
+        trial: run.trial,
+        replay: run.replay,
+        outcome: run.outcome,
+      });
+    }
   };
 
   // Reset cancels any in-flight run (its stale finalize then no-ops) before clearing the trial, so Reset
