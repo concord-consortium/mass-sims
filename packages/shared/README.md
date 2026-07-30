@@ -216,6 +216,11 @@ Queue-backed with a single pending timer and clear-then-re-announce for repeats.
 - **`useCurrentAndPrevious<T>(value)`** → `readonly [current, previous?]`.
 - **`useStateWithCallback` / `useStateWithCallbackInstant` / `useStateWithCallbackLazy`** — set-state
   then run a callback with the new value, without an extra `useEffect`.
+- **`useReducedMotion()`** → `boolean` — the user's `prefers-reduced-motion` setting, kept live (seeded
+  from the current value, updated on an OS toggle). Prefer it over the `prefersReducedMotion()` snapshot
+  when an animation must react to a mid-session change.
+- **`useDocumentHidden()`** → `boolean` — whether the tab is backgrounded, kept live via `visibilitychange`
+  (for pausing an animation off-screen).
 
 ---
 
@@ -248,8 +253,9 @@ the trial list with **MST**; these helpers operate on the MST `types.map` and th
   a callable `SeededRandom` (`rng()` → next `[0,1)`, `.state()` for save/restore). `saveSeededRandom(key)`
   → `SeededRandomState`, `restoreSeededRandom(key, state)`, `resetSeededRandom(key)`, `resetAll()`.
   Inject the PRNG via the MST environment so tests pass a seeded instance.
-- **Reduced motion**: `prefersReducedMotion()` → `boolean`; `smoothScrollIntoView(el)` — smooth scroll
-  that degrades to instant when the user prefers reduced motion.
+- **Reduced motion**: `prefersReducedMotion()` → `boolean` (a one-shot snapshot — for a value that reacts
+  to a mid-session change, use the `useReducedMotion()` hook above); `smoothScrollIntoView(el)` — smooth
+  scroll that degrades to instant when the user prefers reduced motion.
 
 ---
 

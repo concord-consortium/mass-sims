@@ -97,6 +97,7 @@ export function useStormRun(
   const narratedRef = useRef(0); // index of the next staged narration line to speak
   const announcedRunIdRef = useRef<number | null>(null); // speak the run-start line once per run (StrictMode-safe)
   const frameErrorLoggedRef = useRef(false); // log a frame failure once per run, not every frame
+  const lastFrameAtRef = useRef(0); // wall time of the last frame — the liveness watchdog reads this
 
   // Commit the run + fire its analytics/narration, guarded by the captured `runId` so a stale call is a
   // no-op. `simulation_run` is the run's COMPLETION event; its counterpart `simulation_run_started` fires
@@ -179,19 +180,24 @@ export function useStormRun(
   const enabled = runId != null && !reducedMotion && !hidden;
   const totalMs = outcome ? TOTAL_DUR_S[outcome] * 1000 : 0;
 
-  // Wall-clock backstop: if the rAF loop ever dies (a bad frame throws), finalize still fires so the run
-  // can't get stuck. `finalize` is runId-guarded, so it's a no-op once the loop finalizes normally. Held
-  // while the tab is hidden (the clock pauses there but a timer wouldn't) and rebased on the remaining
-  // time on resume, so a hidden/resumed run isn't finalized ahead of its own animation.
+  // Liveness watchdog: finalize only if the rAF loop is genuinely DEAD — no frame for >3 s — so the run
+  // can't get stuck (Run disabled, outcome never recorded). A slow-but-alive loop keeps stamping
+  // `lastFrameAtRef` and finishes on its own clock; a wall-clock DURATION deadline would instead cut a
+  // slow device's animation short, since the clock advances in clamped time. Held while the tab is hidden
+  // (the loop pauses there) and re-seeded on resume. `finalize` is runId-guarded, so a normal finalize
+  // no-ops it.
   useEffect(() => {
     if (runId == null || perfHold || hidden) return;
-    const remaining = Math.max(0, totalMs - elapsedRef.current);
-    const id = setTimeout(finalize, remaining + 3000);
-    return () => clearTimeout(id);
-  }, [runId, perfHold, hidden, totalMs, finalize]);
+    lastFrameAtRef.current = performance.now();
+    const id = setInterval(() => {
+      if (performance.now() - lastFrameAtRef.current > 3000) finalize();
+    }, 1000);
+    return () => clearInterval(id);
+  }, [runId, perfHold, hidden, finalize]);
 
   const tick = useCallback(
     (deltaMs: number) => {
+      lastFrameAtRef.current = performance.now(); // the loop is alive this frame (watchdog reads this)
       try {
         // One clamped frame delta drives both the clock and the physics, so the cloud can't advance out of
         // step with the run clock on a stall.
@@ -235,17 +241,18 @@ export function useStormRun(
         // the diagnostic hold, pin the cloud at peak (t=1) so the probe samples sustained worst-case load.
         const cloudElapsed = perfHold ? 1e9 : elapsed - CLOUD_START_MS;
         if (cloudElapsed >= 0) anim?.drawFrame(cloudElapsed, dt);
-
-        if (!perfHold && elapsed >= totalMs) finalize();
       } catch (err) {
         // A bad frame (e.g. a canvas allocation failure on a memory-starved device) must not kill the rAF
-        // loop — swallow it so the loop keeps running and the wall-clock backstop still finalizes. Log once.
+        // loop — swallow it so the loop keeps running, degrading to no cloud. Log once.
         if (!frameErrorLoggedRef.current) {
           frameErrorLoggedRef.current = true;
           // biome-ignore lint/suspicious/noConsole: surface a genuine device-side frame failure once.
           console.error("noreaster run frame failed; continuing:", err);
         }
       }
+      // Finalize OUTSIDE the try, off the ref, so a throwing `drawFrame` still commits on time (no cloud,
+      // normal timing) instead of never reaching this and limping to the watchdog.
+      if (!perfHold && elapsedRef.current >= totalMs) finalize();
     },
     [totalMs, finalize, arrowsRef, anim, perfHold, outcome, announce],
   );

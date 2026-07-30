@@ -68,7 +68,7 @@ export class NoreasterPage extends SimulationFramePage {
     return this.page.locator(".nor-prompt");
   }
 
-  /** The map stage — carries `data-map-view`, plus `data-run-phase` + `aria-busy` during/after a run. */
+  /** The map stage — carries `data-map-view`, plus `data-run-phase` during/after a run. */
   get mapStage(): Locator {
     return this.page.locator(".nor-stage");
   }
