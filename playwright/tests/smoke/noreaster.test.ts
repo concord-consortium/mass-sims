@@ -2,6 +2,11 @@ import { expect, test } from "@playwright/test";
 import { NoreasterPage } from "../../pages/noreaster-page";
 import { MAX_TRIALS } from "../../testdata/noreaster-testdata";
 
+// The Run animation defers the outcome until it finishes (up to ~11.5 s). These tests assert the
+// post-run state (outcome, scene, locked selectors), so run them under reduced motion — the runner
+// finalizes at once, reaching that state instantly. Normal-motion timing is covered separately below.
+test.use({ contextOptions: { reducedMotion: "reduce" } });
+
 // Nor'easter smoke suite. Conventions:
 //   - a per-sim page object (NoreasterPage) owns all locators + navigation; the spec body has no
 //     raw locators,
@@ -172,21 +177,49 @@ test("Data panel: the weather scene reflects the humid-no-storm outcome", async 
   await expect(sim.weatherScene).toHaveAttribute("data-scene", "humidNoStorm");
 });
 
-test("Data panel weather scene: a fresh run applies the 0.6s opacity fade (normal motion)", async () => {
-  // Default context is no-preference (normal motion). Assert the fade rule actually resolves — nothing else
-  // verifies the transition itself, so it could be removed or mistyped and every other test would still pass.
-  await sim.completeSetup(); // strong
-  await sim.runButton.click();
-  await expect(sim.weatherScene).toHaveAttribute("data-animate", "fade");
-  const applied = await sim.weatherScene.evaluate((el) => {
-    const s = getComputedStyle(el);
-    return {
-      reduceMatches: matchMedia("(prefers-reduced-motion: reduce)").matches,
-      property: s.transitionProperty,
-      duration: s.transitionDuration,
-    };
+// The real deferred timing + the normal-motion fade both need no-preference motion. Use a fast outcome
+// ("windy", ~3 s to finalize) so these stay quick.
+test.describe("run animation — normal motion (deferred)", () => {
+  test.use({ contextOptions: { reducedMotion: "no-preference" } });
+
+  test("Run enters a running phase, defers the outcome, then commits it (arrows removed, pills kept)", async () => {
+    await sim.completeSetup("windy"); // land N/NW (arrow 1), ocean S/SE (arrow 2); ~3 s to finalize
+
+    await sim.runButton.click();
+    // Running phase: the stage is busy, and the outcome is NOT committed yet (deferred).
+    await expect(sim.mapStage).toHaveAttribute("aria-busy", "true");
+    await expect(sim.mapStage).toHaveAttribute("data-run-phase", "running");
+    await expect(sim.outcomePill).toHaveText("–");
+
+    await expect(sim.outcomePill).toHaveText("Windy, no storm", { timeout: 8000 });
+    await expect(sim.replayButton).toBeVisible();
+    await expect(sim.mapStage).not.toHaveAttribute("data-run-phase", "running");
+
+    // The two selected pathway arrows are removed while their pills stay; the companions + pills vanish.
+    await expect(sim.arrow(1)).toHaveAttribute("data-run-state", "removed");
+    await expect(sim.arrow(2)).toHaveAttribute("data-run-state", "removed");
+    await expect(sim.pill(1)).not.toHaveAttribute("data-run-state");
+    await expect(sim.pill(2)).not.toHaveAttribute("data-run-state");
+    await expect(sim.arrow(4)).toHaveAttribute("data-run-state", "hidden"); // companion land W
+    await expect(sim.pill(4)).toHaveAttribute("data-run-state", "hidden");
   });
-  expect(applied).toEqual({ reduceMatches: false, property: "opacity", duration: "0.6s" });
+
+  test("Data panel weather scene: a fresh run applies the 0.6s opacity fade", async () => {
+    // Nothing else verifies the transition itself, so it could be removed or mistyped and every other
+    // test would still pass. The fade is outcome-independent; a fast outcome keeps this quick.
+    await sim.completeSetup("windy");
+    await sim.runButton.click();
+    await expect(sim.weatherScene).toHaveAttribute("data-animate", "fade", { timeout: 8000 });
+    const applied = await sim.weatherScene.evaluate((el) => {
+      const s = getComputedStyle(el);
+      return {
+        reduceMatches: matchMedia("(prefers-reduced-motion: reduce)").matches,
+        property: s.transitionProperty,
+        duration: s.transitionDuration,
+      };
+    });
+    expect(applied).toEqual({ reduceMatches: false, property: "opacity", duration: "0.6s" });
+  });
 });
 
 test("Data panel weather scene: reduced motion themes the scene but suppresses the fade", async ({

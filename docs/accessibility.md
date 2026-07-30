@@ -175,6 +175,57 @@ react-aria one is battle-tested and keyboard-/SR-complete. Documented at the top
 
 ---
 
+## Motion and decorative animation
+
+The Nor'easter Data-panel weather scene is the repo's first animation. The conventions it established
+apply to any future decorative motion. The Nor'easter **map-area run animation** (the storm cloud and
+converging arrows that play when a trial is Run) follows the same conventions, with three additions noted
+below.
+
+- **Decorative subtree is hidden from AT and from the pointer.** The animated layer is `aria-hidden`
+  and `pointer-events: none`: it carries no information a screen-reader user needs (every weather
+  attribute is named in the outcome table) and must never intercept a click. Motion is presentation
+  only — never the sole channel for a fact.
+- **Reduced motion is honored in *both* places that move.** A canvas animation has two independent
+  motion sources — the JS frame loop and the CSS appearance transition — and `prefers-reduced-motion`
+  must gate **both**. The frame loop folds `reduce` into its `enabled` predicate (no `requestAnimationFrame`
+  scheduled), and the CSS zeroes the fade (`.wo-scene[data-animate] { transition: none }`). Gating only
+  one leaves the other moving.
+- **The reduced-motion subscription must be live.** Read the initial value from `matchMedia`, but also
+  subscribe to its `change` event so a mid-session OS toggle takes effect without a reload; drop the
+  static snapshot-only read. (The shared `prefersReducedMotion` util is a snapshot; pair it with a
+  `matchMedia("(prefers-reduced-motion: reduce)")` `change` listener.)
+- **WCAG 2.2.2 (Pause, Stop, Hide) — decision.** The scene animates indefinitely once an outcome is
+  recorded and sits alongside other content, so 2.2.2 is in scope. The team's chosen accommodation is
+  **`prefers-reduced-motion`**: users who signal a motion preference get no animation at all, and the
+  content is purely decorative. We deliberately do **not** add a separate on-screen pause/stop control
+  or an auto-stop timer, keeping the animation faithful to the signed-off prototype. Revisit if the
+  content ever becomes non-decorative or a formal 2.2.2 audit requires an explicit mechanism (the
+  cheapest compliant option would be to disable the frame loop a few seconds after finalization, leaving
+  the static CSS backdrop in place).
+
+### The map-area run animation adds three things
+
+- **Reduced motion has a *third* surface — the run sequence itself.** Beyond the frame loop and the CSS
+  transition, the multi-second Run has its own timeline (arrows converge, then the cloud grows — up to
+  ~11.5 s for `strong`). Under `prefers-reduced-motion: reduce` the runner **collapses the whole sequence
+  to its final frame at once** — no arrow tween, no cloud build — and finalizes on the next tick, so a
+  reduced-motion user still gets the outcome, with no motion. Gating the frame loop alone would leave the
+  run's own timing running.
+- **The run is narrated through the one shared `<Announcer>`.** The animation is purely decorative
+  (`aria-hidden` canvas + overlays), so the *information* travels a parallel `aria-live` channel: a
+  run-start "…air masses converging" line, staged mid-run lines as the runner's clock crosses their times
+  (paused with the tab, like the frame loop), and a full weather-outcome readout at finalize. Under
+  reduced motion only the start line + the readout are spoken (there's no build to narrate). The stage
+  carries `aria-busy="true"` while running. See `run-narration.ts`.
+- **WCAG 2.2.2 for the run — same accommodation, but note it's *finite*.** Unlike the Data-panel scene
+  (which loops indefinitely), the run animation stops at finalize (≤ ~11.5 s) and then holds a static
+  final frame, so 2.2.2's "moving > 5 s" clause is in scope only for the longest outcome (`strong`). The
+  accommodation stays `prefers-reduced-motion` (no on-screen stop control), consistent with the decision
+  above and faithful to the signed-off prototype.
+
+---
+
 ## Known gaps (deferred — revisit when a consumer needs them)
 
 Recorded so they aren't rediscovered as bugs (MAS-25 F-8):

@@ -5,6 +5,10 @@ import { NoreasterPage } from "../../pages/noreaster-page";
 // runs once per viewport project. Covers trial-card body — per-trial content + independence, plus the
 // layout facts jsdom can't prove (the custom footprint and the reset-button position math).
 
+// The Run animation defers the outcome (up to ~11.5 s). These tests assert the recorded outcome, so run
+// under reduced motion — the runner finalizes at once, reaching the post-run state instantly.
+test.use({ contextOptions: { reducedMotion: "reduce" } });
+
 /** Do two vertical boxes overlap on the y-axis? */
 function overlapsVertically(
   a: { y: number; height: number },

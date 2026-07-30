@@ -68,9 +68,19 @@ export class NoreasterPage extends SimulationFramePage {
     return this.page.locator(".nor-prompt");
   }
 
-  /** The map stage — carries `data-map-view` ("street" | "satellite"). */
+  /** The map stage — carries `data-map-view`, plus `data-run-phase` + `aria-busy` during/after a run. */
   get mapStage(): Locator {
     return this.page.locator(".nor-stage");
+  }
+
+  /** A pathway arrow overlay by its number (1 = N/NW, 4 = W, 2 = S/SE, 3 = NE) — decorative. */
+  arrow(num: number): Locator {
+    return this.page.locator(`.nor-arrow[data-arrow="${num}"]`);
+  }
+
+  /** A pathway pill overlay by its number — decorative; kept as the result marker after a run. */
+  pill(num: number): Locator {
+    return this.page.locator(`.nor-pill[data-pathway="${num}"]`);
   }
 
   /** Open an air-mass dropdown by its field label and pick an option by its accessible name. */

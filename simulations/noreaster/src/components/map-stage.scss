@@ -12,11 +12,33 @@
 $shadow: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.35));
 
 .nor-stage {
-  background: theme.$map-bg;
+  background-color: theme.$map-bg;
   flex: 1;
   min-height: 0;
   overflow: hidden;
   position: relative;
+}
+
+// Storm cloud graphic: a fixed 298px container centered on the map, holding the oversized (398px, 4×
+// supersampled) particle canvas that overhangs it. The runner sets the container's transform (center +
+// drift offset) and opacity per frame. Decorative.
+.nor-storm {
+  height: 298px;
+  left: 50%;
+  opacity: 0;
+  pointer-events: none;
+  position: absolute;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 298px;
+}
+
+.nor-storm-canvas {
+  height: 398px;
+  left: -50px;
+  position: absolute;
+  top: -50px;
+  width: 398px;
 }
 
 // Display basemaps: the art at its true 1400/667 ratio, height-filling & centered (behind the overlay
@@ -117,6 +139,17 @@ $shadow: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.35));
 .nor-pill[data-dimmed] {
   filter: none;
   opacity: 0.35;
+}
+
+// Run animation states. Once a trial is running or run: the two selected arrows converge into the storm
+// and are removed (`removed`); the two companion (un-selected) arrows and their pathway pills disappear
+// (`hidden`). Both are instant, no transition. A converging arrow (running + selected) carries no
+// `data-run-state` — the runner drives its inline transform/opacity, and its pill stays as the result marker.
+.nor-arrow[data-run-state="hidden"],
+.nor-arrow[data-run-state="removed"],
+.nor-pill[data-run-state="hidden"] {
+  filter: none;
+  opacity: 0;
 }
 
 // ---- Pathway pills (circled number + direction) ----

@@ -1,4 +1,5 @@
-import { fireEvent, render, within } from "@testing-library/react";
+import { act, fireEvent, render, within } from "@testing-library/react";
+import { useState } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // Mock the lara-interactive-api surface used for AP saved-state sync. vi.hoisted
@@ -177,6 +178,62 @@ describe("Nor'easter App — AP saved state", () => {
     const view = render(<App />);
     expect(view.getByRole("option", { name: /^Trial A/ })).toBeInTheDocument();
     expect(view.queryByRole("option", { name: /^Trial B/ })).toBeNull();
+  });
+
+  it("cancels an in-flight run when saved state hydrates (no stale run against restored trials)", () => {
+    // The real useInitMessage returns null, then the message when it arrives, re-rendering App. Model that
+    // with a STATEFUL mock: a plain mockReturnValue + rerender can't, because `observer` memoizes App, so
+    // identical props bail out and the hook is never re-read. `deliver` pushes the late message.
+    let deliver: (msg: unknown) => void = () => {};
+    useInitMessageMock.mockImplementation(() => {
+      const [msg, setMsg] = useState<unknown>(null);
+      deliver = setMsg;
+      return msg;
+    });
+
+    // Standalone first, so a deferred run is genuinely in flight when the init message arrives.
+    const view = render(<App />);
+    const choose = (field: RegExp, option: string) => {
+      fireEvent.click(view.getByRole("button", { name: field }));
+      fireEvent.click(view.getByRole("option", { name: option }));
+    };
+    choose(/Pathway for Land Air Mass/, "1 N/NW");
+    choose(/Humidity for Land Air Mass/, "Dry");
+    choose(/Temperature for Land Air Mass/, "Cold");
+    choose(/Pathway for Ocean Air Mass/, "2 S/SE");
+    choose(/Humidity for Ocean Air Mass/, "Humid");
+    fireEvent.click(view.getByRole("button", { name: "Run" }));
+    // The run is in flight: the stage is busy (the outcome is deferred, not yet committed).
+    expect(view.container.querySelector(".nor-stage")).toHaveAttribute("aria-busy", "true");
+
+    // Saved state now arrives mid-run. `run` is volatile, so applySnapshot won't clear it — the hydrate
+    // effect must cancel it first, or the descriptor survives against the restored trials and could
+    // finalize onto them.
+    const trialA = {
+      landPathway: null,
+      landHumidity: null,
+      landTemperature: null,
+      oceanPathway: null,
+      oceanHumidity: null,
+      outcome: null,
+    };
+    const trialB = { ...trialA, oceanPathway: "NE" };
+    act(() => {
+      deliver({
+        mode: "runtime",
+        interactiveState: {
+          version: 1,
+          trials: { A: trialA, B: trialB },
+          selectedTrialLetter: "A",
+        },
+      });
+    });
+
+    // Hydration ran (restored B proves applySnapshot fired)…
+    expect(view.getByRole("option", { name: /^Trial B/ })).toBeInTheDocument();
+    // …and the run is gone — the stage is no longer busy — with the restored (empty) trial A intact.
+    expect(view.container.querySelector(".nor-stage")).not.toHaveAttribute("aria-busy");
+    expect(view.getByRole("option", { name: /^Trial A/ })).toHaveAttribute("aria-selected", "true");
   });
 
   it("calls setInteractiveState on a trial-list change (add)", () => {

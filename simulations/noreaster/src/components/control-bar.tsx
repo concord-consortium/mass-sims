@@ -4,7 +4,6 @@ import { type FunctionComponent, type SVGProps, useRef } from "react";
 import { SwitchButton, SwitchField } from "react-aria-components";
 import ResetIcon from "../assets/icons/reset.svg?react";
 import RunIcon from "../assets/icons/run.svg?react";
-import { OUTCOME_BANNER } from "../model/outcome-values";
 import { useStores } from "../stores/root-store";
 import type { MapView } from "./map-stage";
 import { useControlBarFit } from "./use-control-bar-fit";
@@ -92,10 +91,11 @@ export const ControlBar = observer(function ControlBar({
   mapView,
   onToggleMapView,
 }: ControlBarProps) {
-  const { activeTrial: trial, resetTrial, runActiveTrial, ui } = useStores();
+  const { activeTrial: trial, resetTrial, beginRun, cancelRun, ui } = useStores();
   const logEvent = useLogEvent();
   const announce = useAnnounce();
   const letter = ui.selectedTrialLetter;
+  const running = ui.isRunning(letter);
 
   // Fit-based sizing; re-runs on Run↔Replay (changes button width, not bar width).
   const barRef = useRef<HTMLDivElement>(null);
@@ -111,18 +111,18 @@ export const ControlBar = observer(function ControlBar({
     onToggleMapView();
   };
 
+  // Run starts the deferred run animation: the outcome commits when the animation finishes, not now. The
+  // runner (in the map stage) drives the clock and emits the `simulation_run` analytics + completion
+  // narration at finalize — so they are deliberately absent here.
   const handleRun = () => {
-    const replay = trial.hasRun; // captured before the run so Replay reports replay: true
-    runActiveTrial();
-    const outcome = trial.outcome;
-    // Run is gated on `setupComplete`, so `run()` always records an outcome — the guard just narrows.
-    if (!outcome) return;
-    logEvent("simulation_run", { trial: letter, replay, outcome });
-    announce(`Simulation complete: ${OUTCOME_BANNER[outcome]}`);
+    beginRun();
   };
 
+  // Reset cancels any in-flight run (its stale finalize then no-ops) before clearing the trial, so Reset
+  // stays a live escape hatch during the multi-second animation.
   const handleReset = () => {
     logEvent("trial_reset", { trial: letter });
+    cancelRun();
     resetTrial();
     announce(`Trial ${letter} reset.`);
   };
@@ -133,7 +133,7 @@ export const ControlBar = observer(function ControlBar({
       <ControlButton
         label={runLabel}
         Icon={RunIcon}
-        isDisabled={!trial.setupComplete}
+        isDisabled={!trial.setupComplete || running}
         onPress={handleRun}
       />
       <ControlButton
