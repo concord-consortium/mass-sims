@@ -75,9 +75,9 @@ const CANVAS_FILTER_SUPPORTED = (() => {
   if (typeof document === "undefined") return false;
   const cx = document.createElement("canvas").getContext("2d");
   if (!cx) return false;
-  // Require the accessor on the prototype first: where the context has no `filter` (older iPadOS WebKit,
-  // behind a flag), a bare assignment just creates an own property that reads back verbatim — which would
-  // falsely report support and draw a zero-blur cloud. Then confirm the assigned value actually took.
+  // Require the `filter` accessor on the prototype: where the context lacks it (older iPadOS WebKit), a
+  // bare assignment just creates an own property that reads back verbatim, falsely reporting support. Then
+  // confirm the assignment actually took.
   if (!("filter" in Object.getPrototypeOf(cx))) return false;
   cx.filter = "blur(1px)";
   return cx.filter === "blur(1px)";

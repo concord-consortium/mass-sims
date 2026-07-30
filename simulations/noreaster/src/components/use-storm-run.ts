@@ -1,8 +1,9 @@
 import {
-  prefersReducedMotion,
   useAnnounce,
+  useDocumentHidden,
   useFrameLoop,
   useLogEvent,
+  useReducedMotion,
 } from "@concord-consortium/mass-sims-shared";
 import { type RefObject, useCallback, useEffect, useRef, useState } from "react";
 import type { Outcome } from "../model/weather";
@@ -37,7 +38,7 @@ import type { StormAnimation } from "./use-storm-animation";
  * cloud outcomes it is the 1.5 s arrow-converge pre-delay plus the cloud's own duration; `windy`/`fair`
  * have no cloud and finish on a ~3 s timeout.
  */
-const TOTAL_DUR_S: Record<Outcome, number> = {
+export const TOTAL_DUR_S: Record<Outcome, number> = {
   strong: 11.5,
   moderate: 8.5,
   weakCoastal: 6.5,
@@ -85,9 +86,8 @@ export function useStormRun(
   const runId = run?.runId ?? null;
   const outcome = run?.outcome ?? null;
 
-  // Initial snapshots; the subscriptions below keep them current for a mid-session change.
-  const [reducedMotion, setReducedMotion] = useState(prefersReducedMotion);
-  const [hidden, setHidden] = useState(() => typeof document !== "undefined" && document.hidden);
+  const reducedMotion = useReducedMotion();
+  const hidden = useDocumentHidden();
   // Diagnostic-only (`__norPerf`, set by the perf probe via addInitScript — not URL-reachable): hold the
   // cloud at peak and suppress auto-finalize so the probe samples worst-case sustained frame cost.
   const [perfHold] = useState(() => norDebugFlag("__norPerf"));
@@ -95,6 +95,8 @@ export function useStormRun(
   const elapsedRef = useRef(0);
   const convergeRef = useRef<Converge>(NO_CONVERGE);
   const narratedRef = useRef(0); // index of the next staged narration line to speak
+  const announcedRunIdRef = useRef<number | null>(null); // speak the run-start line once per run (StrictMode-safe)
+  const frameErrorLoggedRef = useRef(false); // log a frame failure once per run, not every frame
 
   // Commit the run + fire its analytics/narration, guarded by the captured `runId` so a stale call is a
   // no-op. `simulation_run` is the run's COMPLETION event; its counterpart `simulation_run_started` fires
@@ -113,11 +115,17 @@ export function useStormRun(
   useEffect(() => {
     elapsedRef.current = 0;
     narratedRef.current = 0;
+    frameErrorLoggedRef.current = false;
     if (runId == null) return;
     anim?.clear();
     const active = store.ui.run;
     const setup = active ? store.trials.get(active.trial)?.setup : null;
-    if (setup) announce(startNarration(setup, active?.replay ?? false));
+    // Speak the run-start line once per run — a ref keyed on `runId` guards StrictMode's dev double-invoke
+    // (the Announcer enqueues rather than dedupes, so an unguarded announce would be spoken twice).
+    if (setup && announcedRunIdRef.current !== runId) {
+      announcedRunIdRef.current = runId;
+      announce(startNarration(setup, active?.replay ?? false));
+    }
   }, [runId]);
 
   // Measure the convergence geometry on a new run, and clear the arrows' inline tween styles when it
@@ -160,75 +168,83 @@ export function useStormRun(
     };
   }, [runId, reducedMotion, frameRef, arrowsRef, store]);
 
-  // Live reduced-motion subscription (the shared snapshot util isn't reactive). Guarded for jsdom.
-  useEffect(() => {
-    if (typeof window === "undefined" || typeof window.matchMedia !== "function") return;
-    const mql = window.matchMedia("(prefers-reduced-motion: reduce)");
-    const onChange = () => setReducedMotion(mql.matches);
-    mql.addEventListener("change", onChange);
-    return () => mql.removeEventListener("change", onChange);
-  }, []);
-
   // Reduced motion (initial, or an OS toggle to it mid-run): collapse to the final state at once.
   useEffect(() => {
     if (runId != null && reducedMotion) finalize();
   }, [runId, reducedMotion, finalize]);
 
-  // Pause the clock while the tab is hidden — folded into `enabled` below. `useFrameLoop` re-inits its
-  // frame clock on re-enable, so resuming doesn't jump the elapsed.
-  useEffect(() => {
-    if (typeof document === "undefined") return;
-    const onVisibility = () => setHidden(document.hidden);
-    document.addEventListener("visibilitychange", onVisibility);
-    return () => document.removeEventListener("visibilitychange", onVisibility);
-  }, []);
-
+  // Tab-hidden pauses the clock (folded into `enabled`); `useFrameLoop` re-inits its frame clock on
+  // re-enable, so resuming doesn't jump the elapsed.
   const enabled = runId != null && !reducedMotion && !hidden;
   const totalMs = outcome ? TOTAL_DUR_S[outcome] * 1000 : 0;
 
+  // Wall-clock backstop: if the rAF loop ever dies (a bad frame throws), finalize still fires so the run
+  // can't get stuck. `finalize` is runId-guarded, so it's a no-op once the loop finalizes normally. Held
+  // while the tab is hidden (the clock pauses there but a timer wouldn't) and rebased on the remaining
+  // time on resume, so a hidden/resumed run isn't finalized ahead of its own animation.
+  useEffect(() => {
+    if (runId == null || perfHold || hidden) return;
+    const remaining = Math.max(0, totalMs - elapsedRef.current);
+    const id = setTimeout(finalize, remaining + 3000);
+    return () => clearTimeout(id);
+  }, [runId, perfHold, hidden, totalMs, finalize]);
+
   const tick = useCallback(
     (deltaMs: number) => {
-      // One clamped frame delta drives both the clock and the physics, so the cloud can't advance out of
-      // step with the run clock on a stall.
-      const dt = Math.min(deltaMs, MAX_FRAME_MS);
-      elapsedRef.current += dt;
-      const elapsed = elapsedRef.current;
+      try {
+        // One clamped frame delta drives both the clock and the physics, so the cloud can't advance out of
+        // step with the run clock on a stall.
+        const dt = Math.min(deltaMs, MAX_FRAME_MS);
+        elapsedRef.current += dt;
+        const elapsed = elapsedRef.current;
 
-      // Arrow convergence (0–2 s): tween each selected arrow's top-left toward the storm center, rotate,
-      // and fade out. Written to the elements' inline styles — no React state.
-      const arrows = arrowsRef?.current;
-      if (arrows) {
-        const { nums, deltas } = convergeRef.current;
-        const tc = Math.min(elapsed / CONVERGE_MS, 1);
-        const fade = convergenceFade(tc);
-        for (const num of nums) {
-          const el = arrows[num];
-          const d = deltas[num];
-          if (!el || !d) continue;
-          const rot = convergenceRotation(num) * tc;
-          el.style.transform = `translate(${d.x * tc}px, ${d.y * tc}px) rotate(${rot}deg)`;
-          el.style.opacity = String(fade);
-          el.style.filter =
-            fade > 0 ? `drop-shadow(0 1px 3px rgba(0,0,0,${(0.35 * fade).toFixed(3)}))` : "none";
+        // Arrow convergence (0–2 s): tween each selected arrow's top-left toward the storm center, rotate,
+        // and fade out. Written to the elements' inline styles — no React state.
+        const arrows = arrowsRef?.current;
+        if (arrows) {
+          const { nums, deltas } = convergeRef.current;
+          const tc = Math.min(elapsed / CONVERGE_MS, 1);
+          const fade = convergenceFade(tc);
+          for (const num of nums) {
+            const el = arrows[num];
+            const d = deltas[num];
+            if (!el || !d) continue;
+            const rot = convergenceRotation(num) * tc;
+            el.style.transform = `translate(${d.x * tc}px, ${d.y * tc}px) rotate(${rot}deg)`;
+            el.style.opacity = String(fade);
+            el.style.filter =
+              fade > 0 ? `drop-shadow(0 1px 3px rgba(0,0,0,${(0.35 * fade).toFixed(3)}))` : "none";
+          }
+        }
+
+        // Staged narration: speak each mid-run line as the clock crosses its time (on the runner's clock,
+        // so it pauses with the tab — reduced-motion runs finalize before this and never reach here).
+        if (outcome) {
+          const staged = STAGED_NARRATION[outcome];
+          while (
+            narratedRef.current < staged.length &&
+            elapsed >= staged[narratedRef.current].atMs
+          ) {
+            announce(staged[narratedRef.current].text);
+            narratedRef.current += 1;
+          }
+        }
+
+        // Storm cloud (from 1.5 s): the runner steps the player and positions/opacity the container. Under
+        // the diagnostic hold, pin the cloud at peak (t=1) so the probe samples sustained worst-case load.
+        const cloudElapsed = perfHold ? 1e9 : elapsed - CLOUD_START_MS;
+        if (cloudElapsed >= 0) anim?.drawFrame(cloudElapsed, dt);
+
+        if (!perfHold && elapsed >= totalMs) finalize();
+      } catch (err) {
+        // A bad frame (e.g. a canvas allocation failure on a memory-starved device) must not kill the rAF
+        // loop — swallow it so the loop keeps running and the wall-clock backstop still finalizes. Log once.
+        if (!frameErrorLoggedRef.current) {
+          frameErrorLoggedRef.current = true;
+          // biome-ignore lint/suspicious/noConsole: surface a genuine device-side frame failure once.
+          console.error("noreaster run frame failed; continuing:", err);
         }
       }
-
-      // Staged narration: speak each mid-run line as the clock crosses its time (on the runner's clock,
-      // so it pauses with the tab — reduced-motion runs finalize before this and never reach here).
-      if (outcome) {
-        const staged = STAGED_NARRATION[outcome];
-        while (narratedRef.current < staged.length && elapsed >= staged[narratedRef.current].atMs) {
-          announce(staged[narratedRef.current].text);
-          narratedRef.current += 1;
-        }
-      }
-
-      // Storm cloud (from 1.5 s): the runner steps the player and positions/opacity the container. Under
-      // the diagnostic hold, pin the cloud at peak (t=1) so the probe samples sustained worst-case load.
-      const cloudElapsed = perfHold ? 1e9 : elapsed - CLOUD_START_MS;
-      if (cloudElapsed >= 0) anim?.drawFrame(cloudElapsed, dt);
-
-      if (!perfHold && elapsed >= totalMs) finalize();
     },
     [totalMs, finalize, arrowsRef, anim, perfHold, outcome, announce],
   );

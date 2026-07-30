@@ -18,7 +18,7 @@ import type { Outcome } from "./weather";
 /** The 6 fields the Data panel renders for an outcome (the pill banner + the 5 attribute rows).
  *  Readonly: these are shared singletons. */
 export interface OutcomeValues {
-  readonly label: string; // the outcome pill/banner; also OUTCOME_BANNER (run-complete announcement)
+  readonly label: string; // the outcome pill/banner
   readonly sky: string;
   readonly wind: string;
   readonly precipType: string;
@@ -104,9 +104,3 @@ export const OUTCOME_METADATA: Readonly<Record<Outcome, OutcomeMetadata>> = {
   windy: { coastalFlooding: "None", commaCloud: "Hidden", pressure: "Rising" },
   fair: { coastalFlooding: "None", commaCloud: "Hidden", pressure: "High" },
 };
-
-// Derived single source for the banner (control-bar's run-complete announcement reads it directly).
-// Each banner IS the outcome's label — one label source, no second copy to drift.
-export const OUTCOME_BANNER: Readonly<Record<Outcome, string>> = Object.fromEntries(
-  (Object.entries(OUTCOME_VALUES) as [Outcome, OutcomeValues][]).map(([k, v]) => [k, v.label]),
-) as Record<Outcome, string>;

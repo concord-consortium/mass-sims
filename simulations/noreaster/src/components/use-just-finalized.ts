@@ -4,7 +4,7 @@ import type { Outcome } from "../model/weather";
 /**
  * Whether the weather scene should fade in (vs. appear instantly) this render. Not inferable from `outcome`
  * alone — the same value arrives via Run, hydration, or trial-switch — so it keys off the `.volatile`
- * `runCompletedToken` that `runActiveTrial` bumps only on a real Run: fade only when the token advanced AND
+ * `runCompletedToken` that `finalizeRun` bumps once per completed run: fade only when the token advanced AND
  * the outcome changed, so replay / hydration / trial-switch / Reset stay instant.
  */
 export function useJustFinalized(outcome: Outcome | null, runCompletedToken: number): boolean {

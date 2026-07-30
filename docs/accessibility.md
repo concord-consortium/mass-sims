@@ -191,10 +191,10 @@ below.
   must gate **both**. The frame loop folds `reduce` into its `enabled` predicate (no `requestAnimationFrame`
   scheduled), and the CSS zeroes the fade (`.wo-scene[data-animate] { transition: none }`). Gating only
   one leaves the other moving.
-- **The reduced-motion subscription must be live.** Read the initial value from `matchMedia`, but also
-  subscribe to its `change` event so a mid-session OS toggle takes effect without a reload; drop the
-  static snapshot-only read. (The shared `prefersReducedMotion` util is a snapshot; pair it with a
-  `matchMedia("(prefers-reduced-motion: reduce)")` `change` listener.)
+- **The reduced-motion subscription must be live.** Read the initial value AND subscribe to changes so a
+  mid-session OS toggle takes effect without a reload — the static `prefersReducedMotion` snapshot alone
+  isn't enough. Use the shared **`useReducedMotion()`** hook (and **`useDocumentHidden()`** for the
+  tab-hidden pause) rather than re-implementing the `matchMedia`/`visibilitychange` subscription per animation.
 - **WCAG 2.2.2 (Pause, Stop, Hide) — decision.** The scene animates indefinitely once an outcome is
   recorded and sits alongside other content, so 2.2.2 is in scope. The team's chosen accommodation is
   **`prefers-reduced-motion`**: users who signal a motion preference get no animation at all, and the
@@ -216,8 +216,8 @@ below.
   (`aria-hidden` canvas + overlays), so the *information* travels a parallel `aria-live` channel: a
   run-start "…air masses converging" line, staged mid-run lines as the runner's clock crosses their times
   (paused with the tab, like the frame loop), and a full weather-outcome readout at finalize. Under
-  reduced motion only the start line + the readout are spoken (there's no build to narrate). The stage
-  carries `aria-busy="true"` while running. See `run-narration.ts`.
+  reduced motion only the start line + the readout are spoken (there's no build to narrate). See
+  `run-narration.ts`.
 - **WCAG 2.2.2 for the run — same accommodation, but note it's *finite*.** Unlike the Data-panel scene
   (which loops indefinitely), the run animation stops at finalize (≤ ~11.5 s) and then holds a static
   final frame, so 2.2.2's "moving > 5 s" clause is in scope only for the longest outcome (`strong`). The

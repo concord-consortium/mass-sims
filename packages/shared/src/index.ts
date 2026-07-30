@@ -47,6 +47,7 @@ export {
 
 // Hooks
 export { useCurrentAndPrevious } from "./hooks/use-current-and-previous";
+export { useDocumentHidden } from "./hooks/use-document-hidden";
 export { useFrameLoop } from "./hooks/use-frame-loop";
 export { useInterval } from "./hooks/use-interval";
 export { type LogEvent, useLogEvent } from "./hooks/use-log-event";
@@ -55,6 +56,7 @@ export {
   type UseModelStateReturn,
   useModelState,
 } from "./hooks/use-model-state";
+export { useReducedMotion } from "./hooks/use-reduced-motion";
 export { useReloadWarning } from "./hooks/use-reload-warning";
 export { useReportHeight } from "./hooks/use-report-height";
 export { useScrollFocusRing } from "./hooks/use-scroll-focus-ring";

@@ -63,12 +63,10 @@ export interface Frame {
  */
 export function convergenceTarget(num: number, frame: Frame): { x: number; y: number } {
   const sh = frame.height;
-  // The overlay reference frame: the original map footprint at stage height, centered. `.nor-map` is a
-  // 2:1 box, so imgLeft ≈ 0 — but derive it so a non-exact frame stays faithful.
-  const imgW = sh * (2667 / 1334);
-  const imgLeft = (frame.width - imgW) / 2;
   const scale = sh / ARROW_UNIT_HEIGHT;
-  const stormX = imgLeft + imgW / 2 + NOR_START_OFF.x;
+  // The overlay frame is centered, so the map-footprint width cancels out: the storm's horizontal center
+  // is simply the frame's mid-point.
+  const stormX = frame.width / 2 + NOR_START_OFF.x;
   const stormY = sh / 2 + NOR_START_OFF.y;
   // Fall back for an unknown arrow number, matching `convergenceRotation`'s `?? 0` (the tables are keyed
   // 1–4 but typed over all numbers). Unreachable today — callers only pass `convergedArrows` output.

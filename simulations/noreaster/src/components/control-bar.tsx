@@ -91,7 +91,7 @@ export const ControlBar = observer(function ControlBar({
   mapView,
   onToggleMapView,
 }: ControlBarProps) {
-  const { activeTrial: trial, resetTrial, beginRun, cancelRun, ui } = useStores();
+  const { activeTrial: trial, resetTrial, beginRun, ui } = useStores();
   const logEvent = useLogEvent();
   const announce = useAnnounce();
   const letter = ui.selectedTrialLetter;
@@ -128,11 +128,10 @@ export const ControlBar = observer(function ControlBar({
     }
   };
 
-  // Reset cancels any in-flight run (its stale finalize then no-ops) before clearing the trial, so Reset
-  // stays a live escape hatch during the multi-second animation.
+  // Reset stays a live escape hatch during the multi-second animation: `resetTrial` cancels a run
+  // targeting this trial at the source (root-store), then clears it.
   const handleReset = () => {
     logEvent("trial_reset", { trial: letter });
-    cancelRun();
     resetTrial();
     announce(`Trial ${letter} reset.`);
   };

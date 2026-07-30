@@ -136,7 +136,7 @@ async function main() {
 
     for (const rate of THROTTLE_RATES) {
       for (const [scene, picks] of Object.entries(SETUPS)) {
-        await page.goto(BASE_URL, { waitUntil: "networkidle" });
+        await page.goto(BASE_URL, { waitUntil: "domcontentloaded" });
         await startHeldRun(page, picks);
 
         await cdp.send("Emulation.setCPUThrottlingRate", { rate });
@@ -175,7 +175,7 @@ async function main() {
       (window as unknown as { __norPerf?: boolean }).__norPerf = true;
     });
     const page = await context.newPage();
-    await page.goto(BASE_URL, { waitUntil: "networkidle" });
+    await page.goto(BASE_URL, { waitUntil: "domcontentloaded" });
     await page.waitForFunction(
       () =>
         typeof (window as { __norStormRenderFinalMs?: unknown }).__norStormRenderFinalMs ===

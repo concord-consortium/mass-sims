@@ -68,8 +68,8 @@ export const MapStage = observer(function MapStage({ mapView = "street" }: { map
   const anim = useStormAnimation(stormCanvasRef, stormContainerRef, stormOutcome, running);
   useStormRun(frameRef, arrowsRef, anim);
 
-  // Machine-readable run-state hook for tests; no visual effect on its own (`aria-busy` conveys
-  // "running" to assistive tech separately).
+  // Machine-readable run-state hook for tests (running / done / unrun); no visual effect. The run is
+  // conveyed to assistive tech by the `<Announcer>` narration, not by an attribute on this decorative div.
   const runPhase = running ? "running" : trial.hasRun ? "done" : undefined;
 
   // Once running or run, the two selected arrows converge (runner-driven while running, static "removed"
@@ -85,12 +85,7 @@ export const MapStage = observer(function MapStage({ mapView = "street" }: { map
     runActive && !converged.includes(num) ? "hidden" : undefined; // selected pill kept, companion hidden
 
   return (
-    <div
-      className="nor-stage"
-      data-map-view={mapView}
-      data-run-phase={runPhase}
-      aria-busy={running ? "true" : undefined}
-    >
+    <div className="nor-stage" data-map-view={mapView} data-run-phase={runPhase}>
       {/* Display basemaps at the art's true ratio (1400/667), height-filling & centered; no letterbox.
           The street <img> carries the informative alt; the satellite layer is decorative and crossfades
           in via data-map-view. Both sit behind the overlay frame. */}

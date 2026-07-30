@@ -203,8 +203,8 @@ describe("Nor'easter App — AP saved state", () => {
     choose(/Pathway for Ocean Air Mass/, "2 S/SE");
     choose(/Humidity for Ocean Air Mass/, "Humid");
     fireEvent.click(view.getByRole("button", { name: "Run" }));
-    // The run is in flight: the stage is busy (the outcome is deferred, not yet committed).
-    expect(view.container.querySelector(".nor-stage")).toHaveAttribute("aria-busy", "true");
+    // The run is in flight: the stage is in the running phase (the outcome is deferred, not yet committed).
+    expect(view.container.querySelector(".nor-stage")).toHaveAttribute("data-run-phase", "running");
 
     // Saved state now arrives mid-run. `run` is volatile, so applySnapshot won't clear it — the hydrate
     // effect must cancel it first, or the descriptor survives against the restored trials and could
@@ -231,8 +231,11 @@ describe("Nor'easter App — AP saved state", () => {
 
     // Hydration ran (restored B proves applySnapshot fired)…
     expect(view.getByRole("option", { name: /^Trial B/ })).toBeInTheDocument();
-    // …and the run is gone — the stage is no longer busy — with the restored (empty) trial A intact.
-    expect(view.container.querySelector(".nor-stage")).not.toHaveAttribute("aria-busy");
+    // …and the run is gone — no longer in the running phase — with the restored (empty) trial A intact.
+    expect(view.container.querySelector(".nor-stage")).not.toHaveAttribute(
+      "data-run-phase",
+      "running",
+    );
     expect(view.getByRole("option", { name: /^Trial A/ })).toHaveAttribute("aria-selected", "true");
   });
 

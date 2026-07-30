@@ -186,10 +186,11 @@ test.describe("run animation — normal motion (deferred)", () => {
     await sim.completeSetup("windy"); // land N/NW (arrow 1), ocean S/SE (arrow 2); ~3 s to finalize
 
     await sim.runButton.click();
-    // Running phase: the stage is busy, and the outcome is NOT committed yet (deferred).
-    await expect(sim.mapStage).toHaveAttribute("aria-busy", "true");
+    // Running phase: the outcome is NOT committed yet (deferred). Assert the deferral with a single
+    // snapshot (not an auto-retrying matcher) so it can't race the ~3 s commit window on a loaded worker —
+    // once the running phase is up, the pill still reads "–".
     await expect(sim.mapStage).toHaveAttribute("data-run-phase", "running");
-    await expect(sim.outcomePill).toHaveText("–");
+    expect(await sim.outcomePill.textContent()).toBe("–");
 
     await expect(sim.outcomePill).toHaveText("Windy, no storm", { timeout: 8000 });
     await expect(sim.replayButton).toBeVisible();
@@ -222,11 +223,8 @@ test.describe("run animation — normal motion (deferred)", () => {
   });
 });
 
-test("Data panel weather scene: reduced motion themes the scene but suppresses the fade", async ({
-  page,
-}) => {
-  await page.emulateMedia({ reducedMotion: "reduce" });
-
+test("Data panel weather scene: reduced motion themes the scene but suppresses the fade", async () => {
+  // Reduced motion comes from the file-level `test.use` (contextOptions) — no per-test emulateMedia needed.
   await sim.completeSetup(); // strong
   await sim.runButton.click();
   // The backdrop still themes under reduced motion…

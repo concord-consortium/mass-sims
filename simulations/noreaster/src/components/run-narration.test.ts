@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { SETUPS } from "../stores/test-helpers";
 import { finalNarration, STAGED_NARRATION, startNarration } from "./run-narration";
+import { TOTAL_DUR_S } from "./use-storm-run";
 
 describe("startNarration", () => {
   it("describes both air masses converging", () => {
@@ -25,6 +26,7 @@ describe("STAGED_NARRATION", () => {
       expect(lines.length).toBeGreaterThan(0);
       for (let i = 0; i < lines.length; i++) {
         expect(lines[i].atMs).toBeGreaterThanOrEqual(1500); // first line lands at cloud-start
+        expect(lines[i].atMs).toBeLessThan(TOTAL_DUR_S[outcome] * 1000); // …and before the run finalizes
         expect(lines[i].text.length).toBeGreaterThan(0);
         if (i > 0) expect(lines[i].atMs).toBeGreaterThan(lines[i - 1].atMs);
       }

@@ -173,16 +173,6 @@ describe("RootStore deferred run (beginRun / finalizeRun / cancelRun)", () => {
     expect(store.finalizeRun(runId)?.replay).toBe(true);
     expect(store.activeTrial.outcome).toBe("strong"); // unchanged (recordOutcome no-ops when locked)
   });
-
-  it("runActiveTrial stays the synchronous 'run now' primitive (immediate commit + fade token)", () => {
-    const store = createRootStore();
-    configureStrong(store.activeTrial);
-    const before = store.ui.runCompletedToken;
-    store.runActiveTrial();
-    expect(store.activeTrial.outcome).toBe("strong"); // committed immediately, no running phase
-    expect(store.ui.run).toBeNull();
-    expect(store.ui.runCompletedToken).toBe(before + 1);
-  });
 });
 
 describe("RootStore views consume the shared logic", () => {

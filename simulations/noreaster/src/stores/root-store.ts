@@ -44,28 +44,22 @@ export const RootStore = types
       trial.reset();
     },
     /**
-     * Run the active trial and, if it recorded an outcome, bump the fade signal — both inside ONE MST
-     * action so they land in a single notification. This is the only path that should record an outcome:
-     * keeping `run()` and `markRunCompleted()` together here means the Data-panel scene always reads a fresh
-     * finalization (a `run()` without the bump would silently show the instant path instead of the fade).
-     */
-    runActiveTrial() {
-      const trial = resolveActiveTrial(self.trials, self.ui.selectedTrialLetter);
-      trial.run();
-      if (trial.outcome) self.ui.markRunCompleted();
-    },
-    /**
      * Begin a deferred run: capture the active trial's outcome from its setup without committing it (the
      * trial's `outcome` stays null through the map animation), arm the run descriptor, and return its
      * `runId`. Returns null unless the setup is complete. `finalizeRun` later commits exactly this captured
-     * outcome. The control bar uses this path; `runActiveTrial` is the synchronous "run now, no animation"
-     * primitive.
+     * outcome.
      */
     beginRun(): number | null {
-      const trial = resolveActiveTrial(self.trials, self.ui.selectedTrialLetter);
+      // Resolve the letter once (falling back to the first trial when the selected letter dangles) and arm
+      // with THAT letter, so the run can't target a nonexistent trial. On a replay reuse the recorded
+      // outcome rather than re-evaluating, so a classifier change can't diverge the animation from the table.
+      const selected = self.ui.selectedTrialLetter;
+      const letter = self.trials.has(selected) ? selected : listTrialLetters(self.trials)[0];
+      const trial = self.trials.get(letter);
+      if (!trial) return null;
       const setup = trial.setup;
       if (!setup) return null;
-      return self.ui.armRun(self.ui.selectedTrialLetter, evaluateOutcome(setup), trial.hasRun);
+      return self.ui.armRun(letter, trial.outcome ?? evaluateOutcome(setup), trial.hasRun);
     },
     /**
      * Finalize the run identified by `runId`: commit the captured outcome via `recordOutcome` (never a

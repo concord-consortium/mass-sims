@@ -1,10 +1,5 @@
 import { describe, expect, it } from "vitest";
-import {
-  OUTCOME_BANNER,
-  OUTCOME_METADATA,
-  OUTCOME_VALUES,
-  type OutcomeMetadata,
-} from "./outcome-values";
+import { OUTCOME_METADATA, OUTCOME_VALUES, type OutcomeMetadata } from "./outcome-values";
 import { OUTCOMES } from "./weather";
 
 const METADATA_FIELDS: (keyof OutcomeMetadata)[] = ["coastalFlooding", "commaCloud", "pressure"];
@@ -76,25 +71,6 @@ describe("OUTCOME_METADATA", () => {
         expect(typeof value, `${outcome}.${field}`).toBe("string");
         expect(value.trim().length, `${outcome}.${field}`).toBeGreaterThan(0);
       }
-    }
-  });
-});
-
-describe("OUTCOME_BANNER", () => {
-  it("pins the exact approved label for every outcome (curly apostrophes included)", () => {
-    expect(OUTCOME_BANNER).toEqual({
-      strong: "Strong nor’easter",
-      moderate: "Moderate nor’easter",
-      weakCoastal: "Weak coastal storm",
-      humidNoStorm: "Humid, no storm",
-      windy: "Windy, no storm",
-      fair: "Fair weather",
-    });
-  });
-
-  it("equals each outcome's label (one label source, no drift)", () => {
-    for (const outcome of OUTCOMES) {
-      expect(OUTCOME_BANNER[outcome]).toBe(OUTCOME_VALUES[outcome].label);
     }
   });
 });

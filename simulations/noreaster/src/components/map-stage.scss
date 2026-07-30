@@ -19,9 +19,9 @@ $shadow: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.35));
   position: relative;
 }
 
-// Storm cloud graphic: a fixed 298px container centered on the map, holding the oversized (398px, 4×
-// supersampled) particle canvas that overhangs it. The runner sets the container's transform (center +
-// drift offset) and opacity per frame. Decorative.
+// Storm cloud graphic: a fixed 298px container centered on the map, holding the oversized 398px particle
+// canvas that overhangs it (its backing store is supersampled by NOR_SCALE — see storm-players.ts). The
+// runner sets the container's transform (center + drift offset) and opacity per frame. Decorative.
 .nor-storm {
   height: 298px;
   left: 50%;
