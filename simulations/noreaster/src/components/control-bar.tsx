@@ -111,11 +111,10 @@ export const ControlBar = observer(function ControlBar({
     onToggleMapView();
   };
 
-  // Run starts the deferred run animation: the outcome commits when the animation finishes, not now.
-  // Log `simulation_run_started` on every press (the attempt); the runner emits the paired `simulation_run`
-  // completion event at finalize. A run aborted before finalize (Reset, trial switch, hydration) logs the
-  // start but no completion — so count `simulation_run_started` for attempts, `simulation_run` for
-  // completions.
+  // Run starts the deferred run animation: the outcome commits when the animation finishes, not now. Log
+  // `simulation_run_started` on every press (the attempt); the runner emits the paired `simulation_run`
+  // completion event at finalize (a run aborted before finalize logs the start but no completion). Both
+  // events are registered in LOGGED-EVENTS.md.
   const handleRun = () => {
     if (beginRun() == null) return; // setup incomplete — no run armed
     const run = ui.run;
