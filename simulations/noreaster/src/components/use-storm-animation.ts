@@ -1,5 +1,6 @@
 import { type RefObject, useCallback, useEffect, useRef } from "react";
 import type { Outcome } from "../model/weather";
+import { norDebugFlag } from "./nor-debug";
 import { createStormPlayer, NOR_SIZE, type StormPlayer } from "./storm-players";
 
 /**
@@ -21,9 +22,9 @@ export interface StormAnimation {
   clear(): void;
 }
 
-/** Diagnostic-only window surface (`?perf=1`): the perf probe reads `renderFinal` first-gen latency here. */
+/** Diagnostic-only window surface (`__norPerf`): the perf probe reads `renderFinal` first-gen latency here. */
 interface StormPerfWindow extends Window {
-  __stormRenderFinalMs?: (outcome: Outcome) => number | null;
+  __norStormRenderFinalMs?: (outcome: Outcome) => number | null;
 }
 
 export function useStormAnimation(
@@ -56,13 +57,12 @@ export function useStormAnimation(
     playerRef.current = stormOutcome ? createStormPlayer(stormOutcome) : null;
   }, [stormOutcome]);
 
-  // Diagnostic-only (`?perf=1`): expose a `renderFinal` first-generation timer so the perf probe can
-  // measure that synchronous cost separately from the live loop. Uses a fresh player + canvas so it
-  // never touches the live animation. Off in production.
+  // Diagnostic-only (`__norPerf`, set by the perf probe via addInitScript — not URL-reachable): expose a
+  // `renderFinal` first-generation timer so the probe can measure that synchronous cost separately from
+  // the live loop. Uses a fresh player + canvas so it never touches the live animation.
   useEffect(() => {
-    if (typeof window === "undefined") return;
-    if (new URLSearchParams(window.location.search).get("perf") !== "1") return;
-    (window as StormPerfWindow).__stormRenderFinalMs = (outcome: Outcome) => {
+    if (!norDebugFlag("__norPerf")) return;
+    (window as StormPerfWindow).__norStormRenderFinalMs = (outcome: Outcome) => {
       const player = createStormPlayer(outcome);
       const c = document.createElement("canvas");
       c.width = NOR_SIZE;
@@ -74,7 +74,7 @@ export function useStormAnimation(
       return performance.now() - t0;
     };
     return () => {
-      (window as StormPerfWindow).__stormRenderFinalMs = undefined;
+      (window as StormPerfWindow).__norStormRenderFinalMs = undefined;
     };
   }, []);
 

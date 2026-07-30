@@ -6,9 +6,10 @@
  *   (b) `renderFinal` first-generation latency — the synchronous re-sim that stalls the main thread on
  *       restore / hydration / reduced motion.
  *
- * `?perf=1` holds the storm at peak radius and suppresses auto-finalize, so we sample the worst-case
- * sustained load rather than the fleeting real peak. The run must be live before sampling, or it fails
- * loudly rather than measuring an idle page.
+ * The `__norPerf` flag (set by this probe via addInitScript, so it's never reachable from a production
+ * URL) holds the storm at peak radius and suppresses auto-finalize, so we sample the worst-case sustained
+ * load rather than the fleeting real peak. The run must be live before sampling, or it fails loudly rather
+ * than measuring an idle page.
  *
  * Measure the production build, not the dev server (dev is unminified React and not representative):
  *   yarn workspace noreaster build && yarn workspace noreaster preview --port 8082 --strictPort
@@ -108,7 +109,6 @@ async function sampleFrames(page: Page, durMs: number): Promise<number[]> {
 
 async function main() {
   const browser = await chromium.launch();
-  const perfUrl = `${BASE_URL + (BASE_URL.includes("?") ? "&" : "?")}perf=1`;
 
   const rows: {
     width: number;
@@ -127,12 +127,16 @@ async function main() {
       viewport: { width, height: FRAME_HEIGHT },
       deviceScaleFactor: 2,
     });
+    // Enable the sim's diagnostic hold via a window flag set before any page script — never the URL.
+    await context.addInitScript(() => {
+      (window as unknown as { __norPerf?: boolean }).__norPerf = true;
+    });
     const page = await context.newPage();
     const cdp = await context.newCDPSession(page);
 
     for (const rate of THROTTLE_RATES) {
       for (const [scene, picks] of Object.entries(SETUPS)) {
-        await page.goto(perfUrl, { waitUntil: "networkidle" });
+        await page.goto(BASE_URL, { waitUntil: "networkidle" });
         await startHeldRun(page, picks);
 
         await cdp.send("Emulation.setCPUThrottlingRate", { rate });
@@ -167,11 +171,15 @@ async function main() {
       viewport: { width: WIDTHS[0], height: FRAME_HEIGHT },
       deviceScaleFactor: 2,
     });
+    await context.addInitScript(() => {
+      (window as unknown as { __norPerf?: boolean }).__norPerf = true;
+    });
     const page = await context.newPage();
-    await page.goto(perfUrl, { waitUntil: "networkidle" });
+    await page.goto(BASE_URL, { waitUntil: "networkidle" });
     await page.waitForFunction(
       () =>
-        typeof (window as { __stormRenderFinalMs?: unknown }).__stormRenderFinalMs === "function",
+        typeof (window as { __norStormRenderFinalMs?: unknown }).__norStormRenderFinalMs ===
+        "function",
       { timeout: 5000 },
     );
     for (const scene of Object.keys(SETUPS)) {
@@ -180,8 +188,8 @@ async function main() {
         const ms = await page.evaluate(
           (s) =>
             (
-              window as { __stormRenderFinalMs?: (o: string) => number | null }
-            ).__stormRenderFinalMs?.(s) ?? Number.NaN,
+              window as { __norStormRenderFinalMs?: (o: string) => number | null }
+            ).__norStormRenderFinalMs?.(s) ?? Number.NaN,
           scene,
         );
         if (Number.isFinite(ms)) samples.push(ms);

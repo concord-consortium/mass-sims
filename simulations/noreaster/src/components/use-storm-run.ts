@@ -13,6 +13,7 @@ import {
   convergenceRotation,
   convergenceTarget,
 } from "./converge";
+import { norDebugFlag } from "./nor-debug";
 import { finalNarration, STAGED_NARRATION, startNarration } from "./run-narration";
 import type { StormAnimation } from "./use-storm-animation";
 
@@ -87,13 +88,9 @@ export function useStormRun(
   // Initial snapshots; the subscriptions below keep them current for a mid-session change.
   const [reducedMotion, setReducedMotion] = useState(prefersReducedMotion);
   const [hidden, setHidden] = useState(() => typeof document !== "undefined" && document.hidden);
-  // Diagnostic-only (`?perf=1`): hold the cloud at peak and suppress auto-finalize, so the perf probe can
-  // sample the worst-case sustained frame cost. Off in production — nothing sets the flag.
-  const [perfHold] = useState(
-    () =>
-      typeof window !== "undefined" &&
-      new URLSearchParams(window.location.search).get("perf") === "1",
-  );
+  // Diagnostic-only (`__norPerf`, set by the perf probe via addInitScript — not URL-reachable): hold the
+  // cloud at peak and suppress auto-finalize so the probe samples worst-case sustained frame cost.
+  const [perfHold] = useState(() => norDebugFlag("__norPerf"));
 
   const elapsedRef = useRef(0);
   const convergeRef = useRef<Converge>(NO_CONVERGE);

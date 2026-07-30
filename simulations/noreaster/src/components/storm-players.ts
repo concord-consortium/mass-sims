@@ -1,4 +1,5 @@
 import type { Outcome } from "../model/weather";
+import { norDebugFlag } from "./nor-debug";
 
 /**
  * The map-area storm particle systems. The constants (seeds, radii, opacities, blur radii, spawn
@@ -72,18 +73,14 @@ function createOffscreen(): { canvas: HTMLCanvasElement; ctx: CanvasRenderingCon
  */
 const CANVAS_FILTER_SUPPORTED = (() => {
   if (typeof document === "undefined") return false;
-  // Dev toggle (`?nofilter=1`): force the shadowBlur fallback so it can be verified on a filter-capable
-  // device. Nothing sets it in production.
-  if (
-    typeof window !== "undefined" &&
-    new URLSearchParams(window.location.search).get("nofilter") === "1"
-  ) {
-    return false;
-  }
   const cx = document.createElement("canvas").getContext("2d");
   if (!cx) return false;
+  // Require the accessor on the prototype first: where the context has no `filter` (older iPadOS WebKit,
+  // behind a flag), a bare assignment just creates an own property that reads back verbatim — which would
+  // falsely report support and draw a zero-blur cloud. Then confirm the assigned value actually took.
+  if (!("filter" in Object.getPrototypeOf(cx))) return false;
   cx.filter = "blur(1px)";
-  return cx.filter !== "none";
+  return cx.filter === "blur(1px)";
 })();
 
 /** Fallback only: draw the sharp source this far off-canvas so only its offset-back blurred shadow lands. */
@@ -107,7 +104,8 @@ function composite(
   t: number,
 ): void {
   const shadowAlpha = 0.35 + t * 0.55;
-  if (CANVAS_FILTER_SUPPORTED) {
+  // `__norNoFilter` forces the fallback so it can be previewed on a filter-capable device.
+  if (CANVAS_FILTER_SUPPORTED && !norDebugFlag("__norNoFilter")) {
     ctx.save();
     ctx.filter = `blur(${shadowBlur * NOR_SCALE}px) brightness(0)`;
     ctx.globalAlpha = shadowAlpha;
