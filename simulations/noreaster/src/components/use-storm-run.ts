@@ -39,9 +39,6 @@ const CONVERGE_MS = 2000;
 /** The cloud starts 1.5 s into the run (arrows converge first, then the storm spins up). */
 const CLOUD_START_MS = 1500;
 
-// `TOTAL_DUR_S` (finalize deadlines) and `MAX_FRAME_MS` (dt clamp) live in `./run-timing` so the
-// Data-panel progress bar re-derives the run clock from the exact same constants.
-
 /** Refs the map stage hands the runner so it can drive the overlays imperatively. */
 export interface StormRunRefs {
   /** The `.nor-map` overlay frame — the coordinate basis for convergence. */

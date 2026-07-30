@@ -75,15 +75,15 @@ export function useProgressBar(
   }, [runId, fillRef, pillRef, measure]);
 
   // Resolve the fill when a run ends: fade out on a real completion (keeping the completed width under the
-  // fade), snap hidden on a cancellation / reset / steady-idle. `"start"` is a no-op here — the reset above
-  // and the loop own the running state.
+  // fade), else snap hidden whenever no run is active (cancellation / reset / steady-idle). During a run
+  // (`run != null`) this is a no-op — the reset above and the loop own the sweep.
   useLayoutEffect(() => {
     const fill = fillRef.current;
     if (!fill) return;
     if (transition === "complete") {
       fill.style.transition = reducedMotion ? "none" : "opacity 0.6s ease";
       fill.style.opacity = "0";
-    } else if (transition === "instant" && !run) {
+    } else if (!run) {
       fill.style.transition = "none";
       fill.style.opacity = "0";
       fill.style.left = "0px";

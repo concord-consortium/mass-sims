@@ -43,6 +43,18 @@ function makeEls() {
 
 const FAIR_RUN: NoreasterRun = { runId: 1, trial: "A", outcome: "fair", replay: false }; // 3 s total
 
+// A `prefers-reduced-motion: reduce` match, for `vi.stubGlobal("matchMedia", () => REDUCED_MEDIA)`.
+const REDUCED_MEDIA = {
+  matches: true,
+  media: "(prefers-reduced-motion: reduce)",
+  addEventListener: () => {},
+  removeEventListener: () => {},
+  addListener: () => {},
+  removeListener: () => {},
+  dispatchEvent: () => false,
+  onchange: null,
+};
+
 function driver(
   fill: HTMLElement,
   pill: HTMLElement,
@@ -108,25 +120,40 @@ describe("useProgressBar", () => {
     expect(Number.parseFloat(fill.style.width)).toBe(FULL);
   });
 
+  it("picks up a mid-run resize via ResizeObserver (not stale dimensions)", () => {
+    // jsdom has no ResizeObserver; stub one that captures its callback so we can fire it on demand.
+    let roCallback: (() => void) | null = null;
+    vi.stubGlobal(
+      "ResizeObserver",
+      class {
+        constructor(cb: () => void) {
+          roCallback = cb;
+        }
+        observe() {}
+        disconnect() {}
+      },
+    );
+    const { fill, pill } = makeEls();
+    driver(fill, pill, FAIR_RUN, "start");
+    act(() => flushFrame(0));
+    act(() => flushFrame(100)); // swept against the original 200px width
+
+    // Shrink the pill and fire the observer; the next frame must sweep against the NEW width.
+    Object.defineProperty(pill, "offsetWidth", { value: 100, configurable: true });
+    act(() => roCallback?.());
+    act(() => flushFrame(200));
+
+    const p = 200 / 3000; // 200 ms elapsed of the 3 s run
+    expect(Number.parseFloat(fill.style.width)).toBeCloseTo(H + p * 100, 5); // new 100px width
+    expect(Number.parseFloat(fill.style.width)).toBeLessThan(H + p * 200); // NOT the stale 200px width
+  });
+
   it("does not paint under reduced motion (the loop is disabled)", () => {
-    window.matchMedia = vi.fn().mockReturnValue({
-      matches: true,
-      media: "(prefers-reduced-motion: reduce)",
-      addEventListener: vi.fn(),
-      removeEventListener: vi.fn(),
-      addListener: vi.fn(),
-      removeListener: vi.fn(),
-      dispatchEvent: vi.fn(),
-      onchange: null,
-    });
-    try {
-      const { fill, pill } = makeEls();
-      driver(fill, pill, FAIR_RUN, "start");
-      advanceMs(3000); // no frames run — the loop is gated off
-      expect(fill.style.width).toBe(`${H}px`); // still the off-screen start
-    } finally {
-      delete (window as { matchMedia?: unknown }).matchMedia;
-    }
+    vi.stubGlobal("matchMedia", () => REDUCED_MEDIA); // cleaned by afterEach's unstubAllGlobals
+    const { fill, pill } = makeEls();
+    driver(fill, pill, FAIR_RUN, "start");
+    advanceMs(3000); // no frames run — the loop is gated off
+    expect(fill.style.width).toBe(`${H}px`); // still the off-screen start
   });
 
   it("does not paint while the tab is hidden (the loop is disabled)", () => {
@@ -165,6 +192,20 @@ describe("useProgressBar", () => {
     expect(fill.style.width).toBe("0px");
     expect(fill.style.left).toBe("0px");
     expect(fill.style.transition).toBe("none");
+  });
+
+  it("snaps hidden when the run clears under any non-complete transition", () => {
+    // Defensive: `run === null` with a stale `"start"` isn't reachable through the store today, but the
+    // resolve effect must still hide the fill rather than leave it frozen mid-sweep at opacity 1.
+    const { fill, pill } = makeEls();
+    const { rerender } = driver(fill, pill, FAIR_RUN, "start");
+    act(() => flushFrame(0));
+    act(() => flushFrame(100));
+
+    act(() => rerender({ run: null, transition: "start" }));
+    expect(fill.style.opacity).toBe("0");
+    expect(fill.style.width).toBe("0px");
+    expect(fill.style.left).toBe("0px");
   });
 
   it("resets to the off-screen start on a new run", () => {

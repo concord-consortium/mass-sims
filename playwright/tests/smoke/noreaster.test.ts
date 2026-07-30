@@ -205,6 +205,32 @@ test.describe("run animation — normal motion (deferred)", () => {
     await expect(sim.pill(4)).toHaveAttribute("data-run-state", "hidden");
   });
 
+  test("Data panel pill: first run shows the 'Simulating…' face, then resolves to the outcome", async () => {
+    // Verifies the real-CSS phase behavior the jsdom tests can't: the overlay is shown and the outcome
+    // label hidden beneath it while running, then they swap on completion. `toHaveCSS` auto-retries, so
+    // it settles past the 0.6s crossfade without a hand-tuned wait.
+    await sim.completeSetup("windy"); // ~3 s to finalize
+    await sim.runButton.click();
+    await expect(sim.outcomePillBox).toHaveAttribute("data-phase", "simulating");
+    await expect(sim.simulatingLabel).toHaveCSS("opacity", "1"); // "Simulating…" shown
+    await expect(sim.outcomePill).toHaveCSS("opacity", "0"); // outcome label hidden beneath
+
+    await expect(sim.outcomePill).toHaveText("Windy, no storm", { timeout: 8000 });
+    await expect(sim.outcomePillBox).toHaveAttribute("data-phase", "filled");
+    await expect(sim.simulatingLabel).toHaveCSS("opacity", "0"); // overlay faded out
+  });
+
+  test("Data panel pill: a replay keeps the outcome label (simulating-replay face)", async () => {
+    await sim.completeSetup("windy");
+    await sim.runButton.click();
+    await expect(sim.replayButton).toBeVisible({ timeout: 8000 });
+
+    await sim.replayButton.click();
+    await expect(sim.outcomePillBox).toHaveAttribute("data-phase", "simulating-replay");
+    await expect(sim.outcomePill).toHaveText("Windy, no storm"); // outcome label kept, not "Simulating…"
+    await expect(sim.simulatingLabel).toHaveCSS("opacity", "0"); // no overlay on a replay
+  });
+
   test("Data panel weather scene: a fresh run applies the 0.6s opacity fade", async () => {
     // Nothing else verifies the transition itself, so it could be removed or mistyped and every other
     // test would still pass. The fade is outcome-independent; a fast outcome keeps this quick.

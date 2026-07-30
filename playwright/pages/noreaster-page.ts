@@ -148,6 +148,16 @@ export class NoreasterPage extends SimulationFramePage {
     return this.page.locator(".wo-pill-label--outcome");
   }
 
+  /** The outcome-pill container — carries `data-phase` (empty / simulating / simulating-replay / filled). */
+  get outcomePillBox(): Locator {
+    return this.page.locator(".wo-pill");
+  }
+
+  /** The pill's "Simulating…" overlay layer (shown only during a first run). */
+  get simulatingLabel(): Locator {
+    return this.page.locator(".wo-pill-label--simulating");
+  }
+
   /**
    * The decorative weather-scene layer. Its `data-scene` attribute holds the outcome key once run and
    * `"default"` otherwise — the observable seam for asserting the scene tracks Run/Reset end-to-end.

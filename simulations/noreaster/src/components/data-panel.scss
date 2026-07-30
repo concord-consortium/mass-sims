@@ -238,12 +238,12 @@ $chip-overhang: (tokens.$section-chip-height - tokens.$border-strong-width) * 0.
     }
   }
 
-  // No pill crossfades or row stagger. `[data-animate]` matches the `="fade"` rules' specificity, so it
-  // must stay last to win.
+  // No pill crossfades or row stagger. The doubled `[data-animate]` outranks the `="fade"` rules on
+  // specificity, so this wins regardless of source order.
   @media (prefers-reduced-motion: reduce) {
-    .wo-pill[data-animate] .wo-pill-label,
-    .wo-table[data-animate] .wo-icon,
-    .wo-table[data-animate] .wo-value {
+    .wo-pill[data-animate][data-animate] .wo-pill-label,
+    .wo-table[data-animate][data-animate] .wo-icon,
+    .wo-table[data-animate][data-animate] .wo-value {
       animation: none;
       transition: none;
     }

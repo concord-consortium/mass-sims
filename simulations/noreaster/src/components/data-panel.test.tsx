@@ -1,6 +1,6 @@
 import { act, render } from "@testing-library/react";
 import { StrictMode } from "react";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { OUTCOME_VALUES } from "../model/outcome-values";
 import { OUTCOMES } from "../model/weather";
 import { createRootStore, type RootStoreInstance, RootStoreProvider } from "../stores/root-store";
@@ -457,8 +457,8 @@ describe("NoreasterDataPanel — staggered row fade-on", () => {
 
   it("is instant on a replay — the rows are already shown, no re-stagger", () => {
     const store = createRootStore();
-    const { container } = renderWithStore(store);
     configure(store.activeTrial, SETUPS.strong);
+    const { container } = renderWithStore(store);
     act(() => {
       const id = store.beginRun();
       if (id != null) store.finalizeRun(id);
@@ -495,10 +495,10 @@ describe("NoreasterDataPanel — reduced motion", () => {
     onchange: null,
   };
   beforeEach(() => {
-    window.matchMedia = (() => REDUCED) as unknown as typeof window.matchMedia;
+    vi.stubGlobal("matchMedia", () => REDUCED);
   });
   afterEach(() => {
-    delete (window as { matchMedia?: unknown }).matchMedia;
+    vi.unstubAllGlobals();
   });
 
   function renderWithStore(store: RootStoreInstance) {
