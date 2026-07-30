@@ -159,6 +159,10 @@ function toDt(dtMs: number): number {
   return dtMs > 0 ? Math.min(dtMs / 1000, 0.05) : 0.016;
 }
 
+/** Deterministic step for `renderFinal`, matched to the live ~60fps frame time so the regenerated
+ *  snapshot has the same particle density as the animation's real last frame. */
+const RENDER_FINAL_DT = 1 / 60;
+
 // Spiral — `strong` / `moderate`.
 interface CloudParticle {
   a: number;
@@ -288,7 +292,7 @@ function createSpiralPlayer(cfg: SpiralConfig): StormPlayer {
     renderFinal(ctx) {
       // Fresh deterministic sim to the end at a fixed step.
       seed();
-      const simDt = 1 / 30;
+      const simDt = RENDER_FINAL_DT;
       const simSteps = Math.round(cfg.duration / simDt);
       for (let si = 0; si < simSteps; si++) {
         stepPhysics(simDt, 0.5 + (cfg.maxR - 0.5) * ((si + 1) / simSteps));
@@ -498,7 +502,7 @@ function createBandPlayer(): StormPlayer {
       // Reproduce the animation deterministically with the full physics (curl + drift-shift + bounds), so
       // the restored / reduced-motion end matches what the animation actually drew.
       seed();
-      const simDt = 1 / 30;
+      const simDt = RENDER_FINAL_DT;
       const simSteps = Math.round(BAND_DURATION / simDt);
       for (let si = 0; si < simSteps; si++) physics((si + 1) / simSteps, simDt);
       draw(ctx, 1);
@@ -629,7 +633,7 @@ function createHazePlayer(): StormPlayer {
       // Full physics (spawn + move + the y-bounds compaction the animation uses) at a fixed step, so the
       // restored / reduced-motion end matches the animation.
       seed();
-      const simDt = 1 / 30;
+      const simDt = RENDER_FINAL_DT;
       const simSteps = Math.round(HAZE_DURATION / simDt);
       for (let si = 0; si < simSteps; si++) physics((si + 1) / simSteps, simDt);
       draw(ctx, 1);
