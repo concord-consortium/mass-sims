@@ -3,7 +3,7 @@ import {
   useFrameLoop,
   useReducedMotion,
 } from "@concord-consortium/mass-sims-shared";
-import { type RefObject, useCallback, useLayoutEffect, useRef } from "react";
+import { type RefObject, useCallback, useEffect, useLayoutEffect, useRef } from "react";
 import type { NoreasterRun } from "../stores/ui-store";
 import { MAX_FRAME_MS, TOTAL_DUR_S } from "./run-timing";
 import type { PillTransition } from "./use-pill-phase";
@@ -17,8 +17,9 @@ import type { PillTransition } from "./use-pill-phase";
  * `ui.run`), so the fill stays within ~1 frame of the animation. Completion is authoritative anyway: when
  * the run finalizes, `run` clears and the pill resolves regardless of exactly where this loop reached.
  *
- * The fill is off-screen-left at width 0 and sweeps its rounded right cap across the pill; `left` and
- * `width` are set together each frame from the same measured height so the off-screen cap can't desync.
+ * The fill is off-screen-left at width 0 and sweeps its rounded right cap across the pill. Pill dimensions
+ * are cached (measured at run start + on resize) so each frame only writes `left`/`width` — never reads
+ * layout, which would force a synchronous reflow every frame for the run's duration.
  *
  * Takes the run DESCRIPTOR (not the trial's outcome): `activeTrial.outcome` is null through a first run, so
  * both the duration (`run.outcome`) and the reset identity (`run.runId`) come from `ui.run`. `transition`
@@ -34,7 +35,28 @@ export function useProgressBar(
   const reducedMotion = useReducedMotion();
   const hidden = useDocumentHidden();
   const elapsedRef = useRef(0);
+  const dimsRef = useRef({ h: 0, w: 0 });
   const runId = run?.runId ?? null;
+
+  const measure = useCallback(() => {
+    const pill = pillRef.current;
+    if (pill) dimsRef.current = { h: pill.offsetHeight, w: pill.offsetWidth };
+  }, [pillRef]);
+
+  // Cache the pill's dimensions rather than reading them per frame (each read would force a synchronous
+  // layout, since the loop's own `width` write dirties layout every frame). Measure on mount and on
+  // resize; the reset effect below re-measures at each run start. Guarded for jsdom, which has no
+  // `ResizeObserver`. Observing the pill (not the fill) can't self-trigger: the fill is absolutely
+  // positioned, so its width changes don't resize the pill.
+  useEffect(() => {
+    const pill = pillRef.current;
+    if (!pill) return;
+    measure();
+    if (typeof ResizeObserver === "undefined") return;
+    const observer = new ResizeObserver(measure);
+    observer.observe(pill);
+    return () => observer.disconnect();
+  }, [pillRef, measure]);
 
   // Reset to the off-screen start before paint on each new run — a layout effect (not a plain one) avoids
   // a one-frame flash of the prior bar when opacity is restored. Keyed on `runId`, so only a new run
@@ -44,12 +66,13 @@ export function useProgressBar(
     const pill = pillRef.current;
     if (!fill || !pill || runId == null) return; // no run → completion/cancel handled below, not here
     elapsedRef.current = 0;
-    const h = pill.offsetHeight;
+    measure(); // fresh dims for this run
+    const { h } = dimsRef.current;
     fill.style.transition = "none";
     fill.style.opacity = "1";
     fill.style.left = `${-h}px`;
     fill.style.width = `${h}px`;
-  }, [runId, fillRef, pillRef]);
+  }, [runId, fillRef, pillRef, measure]);
 
   // Resolve the fill when a run ends: fade out on a real completion (keeping the completed width under the
   // fade), snap hidden on a cancellation / reset / steady-idle. `"start"` is a no-op here — the reset above
@@ -71,19 +94,17 @@ export function useProgressBar(
   const tick = useCallback(
     (deltaMs: number) => {
       const fill = fillRef.current;
-      const pill = pillRef.current;
-      if (!fill || !pill || !run) return;
+      if (!fill || !run) return;
       elapsedRef.current += Math.min(deltaMs, MAX_FRAME_MS);
       const totalMs = TOTAL_DUR_S[run.outcome] * 1000;
       const p = Math.min(elapsedRef.current / totalMs, 1);
-      // Measure each frame → resize is free. `left` + `width` share the height so the clipped left cap
-      // stays pinned off-screen while the right cap sweeps 0 → 100%.
-      const h = pill.offsetHeight;
-      const w = pill.offsetWidth;
+      // Cached dims (run start + resize) — no per-frame layout read. `left` + `width` share the height so
+      // the clipped left cap stays pinned off-screen while the right cap sweeps 0 → 100%.
+      const { h, w } = dimsRef.current;
       fill.style.left = `${-h}px`;
       fill.style.width = `${h + p * w}px`;
     },
-    [fillRef, pillRef, run],
+    [fillRef, run],
   );
 
   useFrameLoop(tick, run != null && !reducedMotion && !hidden);
