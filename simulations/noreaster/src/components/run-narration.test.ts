@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { SETUPS } from "../stores/test-helpers";
 import { finalNarration, STAGED_NARRATION, startNarration } from "./run-narration";
-import { TOTAL_DUR_S } from "./use-storm-run";
+import { TOTAL_DUR_S } from "./run-timing";
 
 describe("startNarration", () => {
   it("describes both air masses converging", () => {

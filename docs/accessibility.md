@@ -224,6 +224,25 @@ below.
   accommodation stays `prefers-reduced-motion` (no on-screen stop control), consistent with the decision
   above and faithful to the signed-off prototype.
 
+### The Data-panel progress bar + pill/row transitions add three more
+
+All of it is decorative and reuses the accommodations above:
+
+- **A second frame loop — the pill's progress fill.** During a Run the pill runs its own rAF loop that
+  sweeps the fill, re-derived from the same clock as the runner and gated identically
+  (`run != null && !reducedMotion && !hidden`), so it pauses with the tab and never runs under reduced
+  motion. It's `aria-hidden` and run-bounded (finalize clears it), so the run's finite-2.2.2 decision
+  above carries over unchanged. See `use-progress-bar.ts`.
+- **The pill label crossfade + "Simulating…" overlay.** The pill's two label faces (outcome ↔
+  "Simulating…") crossfade via CSS on run start/completion. The "Simulating…" overlay is `aria-hidden`, so
+  it never reaches AT; the *information* travels the existing `<Announcer>` channel (the run-start + outcome
+  lines above). Under reduced motion the simulating faces are gated off and the pill resolves straight to
+  the outcome — no crossfade to suppress.
+- **The row stagger.** On a first-run finalize the five attribute rows fade in staggered — CSS-only
+  (`animation` on `.wo-icon` / `.wo-value`), so its sole reduced-motion guard is the
+  `@media (prefers-reduced-motion: reduce)` rule in `data-panel.scss` (which wins on specificity via a
+  doubled `[data-animate]`). The rows' *content* is in the DOM regardless of the fade.
+
 ---
 
 ## Known gaps (deferred — revisit when a consumer needs them)

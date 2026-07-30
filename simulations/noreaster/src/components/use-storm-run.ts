@@ -6,7 +6,6 @@ import {
   useReducedMotion,
 } from "@concord-consortium/mass-sims-shared";
 import { type RefObject, useCallback, useEffect, useRef, useState } from "react";
-import type { Outcome } from "../model/weather";
 import { useStores } from "../stores/root-store";
 import {
   convergedArrows,
@@ -16,6 +15,7 @@ import {
 } from "./converge";
 import { norDebugFlag } from "./nor-debug";
 import { finalNarration, STAGED_NARRATION, startNarration } from "./run-narration";
+import { MAX_FRAME_MS, TOTAL_DUR_S } from "./run-timing";
 import type { StormAnimation } from "./use-storm-animation";
 
 /**
@@ -33,28 +33,11 @@ import type { StormAnimation } from "./use-storm-animation";
  * superseded run is dropped by `finalizeRun`'s id guard.
  */
 
-/**
- * Total run duration per outcome, in seconds — the finalize time, when the outcome commits. For the four
- * cloud outcomes it is the 1.5 s arrow-converge pre-delay plus the cloud's own duration; `windy`/`fair`
- * have no cloud and finish on a ~3 s timeout.
- */
-export const TOTAL_DUR_S: Record<Outcome, number> = {
-  strong: 11.5,
-  moderate: 8.5,
-  weakCoastal: 6.5,
-  humidNoStorm: 9.5,
-  windy: 3,
-  fair: 3,
-};
-
 /** Arrow convergence duration (ms). */
 const CONVERGE_MS = 2000;
 
 /** The cloud starts 1.5 s into the run (arrows converge first, then the storm spins up). */
 const CLOUD_START_MS = 1500;
-
-/** Clamp per-frame dt so a long stall can't overshoot the finalize deadline (or a resume jump it). */
-const MAX_FRAME_MS = 100;
 
 /** Refs the map stage hands the runner so it can drive the overlays imperatively. */
 export interface StormRunRefs {
