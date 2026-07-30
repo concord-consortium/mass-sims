@@ -175,7 +175,9 @@ export const AirMassSelectors = observer(function AirMassSelectors() {
   const { activeTrial: trial, ui } = useStores();
   const announce = useAnnounce();
   const letter = ui.selectedTrialLetter;
-  const locked = trial.locked;
+  // Lock to read-only pills once the trial is run, or while its run animation is in flight — the outcome
+  // isn't recorded yet mid-run, so `trial.locked` alone wouldn't cover the running phase.
+  const locked = trial.locked || ui.isRunning(letter);
 
   // Announce the incomplete → complete transition once (any of the five selectors can be the one that
   // completes the setup), so a screen-reader user learns the setup is ready to run without navigating

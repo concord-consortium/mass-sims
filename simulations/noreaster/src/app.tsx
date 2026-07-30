@@ -70,6 +70,10 @@ export const App = observer(function App() {
     if (initMsg && "interactiveState" in initMsg && initMsg.interactiveState) {
       const state = migrateSavedState(initMsg.interactiveState);
       if (state) {
+        // Clear any in-flight run before replacing the trials: `run` is volatile, so `applySnapshot`
+        // won't touch it, and a surviving descriptor's finalize would commit its pre-hydration captured
+        // outcome onto the freshly-restored trial.
+        rootStore.cancelRun();
         applySnapshot(rootStore, {
           trials: state.trials,
           ui: { selectedTrialLetter: state.selectedTrialLetter },

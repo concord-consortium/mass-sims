@@ -195,12 +195,13 @@ describe("NoreasterDataPanel — weather scene", () => {
     fair: false,
   };
 
-  // A real Run goes through `runActiveTrial()` (run + fade-signal bump in one action), which the panel's fade
-  // signal reads via the token — so the tests drive that same action.
+  // A real Run goes through `beginRun()` → `finalizeRun()` (finalize records the outcome and bumps the
+  // fade-signal token), which the panel's fade signal reads — so the tests drive that same path.
   function runActive(store: RootStoreInstance, outcome: (typeof OUTCOMES)[number]) {
     act(() => {
       configure(store.activeTrial, SETUPS[outcome]);
-      store.runActiveTrial();
+      const id = store.beginRun();
+      if (id != null) store.finalizeRun(id);
     });
   }
 
@@ -281,7 +282,10 @@ describe("NoreasterDataPanel — weather scene", () => {
       expect(scene(container)).toHaveAttribute("data-animate", "fade");
 
       // Replay: run again (same outcome), bumping the token. The outcome is unchanged, so no re-fade.
-      act(() => store.runActiveTrial());
+      act(() => {
+        const id = store.beginRun();
+        if (id != null) store.finalizeRun(id);
+      });
       expect(scene(container)).toHaveAttribute("data-animate", "instant");
     });
 

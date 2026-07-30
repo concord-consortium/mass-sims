@@ -119,3 +119,61 @@ describe("MapStage — arrow tint from selections", () => {
     }
   });
 });
+
+describe("MapStage — run animation states (arrows + pills)", () => {
+  // configureStrong selects land N/NW (arrow 1) + ocean S/SE (arrow 2); the companions are land W (4)
+  // and ocean NE (3).
+  const arrow = (c: HTMLElement, n: number) => c.querySelector(`.nor-arrow[data-arrow="${n}"]`);
+  const pill = (c: HTMLElement, n: number) => c.querySelector(`.nor-pill[data-pathway="${n}"]`);
+
+  it("while running: companions hidden, selected arrows runner-driven, all pills of selected kept", () => {
+    const store = createRootStore();
+    act(() => configureStrong(store.activeTrial));
+    const { container } = renderStage("street", store);
+    act(() => {
+      store.beginRun();
+    });
+    // Selected arrows (1, 2) converge under the runner — no static run-state; their pills stay.
+    expect(arrow(container, 1)).not.toHaveAttribute("data-run-state");
+    expect(arrow(container, 2)).not.toHaveAttribute("data-run-state");
+    expect(pill(container, 1)).not.toHaveAttribute("data-run-state");
+    expect(pill(container, 2)).not.toHaveAttribute("data-run-state");
+    // Companion arrows (4, 3) AND their pills disappear the instant the run begins.
+    expect(arrow(container, 4)).toHaveAttribute("data-run-state", "hidden");
+    expect(arrow(container, 3)).toHaveAttribute("data-run-state", "hidden");
+    expect(pill(container, 4)).toHaveAttribute("data-run-state", "hidden");
+    expect(pill(container, 3)).toHaveAttribute("data-run-state", "hidden");
+    // The stage carries the running run-phase.
+    expect(container.querySelector(".nor-stage")).toHaveAttribute("data-run-phase", "running");
+  });
+
+  it("after a run: selected arrows removed (pills kept), companion arrows + pills hidden", () => {
+    const store = createRootStore();
+    act(() => configureStrong(store.activeTrial));
+    const { container } = renderStage("street", store);
+    act(() => store.activeTrial.run()); // finalized (no running phase)
+
+    expect(arrow(container, 1)).toHaveAttribute("data-run-state", "removed");
+    expect(arrow(container, 2)).toHaveAttribute("data-run-state", "removed");
+    expect(pill(container, 1)).not.toHaveAttribute("data-run-state"); // kept as the result marker
+    expect(pill(container, 2)).not.toHaveAttribute("data-run-state");
+    expect(arrow(container, 4)).toHaveAttribute("data-run-state", "hidden");
+    expect(arrow(container, 3)).toHaveAttribute("data-run-state", "hidden");
+    expect(pill(container, 4)).toHaveAttribute("data-run-state", "hidden");
+    expect(pill(container, 3)).toHaveAttribute("data-run-state", "hidden");
+    // A completed/restored trial carries the "done" run-phase.
+    expect(container.querySelector(".nor-stage")).toHaveAttribute("data-run-phase", "done");
+  });
+
+  it("clears every run-state and the run-phase once the trial is reset", () => {
+    const store = createRootStore();
+    act(() => configureStrong(store.activeTrial));
+    const { container } = renderStage("street", store);
+    act(() => store.activeTrial.run());
+    act(() => store.resetTrial());
+    for (const el of container.querySelectorAll(".nor-arrow, .nor-pill")) {
+      expect(el).not.toHaveAttribute("data-run-state");
+    }
+    expect(container.querySelector(".nor-stage")).not.toHaveAttribute("data-run-phase");
+  });
+});

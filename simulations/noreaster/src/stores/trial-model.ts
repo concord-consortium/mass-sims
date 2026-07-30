@@ -126,6 +126,15 @@ export const TrialModel = types
       if (!setup) return;
       self.outcome = evaluateOutcome(setup);
     },
+    /**
+     * Commit an already-computed outcome — the deferred run's finalize path (`RootStore.finalizeRun`),
+     * which records the outcome captured at `beginRun` instead of re-evaluating the current setup, so the
+     * storm the user watched and the recorded result can't diverge. No-op once locked, so replaying an
+     * already-run trial re-commits nothing.
+     */
+    recordOutcome(value: Outcome) {
+      if (!self.locked) self.outcome = value;
+    },
     /** Reset to the default, unconfigured trial: clear the five selections and the recorded outcome. */
     reset() {
       self.landPathway = null;

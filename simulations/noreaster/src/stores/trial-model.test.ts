@@ -85,6 +85,22 @@ describe("TrialModel", () => {
     expect(trial.hasRun).toBe(false);
   });
 
+  it("recordOutcome commits the GIVEN outcome, not a re-evaluation of the setup", () => {
+    const trial = TrialModel.create(emptyTrialSnapshot());
+    configureStrong(trial); // the setup evaluates to "strong"…
+    trial.recordOutcome("fair"); // …but finalize commits the captured value it was handed
+    expect(trial.outcome).toBe("fair");
+    expect(trial.hasRun).toBe(true);
+  });
+
+  it("recordOutcome is a no-op once locked (replay re-commits nothing)", () => {
+    const trial = TrialModel.create(emptyTrialSnapshot());
+    configureStrong(trial);
+    trial.run(); // outcome "strong", now locked
+    trial.recordOutcome("fair");
+    expect(trial.outcome).toBe("strong");
+  });
+
   it("selection setters no-op once locked (post-run read-only)", () => {
     const trial = TrialModel.create(emptyTrialSnapshot());
     configureStrong(trial);

@@ -1,4 +1,8 @@
-import { prefersReducedMotion, useFrameLoop } from "@concord-consortium/mass-sims-shared";
+import {
+  useDocumentHidden,
+  useFrameLoop,
+  useReducedMotion,
+} from "@concord-consortium/mass-sims-shared";
 import { type RefObject, useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { ARTBOARD_WIDTH, createWeatherPlayer, type WeatherPlayer } from "./weather-players";
 import type { SceneSpec } from "./weather-scenes";
@@ -30,10 +34,8 @@ export function useWeatherAnimation(
   // State (not just a ref) so `enabled` recomputes once the context is acquired; `null` (jsdom) keeps
   // `enabled` false → no frame scheduled.
   const [hasCtx, setHasCtx] = useState(false);
-  // Initial snapshot; the `change` subscription below keeps it current for a mid-session OS toggle.
-  const [reducedMotion, setReducedMotion] = useState(prefersReducedMotion);
-  // Pause the loop while the tab is hidden.
-  const [hidden, setHidden] = useState(() => typeof document !== "undefined" && document.hidden);
+  const reducedMotion = useReducedMotion();
+  const hidden = useDocumentHidden();
 
   // Measure the header (top of the 2nd `.wo-row` relative to the panel), size the layer + canvas, acquire the
   // 2D context, and apply the DPR transform.
@@ -107,23 +109,6 @@ export function useWeatherAnimation(
     observer.observe(panel);
     return () => observer.disconnect();
   }, [panelRef, measure]);
-
-  // Subscribe to the media query's `change` (the shared snapshot util isn't reactive). Guarded for jsdom.
-  useEffect(() => {
-    if (typeof window === "undefined" || typeof window.matchMedia !== "function") return;
-    const mql = window.matchMedia("(prefers-reduced-motion: reduce)");
-    const onChange = () => setReducedMotion(mql.matches);
-    mql.addEventListener("change", onChange);
-    return () => mql.removeEventListener("change", onChange);
-  }, []);
-
-  // Pause when the tab is hidden; folded into `enabled` below.
-  useEffect(() => {
-    if (typeof document === "undefined") return;
-    const onVisibility = () => setHidden(document.hidden);
-    document.addEventListener("visibilitychange", onVisibility);
-    return () => document.removeEventListener("visibilitychange", onVisibility);
-  }, []);
 
   const enabled = scene.player !== "none" && hasCtx && !reducedMotion && !hidden;
 

@@ -35,7 +35,8 @@ transports silently no-op when unavailable. Event names are snake_case; payloads
 | Event | Trigger | Parameters |
 | --- | --- | --- |
 | `air_mass_selected` | An air-mass selector commits a value | `{ trial, airMass, attribute, value }` |
-| `simulation_run` | **Run** (or **Replay**) is pressed | `{ trial, replay, outcome }` |
+| `simulation_run_started` | **Run** (or **Replay**) is pressed | `{ trial, replay, outcome }` |
+| `simulation_run` | The run animation finishes and the outcome is committed | `{ trial, replay, outcome }` |
 | `map_view_changed` | The Street/Satellite map-view toggle is switched | `{ trial, view }` |
 
 ## Notes
@@ -46,6 +47,11 @@ transports silently no-op when unavailable. Event names are snake_case; payloads
 - `air_mass_selected` covers all five selectors; the field is identified by `airMass`
   (`"land"` | `"ocean"`) + `attribute` (`"pathway"` | `"humidity"` | `"temperature"`), with `value`
   the chosen option. (Ocean Temperature is derived, not selected, so it emits no event.)
-- `simulation_run` carries `replay` (`false` on the first run of a trial, `true` on a Replay) and the
-  resolved `outcome` (`"strong"` | `"moderate"` | `"fair"`).
+- `simulation_run_started` fires on the **Run/Replay press** (the attempt); `simulation_run` fires at
+  **finalize**, when the animation finishes and the outcome commits. Both carry `replay` (`false` on the
+  first run of a trial, `true` on a Replay) and the resolved `outcome` (`"strong"` | `"moderate"` |
+  `"weakCoastal"` | `"humidNoStorm"` | `"windy"` | `"fair"`).
+- **Counting runs:** `simulation_run_started` = attempts, `simulation_run` = completions. A run aborted
+  before finalize (Reset, a trial switch, AP hydration, or a backgrounded tab that never resumes) emits
+  only the start — so the difference between the two is the abandon rate.
 - `map_view_changed` carries the new `view` (`"street"` | `"satellite"`).

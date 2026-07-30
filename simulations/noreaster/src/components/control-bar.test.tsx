@@ -40,39 +40,58 @@ describe("ControlBar — Run gating", () => {
   });
 });
 
-describe("ControlBar — Run / Replay", () => {
-  it("on Run: records the outcome, relabels to Replay, enables Reset, logs + announces", () => {
+describe("ControlBar — Run / Replay (deferred)", () => {
+  it("on Run: enters the running phase (captures the outcome, disables Run) without recording it yet", () => {
     const store = createRootStore();
     configureStrong(store.activeTrial);
-    const { getByRole, region } = renderBar(store);
+    const { getByRole } = renderBar(store);
     fireEvent.click(getByRole("button", { name: "Run" }));
 
-    expect(store.activeTrial.outcome).toBe("strong");
-    expect(getByRole("button", { name: "Replay" })).toBeInTheDocument();
-    expect(getByRole("button", { name: "Reset Trial" })).not.toHaveAttribute(
-      "aria-disabled",
-      "true",
-    );
-    expect(log).toHaveBeenCalledWith("simulation_run", {
+    // The outcome is captured on the run descriptor but not committed to the trial until the animation
+    // finalizes, which the isolated control bar (no runner mounted) never reaches.
+    expect(store.ui.isRunning("A")).toBe(true);
+    expect(store.ui.run?.outcome).toBe("strong");
+    expect(store.ui.run?.replay).toBe(false);
+    expect(store.activeTrial.outcome).toBeNull();
+    expect(getByRole("button", { name: "Run" })).toHaveAttribute("aria-disabled", "true");
+    // The run START is logged here (the attempt); the paired `simulation_run` completion is the runner's
+    // job at finalize, which the isolated bar (no runner mounted) never reaches.
+    expect(log).toHaveBeenCalledWith("simulation_run_started", {
       trial: "A",
       replay: false,
       outcome: "strong",
     });
-    expect(region).toHaveTextContent(/Simulation complete: Strong nor/);
+    expect(log).not.toHaveBeenCalledWith("simulation_run", expect.anything());
   });
 
-  it("Replay re-runs the current trial and reports replay: true", () => {
+  it("on Replay: re-enters the running phase with replay: true", () => {
     const store = createRootStore();
     configureStrong(store.activeTrial);
-    store.activeTrial.run();
+    store.activeTrial.run(); // already run → the button reads "Replay"
     const { getByRole } = renderBar(store);
-    log.mockClear();
     fireEvent.click(getByRole("button", { name: "Replay" }));
-    expect(log).toHaveBeenCalledWith("simulation_run", {
+    expect(store.ui.isRunning("A")).toBe(true);
+    expect(store.ui.run?.replay).toBe(true);
+    expect(store.ui.run?.outcome).toBe("strong");
+    expect(log).toHaveBeenCalledWith("simulation_run_started", {
       trial: "A",
       replay: true,
       outcome: "strong",
     });
+  });
+
+  it("Reset during a run cancels it, then clears the trial", () => {
+    const store = createRootStore();
+    configureStrong(store.activeTrial);
+    const { getByRole } = renderBar(store);
+    fireEvent.click(getByRole("button", { name: "Run" }));
+    expect(store.ui.isRunning("A")).toBe(true);
+
+    fireEvent.click(getByRole("button", { name: "Reset Trial" }));
+    expect(store.ui.run).toBeNull();
+    expect(store.ui.isRunning("A")).toBe(false);
+    expect(store.activeTrial.canReset).toBe(false);
+    expect(log).toHaveBeenCalledWith("trial_reset", { trial: "A" });
   });
 });
 
