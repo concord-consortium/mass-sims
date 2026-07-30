@@ -1,5 +1,6 @@
 import { act, renderHook } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { SETUPS } from "../stores/test-helpers";
 import type { NoreasterRun } from "../stores/ui-store";
 import type { PillTransition } from "./use-pill-phase";
 import { useProgressBar } from "./use-progress-bar";
@@ -41,7 +42,13 @@ function makeEls() {
   return { fill, pill };
 }
 
-const FAIR_RUN: NoreasterRun = { runId: 1, trial: "A", outcome: "fair", replay: false }; // 3 s total
+const FAIR_RUN: NoreasterRun = {
+  runId: 1,
+  trial: "A",
+  outcome: "fair",
+  replay: false,
+  setup: SETUPS.fair,
+}; // 3 s total
 
 // A `prefers-reduced-motion: reduce` match, for `vi.stubGlobal("matchMedia", () => REDUCED_MEDIA)`.
 const REDUCED_MEDIA = {

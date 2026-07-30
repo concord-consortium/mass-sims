@@ -2,15 +2,18 @@ import { act, fireEvent, render, within } from "@testing-library/react";
 import { useState } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-// Mock the lara-interactive-api surface used for AP saved-state sync. vi.hoisted
+// Mock the lara-interactive-api surface used across the App tree: the AP saved-state pair plus
+// `log` (the transport useLogEvent forwards to — the seam a sim test reaches for analytics). vi.hoisted
 // so the mocks exist when vi.mock runs; defaults to standalone (null), overridden per-case.
-const { useInitMessageMock, setInteractiveStateMock } = vi.hoisted(() => ({
+const { useInitMessageMock, setInteractiveStateMock, logMock } = vi.hoisted(() => ({
   useInitMessageMock: vi.fn(),
   setInteractiveStateMock: vi.fn(),
+  logMock: vi.fn(),
 }));
 vi.mock("@concord-consortium/lara-interactive-api", () => ({
   useInitMessage: useInitMessageMock,
   setInteractiveState: setInteractiveStateMock,
+  log: logMock,
 }));
 
 import { App } from "./app";
@@ -19,6 +22,7 @@ import { App } from "./app";
 // real useInitMessage returns null (not undefined) with no AP parent. Embedded tests override.
 beforeEach(() => {
   useInitMessageMock.mockReturnValue(null);
+  logMock.mockReset();
 });
 
 describe("Nor'easter App", () => {
@@ -87,6 +91,25 @@ describe("Nor'easter App", () => {
     // Run → the prompt is gone (the trial has run).
     fireEvent.click(getByRole("button", { name: "Run" }));
     expect(container.querySelector(".nor-prompt")).toBeNull();
+  });
+});
+
+describe("Nor'easter App — info modal logging", () => {
+  it("does not log an info_modal event on initial render", () => {
+    render(<App />);
+    const infoEvents = logMock.mock.calls.filter(
+      ([event]) => event === "info_modal_opened" || event === "info_modal_closed",
+    );
+    expect(infoEvents).toEqual([]);
+  });
+
+  it("logs info_modal_opened on open and info_modal_closed on close", () => {
+    const { getByRole } = render(<App />);
+    logMock.mockReset();
+    fireEvent.click(getByRole("button", { name: /about/i }));
+    expect(logMock).toHaveBeenCalledWith("info_modal_opened", undefined);
+    fireEvent.click(getByRole("button", { name: /close/i }));
+    expect(logMock).toHaveBeenCalledWith("info_modal_closed", undefined);
   });
 });
 

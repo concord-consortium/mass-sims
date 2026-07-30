@@ -90,7 +90,13 @@ export function useStormRun(
     if (runId == null) return;
     const done = store.finalizeRun(runId);
     if (!done) return;
-    logEvent("simulation_run", { trial: done.trial, replay: done.replay, outcome: done.outcome });
+    // Include the captured setup so the completion logs the same air-mass config as the paired start event.
+    logEvent("simulation_run", {
+      trial: done.trial,
+      replay: done.replay,
+      outcome: done.outcome,
+      ...done.setup,
+    });
     announce(finalNarration(done.outcome));
   }, [store, runId, logEvent, announce]);
 

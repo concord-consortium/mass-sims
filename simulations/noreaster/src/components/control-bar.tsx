@@ -84,8 +84,7 @@ interface ControlBarProps {
  * The Simulation panel's bottom control bar: the Street ⇄ Satellite map-view toggle, Run/Replay, and
  * Reset Trial. `observer`-wrapped so the buttons track the active trial's setup/lock state. Analytics
  * events are emitted explicitly (Run carries the computed outcome; the raw switch can't auto-emit);
- * narration routes through the shared `<Announcer>`. The provisional event schema is finalized in the
- * logging story.
+ * narration routes through the shared `<Announcer>`.
  */
 export const ControlBar = observer(function ControlBar({
   mapView,
@@ -119,10 +118,12 @@ export const ControlBar = observer(function ControlBar({
     if (beginRun() == null) return; // setup incomplete — no run armed
     const run = ui.run;
     if (run) {
+      // Include the captured setup so the attempt logs the full air-mass config with the outcome.
       logEvent("simulation_run_started", {
         trial: run.trial,
         replay: run.replay,
         outcome: run.outcome,
+        ...run.setup,
       });
     }
   };

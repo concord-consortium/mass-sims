@@ -3,7 +3,7 @@ import { getSnapshot } from "mobx-state-tree";
 import { createElement } from "react";
 import { describe, expect, it } from "vitest";
 import { createRootStore, RootStoreProvider, useStores } from "./root-store";
-import { configureStrong, runStrong } from "./test-helpers";
+import { configureStrong, runStrong, STRONG_SETUP } from "./test-helpers";
 import type { TrialModelInstance } from "./trial-model";
 
 describe("createRootStore", () => {
@@ -64,6 +64,7 @@ describe("RootStore deferred run (beginRun / finalizeRun / cancelRun)", () => {
     const runId = store.beginRun();
     expect(runId).not.toBeNull();
     expect(store.ui.run).toMatchObject({ runId, trial: "A", outcome: "strong", replay: false });
+    expect(store.ui.run?.setup).toEqual(STRONG_SETUP);
     expect(store.ui.isRunning("A")).toBe(true);
     expect(store.activeTrial.outcome).toBeNull(); // deferred: not committed until finalize
   });
@@ -84,6 +85,8 @@ describe("RootStore deferred run (beginRun / finalizeRun / cancelRun)", () => {
     store.activeTrial.setLandHumidity("Humid"); // setup would now evaluate to humidNoStorm, not strong
     const done = store.finalizeRun(runId);
     expect(done).toMatchObject({ trial: "A", outcome: "strong", replay: false });
+    // finalize returns the CAPTURED setup, not the mutated live selections.
+    expect(done?.setup).toEqual(STRONG_SETUP);
     expect(store.activeTrial.outcome).toBe("strong");
     expect(store.ui.run).toBeNull();
   });

@@ -4,13 +4,14 @@ import {
   inIframe,
   SimulationFrame,
   TRIAL_LETTERS_DEFAULT,
+  useLogEvent,
   useReloadWarning,
   useReportHeight,
 } from "@concord-consortium/mass-sims-shared";
 import { reaction } from "mobx";
 import { observer } from "mobx-react-lite";
 import { applySnapshot, getSnapshot, onSnapshot } from "mobx-state-tree";
-import { useEffect, useMemo } from "react";
+import { useCallback, useEffect, useMemo } from "react";
 import { AboutContent } from "./components/about";
 import { NoreasterDataPanel } from "./components/data-panel";
 import { SimulationPanel } from "./components/simulation-panel";
@@ -43,6 +44,13 @@ export const App = observer(function App() {
   // Tell the host (Activity Player) our render height so it doesn't leave white space below the
   // embedded sim. No-op when standalone.
   useReportHeight(isEmbedded);
+
+  // Log About-modal open/close. Memoized so SimulationFrame's open-change effect isn't re-subscribed each render.
+  const logEvent = useLogEvent();
+  const handleInfoOpenChange = useCallback(
+    (open: boolean) => logEvent(open ? "info_modal_opened" : "info_modal_closed"),
+    [logEvent],
+  );
 
   // Defensive normalization: if `selectedTrialLetter` ever names a trial that doesn't exist (e.g. a
   // restored saved state whose active letter wasn't among its trials), re-select the first available
@@ -113,6 +121,7 @@ export const App = observer(function App() {
           tagline="Which air masses create a nor’easter?"
           infoModalContent={<AboutContent />}
           standalone={!isEmbedded}
+          onInfoOpenChange={handleInfoOpenChange}
         >
           <SimulationFrame.Trials>
             <TrialsPanel />
