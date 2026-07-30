@@ -1,6 +1,6 @@
 import { act, render } from "@testing-library/react";
 import { StrictMode } from "react";
-import { describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { OUTCOME_VALUES } from "../model/outcome-values";
 import { OUTCOMES } from "../model/weather";
 import { createRootStore, type RootStoreInstance, RootStoreProvider } from "../stores/root-store";
@@ -33,7 +33,7 @@ describe("NoreasterDataPanel — static layout", () => {
 
   it("renders the outcome pill in its empty default state (en-dash placeholder)", () => {
     const { container } = renderPanel();
-    const pill = container.querySelector(".wo-pill");
+    const pill = container.querySelector(".wo-pill-label--outcome");
     expect(pill).toBeInTheDocument();
     expect(pill).toHaveTextContent("–");
   });
@@ -107,7 +107,9 @@ describe("NoreasterDataPanel — filled state", () => {
 
       const { container } = renderWithStore(store);
 
-      expect(container.querySelector(".wo-pill")).toHaveTextContent(OUTCOME_VALUES[outcome].label);
+      expect(container.querySelector(".wo-pill-label--outcome")).toHaveTextContent(
+        OUTCOME_VALUES[outcome].label,
+      );
       const values = [...container.querySelectorAll(".wo-value")].map((el) => el.textContent);
       expect(values).toEqual(valuesInOrder(outcome));
       // Every slot shows a real weather SVG (not the empty stand-in disc).
@@ -119,13 +121,15 @@ describe("NoreasterDataPanel — filled state", () => {
     const store = createRootStore();
     runSetup(store.activeTrial, SETUPS.strong);
     const { container } = renderWithStore(store);
-    expect(container.querySelector(".wo-pill")).toHaveTextContent(OUTCOME_VALUES.strong.label);
+    expect(container.querySelector(".wo-pill-label--outcome")).toHaveTextContent(
+      OUTCOME_VALUES.strong.label,
+    );
 
     act(() => {
       store.resetTrial();
     });
 
-    expect(container.querySelector(".wo-pill")).toHaveTextContent("–");
+    expect(container.querySelector(".wo-pill-label--outcome")).toHaveTextContent("–");
     for (const value of container.querySelectorAll(".wo-value"))
       expect(value.textContent).toBe("–");
     expect(container.querySelectorAll(".wo-icon svg")).toHaveLength(0);
@@ -136,13 +140,15 @@ describe("NoreasterDataPanel — filled state", () => {
     runSetup(store.activeTrial, SETUPS.strong); // trial A → strong
     const added = store.addTrial(); // trial B, unrun
     const { container } = renderWithStore(store);
-    expect(container.querySelector(".wo-pill")).toHaveTextContent(OUTCOME_VALUES.strong.label);
+    expect(container.querySelector(".wo-pill-label--outcome")).toHaveTextContent(
+      OUTCOME_VALUES.strong.label,
+    );
 
     act(() => {
       store.ui.selectTrial(added as string);
     });
 
-    expect(container.querySelector(".wo-pill")).toHaveTextContent("–");
+    expect(container.querySelector(".wo-pill-label--outcome")).toHaveTextContent("–");
     expect(container.querySelectorAll(".wo-icon svg")).toHaveLength(0);
   });
 
@@ -157,14 +163,18 @@ describe("NoreasterDataPanel — filled state", () => {
 
     const { container } = renderWithStore(store);
     // Viewing A: strong.
-    expect(container.querySelector(".wo-pill")).toHaveTextContent(OUTCOME_VALUES.strong.label);
+    expect(container.querySelector(".wo-pill-label--outcome")).toHaveTextContent(
+      OUTCOME_VALUES.strong.label,
+    );
 
     act(() => {
       store.ui.selectTrial(b);
     });
 
     // Selecting the other run trial repopulates the panel with ITS outcome, not the previous trial's.
-    expect(container.querySelector(".wo-pill")).toHaveTextContent(OUTCOME_VALUES.fair.label);
+    expect(container.querySelector(".wo-pill-label--outcome")).toHaveTextContent(
+      OUTCOME_VALUES.fair.label,
+    );
     const values = [...container.querySelectorAll(".wo-value")].map((el) => el.textContent);
     expect(values).toEqual(valuesInOrder("fair"));
     expect(container.querySelectorAll(".wo-icon svg")).toHaveLength(ATTRIBUTES.length);
@@ -302,5 +312,228 @@ describe("NoreasterDataPanel — weather scene", () => {
       expect(scene(container)).toHaveAttribute("data-scene", "default");
       expect(scene(container)).toHaveAttribute("data-animate", "instant");
     });
+  });
+});
+
+describe("NoreasterDataPanel — pill run state", () => {
+  // Under <StrictMode> (as the app mounts) to guard `usePillPhase`'s adjust-state-during-render edge
+  // against the dev double-invoke — the same reason the weather-scene block below uses it.
+  function renderWithStore(store: RootStoreInstance) {
+    return render(
+      <StrictMode>
+        <RootStoreProvider store={store}>
+          <NoreasterDataPanel />
+        </RootStoreProvider>
+      </StrictMode>,
+    );
+  }
+  const pill = (c: HTMLElement) => c.querySelector(".wo-pill");
+  const outcomeLabel = (c: HTMLElement) => c.querySelector(".wo-pill-label--outcome");
+
+  // Rendering BEFORE arming the run is deliberate: `usePillPhase` seeds to the mounted counters, so the
+  // "start" edge is only observed when `runId` advances AFTER mount. Begin and finalize are in SEPARATE
+  // `act`s because they land in separate commits in reality (finalize fires seconds later), and the phase
+  // hook reads `runId` (start) vs. `runCompletedToken` (complete) — batching them would collapse the edge.
+
+  it("shows the aria-hidden 'Simulating…' overlay during a first run", () => {
+    const store = createRootStore();
+    configure(store.activeTrial, SETUPS.strong);
+    const { container } = renderWithStore(store);
+    act(() => {
+      store.beginRun();
+    });
+    expect(pill(container)).toHaveAttribute("data-phase", "simulating");
+    expect(pill(container)).toHaveAttribute("data-animate", "fade");
+    const sim = container.querySelector(".wo-pill-label--simulating");
+    expect(sim).toHaveTextContent("Simulating…");
+    expect(sim).toHaveAttribute("aria-hidden", "true");
+    // Outcome not committed yet — the outcome layer still carries the placeholder.
+    expect(outcomeLabel(container)).toHaveTextContent("–");
+  });
+
+  it("keeps the outcome label (simulating-replay) during a replay", () => {
+    const store = createRootStore();
+    runSetup(store.activeTrial, SETUPS.strong); // A → strong, committed
+    const { container } = renderWithStore(store);
+    act(() => {
+      store.beginRun(); // replay begins (trial already hasRun)
+    });
+    expect(pill(container)).toHaveAttribute("data-phase", "simulating-replay");
+    expect(pill(container)).toHaveAttribute("data-animate", "fade");
+    expect(outcomeLabel(container)).toHaveTextContent(OUTCOME_VALUES.strong.label);
+  });
+
+  it("resolves to filled with data-animate='fade' on completion", () => {
+    const store = createRootStore();
+    configure(store.activeTrial, SETUPS.strong);
+    const { container } = renderWithStore(store);
+    let id: number | null = null;
+    act(() => {
+      id = store.beginRun();
+    });
+    expect(pill(container)).toHaveAttribute("data-phase", "simulating");
+    act(() => {
+      if (id != null) store.finalizeRun(id);
+    });
+    expect(pill(container)).toHaveAttribute("data-phase", "filled");
+    expect(pill(container)).toHaveAttribute("data-animate", "fade");
+    expect(outcomeLabel(container)).toHaveTextContent(OUTCOME_VALUES.strong.label);
+  });
+
+  // Canceling a replay by switching to another already-run trial must NOT play the completion fade —
+  // neither counter advances on the switch.
+  it("stays instant when a replay is CANCELED by switching to another run trial", () => {
+    const store = createRootStore();
+    runSetup(store.activeTrial, SETUPS.strong); // A → strong
+    const b = store.addTrial() as string;
+    const trialB = store.trials.get(b);
+    if (!trialB) throw new Error(`trial ${b} was not added`);
+    runSetup(trialB, SETUPS.fair); // B → fair
+    const { container } = renderWithStore(store); // viewing A
+    act(() => {
+      store.beginRun(); // replay on A
+    });
+    expect(pill(container)).toHaveAttribute("data-phase", "simulating-replay");
+
+    act(() => store.ui.selectTrial(b)); // cancels the run and shows B
+    expect(pill(container)).toHaveAttribute("data-phase", "filled");
+    expect(pill(container)).toHaveAttribute("data-animate", "instant");
+    expect(outcomeLabel(container)).toHaveTextContent(OUTCOME_VALUES.fair.label);
+  });
+
+  it("clears to empty + instant on Reset", () => {
+    const store = createRootStore();
+    runSetup(store.activeTrial, SETUPS.strong);
+    const { container } = renderWithStore(store);
+    act(() => store.resetTrial());
+    expect(pill(container)).toHaveAttribute("data-phase", "empty");
+    expect(pill(container)).toHaveAttribute("data-animate", "instant");
+    expect(outcomeLabel(container)).toHaveTextContent("–");
+  });
+
+  // Canceling a FIRST run (Reset before finalize) advances neither counter and the outcome was never
+  // committed, so only the running edge signals the end: the pill must go instant and the fill must hide.
+  it("hides the fill + goes instant when a first run is reset before completion", () => {
+    const store = createRootStore();
+    configure(store.activeTrial, SETUPS.strong);
+    const { container } = renderWithStore(store);
+    act(() => {
+      store.beginRun();
+    });
+    expect(pill(container)).toHaveAttribute("data-phase", "simulating");
+    const fill = container.querySelector<HTMLElement>(".wo-progress-fill");
+    expect(fill?.style.opacity).toBe("1"); // shown during the run
+
+    act(() => store.resetTrial()); // cancel before the outcome is ever committed
+    expect(pill(container)).toHaveAttribute("data-phase", "empty");
+    expect(pill(container)).toHaveAttribute("data-animate", "instant");
+    expect(fill?.style.opacity).toBe("0"); // hidden, not left mid-sweep
+  });
+});
+
+describe("NoreasterDataPanel — staggered row fade-on", () => {
+  function renderWithStore(store: RootStoreInstance) {
+    return render(
+      <RootStoreProvider store={store}>
+        <NoreasterDataPanel />
+      </RootStoreProvider>,
+    );
+  }
+  const table = (c: HTMLElement) => c.querySelector(".wo-table");
+
+  // The table fade flag reuses `useJustFinalized` (token + outcome), so batching begin+finalize is fine
+  // here — unlike the pill's `runId`-vs-token edge.
+  it("marks the table data-animate='fade' on a fresh first-run finalize", () => {
+    const store = createRootStore();
+    configure(store.activeTrial, SETUPS.strong);
+    const { container } = renderWithStore(store);
+    expect(table(container)).toHaveAttribute("data-animate", "instant"); // nothing run yet
+    act(() => {
+      const id = store.beginRun();
+      if (id != null) store.finalizeRun(id);
+    });
+    expect(table(container)).toHaveAttribute("data-animate", "fade");
+  });
+
+  it("is instant on a replay — the rows are already shown, no re-stagger", () => {
+    const store = createRootStore();
+    const { container } = renderWithStore(store);
+    configure(store.activeTrial, SETUPS.strong);
+    act(() => {
+      const id = store.beginRun();
+      if (id != null) store.finalizeRun(id);
+    });
+    expect(table(container)).toHaveAttribute("data-animate", "fade");
+    act(() => {
+      const id = store.beginRun(); // replay — same outcome, no re-fade
+      if (id != null) store.finalizeRun(id);
+    });
+    expect(table(container)).toHaveAttribute("data-animate", "instant");
+  });
+
+  it("assigns each row a 0-based --wo-row-index for the stagger delay", () => {
+    const store = createRootStore();
+    const { container } = renderWithStore(store);
+    const rows = [...container.querySelectorAll<HTMLElement>(".wo-row")];
+    expect(rows).toHaveLength(ATTRIBUTES.length);
+    rows.forEach((row, i) => {
+      expect(row.style.getPropertyValue("--wo-row-index")).toBe(String(i));
+    });
+  });
+});
+
+describe("NoreasterDataPanel — reduced motion", () => {
+  // `useReducedMotion` seeds from `window.matchMedia(...).matches`; stub it on for this block.
+  const REDUCED = {
+    matches: true,
+    media: "(prefers-reduced-motion: reduce)",
+    addEventListener: () => {},
+    removeEventListener: () => {},
+    addListener: () => {},
+    removeListener: () => {},
+    dispatchEvent: () => false,
+    onchange: null,
+  };
+  beforeEach(() => {
+    window.matchMedia = (() => REDUCED) as unknown as typeof window.matchMedia;
+  });
+  afterEach(() => {
+    delete (window as { matchMedia?: unknown }).matchMedia;
+  });
+
+  function renderWithStore(store: RootStoreInstance) {
+    return render(
+      <RootStoreProvider store={store}>
+        <NoreasterDataPanel />
+      </RootStoreProvider>,
+    );
+  }
+  const pill = (c: HTMLElement) => c.querySelector(".wo-pill");
+
+  // The simulating faces are gated off, so the pill never flashes "Simulating…" — it resolves straight to
+  // the outcome regardless of when React flushes the run's finalize.
+  it("never shows the 'simulating' face on a first run", () => {
+    const store = createRootStore();
+    configure(store.activeTrial, SETUPS.strong);
+    const { container } = renderWithStore(store);
+    let id: number | null = null;
+    act(() => {
+      id = store.beginRun();
+    });
+    expect(pill(container)).toHaveAttribute("data-phase", "empty"); // not "simulating"
+    act(() => {
+      if (id != null) store.finalizeRun(id);
+    });
+    expect(pill(container)).toHaveAttribute("data-phase", "filled");
+  });
+
+  it("stays on the outcome during a replay (no 'simulating-replay' face)", () => {
+    const store = createRootStore();
+    runSetup(store.activeTrial, SETUPS.strong); // committed
+    const { container } = renderWithStore(store);
+    act(() => {
+      store.beginRun(); // replay armed
+    });
+    expect(pill(container)).toHaveAttribute("data-phase", "filled"); // not "simulating-replay"
   });
 });

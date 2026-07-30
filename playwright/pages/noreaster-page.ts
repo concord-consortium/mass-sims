@@ -139,9 +139,13 @@ export class NoreasterPage extends SimulationFramePage {
     return this.page.getByRole("term");
   }
 
-  /** The outcome "pill" — its banner once run, the "–" placeholder otherwise. */
+  /**
+   * The outcome pill's banner text — its outcome banner once run, the "–" placeholder otherwise. Targets
+   * the outcome label span (not `.wo-pill`) so the always-mounted, aria-hidden "Simulating…" overlay
+   * doesn't leak into the asserted text.
+   */
   get outcomePill(): Locator {
-    return this.page.locator(".wo-pill");
+    return this.page.locator(".wo-pill-label--outcome");
   }
 
   /**

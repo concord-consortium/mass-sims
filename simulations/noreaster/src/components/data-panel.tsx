@@ -1,12 +1,14 @@
-import { DataSubsection } from "@concord-consortium/mass-sims-shared";
+import { DataSubsection, useReducedMotion } from "@concord-consortium/mass-sims-shared";
 import { observer } from "mobx-react-lite";
-import { type ReactNode, useRef } from "react";
+import { type CSSProperties, type ReactNode, useRef } from "react";
 import { OUTCOME_VALUES, type OutcomeValues } from "../model/outcome-values";
 import { useStores } from "../stores/root-store";
 import { WeatherIcon } from "./icons/weather-icons";
 import { OUTCOME_ICONS, type WeatherIconSet } from "./outcome-icons";
 import { useCondensedLabels } from "./use-condensed-labels";
 import { useJustFinalized } from "./use-just-finalized";
+import { usePillPhase } from "./use-pill-phase";
+import { useProgressBar } from "./use-progress-bar";
 import { WeatherScene } from "./weather-scene";
 import { sceneFor } from "./weather-scenes";
 
@@ -17,6 +19,10 @@ import "./data-panel.scss";
  * or reset) every cell shows the placeholder and each icon slot is the stand-in disc; once run, the pill and
  * rows show the outcome's values + icons from `OUTCOME_VALUES` / `OUTCOME_ICONS`. It's an `observer` on
  * `activeTrial.outcome`, so filling and clearing are automatic. The heading is the shared `<DataSubsection>`.
+ *
+ * During a run the pill shows a progress bar synced to the Sim-panel animation (`useProgressBar`) and a
+ * "Simulating…" / white-outlined-outcome face (`usePillPhase`); on completion the rows stagger-fade in on a
+ * first run (the `useJustFinalized` signal, shared with the weather scene).
  */
 
 const PLACEHOLDER = "–";
@@ -63,8 +69,29 @@ export const NoreasterDataPanel = observer(function NoreasterDataPanel() {
   const values = outcome ? OUTCOME_VALUES[outcome] : null;
   const icons = outcome ? OUTCOME_ICONS[outcome] : null;
   const animateAppearance = useJustFinalized(outcome, ui.runCompletedToken);
+
+  // The in-progress run (only ever the shown trial's — `selectTrial` cancels any other) and the pill's
+  // state around it. `transition` is the single provenance both the pill CSS and the progress fill read,
+  // so the label crossfade and the bar can't disagree about start / completion / cancellation.
+  const run = ui.run;
+  // Under reduced motion the run finalizes near-instantly, so gate the simulating faces off — the pill
+  // resolves straight to the outcome instead of relying on React flushing the finalize before paint. The
+  // fill loop in `useProgressBar` is gated the same way.
+  const reducedMotion = useReducedMotion();
+  const runningHere = ui.isRunning(ui.selectedTrialLetter) && !reducedMotion;
+  const { phase, transition } = usePillPhase({
+    runningHere,
+    replay: run?.replay ?? false,
+    outcome,
+    runId: ui.runId,
+    runCompletedToken: ui.runCompletedToken,
+  });
+
   const panelRef = useRef<HTMLDivElement>(null);
+  const pillRef = useRef<HTMLDivElement>(null);
+  const fillRef = useRef<HTMLSpanElement>(null);
   useCondensedLabels(panelRef, outcome);
+  useProgressBar(fillRef, pillRef, run, transition);
 
   return (
     <div
@@ -74,13 +101,31 @@ export const NoreasterDataPanel = observer(function NoreasterDataPanel() {
     >
       <WeatherScene outcome={outcome} animate={animateAppearance} panelRef={panelRef} />
       <DataSubsection title={TITLE}>
-        {/* The outcome banner once run, else the placeholder. */}
-        <div className={`wo-pill${values ? " wo-pill--filled" : ""}`}>
-          {values ? values.label : PLACEHOLDER}
+        {/* The Weather-Outcome pill: a progress fill behind the label, the in-flow outcome banner (owns the
+            pill height + the @container condense), and an absolute "Simulating…" overlay that crossfades
+            with it during a run. `data-phase` selects the face; `data-animate` arms the crossfades. */}
+        <div
+          className={`wo-pill${values ? " wo-pill--filled" : ""}`}
+          data-phase={phase}
+          data-animate={transition === "instant" ? "instant" : "fade"}
+          ref={pillRef}
+        >
+          <span className="wo-progress-fill" aria-hidden="true" ref={fillRef} />
+          <span className="wo-pill-label wo-pill-label--outcome">
+            {values ? values.label : PLACEHOLDER}
+          </span>
+          {/* Kept mounted (aria-hidden) so the completion crossfade has a layer to fade out — visually
+              hidden except in the simulating phases. Excluded from the pill's a11y name; the run narrates
+              through the shared Announcer instead. */}
+          <span className="wo-pill-label wo-pill-label--simulating" aria-hidden="true">
+            Simulating…
+          </span>
         </div>
-        <dl className="wo-table">
-          {WEATHER_ATTRIBUTES.map(({ label, short, value, icon }) => (
-            <div className="wo-row" key={label}>
+        {/* `data-animate="fade"` only on a fresh first-run finalize (via `useJustFinalized`) staggers the
+            rows in; replay / hydration / trial-switch / reset stay instant (the rows are already shown). */}
+        <dl className="wo-table" data-animate={animateAppearance ? "fade" : "instant"}>
+          {WEATHER_ATTRIBUTES.map(({ label, short, value, icon }, i) => (
+            <div className="wo-row" key={label} style={{ "--wo-row-index": i } as CSSProperties}>
               {/* Condensable rows expose the FULL label via aria-label and hide both visible spans, so the
                   a11y name doesn't change when the visible text swaps. Simple rows name themselves. */}
               <dt className="wo-row-header" {...(short ? { "aria-label": label } : {})}>
