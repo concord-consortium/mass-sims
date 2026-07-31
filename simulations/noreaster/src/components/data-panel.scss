@@ -101,6 +101,7 @@ $chip-overhang: (tokens.$section-chip-height - tokens.$border-strong-width) * 0.
       &--simulating {
         align-items: center;
         display: flex;
+        font-weight: 700;
         inset: 0;
         justify-content: center;
         opacity: 0;
@@ -132,9 +133,11 @@ $chip-overhang: (tokens.$section-chip-height - tokens.$border-strong-width) * 0.
       -webkit-text-stroke-color: theme.$data-panel-surface;
     }
 
-    // Below ~180px the filled banner uses the condensed face so the longest label still fits on one line.
+    // Below ~180px the filled banner and the "Simulating…" overlay use the condensed face (weight 500) so
+    // the longest label still fits on one line.
     @container noreaster-data-panel (max-width: 180px) {
-      &--filled .wo-pill-label--outcome {
+      &--filled .wo-pill-label--outcome,
+      .wo-pill-label--simulating {
         font-family: tokens.$font-family-condensed;
         font-weight: 500;
       }
