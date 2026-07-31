@@ -131,8 +131,8 @@ export function useStormAnimation(
       paintedRef.current = stormOutcome;
       return;
     }
-    // Generate the deterministic final frame once per outcome, then blit it — avoids re-simulating
-    // ~300 steps on every restore/hydration.
+    // Generate the deterministic final frame once per outcome, then just copy that saved image — avoids
+    // re-running the full deterministic sim (several hundred physics steps) on every restore/hydration.
     let cache = cacheRef.current.get(stormOutcome);
     if (!cache) {
       const c = document.createElement("canvas");

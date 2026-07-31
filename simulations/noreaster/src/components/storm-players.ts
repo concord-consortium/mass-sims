@@ -159,8 +159,11 @@ function toDt(dtMs: number): number {
   return dtMs > 0 ? Math.min(dtMs / 1000, 0.05) : 0.016;
 }
 
-/** Deterministic step for `renderFinal`, matched to the live ~60fps frame time so the regenerated
- *  snapshot has the same particle density as the animation's real last frame. */
+/** Deterministic step for `renderFinal`, a nominal 60fps frame time chosen to approximate a typical live
+ *  run — the regenerated snapshot is the end frame of a full sim stepped at this fixed rate. Since
+ *  particles spawn per step, the density tracks this rate rather than the live loop's actual frame rate.
+ *  TODO(MAS-50): make the cloud density frame-rate-independent, and revisit the per-system seeds (the
+ *  formations are deterministic). */
 const RENDER_FINAL_DT = 1 / 60;
 
 // Spiral — `strong` / `moderate`.
