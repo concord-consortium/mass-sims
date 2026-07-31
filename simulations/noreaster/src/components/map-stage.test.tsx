@@ -40,6 +40,21 @@ describe("MapStage — structure", () => {
     expect(overlays.every((o) => o.getAttribute("aria-hidden") === "true")).toBe(true);
   });
 
+  it("layers the storm cloud over the Boston marker (paint order: Boston, storm, then arrows)", () => {
+    const { container } = renderStage();
+    const map = container.querySelector(".nor-map") as HTMLElement;
+    const classes = [...map.children].map((el) => el.className);
+    const bostonIdx = classes.findIndex((c) => c.includes("nor-boston"));
+    const stormIdx = classes.findIndex((c) => c.includes("nor-storm"));
+    const firstArrowIdx = classes.findIndex((c) => c.includes("nor-arrow"));
+    // Same stacking context, all z-index:auto → paint order = document order. Boston must precede the
+    // storm canvas (so the cloud covers it) and the storm must precede the arrows (arrows stay on top).
+    // This layering is enforced only by JSX sibling order, and it has regressed once.
+    expect(bostonIdx).toBe(0);
+    expect(bostonIdx).toBeLessThan(stormIdx);
+    expect(stormIdx).toBeLessThan(firstArrowIdx);
+  });
+
   it("renders the four numbered pathway pills with their direction labels", () => {
     const { container } = renderStage();
     const stage = container.querySelector(".nor-stage") as HTMLElement;

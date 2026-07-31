@@ -96,8 +96,13 @@ export const MapStage = observer(function MapStage({ mapView = "street" }: { map
           children hold their map positions. It's the coordinate basis for the run animation. See
           map-stage.scss. */}
       <div className="nor-map" ref={frameRef}>
+        <div className="nor-boston" aria-hidden="true">
+          <span className="nor-boston-dot" />
+          <span className="nor-boston-label">Boston</span>
+        </div>
+
         {/* Storm cloud canvas, centered on the map: driven by the runner during a run, painted to its
-            final frame on restore. Decorative; behind the arrows/pills in DOM order. */}
+            final frame on restore. Decorative; over the Boston marker, behind the arrows/pills. */}
         <span className="nor-storm" ref={stormContainerRef} aria-hidden="true">
           <canvas className="nor-storm-canvas" ref={stormCanvasRef} />
         </span>
@@ -149,11 +154,6 @@ export const MapStage = observer(function MapStage({ mapView = "street" }: { map
             </div>
           );
         })}
-
-        <div className="nor-boston" aria-hidden="true">
-          <span className="nor-boston-dot" />
-          <span className="nor-boston-label">Boston</span>
-        </div>
       </div>
 
       <span className="nor-compass" aria-hidden="true">
