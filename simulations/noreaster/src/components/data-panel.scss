@@ -108,7 +108,11 @@ $chip-overhang: (tokens.$section-chip-height - tokens.$border-strong-width) * 0.
       }
     }
 
-    &--filled .wo-pill-label--outcome {
+    // Bold: the filled outcome banner, and the "Simulating…" overlay whenever it shows (matching the
+    // prototype's bar label). Kept in the same rule as the condensed override below so the weight isn't
+    // split across blocks whose source order would decide the winner.
+    &--filled .wo-pill-label--outcome,
+    .wo-pill-label--simulating {
       font-weight: 700;
     }
 
@@ -132,9 +136,9 @@ $chip-overhang: (tokens.$section-chip-height - tokens.$border-strong-width) * 0.
       -webkit-text-stroke-color: theme.$data-panel-surface;
     }
 
-    // Below ~180px the filled banner uses the condensed face so the longest label still fits on one line.
     @container noreaster-data-panel (max-width: 180px) {
-      &--filled .wo-pill-label--outcome {
+      &--filled .wo-pill-label--outcome,
+      .wo-pill-label--simulating {
         font-family: tokens.$font-family-condensed;
         font-weight: 500;
       }

@@ -158,6 +158,16 @@ export class NoreasterPage extends SimulationFramePage {
     return this.page.locator(".wo-pill-label--simulating");
   }
 
+  /** A condensable attribute's FULL label span (e.g. "Precipitation Type") — shown above the condense width. */
+  attributeLabelFull(text: string): Locator {
+    return this.page.locator(".wo-label-full").filter({ hasText: exactText(text) });
+  }
+
+  /** A condensable attribute's SHORT label span (e.g. "Precip Type") — shown below the condense width. */
+  attributeLabelShort(text: string): Locator {
+    return this.page.locator(".wo-label-short").filter({ hasText: exactText(text) });
+  }
+
   /**
    * The decorative weather-scene layer. Its `data-scene` attribute holds the outcome key once run and
    * `"default"` otherwise — the observable seam for asserting the scene tracks Run/Reset end-to-end.
