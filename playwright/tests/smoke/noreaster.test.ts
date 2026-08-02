@@ -150,6 +150,35 @@ test("Data panel: shows the 'Humid, no storm' outcome", async () => {
   await expect(sim.outcomeValue("Scattered rain")).toBeVisible();
 });
 
+test("Data panel: condenses the banner + attribute labels below the container threshold", async ({
+  page,
+}) => {
+  const height = page.viewportSize()?.height ?? 900;
+
+  await page.setViewportSize({ width: 1044, height }); // widest target → above the threshold
+  await sim.completeSetup("windy");
+  await sim.runButton.click();
+  await expect(sim.outcomePill).toHaveText("Windy, no storm");
+
+  // Wide: full-weight Lato banner + full attribute labels.
+  await expect(sim.outcomePill).toHaveCSS("font-weight", "700");
+  await expect(sim.outcomePill).toHaveCSS("font-family", /Lato/);
+  await expect(sim.attributeLabelFull("Precipitation Type")).toBeVisible();
+  await expect(sim.attributeLabelShort("Precip Type")).toBeHidden();
+  await expect(sim.attributeLabelFull("Precipitation Amount")).toBeVisible();
+  await expect(sim.attributeLabelShort("Precip Amount")).toBeHidden();
+
+  await page.setViewportSize({ width: 767, height }); // narrowest target → below the threshold
+
+  // Narrow: condensed banner + short attribute labels (both condensable rows behave identically).
+  await expect(sim.outcomePill).toHaveCSS("font-weight", "500");
+  await expect(sim.outcomePill).toHaveCSS("font-family", /Roboto Condensed/);
+  await expect(sim.attributeLabelShort("Precip Type")).toBeVisible();
+  await expect(sim.attributeLabelFull("Precipitation Type")).toBeHidden();
+  await expect(sim.attributeLabelShort("Precip Amount")).toBeVisible();
+  await expect(sim.attributeLabelFull("Precipitation Amount")).toBeHidden();
+});
+
 test("Data panel: the weather scene tracks the outcome and clears on Reset", async () => {
   // Default (unrun): no scene.
   await expect(sim.weatherScene).toHaveAttribute("data-scene", "default");
@@ -229,6 +258,29 @@ test.describe("run animation — normal motion (deferred)", () => {
     await expect(sim.outcomePillBox).toHaveAttribute("data-phase", "simulating-replay");
     await expect(sim.outcomePill).toHaveText("Windy, no storm"); // outcome label kept, not "Simulating…"
     await expect(sim.simulatingLabel).toHaveCSS("opacity", "0"); // no overlay on a replay
+  });
+
+  test("Data panel pill: 'Simulating…' is bold, and condenses when the panel narrows", async ({
+    page,
+  }) => {
+    // Drives the @container switch directly rather than trusting which project happens to be narrow:
+    // assert the font while the panel is wide, then narrow the viewport past the 180px container threshold
+    // and assert it switched. The font assertions themselves prove the crossing (a failed switch fails the
+    // second pair). `strong` (11.5 s) keeps "Simulating…" up long enough to resize mid-run.
+    const height = page.viewportSize()?.height ?? 900;
+
+    await page.setViewportSize({ width: 1044, height }); // widest target → panel above the threshold
+    await sim.completeSetup("strong");
+    await sim.runButton.click();
+    await expect(sim.outcomePillBox).toHaveAttribute("data-phase", "simulating");
+    const widePill = await sim.outcomePillBox.evaluate((el) => el.clientWidth);
+    await expect(sim.simulatingLabel).toHaveCSS("font-weight", "700");
+    await expect(sim.simulatingLabel).toHaveCSS("font-family", /Lato/);
+
+    await page.setViewportSize({ width: 767, height }); // narrowest target → panel below the threshold
+    expect(await sim.outcomePillBox.evaluate((el) => el.clientWidth)).toBeLessThan(widePill);
+    await expect(sim.simulatingLabel).toHaveCSS("font-weight", "500");
+    await expect(sim.simulatingLabel).toHaveCSS("font-family", /Roboto Condensed/);
   });
 
   test("Data panel weather scene: a fresh run applies the 0.6s opacity fade", async () => {
