@@ -110,7 +110,7 @@ export function useStormRun(
     if (runId == null) return;
     anim?.clear();
     const active = store.ui.run;
-    const setup = active ? store.trials.get(active.trial)?.setup : null;
+    const setup = active?.setup ?? null;
     // Speak the run-start line once per run — a ref keyed on `runId` guards StrictMode's dev double-invoke
     // (the Announcer enqueues rather than dedupes, so an unguarded announce would be spoken twice).
     if (setup && announcedRunIdRef.current !== runId) {
