@@ -13,7 +13,7 @@ import {
   types,
 } from "mobx-state-tree";
 import { createContext, createElement, type ReactNode, useContext } from "react";
-import { evaluateOutcome, type Outcome } from "../model/weather";
+import { type AirMassSetup, evaluateOutcome, type Outcome } from "../model/weather";
 import { emptyTrialSnapshot, TrialModel, type TrialModelInstance } from "./trial-model";
 import { UiStore } from "./ui-store";
 
@@ -22,6 +22,7 @@ export interface FinalizedRun {
   trial: string;
   outcome: Outcome;
   replay: boolean;
+  setup: AirMassSetup;
 }
 
 export const RootStore = types
@@ -59,7 +60,7 @@ export const RootStore = types
       if (!trial) return null;
       const setup = trial.setup;
       if (!setup) return null;
-      return self.ui.armRun(letter, trial.outcome ?? evaluateOutcome(setup), trial.hasRun);
+      return self.ui.armRun(letter, trial.outcome ?? evaluateOutcome(setup), trial.hasRun, setup);
     },
     /**
      * Finalize the run identified by `runId`: commit the captured outcome via `recordOutcome` (never a
@@ -74,7 +75,7 @@ export const RootStore = types
       if (trial) trial.recordOutcome(run.outcome);
       self.ui.markRunCompleted();
       self.ui.clearRun();
-      return { trial: run.trial, outcome: run.outcome, replay: run.replay };
+      return { trial: run.trial, outcome: run.outcome, replay: run.replay, setup: run.setup };
     },
     /** Cancel the in-progress run (Reset / abort). Guarded clear via the ui store. */
     cancelRun(runId?: number) {

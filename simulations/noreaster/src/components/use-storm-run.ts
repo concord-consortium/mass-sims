@@ -90,7 +90,13 @@ export function useStormRun(
     if (runId == null) return;
     const done = store.finalizeRun(runId);
     if (!done) return;
-    logEvent("simulation_run", { trial: done.trial, replay: done.replay, outcome: done.outcome });
+    // Include the captured setup so the completion logs the same air-mass config as the paired start event.
+    logEvent("simulation_run", {
+      trial: done.trial,
+      replay: done.replay,
+      outcome: done.outcome,
+      ...done.setup,
+    });
     announce(finalNarration(done.outcome));
   }, [store, runId, logEvent, announce]);
 
@@ -104,7 +110,7 @@ export function useStormRun(
     if (runId == null) return;
     anim?.clear();
     const active = store.ui.run;
-    const setup = active ? store.trials.get(active.trial)?.setup : null;
+    const setup = active?.setup ?? null;
     // Speak the run-start line once per run — a ref keyed on `runId` guards StrictMode's dev double-invoke
     // (the Announcer enqueues rather than dedupes, so an unguarded announce would be spoken twice).
     if (setup && announcedRunIdRef.current !== runId) {

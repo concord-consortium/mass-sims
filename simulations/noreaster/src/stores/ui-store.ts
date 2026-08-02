@@ -1,10 +1,10 @@
 import { UiStore as BaseUiStore } from "@concord-consortium/mass-sims-shared";
 import type { Instance } from "mobx-state-tree";
-import type { Outcome } from "../model/weather";
+import type { AirMassSetup, Outcome } from "../model/weather";
 
 /**
  * A run in progress — the volatile descriptor `RootStore.beginRun` arms and `finalizeRun`/`cancelRun`
- * clear. The `outcome` is captured at begin from the setup, so finalize commits exactly the outcome the
+ * clear. The `outcome` is captured from the setup when the run starts, so finalize commits exactly the outcome the
  * map animation depicted, never a re-evaluation. `runId` is the identity token that lets a finalize/cancel
  * callback reject a stale run it no longer owns.
  */
@@ -12,8 +12,9 @@ export interface NoreasterRun {
   readonly runId: number;
   readonly trial: string;
   readonly outcome: Outcome;
-  /** True when the trial was already run at begin (a Replay) — carried into the finalize analytics. */
+  /** True when the trial had already been run (a Replay) — carried into the finalize analytics. */
   readonly replay: boolean;
+  readonly setup: AirMassSetup;
 }
 
 /**
@@ -43,9 +44,9 @@ export const UiStore = BaseUiStore.volatile(() => ({
         self.runCompletedToken += 1;
       },
       /** Arm a new run: bump the id, store the descriptor, and return the id (the runner captures it). */
-      armRun(trial: string, outcome: Outcome, replay: boolean): number {
+      armRun(trial: string, outcome: Outcome, replay: boolean, setup: AirMassSetup): number {
         self.runId += 1;
-        self.run = { runId: self.runId, trial, outcome, replay };
+        self.run = { runId: self.runId, trial, outcome, replay, setup };
         return self.runId;
       },
       /** Clear the in-progress run (the finalize path). */

@@ -5,20 +5,18 @@ portal-report data and for tools/LLMs that need a single reference.
 
 Events reach `useLogEvent` two ways: the shared **controls' auto-emit** (passing an `action`/`actionParams`
 to a shared `<Select>`, `<Button>`, `<Switch>`, etc. logs on its natural commit — used by the air-mass
-selectors) and **explicit `useLogEvent` calls** in handlers that need computed data (Run's outcome) or
-whose control can't auto-emit (the raw map-view switch). `useLogEvent` dual-transports each event to
+selectors) and **explicit `useLogEvent` calls** in handlers that need computed data (the run's setup +
+outcome) or whose control can't auto-emit (the raw map-view switch, the About-modal open/close at the
+app root). `useLogEvent` dual-transports each event to
 [`@concord-consortium/lara-interactive-api`](https://github.com/concord-consortium/lara-interactive-api)'s
 `log(action, data)` (→ portal-report when embedded) and to GA4 via `gtag` (when configured). Both
 transports silently no-op when unavailable. Event names are snake_case; payloads are flat objects.
-
-> **Provisional:** the Simulation-panel event names/params below are wired in MAS-30; the definitive
-> analytics catalog is the logging story's (MAS-34) and may rename or extend them.
 
 ## Common parameters
 
 | Parameter | Type | Meaning |
 | --- | --- | --- |
-| `trial` | string | The active trial's label. Present on every event. |
+| `trial` | string | The active trial's label. Present on every **trial-specific** event — i.e. every event except the global `info_modal_opened` / `info_modal_closed`. |
 
 ## Events
 
@@ -35,23 +33,58 @@ transports silently no-op when unavailable. Event names are snake_case; payloads
 | Event | Trigger | Parameters |
 | --- | --- | --- |
 | `air_mass_selected` | An air-mass selector commits a value | `{ trial, airMass, attribute, value }` |
-| `simulation_run_started` | **Run** (or **Replay**) is pressed | `{ trial, replay, outcome }` |
-| `simulation_run` | The run animation finishes and the outcome is committed | `{ trial, replay, outcome }` |
+| `simulation_run_started` | **Run** (or **Replay**) is pressed | `{ trial, replay, outcome, landPathway, landHumidity, landTemperature, oceanPathway, oceanHumidity }` |
+| `simulation_run` | The run resolves and the outcome is committed (see Notes for the reduced-motion / watchdog paths) | `{ trial, replay, outcome, landPathway, landHumidity, landTemperature, oceanPathway, oceanHumidity }` |
 | `map_view_changed` | The Street/Satellite map-view toggle is switched | `{ trial, view }` |
+
+### About modal (shared)
+
+| Event | Trigger | Parameters |
+| --- | --- | --- |
+| `info_modal_opened` | The **About** modal is opened | _(none)_ |
+| `info_modal_closed` | The **About** modal is closed (close button, Escape, or toggling the About button) | _(none)_ |
 
 ## Notes
 
 - `trial_added` fires immediately before the `trial_selected` for the same new trial (creating a
   trial also selects it — two distinct actions).
-- `trial_selected` carries `previous`, the letter that was selected before the change.
+- `trial_selected` carries `previous`, the letter that was selected before the change. It is skipped
+  when the target is already the active trial — re-clicking or keyboard-navigating back onto the
+  selected card logs nothing.
 - `air_mass_selected` covers all five selectors; the field is identified by `airMass`
   (`"land"` | `"ocean"`) + `attribute` (`"pathway"` | `"humidity"` | `"temperature"`), with `value`
-  the chosen option. (Ocean Temperature is derived, not selected, so it emits no event.)
+  the chosen option. The run events report the same field as a flattened camelCase key — e.g.
+  `{ airMass: "land", attribute: "temperature" }` here is `landTemperature` there. (Ocean Temperature is
+  derived, not selected, so it emits no event.)
 - `simulation_run_started` fires on the **Run/Replay press** (the attempt); `simulation_run` fires at
-  **finalize**, when the animation finishes and the outcome commits. Both carry `replay` (`false` on the
+  **finalize**, when the run resolves and the outcome commits. Both carry `replay` (`false` on the
   first run of a trial, `true` on a Replay) and the resolved `outcome` (`"strong"` | `"moderate"` |
   `"weakCoastal"` | `"humidNoStorm"` | `"windy"` | `"fair"`).
+- **`simulation_run` resolve paths:** finalize is reached three ways — the animation clock elapsing
+  (normal), an immediate finalize under `prefers-reduced-motion: reduce` (no clock), or a liveness
+  watchdog if the animation loop dies. Attempt/completion counts and the abandon rate are unaffected,
+  but under reduced motion `simulation_run_started` and `simulation_run` land in the **same tick**, so a
+  duration derived from their timestamp delta reads ~0s — there is no field distinguishing the paths.
+- **Run setup fields:** both run events also carry the trial's full air-mass setup at run time — the
+  five student selections `landPathway` (`"N/NW"` | `"W"`), `landHumidity` / `oceanHumidity` (`"Dry"` |
+  `"Humid"`), `landTemperature` (`"Cold"` | `"Warm"`), and `oceanPathway` (`"S/SE"` | `"NE"`). This makes
+  a single run record reconstruct the whole experiment (setup + outcome). Ocean **temperature** is
+  intentionally omitted — it is derived from `oceanPathway` (`S/SE → Warm`, `NE → Cool`), not a student
+  selection. The setup is captured when the run is armed and reused at finalize, so a completed run's
+  start and completion events report identical setup values. (The selectors are locked for the whole
+  running phase, so students can't change the setup mid-run; the capture also guards against any
+  programmatic change.) A Reset instead cancels the run, so only the start event is emitted; see
+  *Counting runs* below.
 - **Counting runs:** `simulation_run_started` = attempts, `simulation_run` = completions. A run aborted
   before finalize (Reset, a trial switch, AP hydration, or a backgrounded tab that never resumes) emits
   only the start — so the difference between the two is the abandon rate.
 - `map_view_changed` carries the new `view` (`"street"` | `"satellite"`).
+- `info_modal_opened` / `info_modal_closed` carry **no payload** (the About modal is global, not
+  trial-scoped) and never fire on initial page load — only on real open↔close transitions.
+
+## Not logged (intentional)
+
+The derived **Ocean Temperature** pill (computed from the ocean pathway, never a student selection),
+About-modal drag/reposition, Data-panel reads, and saved-state hydration / restore (`applySnapshot`)
+are deliberately not logged — they are derived values, non-student actions, or high-frequency UI
+navigation, not meaningful for portal-report.

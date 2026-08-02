@@ -9,7 +9,7 @@ const { log } = vi.hoisted(() => ({ log: vi.fn() }));
 vi.mock("@concord-consortium/lara-interactive-api", () => ({ log }));
 
 import { createRootStore, type RootStoreInstance, RootStoreProvider } from "../stores/root-store";
-import { configureStrong } from "../stores/test-helpers";
+import { configureStrong, STRONG_SETUP } from "../stores/test-helpers";
 import { ControlBar } from "./control-bar";
 
 function renderBar(store: RootStoreInstance = createRootStore()) {
@@ -60,6 +60,7 @@ describe("ControlBar — Run / Replay (deferred)", () => {
       trial: "A",
       replay: false,
       outcome: "strong",
+      ...STRONG_SETUP,
     });
     expect(log).not.toHaveBeenCalledWith("simulation_run", expect.anything());
   });
@@ -77,6 +78,7 @@ describe("ControlBar — Run / Replay (deferred)", () => {
       trial: "A",
       replay: true,
       outcome: "strong",
+      ...STRONG_SETUP,
     });
   });
 

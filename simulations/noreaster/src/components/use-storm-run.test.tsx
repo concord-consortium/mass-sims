@@ -9,7 +9,7 @@ const { log } = vi.hoisted(() => ({ log: vi.fn() }));
 vi.mock("@concord-consortium/lara-interactive-api", () => ({ log }));
 
 import { createRootStore, type RootStoreInstance, RootStoreProvider } from "../stores/root-store";
-import { configureStrong } from "../stores/test-helpers";
+import { configureStrong, STRONG_SETUP } from "../stores/test-helpers";
 import { useStormRun } from "./use-storm-run";
 
 // ─── rAF mock: `useFrameLoop` keeps one frame pending at a time; flushFrame runs the latest with a
@@ -98,6 +98,7 @@ describe("useStormRun — deferred run clock", () => {
       trial: "A",
       replay: false,
       outcome: "strong",
+      ...STRONG_SETUP,
     });
   });
 
@@ -149,6 +150,7 @@ describe("useStormRun — deferred run clock", () => {
       trial: "A",
       replay: false,
       outcome: "strong",
+      ...STRONG_SETUP,
     });
   });
 });
