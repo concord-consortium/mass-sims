@@ -1,7 +1,7 @@
 import { type RefObject, useCallback, useEffect, useRef } from "react";
+import { createStormPlayer, NOR_SIZE, type StormPlayer } from "../animation/storm-players";
 import type { Outcome } from "../model/weather";
-import { norDebugFlag } from "./nor-debug";
-import { createStormPlayer, NOR_SIZE, type StormPlayer } from "./storm-players";
+import { norDebugFlag } from "../utils/nor-debug";
 
 /**
  * The storm-canvas setup helper: it owns the fixed backing store (no DPR multiplier), builds the

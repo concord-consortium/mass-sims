@@ -4,9 +4,9 @@ import { type FunctionComponent, type SVGProps, useRef } from "react";
 import { SwitchButton, SwitchField } from "react-aria-components";
 import ResetIcon from "../assets/icons/reset.svg?react";
 import RunIcon from "../assets/icons/run.svg?react";
+import { useControlBarFit } from "../hooks/use-control-bar-fit";
 import { useStores } from "../stores/root-store";
 import type { MapView } from "./map-stage";
-import { useControlBarFit } from "./use-control-bar-fit";
 
 import "./control-bar.scss";
 

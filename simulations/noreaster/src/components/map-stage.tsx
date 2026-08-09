@@ -1,5 +1,6 @@
 import { observer } from "mobx-react-lite";
 import { type FunctionComponent, type SVGProps, useRef } from "react";
+import { convergedArrows } from "../animation/converge";
 import Arrow1 from "../assets/icons/arrow-1.svg?react";
 import Arrow2 from "../assets/icons/arrow-2.svg?react";
 import Arrow3 from "../assets/icons/arrow-3.svg?react";
@@ -7,12 +8,11 @@ import Arrow4 from "../assets/icons/arrow-4.svg?react";
 import CompassRose from "../assets/icons/compass-rose.svg?react";
 import mapSatellite from "../assets/map/map-satellite.jpg";
 import mapStreet from "../assets/map/map-street.png";
+import { useStormAnimation } from "../hooks/use-storm-animation";
+import { useStormRun } from "../hooks/use-storm-run";
 import { useStores } from "../stores/root-store";
-import { convergedArrows } from "./converge";
+import { arrowTint } from "../utils/selection-tint";
 import { PathwayNumber } from "./icons/pathway-number";
-import { arrowTint } from "./selection-tint";
-import { useStormAnimation } from "./use-storm-animation";
-import { useStormRun } from "./use-storm-run";
 
 import "./map-stage.scss";
 

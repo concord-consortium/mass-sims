@@ -6,16 +6,16 @@ import {
   useReducedMotion,
 } from "@concord-consortium/mass-sims-shared";
 import { type RefObject, useCallback, useEffect, useRef, useState } from "react";
-import { useStores } from "../stores/root-store";
 import {
   convergedArrows,
   convergenceFade,
   convergenceRotation,
   convergenceTarget,
-} from "./converge";
-import { norDebugFlag } from "./nor-debug";
-import { finalNarration, STAGED_NARRATION, startNarration } from "./run-narration";
-import { MAX_FRAME_MS, TOTAL_DUR_S } from "./run-timing";
+} from "../animation/converge";
+import { finalNarration, STAGED_NARRATION, startNarration } from "../animation/run-narration";
+import { MAX_FRAME_MS, TOTAL_DUR_S } from "../animation/run-timing";
+import { useStores } from "../stores/root-store";
+import { norDebugFlag } from "../utils/nor-debug";
 import type { StormAnimation } from "./use-storm-animation";
 
 /**

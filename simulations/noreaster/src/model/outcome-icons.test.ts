@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
+import { ICONS } from "../components/icons/weather-icons";
 import { OUTCOMES } from "../model/weather";
-import { ICONS } from "./icons/weather-icons";
 import { OUTCOME_ICONS, type WeatherIconSet } from "./outcome-icons";
 
 // Each WeatherIconSet field's icon-registry family (identity except stormIntensity → storm) — lets the

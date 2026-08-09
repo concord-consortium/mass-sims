@@ -1,16 +1,16 @@
 import { DataSubsection, useReducedMotion } from "@concord-consortium/mass-sims-shared";
 import { observer } from "mobx-react-lite";
 import { type CSSProperties, type ReactNode, useRef } from "react";
+import { sceneFor } from "../animation/weather-scenes";
+import { useCondensedLabels } from "../hooks/use-condensed-labels";
+import { useJustFinalized } from "../hooks/use-just-finalized";
+import { usePillPhase } from "../hooks/use-pill-phase";
+import { useProgressBar } from "../hooks/use-progress-bar";
+import { OUTCOME_ICONS, type WeatherIconSet } from "../model/outcome-icons";
 import { OUTCOME_VALUES, type OutcomeValues } from "../model/outcome-values";
 import { useStores } from "../stores/root-store";
 import { WeatherIcon } from "./icons/weather-icons";
-import { OUTCOME_ICONS, type WeatherIconSet } from "./outcome-icons";
-import { useCondensedLabels } from "./use-condensed-labels";
-import { useJustFinalized } from "./use-just-finalized";
-import { usePillPhase } from "./use-pill-phase";
-import { useProgressBar } from "./use-progress-bar";
 import { WeatherScene } from "./weather-scene";
-import { sceneFor } from "./weather-scenes";
 
 import "./data-panel.scss";
 

@@ -12,6 +12,7 @@ import {
   type OceanPathway,
 } from "../model/weather";
 import { useStores } from "../stores/root-store";
+import { tempTint } from "../utils/selection-tint";
 import {
   airMassIcon,
   humidityIcon,
@@ -19,7 +20,6 @@ import {
   pathwayNumber,
   tempIcon,
 } from "./icons/air-mass-icons";
-import { tempTint } from "./selection-tint";
 
 import "./air-mass-selectors.scss";
 

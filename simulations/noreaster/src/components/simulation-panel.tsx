@@ -1,10 +1,10 @@
 import { observer } from "mobx-react-lite";
 import { useCallback, useRef, useState } from "react";
+import { useNorScaling } from "../hooks/use-nor-scaling";
 import { useStores } from "../stores/root-store";
 import { AirMassSelectors } from "./air-mass-selectors";
 import { ControlBar } from "./control-bar";
 import { MapStage, type MapView } from "./map-stage";
-import { useNorScaling } from "./use-nor-scaling";
 
 import "./simulation-panel.scss";
 
