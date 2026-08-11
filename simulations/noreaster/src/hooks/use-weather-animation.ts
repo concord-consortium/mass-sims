@@ -4,8 +4,12 @@ import {
   useReducedMotion,
 } from "@concord-consortium/mass-sims-shared";
 import { type RefObject, useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
-import { ARTBOARD_WIDTH, createWeatherPlayer, type WeatherPlayer } from "./weather-players";
-import type { SceneSpec } from "./weather-scenes";
+import {
+  ARTBOARD_WIDTH,
+  createWeatherPlayer,
+  type WeatherPlayer,
+} from "../animation/weather-players";
+import type { SceneSpec } from "../animation/weather-scenes";
 
 /**
  * Drives the Data-panel header weather scene — the particle systems in `weather-players.ts`, scheduled over

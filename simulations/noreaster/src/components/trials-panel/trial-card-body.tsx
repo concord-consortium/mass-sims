@@ -9,8 +9,8 @@ import type {
   OceanTemperature,
 } from "../../model/weather";
 import type { TrialModelInstance } from "../../stores/trial-model";
+import { tempTint } from "../../utils/selection-tint";
 import { airMassIcon, humidityIcon, pathwayNumber, tempIcon } from "../icons/air-mass-icons";
-import { tempTint } from "../selection-tint";
 
 /**
  * Split an outcome label into its two display lines at the FIRST space, which yields the intended break

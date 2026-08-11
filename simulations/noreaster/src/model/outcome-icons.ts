@@ -1,5 +1,5 @@
-import type { Outcome } from "../model/weather";
-import type { IconKey } from "./icons/weather-icons";
+import type { IconKey } from "../components/icons/weather-icons";
+import type { Outcome } from "./weather";
 
 // Presentation-layer data: which weather icon each attribute shows for each outcome — parallel to the
 // model's OUTCOME_VALUES (the displayed text) but keyed to the icon registry. Type-only imports, so no

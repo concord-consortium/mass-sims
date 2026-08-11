@@ -23,6 +23,31 @@ refuses to overwrite an existing directory.
 This copies `packages/starter/` into `simulations/<name>/`, rewrites the `package.json`
 name, and replaces the `simTitle` in `app.tsx` with a `<NEW SIM TITLE>` placeholder.
 
+### Source layout — where new code goes
+
+A sim's `src/` splits by **what a file is**, not by feature. Starter ships only the three
+directories every sim needs; you add the rest when you first have something to put in them.
+Keep `components/` for components — as a sim grows, pull other kinds of file out into their
+own sibling directory rather than letting them accumulate here.
+
+| Directory | Holds | Ships in Starter |
+| --- | --- | --- |
+| `components/` | React components (`.tsx`) + their `.scss` and tests | yes |
+| `model/` | pure domain logic and data — no React, no MST, no side effects | yes |
+| `stores/` | MST stores (the trial list, UI state, saved-state sync) | yes |
+| `hooks/` | shared `use-*` hooks and their tests | no — add on first hook |
+| `utils/` | small, generic, sim-agnostic helpers | no — add on first util |
+
+This mirrors the convention in the shared library (`packages/shared/src/hooks`, `.../utils`).
+A sim with substantial presentation logic can add further sibling directories named for what
+they hold — e.g. noreaster keeps its canvas/animation layer in `src/animation/`. Co-locate
+each file's test next to it (`use-progress-bar.ts` beside `use-progress-bar.test.ts`).
+
+One practical note: git does not track empty directories, so there is nothing to pre-create.
+`hooks/` and `utils/` come into existence the moment you add the first file to them — don't
+add a placeholder to reserve the name. For a fuller worked example of the layout, see
+`simulations/noreaster/src/`.
+
 ## 2. Link the workspace and refresh derived artifacts
 
 ```bash

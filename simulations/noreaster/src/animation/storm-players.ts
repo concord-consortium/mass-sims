@@ -1,5 +1,5 @@
 import type { Outcome } from "../model/weather";
-import { norDebugFlag } from "./nor-debug";
+import { norDebugFlag } from "../utils/nor-debug";
 
 /**
  * The map-area storm particle systems. The constants (seeds, radii, opacities, blur radii, spawn

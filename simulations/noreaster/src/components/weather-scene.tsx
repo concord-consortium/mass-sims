@@ -1,7 +1,7 @@
 import { type RefObject, useRef } from "react";
+import { sceneFor } from "../animation/weather-scenes";
+import { useWeatherAnimation } from "../hooks/use-weather-animation";
 import type { Outcome } from "../model/weather";
-import { useWeatherAnimation } from "./use-weather-animation";
-import { sceneFor } from "./weather-scenes";
 
 import "./weather-scene.scss";
 

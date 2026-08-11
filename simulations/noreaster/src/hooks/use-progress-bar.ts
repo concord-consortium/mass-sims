@@ -4,8 +4,8 @@ import {
   useReducedMotion,
 } from "@concord-consortium/mass-sims-shared";
 import { type RefObject, useCallback, useEffect, useLayoutEffect, useRef } from "react";
+import { MAX_FRAME_MS, TOTAL_DUR_S } from "../animation/run-timing";
 import type { NoreasterRun } from "../stores/ui-store";
-import { MAX_FRAME_MS, TOTAL_DUR_S } from "./run-timing";
 import type { PillTransition } from "./use-pill-phase";
 
 /**

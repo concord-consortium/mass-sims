@@ -1,8 +1,8 @@
 import { act, render } from "@testing-library/react";
 import { createElement, type RefObject, useRef } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { NO_SCENE, SCENES, type SceneSpec } from "../animation/weather-scenes";
 import { useWeatherAnimation } from "./use-weather-animation";
-import { NO_SCENE, SCENES, type SceneSpec } from "./weather-scenes";
 
 /**
  * Hook-lifecycle suite — the highest-risk surface. jsdom provides none of the browser APIs the hook composes
