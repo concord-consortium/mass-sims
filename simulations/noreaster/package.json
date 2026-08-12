@@ -1,6 +1,6 @@
 {
   "name": "noreaster",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "private": true,
   "description": "Nor'easter — which air masses create a nor'easter?",
   "license": "MIT",
@@ -8,6 +8,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
+    "postbuild": "tsx ../../scripts/generate-index-top.ts",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
     "lint": "biome check src",
@@ -16,7 +17,7 @@
     "clean": "rimraf --glob dist '*.tsbuildinfo'"
   },
   "dependencies": {
-    "@concord-consortium/mass-sims-shared": "0.1.0",
+    "@concord-consortium/mass-sims-shared": "0.1.1",
     "mobx": "^6.16.1",
     "mobx-react-lite": "^4.1.1",
     "mobx-state-tree": "^7.2.0",
