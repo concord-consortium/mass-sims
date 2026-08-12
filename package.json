@@ -1,6 +1,6 @@
 {
   "name": "mass-sims",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "private": true,
   "description": "Mass Sims — educational science simulations monorepo (concord-consortium/mass-sims).",
   "license": "MIT",

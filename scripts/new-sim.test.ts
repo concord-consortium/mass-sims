@@ -36,7 +36,7 @@ describe("isValidSimName", () => {
 
 describe("substituteInFile", () => {
   it("replaces the package name in package.json", () => {
-    const before = `{ "name": "starter", "version": "0.0.1" }`;
+    const before = `{ "name": "starter", "version": "0.1.0" }`;
     const after = substituteInFile(before, "starter", "bananas", "package.json");
     expect(after).toContain(`"name": "bananas"`);
   });

@@ -1,6 +1,6 @@
 {
   "name": "starter",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "private": true,
   "description": "Re-usable starter simulation template. Copy via `yarn new-sim <name>` to scaffold a new sim.",
   "license": "MIT",
@@ -16,7 +16,7 @@
     "clean": "rimraf --glob dist '*.tsbuildinfo'"
   },
   "dependencies": {
-    "@concord-consortium/mass-sims-shared": "0.0.1",
+    "@concord-consortium/mass-sims-shared": "0.1.0",
     "mobx": "^6.16.1",
     "mobx-react-lite": "^4.1.1",
     "mobx-state-tree": "^7.2.0",
