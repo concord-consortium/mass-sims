@@ -1,0 +1,16 @@
+@use "@concord-consortium/mass-sims-shared/styles/tokens" as tokens;
+
+.landscape-thumbnail {
+  display: block;
+  width: 100%;
+  height: auto;
+
+  .sky { fill: #cfe6f4; }
+  .soil { fill: #a9855f; }
+  .groundwater { fill: rgba(43, 127, 184, 0.35); }
+  .surface-line { stroke: #6f5236; stroke-width: 1.5; }
+  .cave { fill: #3a2f28; }
+  .fractures line { stroke: rgba(43, 127, 184, 0.6); stroke-width: 1.5; }
+  .building { fill: #e8e2d2; stroke: #6f5236; stroke-width: 1; }
+  .roof { fill: #b5462f; }
+}

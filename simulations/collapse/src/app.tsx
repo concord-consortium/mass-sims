@@ -1,234 +1,334 @@
 import { setInteractiveState, useInitMessage } from "@concord-consortium/lara-interactive-api";
-import {
-  SimulationFrame,
-  TrialCard,
-  useReloadWarning,
-  useSimulationRunner,
-} from "@concord-consortium/mass-sims-shared";
-import { useCallback, useEffect, useState } from "react";
-import { DataPanel } from "./components/data-panel";
-import { SimulationView } from "./components/simulation-view";
-import { END_YEAR, finalizeTrial, START_YEAR, YEARS_PER_FRAME } from "./model/collapse";
+import { Button, SimulationFrame, TrialCard } from "@concord-consortium/mass-sims-shared";
+import { type ReactNode, useCallback, useEffect, useRef, useState } from "react";
+import { DataTable } from "./components/data-table";
+import { Graph } from "./components/graph";
+import { RowDetail } from "./components/row-detail";
+import { Timeline } from "./components/timeline";
 import type { SavedState } from "./model/saved-state";
-import type { RecordedTrial, SimInput } from "./model/types";
+import {
+  type AxisDef,
+  COLLAPSE_SPAN_YEARS,
+  COLUMNS,
+  COMBOS,
+  type ColumnId,
+  type ComboId,
+  comboById,
+  DEFAULT_YEARS_BEFORE,
+  generateRow,
+  MAX_SELECTED_COLUMNS,
+  type SampleRow,
+  type StatId,
+  TERRAIN_META,
+  WEATHER_META,
+  weatherDefinition,
+  YEAR_STEP,
+} from "./model/sim";
 
 import "./app.scss";
 
-const TRIAL_LIMIT = 10; // Matches TrialCard's A–J letter cap.
-const DEFAULT_SETTINGS: SimInput = {
-  location: "bowling-green",
-  wetness: "wet",
-  soil: "limestone",
-};
-function makeTrialId(): string {
-  return Math.random().toString(36).slice(2, 10);
-}
-function makeEmptyTrial(input: SimInput = DEFAULT_SETTINGS): RecordedTrial {
-  return { id: makeTrialId(), input: { ...input }, output: null, finalTransient: null };
+interface AppState {
+  tables: Record<ComboId, SampleRow[]>;
+  selectedCombo: ComboId;
+  selectedColumns: ColumnId[];
+  summaryStat: StatId;
+  xAxis: AxisDef["id"];
+  yAxis: AxisDef["id"];
 }
 
-const SETTING_LABELS = {
-  location: { "bowling-green": "Bowling Green", louisville: "Louisville" },
-  wetness: { wet: "Wet", dry: "Dry" },
-  soil: { limestone: "Limestone", granite: "Granite" },
-} as const;
+const emptyTables = (): Record<ComboId, SampleRow[]> => ({
+  "limestone-wet": [],
+  "limestone-dry": [],
+  "granite-wet": [],
+  "granite-dry": [],
+});
+
+const INITIAL: AppState = {
+  tables: emptyTables(),
+  selectedCombo: "limestone-wet",
+  selectedColumns: ["erosionRate", "dissolvedRock", "totalDepth"],
+  summaryStat: "average",
+  xAxis: "yearsBeforeCollapse",
+  yAxis: "erosionRate",
+};
+
+/** A button that fires `onStep` once on press, then repeats while held (press-and-hold). */
+function HoldButton({
+  onStep,
+  disabled,
+  className,
+  children,
+  "aria-label": ariaLabel,
+}: {
+  onStep: () => void;
+  disabled?: boolean;
+  className?: string;
+  children: ReactNode;
+  "aria-label"?: string;
+}) {
+  const timeoutRef = useRef<number | null>(null);
+  const intervalRef = useRef<number | null>(null);
+
+  const stop = useCallback(() => {
+    if (timeoutRef.current != null) window.clearTimeout(timeoutRef.current);
+    if (intervalRef.current != null) window.clearInterval(intervalRef.current);
+    timeoutRef.current = null;
+    intervalRef.current = null;
+  }, []);
+
+  const start = useCallback(() => {
+    if (disabled) return;
+    onStep();
+    // Short pause before auto-repeat kicks in, then step steadily.
+    timeoutRef.current = window.setTimeout(() => {
+      intervalRef.current = window.setInterval(onStep, 70);
+    }, 350);
+  }, [disabled, onStep]);
+
+  // Stop if the button disables mid-hold (hit a bound) or the component unmounts.
+  useEffect(() => {
+    if (disabled) stop();
+  }, [disabled, stop]);
+  useEffect(() => stop, [stop]);
+
+  return (
+    <button
+      type="button"
+      className={className}
+      disabled={disabled}
+      aria-label={ariaLabel}
+      onPointerDown={(e) => {
+        e.preventDefault();
+        start();
+      }}
+      onPointerUp={stop}
+      onPointerLeave={stop}
+      onPointerCancel={stop}
+    >
+      {children}
+    </button>
+  );
+}
 
 /**
- * Collapse — mock sim of the 2014 Corvette Museum karst sinkhole. App owns the trial list, the
- * shared timeline `year`, and the play loop. Lifting `year` here (rather than into SimulationView)
- * lets the Data panel's erosion meters and the cross-section update live as the years advance.
+ * Collapse — a data-generation sim. Four environments (terrain × weather) each get their own table.
+ * The Simulation pane is the timeline + a sample control, then the selected experiment's table
+ * (columns picked on the table itself); the graph lives in the Data pane.
  */
 export function App() {
-  const [{ trials, selectedId }, setState] = useState(() => {
-    const first = makeEmptyTrial();
-    return { trials: [first], selectedId: first.id };
-  });
-  const [year, setYear] = useState(START_YEAR);
+  const [state, setState] = useState<AppState>(INITIAL);
+  const [yearsBefore, setYearsBefore] = useState<number>(DEFAULT_YEARS_BEFORE);
+  const [selectedRowId, setSelectedRowId] = useState<string | null>(null);
 
-  // AP saved-state sync: restore on init, push on change (standalone-safe — see infra-plan §3).
+  const { tables, selectedCombo, selectedColumns, summaryStat, xAxis, yAxis } = state;
+  const rows = tables[selectedCombo];
+  // Selection is validated against the current table, so switching zones, deleting, or resetting
+  // a row all clear the detail/highlight for free (the id simply isn't found).
+  const selectedRow = rows.find((r) => r.id === selectedRowId) ?? null;
+  const combo = comboById(selectedCombo);
+  const availableColumns = COLUMNS.filter((c) => !selectedColumns.includes(c.id));
+  const canAddColumn = selectedColumns.length < MAX_SELECTED_COLUMNS && availableColumns.length > 0;
+  const clampYear = (y: number) => Math.max(0, Math.min(COLLAPSE_SPAN_YEARS, y));
+
   const initMsg = useInitMessage<SavedState>();
-  const isEmbedded = initMsg !== null;
   useEffect(() => {
     if (initMsg && "interactiveState" in initMsg && initMsg.interactiveState) {
-      setState(initMsg.interactiveState);
+      setState((prev) => ({ ...prev, ...initMsg.interactiveState }));
     }
   }, [initMsg]);
   useEffect(() => {
-    setInteractiveState<SavedState>({ trials, selectedId });
-  }, [trials, selectedId]);
-
-  const selected = trials.find((t) => t.id === selectedId) ?? trials[0];
-  const selectedLetter = String.fromCharCode(65 + Math.max(0, trials.indexOf(selected)));
-  // Toggles lock once the timeline advances or the trial has a recorded outcome; Reset re-opens.
-  const inputsLocked = year > START_YEAR || selected.output !== null;
-
-  useReloadWarning(!isEmbedded && trials.some((t) => t.output !== null));
-
-  // Play loop: advance the year a couple of years per frame, capped at END_YEAR.
-  const onStep = useCallback(() => {
-    setYear((y) => Math.min(END_YEAR, y + YEARS_PER_FRAME));
-  }, []);
-  const { isPlaying, play, pause } = useSimulationRunner({ onStep });
-
-  // Stop the runner at the end of the timeline.
-  useEffect(() => {
-    if (year >= END_YEAR && isPlaying) pause();
-  }, [year, isPlaying, pause]);
-
-  // Record the trial's outcome once the timeline reaches the final year.
-  useEffect(() => {
-    if (year >= END_YEAR && selected.output === null) {
-      const output = finalizeTrial(selected.input);
-      setState((prev) => ({
-        ...prev,
-        trials: prev.trials.map((t) =>
-          t.id === selected.id ? { ...t, output, finalTransient: { year: END_YEAR } } : t,
-        ),
-      }));
-    }
-  }, [year, selected]);
-
-  const changeInput = useCallback((patch: Partial<SimInput>) => {
-    setState((prev) => ({
-      ...prev,
-      trials: prev.trials.map((t) =>
-        t.id === prev.selectedId ? { ...t, input: { ...t.input, ...patch } } : t,
-      ),
-    }));
-  }, []);
-
-  const handlePlayPause = useCallback(() => {
-    if (isPlaying) {
-      pause();
-    } else {
-      play();
-    }
-  }, [isPlaying, play, pause]);
-
-  const scrubYear = useCallback(
-    (y: number) => {
-      pause();
-      setYear(y);
-    },
-    [pause],
-  );
-
-  const resetSelected = useCallback(() => {
-    pause();
-    setYear(START_YEAR);
-    setState((prev) => ({
-      ...prev,
-      trials: prev.trials.map((t) =>
-        t.id === prev.selectedId ? { ...t, output: null, finalTransient: null } : t,
-      ),
-    }));
-  }, [pause]);
-
-  const selectTrial = useCallback(
-    (id: string) => {
-      pause();
-      const t = trials.find((x) => x.id === id);
-      // Show recorded trials at their outcome year; empty trials at the start.
-      setYear(t?.output ? END_YEAR : START_YEAR);
-      setState((prev) => (prev.selectedId === id ? prev : { ...prev, selectedId: id }));
-    },
-    [pause, trials],
-  );
-
-  const resetTrial = useCallback(
-    (id: string) => {
-      setState((prev) => ({
-        ...prev,
-        trials: prev.trials.map((t) =>
-          t.id === id ? { ...t, output: null, finalTransient: null } : t,
-        ),
-      }));
-      if (id === selectedId) {
-        pause();
-        setYear(START_YEAR);
-      }
-    },
-    [pause, selectedId],
-  );
-
-  const addTrial = useCallback(() => {
-    pause();
-    setYear(START_YEAR);
-    setState((prev) => {
-      if (prev.trials.length >= TRIAL_LIMIT) return prev;
-      // Seed the new trial from the current selection's settings for quick iteration.
-      const base = prev.trials.find((t) => t.id === prev.selectedId)?.input ?? DEFAULT_SETTINGS;
-      const trial = makeEmptyTrial(base);
-      return { trials: [...prev.trials, trial], selectedId: trial.id };
+    setInteractiveState<SavedState>({
+      tables,
+      selectedCombo,
+      selectedColumns,
+      summaryStat,
+      xAxis,
+      yAxis,
     });
-  }, [pause]);
+  }, [tables, selectedCombo, selectedColumns, summaryStat, xAxis, yAxis]);
+
+  const sample = useCallback(() => {
+    setState((prev) => {
+      const row = generateRow(prev.selectedCombo, yearsBefore);
+      return {
+        ...prev,
+        tables: { ...prev.tables, [prev.selectedCombo]: [...prev.tables[prev.selectedCombo], row] },
+      };
+    });
+  }, [yearsBefore]);
+
+  const setColumns = useCallback(
+    (cols: ColumnId[]) =>
+      setState((prev) => ({ ...prev, selectedColumns: cols.slice(0, MAX_SELECTED_COLUMNS) })),
+    [],
+  );
+
+  const resetZone = useCallback((id: ComboId) => {
+    setState((prev) => ({ ...prev, tables: { ...prev.tables, [id]: [] } }));
+  }, []);
+
+  const deleteRow = useCallback((id: string) => {
+    setState((prev) => ({
+      ...prev,
+      tables: {
+        ...prev.tables,
+        [prev.selectedCombo]: prev.tables[prev.selectedCombo].filter((r) => r.id !== id),
+      },
+    }));
+  }, []);
+
+  const patch = useCallback((p: Partial<AppState>) => setState((prev) => ({ ...prev, ...p })), []);
 
   return (
     <SimulationFrame
       simTitle="Collapse"
-      tagline="What made the ground give way beneath the Corvette Museum?"
+      tagline="Sample deep time to see how caves and karst form"
       infoModalContent={
         <p>
-          A mock simulation of the karst sinkhole that collapsed part of the National Corvette
-          Museum in Bowling Green, Kentucky in 2014, above the Mammoth Cave system. Choose a
-          location, climate, and soil, then watch ~2000 years pass: in Bowling Green, a wet climate
-          over soluble limestone slowly dissolves the cave roof until it fails. Compare Louisville,
-          on the Ohio River floodplain, where thick soil over solid granite leaves no shallow cave
-          to collapse.
+          Each environment — a terrain (limestone or granite) and a weather (wet or dry) — has its
+          own data table. Pick one, choose how many years before the collapse to sample, and add a
+          row. Choose which measurements to record right on the table (up to three), pick a summary
+          statistic, and build a graph to compare the environments.
         </p>
       }
     >
-      <SimulationFrame.Trials>
-        {trials.map((trial, i) => (
+      <SimulationFrame.Trials title="Zone">
+        {COMBOS.map((c, i) => (
           <TrialCard
-            key={trial.id}
+            key={c.id}
             index={i}
-            selected={trial.id === selectedId}
-            onSelect={() => selectTrial(trial.id)}
-            onReset={() => resetTrial(trial.id)}
-            resetDisabled={trial.output === null}
+            selected={c.id === selectedCombo}
+            onSelect={() => patch({ selectedCombo: c.id })}
+            onReset={() => resetZone(c.id)}
+            resetDisabled={tables[c.id].length === 0}
           >
-            <span>{SETTING_LABELS.location[trial.input.location]}</span>
-            <span>{SETTING_LABELS.wetness[trial.input.wetness]}</span>
-            <span>{SETTING_LABELS.soil[trial.input.soil]}</span>
-            {trial.output ? (
-              <span className={trial.output.collapsed ? "trial-collapsed" : "trial-intact"}>
-                {trial.output.collapsed ? "Collapsed" : "Intact"}
+            <span className="zone-row">
+              <span className="zone-icon" aria-hidden="true">
+                {TERRAIN_META[c.terrain].icon}
               </span>
-            ) : null}
+              <span className="zone-label">{TERRAIN_META[c.terrain].label}</span>
+            </span>
+            <span className="zone-row">
+              <span className="zone-icon" aria-hidden="true">
+                {WEATHER_META[c.weather].icon}
+              </span>
+              <span className="zone-label">{WEATHER_META[c.weather].label}</span>
+            </span>
+            <span className="table-card-count">
+              {tables[c.id].length} {tables[c.id].length === 1 ? "time sampled" : "times sampled"}
+            </span>
           </TrialCard>
         ))}
-        {trials.length < TRIAL_LIMIT ? (
-          <button
-            type="button"
-            className="new-trial-card"
-            aria-label="New trial"
-            onClick={addTrial}
-          >
-            <span className="new-trial-icon" aria-hidden="true">
-              +
-            </span>
-            New
-          </button>
-        ) : null}
       </SimulationFrame.Trials>
 
-      <SimulationFrame.Simulation instruction="Set location, climate & soil, then press Play (or drag the Year slider)">
-        <SimulationView
-          input={selected.input}
-          year={year}
-          isPlaying={isPlaying}
-          inputsLocked={inputsLocked}
-          trialLabel={selectedLetter}
-          onChangeInput={changeInput}
-          onPlayPause={handlePlayPause}
-          onScrubYear={scrubYear}
-          onReset={resetSelected}
-        />
+      <SimulationFrame.Simulation instruction="Choose the data to sample and display">
+        <div className="sim-body">
+          <Timeline sampledYear={yearsBefore} />
+
+          <div className="sampler-row">
+            <div className="year-control">
+              <span className="year-label">
+                Years before
+                <br />
+                Collapse
+              </span>
+              {/* Arrows follow the timeline: ← moves back in time (more years before collapse), → forward. */}
+              <div className="year-stepper">
+                <HoldButton
+                  className="year-arrow"
+                  aria-label="Earlier — more years before collapse"
+                  disabled={yearsBefore >= COLLAPSE_SPAN_YEARS}
+                  onStep={() => setYearsBefore((y) => clampYear(y + YEAR_STEP))}
+                >
+                  ◀
+                </HoldButton>
+                <input
+                  type="number"
+                  className="year-input"
+                  aria-label="Years before collapse"
+                  min={0}
+                  max={COLLAPSE_SPAN_YEARS}
+                  step={YEAR_STEP}
+                  value={yearsBefore}
+                  onChange={(e) => {
+                    const v = Number(e.target.value);
+                    if (!Number.isNaN(v)) setYearsBefore(clampYear(v));
+                  }}
+                />
+                <HoldButton
+                  className="year-arrow"
+                  aria-label="Later — fewer years before collapse"
+                  disabled={yearsBefore <= 0}
+                  onStep={() => setYearsBefore((y) => clampYear(y - YEAR_STEP))}
+                >
+                  ▶
+                </HoldButton>
+              </div>
+            </div>
+            <Button onPress={sample}>Sample</Button>
+
+            <div className="zone-desc">
+              <span className="zone-row">
+                <span className="zone-icon" aria-hidden="true">
+                  {TERRAIN_META[combo.terrain].icon}
+                </span>
+                <span className="zone-label">{TERRAIN_META[combo.terrain].label}</span>
+              </span>
+              <span className="zone-row">
+                <span className="zone-icon" aria-hidden="true">
+                  {WEATHER_META[combo.weather].icon}
+                </span>
+                <span className="zone-label">{WEATHER_META[combo.weather].label}</span>
+                <span className="combo-def">{weatherDefinition(combo.weather)}</span>
+              </span>
+            </div>
+
+            {canAddColumn ? (
+              <select
+                className="add-column"
+                aria-label="Add a column"
+                value=""
+                onChange={(e) =>
+                  e.target.value && setColumns([...selectedColumns, e.target.value as ColumnId])
+                }
+              >
+                <option value="">＋ column</option>
+                {availableColumns.map((o) => (
+                  <option key={o.id} value={o.id}>
+                    {o.label}
+                  </option>
+                ))}
+              </select>
+            ) : null}
+          </div>
+
+          <div className="table-area">
+            <DataTable
+              rows={rows}
+              selectedColumns={selectedColumns}
+              onSetColumns={setColumns}
+              summaryStat={summaryStat}
+              onChangeSummaryStat={(s) => patch({ summaryStat: s })}
+              onDeleteRow={deleteRow}
+              selectedRowId={selectedRow?.id ?? null}
+              onSelectRow={setSelectedRowId}
+            />
+          </div>
+        </div>
       </SimulationFrame.Simulation>
 
       <SimulationFrame.Data>
-        <DataPanel input={selected.input} year={year} />
+        <div className="data-pane">
+          <Graph
+            rows={rows}
+            xAxis={xAxis}
+            yAxis={yAxis}
+            onChangeXAxis={(id) => patch({ xAxis: id })}
+            onChangeYAxis={(id) => patch({ yAxis: id })}
+            selectedRow={selectedRow}
+          />
+          <RowDetail row={selectedRow} />
+        </div>
       </SimulationFrame.Data>
     </SimulationFrame>
   );

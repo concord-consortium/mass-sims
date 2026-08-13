@@ -56,13 +56,15 @@ describe("LineChart", () => {
     expect(getByText("Avg distance")).toBeInTheDocument();
   });
 
-  it("renders 3 y-tick labels (0, max/2, max) by default", () => {
+  it("renders 3 y gridlines but labels only the top and bottom ticks", () => {
     const data = [
       { x: 0, y: 0 },
       { x: 1, y: 5 },
       { x: 2, y: 10 },
     ];
     const { container } = render(<LineChart data={data} xKey="x" yKey="y" height={130} />);
-    expect(container.querySelectorAll(".line-chart-y-tick-label")).toHaveLength(3);
+    expect(container.querySelectorAll(".line-chart-grid")).toHaveLength(3);
+    // The middle label is omitted so it doesn't overlap the rotated y-axis title.
+    expect(container.querySelectorAll(".line-chart-y-tick-label")).toHaveLength(2);
   });
 });

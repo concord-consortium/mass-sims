@@ -34,6 +34,12 @@
   .line-chart-point {
     fill: tokens.$color-text;
   }
+
+  .line-chart-point-highlight {
+    fill: tokens.$focus-blue;
+    stroke: tokens.$white;
+    stroke-width: 2;
+  }
 }
 
 .line-chart-empty {

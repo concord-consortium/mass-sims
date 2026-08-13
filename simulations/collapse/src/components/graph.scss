@@ -1,0 +1,26 @@
+@use "@concord-consortium/mass-sims-shared/styles/tokens" as tokens;
+
+// Data pane: the graph on top, the selected-row landscape pinned at the bottom.
+.data-pane {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  gap: tokens.$space-2;
+}
+
+.graph {
+  display: flex;
+  flex-direction: column;
+  gap: tokens.$space-1;
+  margin-top: tokens.$space-3;
+
+  .axis-picker { display: flex; }
+  .axis-y { justify-content: flex-start; }
+  .axis-x { justify-content: center; }
+
+  .graph-empty {
+    color: tokens.$color-text-muted;
+    font-size: tokens.$font-size-sm;
+  }
+}

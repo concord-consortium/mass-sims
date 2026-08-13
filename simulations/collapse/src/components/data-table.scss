@@ -1,0 +1,227 @@
+@use "@concord-consortium/mass-sims-shared/styles/tokens" as tokens;
+
+// Width of the (header-less) landscape thumbnail column.
+$thumb-col-width: 52px;
+
+.data-table {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: tokens.$space-2;
+}
+
+.table-header {
+  flex: none;
+  display: flex;
+  align-items: baseline;
+  gap: tokens.$space-2;
+
+  h3 {
+    margin: 0;
+    font-size: tokens.$font-size-lg;
+  }
+}
+
+.table-header-def {
+  color: tokens.$color-text-muted;
+  font-size: tokens.$font-size-sm;
+}
+
+.add-column {
+  margin-left: auto;
+  padding: 2px 6px;
+  border: 1px solid tokens.$color-border;
+  border-radius: tokens.$radius-sm;
+  background: tokens.$color-surface;
+  font-family: tokens.$font-family-base;
+  font-size: tokens.$font-size-sm;
+  cursor: pointer;
+}
+
+// Fixed-layout table so the header and footer stay pinned and ONLY the tbody scrolls.
+.grid-table {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  border-collapse: collapse;
+  font-size: tokens.$font-size-sm;
+
+  thead,
+  tfoot {
+    flex: none;
+    display: block;
+  }
+
+  tbody {
+    flex: 1;
+    min-height: 0;
+    display: block;
+    overflow-y: auto;
+  }
+
+  // Rows are clickable to select (shows an enlarged landscape + highlights the graph point).
+  tbody tr {
+    cursor: pointer;
+  }
+  tbody tr:hover {
+    background: tokens.$color-surface-hover;
+  }
+  tbody tr.is-selected {
+    background: tokens.$color-surface-active;
+    box-shadow: inset 3px 0 0 tokens.$focus-blue;
+  }
+  tbody tr.empty-row {
+    cursor: default;
+  }
+  tbody tr.empty-row:hover {
+    background: none;
+  }
+
+  // Each row lays its columns out identically so header/body/footer align.
+  tr {
+    display: table;
+    width: 100%;
+    table-layout: fixed;
+  }
+
+  th,
+  td {
+    padding: tokens.$space-1 tokens.$space-2;
+    text-align: right;
+    border-bottom: 1px solid tokens.$color-border-subtle;
+  }
+
+  // Data cells stay on one line (numbers); headers may wrap so the label + caret fit.
+  td {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  th { font-weight: 700; vertical-align: top; white-space: normal; }
+  .col-year { text-align: left; }
+  .col-landscape { width: $thumb-col-width; padding: 2px tokens.$space-1; }
+
+  // The landscape column has no header, so let the year label extend left over that empty
+  // space (the body columns keep their own widths, so nothing below shifts).
+  thead .col-year .sort-btn {
+    width: calc(100% + #{$thumb-col-width});
+    margin-left: -$thumb-col-width;
+  }
+  .col-delete { width: 30px; text-align: center; padding: 0; }
+
+  thead th { background: tokens.$color-surface; border-bottom: 2px solid tokens.$color-border; }
+  tfoot th,
+  tfoot td {
+    border-top: 2px solid tokens.$color-border;
+    border-bottom: none;
+    font-weight: 700;
+    background: tokens.$color-surface-muted;
+  }
+
+  // Year header: a plain sort button (label + caret).
+  .sort-btn {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    width: 100%;
+    border: none;
+    background: none;
+    padding: 0;
+    font: inherit;
+    font-weight: 700;
+    color: tokens.$color-text;
+    cursor: pointer;
+    text-align: left;
+
+    &:hover { color: tokens.$focus-blue; }
+    &:focus-visible { outline: tokens.$focus-outline; outline-offset: tokens.$focus-outline-offset; }
+  }
+  .sort-caret { flex: none; color: tokens.$focus-blue; }
+
+  // Data column header: a measurement dropdown + a unit/sort meta row.
+  .col-picker {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 1px;
+  }
+  .col-select {
+    width: 100%;
+    max-width: 100%;
+    padding: 1px 2px;
+    border: 1px solid tokens.$color-border;
+    border-radius: tokens.$radius-sm;
+    background: tokens.$white;
+    font-family: tokens.$font-family-base;
+    font-size: tokens.$font-size-sm;
+    font-weight: 700;
+    cursor: pointer;
+  }
+  .col-meta {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 2px;
+  }
+  .col-sort {
+    flex: none;
+    border: none;
+    background: none;
+    padding: 0 2px;
+    font-size: tokens.$font-size-xs;
+    color: tokens.$color-text-muted;
+    cursor: pointer;
+
+    &:hover { color: tokens.$focus-blue; }
+    &:focus-visible { outline: tokens.$focus-outline; outline-offset: tokens.$focus-outline-offset; }
+  }
+
+  .col-unit {
+    font-weight: 400;
+    font-size: tokens.$font-size-xs;
+    color: tokens.$color-text-muted;
+  }
+
+  .thumb-cell {
+    display: block;
+    width: 48px;
+    border-radius: tokens.$radius-sm;
+    border: 1px solid tokens.$color-border-subtle;
+  }
+
+  .empty-row td {
+    text-align: center;
+    color: tokens.$color-text-muted;
+    font-style: italic;
+  }
+
+  .delete-row {
+    width: 22px;
+    height: 22px;
+    border: none;
+    border-radius: tokens.$radius-pill;
+    background: transparent;
+    color: tokens.$color-text-muted;
+    font-size: 16px;
+    line-height: 1;
+    cursor: pointer;
+
+    &:hover { background: #f3d6d6; color: #b5462f; }
+    &:focus-visible { outline: tokens.$focus-outline; outline-offset: tokens.$focus-outline-offset; }
+  }
+
+  .summary-select {
+    max-width: 100%;
+    padding: 2px 4px;
+    border: 1px solid tokens.$color-border;
+    border-radius: tokens.$radius-sm;
+    background: tokens.$white;
+    font-family: tokens.$font-family-base;
+    font-size: tokens.$font-size-sm;
+    font-weight: 700;
+    cursor: pointer;
+  }
+}

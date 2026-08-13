@@ -1,0 +1,151 @@
+@use "@concord-consortium/mass-sims-shared/styles/tokens" as tokens;
+
+.timeline {
+  display: flex;
+  flex-direction: column;
+  gap: tokens.$space-1;
+}
+
+.timeline-track {
+  position: relative;
+  height: 92px;
+  margin: 0 tokens.$space-4;
+  // the axis line sits vertically centered
+  &::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 50%;
+    height: 3px;
+    border-radius: tokens.$radius-pill;
+    background: linear-gradient(90deg, #8a97a6, #cfd6de);
+  }
+}
+
+.era-marker {
+  position: absolute;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+
+  .era-tick {
+    width: 2px;
+    height: 12px;
+    background: tokens.$color-text-muted;
+  }
+
+  .era-label {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    white-space: nowrap;
+    font-size: tokens.$font-size-xs;
+    color: tokens.$color-text;
+    line-height: 1.1;
+  }
+
+  .era-icon {
+    font-size: 16px;
+    line-height: 1.2;
+  }
+
+  .era-age {
+    color: tokens.$color-text-muted;
+  }
+
+  &.above .era-label { bottom: 12px; }
+  &.below .era-label { top: 12px; }
+
+  // Keep the outermost labels from overflowing the screen: anchor them inward
+  // from their tick instead of centering.
+  &.edge-left .era-label {
+    left: 0;
+    transform: none;
+    align-items: flex-start;
+    text-align: left;
+  }
+  &.edge-right .era-label {
+    left: auto;
+    right: 0;
+    transform: none;
+    align-items: flex-end;
+    text-align: right;
+  }
+}
+
+.now-marker {
+  position: absolute;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+
+  .now-tick {
+    width: 2px;
+    height: 12px;
+    background: tokens.$color-text;
+  }
+
+  .now-label {
+    position: absolute;
+    bottom: 12px;
+    right: 0;
+    font-size: tokens.$font-size-xs;
+    font-weight: 700;
+    white-space: nowrap;
+  }
+}
+
+.sample-marker {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+
+  .sample-line {
+    position: absolute;
+    top: 6px;
+    bottom: 6px;
+    width: 3px;
+    background: #d94f4f;
+    border-radius: tokens.$radius-pill;
+  }
+
+  .sample-flag {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 2px 6px;
+    border-radius: tokens.$radius-sm;
+    background: #d94f4f;
+    color: tokens.$white;
+    font-size: tokens.$font-size-xs;
+    font-weight: 700;
+    line-height: 1.1;
+    white-space: nowrap;
+  }
+
+  .sample-age { font-weight: 500; }
+}
+
+.timeline-ends {
+  display: flex;
+  justify-content: space-between;
+  margin: 0 tokens.$space-4;
+  color: tokens.$color-text-muted;
+  font-size: tokens.$font-size-xs;
+  font-style: italic;
+}

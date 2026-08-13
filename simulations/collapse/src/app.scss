@@ -1,36 +1,160 @@
 @use "@concord-consortium/mass-sims-shared/styles/tokens" as tokens;
 
-// "New trial" card — sim-owned (the shared TrialCard has no add variant); matches the TrialCard
-// 120 × 136 footprint.
-.new-trial-card {
+// Per-combo accent colors (terrain × weather), shared across cards + swatches.
+$combo-colors: (
+  "limestone-wet": #2b7fb8,
+  "limestone-dry": #c79a4b,
+  "granite-wet": #3f9e8f,
+  "granite-dry": #9c6f97,
+);
+
+@mixin combo-colors($prop: background) {
+  @each $id, $color in $combo-colors {
+    &[data-combo="#{$id}"] { #{$prop}: $color; }
+  }
+}
+
+// ---- Zone column: the four TrialCards ------------------------------------------------------
+// Our zone cards hold only two factor rows + a count, so shrink the default 136px TrialCard
+// height so all four fit without scrolling. (Extra specificity to win over the shared style.)
+.trials-list .trial-card-wrapper {
+  height: 112px;
+}
+
+// One factor (stone or weather): an icon with its label beside it, on its own line.
+.zone-row {
+  display: flex;
   align-items: center;
-  background: transparent;
-  border: 2px dashed tokens.$color-border;
-  border-radius: tokens.$radius-md;
-  color: tokens.$color-text;
-  cursor: pointer;
+  gap: tokens.$space-2;
+}
+.zone-icon {
+  font-size: 20px;
+  line-height: 1;
+  width: 22px;
+  text-align: center;
+  flex: none;
+}
+.zone-label {
+  font-weight: 600;
+  font-size: tokens.$font-size-sm;
+}
+
+.table-card-count {
+  color: tokens.$color-text-muted;
+  font-size: tokens.$font-size-xs;
+}
+
+// Small color swatch reused in the sampler-row description.
+.table-card-swatch {
+  width: 14px;
+  height: 28px;
+  border-radius: tokens.$radius-sm;
+  background: tokens.$color-border;
+
+  @include combo-colors(background);
+}
+
+// ---- Simulation pane: timeline, sampler row, then the table --------------------------------
+.sim-body {
   display: flex;
   flex-direction: column;
-  font-family: tokens.$font-family-base;
-  font-size: tokens.$font-size-base;
+  gap: tokens.$space-2;
+  height: 100%;
+  min-height: 0;
+}
+
+.sampler-row {
+  display: flex;
+  align-items: flex-end;
+  gap: tokens.$space-3;
+  flex: none;
+}
+
+// Year control: a small two-line label in front of a stepper whose arrows follow the
+// timeline (← = further back / more years before collapse, → = later / fewer).
+.year-control {
+  display: flex;
+  align-items: center;
+  gap: tokens.$space-2;
+  flex: none;
+}
+
+.year-label {
+  font-size: tokens.$font-size-xs;
+  color: tokens.$color-text-muted;
+  line-height: 1.15;
+  white-space: nowrap; // explicit <br> controls the break: "Years before" / "Collapse"
+}
+
+.year-stepper {
+  display: flex;
+  align-items: stretch;
+  border: tokens.$border-strong;
+  border-radius: tokens.$radius-md;
+  overflow: hidden;
+  min-height: tokens.$touch-target-min;
+
+  &:focus-within {
+    outline: tokens.$focus-outline;
+    outline-offset: tokens.$focus-outline-offset;
+  }
+}
+
+.year-arrow {
+  background: tokens.$color-surface;
+  border: none;
+  color: tokens.$color-text;
+  cursor: pointer;
+  font-size: tokens.$font-size-lg;
   font-weight: 700;
-  gap: tokens.$space-1;
-  height: 136px;
-  justify-content: center;
-  width: 120px;
-}
-
-.new-trial-card:hover,
-.new-trial-card:focus-visible {
-  background: tokens.$color-surface-hover;
-}
-
-.new-trial-card:focus-visible {
-  outline: tokens.$focus-outline;
-  outline-offset: tokens.$focus-outline-offset;
-}
-
-.new-trial-icon {
-  font-size: 28px;
   line-height: 1;
+  min-width: 30px;
+  padding: 0 tokens.$space-1;
+
+  &:first-child { border-right: tokens.$border-strong; }
+  &:last-child { border-left: tokens.$border-strong; }
+  &:hover { background: tokens.$color-surface-hover; }
+  &:active { background: tokens.$color-surface-active; }
+  &:disabled { color: tokens.$color-text-muted; cursor: not-allowed; }
+}
+
+.year-input {
+  width: 84px;
+  background: tokens.$color-surface;
+  border: none;
+  color: tokens.$color-text;
+  font: inherit;
+  outline: none;
+  padding: 4px tokens.$space-1;
+  text-align: center;
+
+  // We supply our own ◀ ▶ steppers — hide the native number-input spinners.
+  appearance: textfield;
+  -moz-appearance: textfield;
+  &::-webkit-outer-spin-button,
+  &::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+}
+
+// The selected experiment's stone/weather, stacked beside the Sample button like the Zone cards.
+.zone-desc {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+
+  .zone-icon { font-size: 18px; }
+  .combo-def {
+    color: tokens.$color-text-muted;
+    font-size: tokens.$font-size-sm;
+    font-weight: 400;
+    margin-left: tokens.$space-2;
+  }
+}
+
+.table-area {
+  flex: 1;
+  min-height: 0;
+  display: flex;
 }

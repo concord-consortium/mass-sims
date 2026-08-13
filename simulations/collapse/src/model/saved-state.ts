@@ -1,14 +1,15 @@
-import type { RecordedTrial } from "./types";
+import type { AxisDef, ColumnId, ComboId, SampleRow, StatId } from "./sim";
 
 /**
  * The shape persisted to / restored from Activity Player's `interactiveState`. Plain
- * JSON-serializable values only — `trials` is `RecordedTrial[]` whose `input`, `output`,
- * and `finalTransient` (when present) are also plain objects. Per-frame transient state
- * (the live walker positions, frame counter, and `liveSeries` from the in-progress run)
- * is intentionally NOT persisted; students restart trials from the beginning when they
- * return to the activity.
+ * JSON-serializable values only. Holds each environment's generated rows plus the shared
+ * table/graph configuration; the in-progress "years before collapse" field is transient.
  */
 export interface SavedState {
-  trials: RecordedTrial[];
-  selectedId: string;
+  tables: Record<ComboId, SampleRow[]>;
+  selectedCombo: ComboId;
+  selectedColumns: ColumnId[];
+  summaryStat: StatId;
+  xAxis: AxisDef["id"];
+  yAxis: AxisDef["id"];
 }

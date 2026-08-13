@@ -14,6 +14,13 @@ export interface LineChartProps<T> {
   ariaLabel?: string;
   xLabel?: string;
   yLabel?: string;
+  /** Plot the x axis descending (max at left, min at right). Data still passed sorted ascending. */
+  xReversed?: boolean;
+  /** Plot the y axis descending (max at bottom, min at top). */
+  yReversed?: boolean;
+  /** Emphasize the datum at these axis values (e.g. a selected table row). */
+  highlightX?: number;
+  highlightY?: number;
   emptyState?: ReactNode;
   className?: string;
 }
@@ -36,6 +43,10 @@ export function LineChart<T extends Record<string, number | string>>({
   ariaLabel,
   xLabel,
   yLabel,
+  xReversed,
+  yReversed,
+  highlightX,
+  highlightY,
   emptyState,
   className,
 }: LineChartProps<T>) {
@@ -68,28 +79,39 @@ export function LineChart<T extends Record<string, number | string>>({
     );
   }
 
-  // Margins grow to make room for axis titles only when they're supplied, so the rotated
-  // y-title / x-title never collide with the tick labels.
+  const yValues = data.map((d) => Number(d[yKey]));
+  const yMax = Math.max(...yValues, 1);
+  // Tick labels round to at most 2 decimals (raw floats are noise) with digit grouping.
+  const formatTick = (n: number) => n.toLocaleString(undefined, { maximumFractionDigits: 2 });
+
+  // Margins grow to fit the content: the left margin tracks the widest y-tick label so large
+  // numbers never clip at the edge or collide with the rotated y-title; top/bottom make room
+  // for the axis titles only when they're supplied.
   const top = 12;
   const right = 14;
   const bottom = 24 + (xLabel ? 16 : 0);
-  const left = 40 + (yLabel ? 9 : 0);
+  const yTickLabelW = formatTick(yMax).length * 6.5; // ~6.5px per character at the tick font size
+  const left = (yLabel ? 20 : 4) + yTickLabelW + 8;
   const plotW = Math.max(0, width - left - right);
   const plotH = height - top - bottom;
-  const yValues = data.map((d) => Number(d[yKey]));
-  const yMax = Math.max(...yValues, 1);
   const xValues = data.map((d) => Number(d[xKey]));
   const xMin = xValues[0];
   const xMax = xValues[xValues.length - 1];
   const xRange = Math.max(1, xMax - xMin);
 
+  // Map a data value to a pixel position, optionally reversing the axis direction.
+  const xPos = (v: number) => {
+    const t = (v - xMin) / xRange;
+    return left + (xReversed ? 1 - t : t) * plotW;
+  };
+  const yPos = (v: number) => {
+    const t = v / yMax;
+    return yReversed ? top + t * plotH : top + plotH - t * plotH;
+  };
+
   // Build the polyline `points` attribute: "x1,y1 x2,y2 ..." in viewBox units.
   const points = data
-    .map((d) => {
-      const x = left + ((Number(d[xKey]) - xMin) / xRange) * plotW;
-      const y = top + plotH - (Number(d[yKey]) / yMax) * plotH;
-      return `${x.toFixed(2)},${y.toFixed(2)}`;
-    })
+    .map((d) => `${xPos(Number(d[xKey])).toFixed(2)},${yPos(Number(d[yKey])).toFixed(2)}`)
     .join(" ");
 
   return (
@@ -111,29 +133,32 @@ export function LineChart<T extends Record<string, number | string>>({
       >
         {ariaLabel ? <title>{ariaLabel}</title> : null}
 
-        {/* Y-axis gridlines + tick labels (0, max/2, max). No plot-border box and no tick
-            marks — the full-width gridlines carry the structure (matches the design spec). */}
+        {/* Y-axis gridlines for all ticks, but only the top/bottom get labels — the middle label
+            sits where the rotated y-title crosses, so labeling it would overlap. */}
         {Array.from({ length: Y_TICKS }).map((_, i) => {
           const frac = i / (Y_TICKS - 1);
-          const y = top + plotH - frac * plotH;
+          const y = yPos(yMax * frac);
+          const labeled = i === 0 || i === Y_TICKS - 1;
           return (
             // biome-ignore lint/suspicious/noArrayIndexKey: fixed-length tick array, index is stable
             <g key={`y-${i}`} className="line-chart-y-tick">
               <line className="line-chart-grid" x1={left} y1={y} x2={left + plotW} y2={y} />
-              <text
-                className="line-chart-y-tick-label"
-                x={left - 6}
-                y={y}
-                textAnchor="end"
-                dominantBaseline="middle"
-              >
-                {(yMax * frac).toFixed(1)}
-              </text>
+              {labeled ? (
+                <text
+                  className="line-chart-y-tick-label"
+                  x={left - 6}
+                  y={y}
+                  textAnchor="end"
+                  dominantBaseline="middle"
+                >
+                  {formatTick(yMax * frac)}
+                </text>
+              ) : null}
             </g>
           );
         })}
 
-        {/* X-axis start / end labels. */}
+        {/* X-axis start / end labels (swap ends when the axis is reversed). */}
         <text
           className="line-chart-x-tick-label"
           x={left}
@@ -141,7 +166,7 @@ export function LineChart<T extends Record<string, number | string>>({
           textAnchor="start"
           dominantBaseline="hanging"
         >
-          {xMin}
+          {formatTick(xReversed ? xMax : xMin)}
         </text>
         <text
           className="line-chart-x-tick-label"
@@ -150,7 +175,7 @@ export function LineChart<T extends Record<string, number | string>>({
           textAnchor="end"
           dominantBaseline="hanging"
         >
-          {xMax}
+          {formatTick(xReversed ? xMin : xMax)}
         </text>
 
         {/* Series line. */}
@@ -162,11 +187,21 @@ export function LineChart<T extends Record<string, number | string>>({
             // biome-ignore lint/suspicious/noArrayIndexKey: positional series, index is stable
             key={`pt-${i}`}
             className="line-chart-point"
-            cx={left + ((Number(d[xKey]) - xMin) / xRange) * plotW}
-            cy={top + plotH - (Number(d[yKey]) / yMax) * plotH}
+            cx={xPos(Number(d[xKey]))}
+            cy={yPos(Number(d[yKey]))}
             r={POINT_RADIUS}
           />
         ))}
+
+        {/* Emphasized marker for the highlighted datum (e.g. a selected table row). */}
+        {highlightX != null && highlightY != null ? (
+          <circle
+            className="line-chart-point-highlight"
+            cx={xPos(highlightX)}
+            cy={yPos(highlightY)}
+            r={POINT_RADIUS + 3}
+          />
+        ) : null}
 
         {/* X-axis title (centered below). */}
         {xLabel ? (

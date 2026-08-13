@@ -1,0 +1,37 @@
+@use "@concord-consortium/mass-sims-shared/styles/tokens" as tokens;
+
+.row-detail {
+  flex: none;
+  margin-top: auto; // pin to the bottom of the Data pane
+  display: flex;
+  flex-direction: column;
+  gap: tokens.$space-1;
+}
+
+.row-detail-year {
+  font-weight: 700;
+  font-size: tokens.$font-size-sm;
+}
+
+.row-detail-image {
+  display: block;
+  width: 100%;
+  height: auto;
+  border: 1px solid tokens.$color-border;
+  border-radius: tokens.$radius-sm;
+}
+
+// Placeholder prompting the student to select a row.
+.row-detail-empty {
+  flex: none;
+  margin-top: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 64px;
+  padding: tokens.$space-2;
+  border: 1px dashed tokens.$color-border;
+  border-radius: tokens.$radius-md;
+  color: tokens.$color-text-muted;
+  font-size: tokens.$font-size-sm;
+}
