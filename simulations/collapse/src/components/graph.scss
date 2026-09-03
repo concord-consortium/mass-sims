@@ -18,6 +18,11 @@
   .axis-picker { display: flex; }
   .axis-y { justify-content: flex-start; }
   .axis-x { justify-content: center; }
+  .axis-fixed-label {
+    font-size: tokens.$font-size-sm;
+    font-weight: 600;
+    color: tokens.$color-text;
+  }
 
   .graph-empty {
     color: tokens.$color-text-muted;

@@ -85,8 +85,16 @@ export const COMBO_BLURB: Record<ComboId, string> = {
   "granite-dry": "Granite, and little rain: almost no erosion, and no dissolved rock.",
 };
 
-/** The karst forms over this span; "years before collapse" is measured back from the end of it. */
-export const COLLAPSE_SPAN_YEARS = 200_000;
+/** How far before the collapse a student can sample — the timeline/stepper range. */
+export const COLLAPSE_SPAN_YEARS = 100_000;
+
+/**
+ * The cavern is older than the samplable window: it has been eroding for this many years by the time
+ * of the collapse. So even the oldest sample (COLLAPSE_SPAN_YEARS before collapse) already shows a
+ * partly-formed cavern, and the depth reaches its full extent at the collapse — without changing the
+ * erosion rate. (elapsed = KARST_AGE_AT_COLLAPSE − yearsBeforeCollapse.)
+ */
+export const KARST_AGE_AT_COLLAPSE = 200_000;
 
 /** The collapse happened in 2014; the timeline's "now" is 2026 — so 0 years-before-collapse sits
  *  this many years back from the right (present-day) end, not at it. */
@@ -127,7 +135,7 @@ export function generateRow(
   const e = envProfile(combo);
   const jitter = (amount: number) => 1 + (rng() * 2 - 1) * amount;
 
-  const elapsed = Math.max(0, COLLAPSE_SPAN_YEARS - yearsBeforeCollapse); // years of erosion so far
+  const elapsed = Math.max(0, KARST_AGE_AT_COLLAPSE - yearsBeforeCollapse); // years of erosion so far
   const erosionRate = e.baseRate * jitter(RATE_VARIATION); // noisy per-measurement rate (mm/1000yr)
   // Total depth is erosion integrated over all past time, so the ±15% measurement noise averages
   // out — use the mean rate. This keeps depth monotonic: a sample further in the past is never
@@ -183,8 +191,9 @@ export const COLUMNS: ColumnDef[] = [
   { id: "pctWater", label: "% water in soil", unit: "%", decimals: 1, get: (r) => r.pctWater },
 ];
 
-/** How many data columns the student may show at once (besides the Year column). */
-export const MAX_SELECTED_COLUMNS = 3;
+/** The fixed data columns shown in every table and offered on the graph's y axis — not pickable or
+ *  reorderable. (The x axis is always "Years before collapse".) */
+export const FIXED_COLUMN_IDS: ColumnId[] = ["erosionRate", "dissolvedRock", "totalDepth"];
 
 /** Columns usable on a graph axis: the Year, plus every data column. */
 export interface AxisDef {
@@ -245,16 +254,16 @@ export interface EraMarker {
   icon: string; // placeholder emoji until real art lands
 }
 export const ERA_MARKERS: EraMarker[] = [
-  { label: "First humans", yearsAgo: 300_000, icon: "🧍" },
+  { label: "Last Ice Age", yearsAgo: 20_000, icon: "❄️" },
   { label: "Pyramids built", yearsAgo: 4_600, icon: "🔺" },
   { label: "Industrial age", yearsAgo: 250, icon: "🏭" },
   { label: "Corvette Museum", yearsAgo: 30, icon: "🚗" },
 ];
 
-// The timeline runs from ~First humans (oldest, left) to today (right); the sampled span
-// (up to 200,000 years) fills most of it. Log-scaled so both ends read legibly.
+// The timeline runs from 100,000 years ago (oldest, left) to today (right); the sampled span
+// (up to COLLAPSE_SPAN_YEARS) fills it. Log-scaled so both ends read legibly.
 export const TIMELINE_MIN_YEARS = 10;
-export const TIMELINE_MAX_YEARS = 350_000;
+export const TIMELINE_MAX_YEARS = 100_000;
 
 /** Position (0 = left/oldest … 1 = right/most recent) of a "years ago" value on the log timeline. */
 export function timelinePosition(yearsAgo: number): number {
@@ -263,4 +272,61 @@ export function timelinePosition(yearsAgo: number): number {
   const hi = Math.log10(TIMELINE_MAX_YEARS);
   const norm = (Math.log10(y) - lo) / (hi - lo); // 0 recent … 1 old
   return 1 - norm; // flip so oldest is on the left
+}
+
+/** Inverse of timelinePosition: the "years ago" at a horizontal position (0 = left/oldest … 1 = right). */
+export function yearsAgoAtPosition(pos: number): number {
+  const p = Math.max(0, Math.min(1, pos));
+  const lo = Math.log10(TIMELINE_MIN_YEARS);
+  const hi = Math.log10(TIMELINE_MAX_YEARS);
+  const norm = 1 - p; // undo the "oldest on the left" flip
+  return 10 ** (norm * (hi - lo) + lo);
+}
+
+/**
+ * Log-spaced sampling grid (years before collapse). A fixed linear step feels jarring on the log
+ * timeline — 1,000 years is nearly half the axis near the present but a sliver near the oldest end — so
+ * the timeline, stepper, and keyboard all move through these values, giving roughly even visual spacing.
+ */
+export const SAMPLE_YEARS_BEFORE: number[] = [
+  0, 10, 20, 50, 100, 200, 500, 1_000, 2_000, 5_000, 10_000, 20_000, 50_000, 100_000,
+];
+
+/** Snap a years-before-collapse value to the nearest grid value, measured on the log timeline. */
+export function snapToSampleGrid(yearsBefore: number): number {
+  const target = timelinePosition(yearsBefore + YEARS_SINCE_COLLAPSE);
+  let best = SAMPLE_YEARS_BEFORE[0];
+  let bestDist = Number.POSITIVE_INFINITY;
+  for (const v of SAMPLE_YEARS_BEFORE) {
+    const d = Math.abs(timelinePosition(v + YEARS_SINCE_COLLAPSE) - target);
+    if (d < bestDist) {
+      bestDist = d;
+      best = v;
+    }
+  }
+  return best;
+}
+
+/** Step to the adjacent grid value (dir +1 = older / more years before, −1 = more recent / fewer). */
+export function stepSampleYear(current: number, dir: 1 | -1): number {
+  let idx = 0;
+  let bestDist = Number.POSITIVE_INFINITY;
+  SAMPLE_YEARS_BEFORE.forEach((v, i) => {
+    const d = Math.abs(v - current);
+    if (d < bestDist) {
+      bestDist = d;
+      idx = i;
+    }
+  });
+  const next = Math.max(0, Math.min(SAMPLE_YEARS_BEFORE.length - 1, idx + dir));
+  return SAMPLE_YEARS_BEFORE[next];
+}
+
+/**
+ * Years-before-collapse for a click at horizontal position `pos` (0…1) on the timeline — the inverse of
+ * the sample marker's placement, snapped to the log-spaced grid so clicks land on nice values with even
+ * visual spacing.
+ */
+export function yearsBeforeAtPosition(pos: number): number {
+  return snapToSampleGrid(yearsAgoAtPosition(pos) - YEARS_SINCE_COLLAPSE);
 }

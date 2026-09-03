@@ -9,20 +9,17 @@ import type { SavedState } from "./model/saved-state";
 import {
   type AxisDef,
   COLLAPSE_SPAN_YEARS,
-  COLUMNS,
   COMBOS,
-  type ColumnId,
   type ComboId,
   comboById,
   DEFAULT_YEARS_BEFORE,
   generateRow,
-  MAX_SELECTED_COLUMNS,
   type SampleRow,
   type StatId,
+  stepSampleYear,
   TERRAIN_META,
   WEATHER_META,
   weatherDefinition,
-  YEAR_STEP,
 } from "./model/sim";
 
 import "./app.scss";
@@ -30,9 +27,7 @@ import "./app.scss";
 interface AppState {
   tables: Record<ComboId, SampleRow[]>;
   selectedCombo: ComboId;
-  selectedColumns: ColumnId[];
   summaryStat: StatId;
-  xAxis: AxisDef["id"];
   yAxis: AxisDef["id"];
 }
 
@@ -46,9 +41,7 @@ const emptyTables = (): Record<ComboId, SampleRow[]> => ({
 const INITIAL: AppState = {
   tables: emptyTables(),
   selectedCombo: "limestone-wet",
-  selectedColumns: ["erosionRate", "dissolvedRock", "totalDepth"],
   summaryStat: "average",
-  xAxis: "yearsBeforeCollapse",
   yAxis: "erosionRate",
 };
 
@@ -113,21 +106,19 @@ function HoldButton({
 /**
  * Collapse — a data-generation sim. Four environments (terrain × weather) each get their own table.
  * The Simulation pane is the timeline + a sample control, then the selected experiment's table
- * (columns picked on the table itself); the graph lives in the Data pane.
+ * with fixed columns (erosion rate, dissolved rock, total depth); the graph lives in the Data pane.
  */
 export function App() {
   const [state, setState] = useState<AppState>(INITIAL);
   const [yearsBefore, setYearsBefore] = useState<number>(DEFAULT_YEARS_BEFORE);
   const [selectedRowId, setSelectedRowId] = useState<string | null>(null);
 
-  const { tables, selectedCombo, selectedColumns, summaryStat, xAxis, yAxis } = state;
+  const { tables, selectedCombo, summaryStat, yAxis } = state;
   const rows = tables[selectedCombo];
   // Selection is validated against the current table, so switching zones, deleting, or resetting
   // a row all clear the detail/highlight for free (the id simply isn't found).
   const selectedRow = rows.find((r) => r.id === selectedRowId) ?? null;
   const combo = comboById(selectedCombo);
-  const availableColumns = COLUMNS.filter((c) => !selectedColumns.includes(c.id));
-  const canAddColumn = selectedColumns.length < MAX_SELECTED_COLUMNS && availableColumns.length > 0;
   const clampYear = (y: number) => Math.max(0, Math.min(COLLAPSE_SPAN_YEARS, y));
 
   const initMsg = useInitMessage<SavedState>();
@@ -137,15 +128,8 @@ export function App() {
     }
   }, [initMsg]);
   useEffect(() => {
-    setInteractiveState<SavedState>({
-      tables,
-      selectedCombo,
-      selectedColumns,
-      summaryStat,
-      xAxis,
-      yAxis,
-    });
-  }, [tables, selectedCombo, selectedColumns, summaryStat, xAxis, yAxis]);
+    setInteractiveState<SavedState>({ tables, selectedCombo, summaryStat, yAxis });
+  }, [tables, selectedCombo, summaryStat, yAxis]);
 
   const sample = useCallback(() => {
     setState((prev) => {
@@ -156,12 +140,6 @@ export function App() {
       };
     });
   }, [yearsBefore]);
-
-  const setColumns = useCallback(
-    (cols: ColumnId[]) =>
-      setState((prev) => ({ ...prev, selectedColumns: cols.slice(0, MAX_SELECTED_COLUMNS) })),
-    [],
-  );
 
   const resetZone = useCallback((id: ComboId) => {
     setState((prev) => ({ ...prev, tables: { ...prev.tables, [id]: [] } }));
@@ -187,8 +165,8 @@ export function App() {
         <p>
           Each environment — a terrain (limestone or granite) and a weather (wet or dry) — has its
           own data table. Pick one, choose how many years before the collapse to sample, and add a
-          row. Choose which measurements to record right on the table (up to three), pick a summary
-          statistic, and build a graph to compare the environments.
+          row. Each row records the erosion rate, dissolved rock, and total depth; pick a summary
+          statistic and build a graph to compare the environments.
         </p>
       }
     >
@@ -221,9 +199,9 @@ export function App() {
         ))}
       </SimulationFrame.Trials>
 
-      <SimulationFrame.Simulation instruction="Choose the data to sample and display">
+      <SimulationFrame.Simulation instruction="Choose a zone and sample through time">
         <div className="sim-body">
-          <Timeline sampledYear={yearsBefore} />
+          <Timeline sampledYear={yearsBefore} onScrub={(y) => setYearsBefore(clampYear(y))} />
 
           <div className="sampler-row">
             <div className="year-control">
@@ -238,7 +216,7 @@ export function App() {
                   className="year-arrow"
                   aria-label="Earlier — more years before collapse"
                   disabled={yearsBefore >= COLLAPSE_SPAN_YEARS}
-                  onStep={() => setYearsBefore((y) => clampYear(y + YEAR_STEP))}
+                  onStep={() => setYearsBefore((y) => stepSampleYear(y, 1))}
                 >
                   ◀
                 </HoldButton>
@@ -248,7 +226,7 @@ export function App() {
                   aria-label="Years before collapse"
                   min={0}
                   max={COLLAPSE_SPAN_YEARS}
-                  step={YEAR_STEP}
+                  step={1}
                   value={yearsBefore}
                   onChange={(e) => {
                     const v = Number(e.target.value);
@@ -259,7 +237,7 @@ export function App() {
                   className="year-arrow"
                   aria-label="Later — fewer years before collapse"
                   disabled={yearsBefore <= 0}
-                  onStep={() => setYearsBefore((y) => clampYear(y - YEAR_STEP))}
+                  onStep={() => setYearsBefore((y) => stepSampleYear(y, -1))}
                 >
                   ▶
                 </HoldButton>
@@ -282,31 +260,11 @@ export function App() {
                 <span className="combo-def">{weatherDefinition(combo.weather)}</span>
               </span>
             </div>
-
-            {canAddColumn ? (
-              <select
-                className="add-column"
-                aria-label="Add a column"
-                value=""
-                onChange={(e) =>
-                  e.target.value && setColumns([...selectedColumns, e.target.value as ColumnId])
-                }
-              >
-                <option value="">＋ column</option>
-                {availableColumns.map((o) => (
-                  <option key={o.id} value={o.id}>
-                    {o.label}
-                  </option>
-                ))}
-              </select>
-            ) : null}
           </div>
 
           <div className="table-area">
             <DataTable
               rows={rows}
-              selectedColumns={selectedColumns}
-              onSetColumns={setColumns}
               summaryStat={summaryStat}
               onChangeSummaryStat={(s) => patch({ summaryStat: s })}
               onDeleteRow={deleteRow}
@@ -321,9 +279,7 @@ export function App() {
         <div className="data-pane">
           <Graph
             rows={rows}
-            xAxis={xAxis}
             yAxis={yAxis}
-            onChangeXAxis={(id) => patch({ xAxis: id })}
             onChangeYAxis={(id) => patch({ yAxis: id })}
             selectedRow={selectedRow}
           />

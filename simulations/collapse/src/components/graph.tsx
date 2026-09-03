@@ -1,28 +1,25 @@
 import { LineChart, Select } from "@concord-consortium/mass-sims-shared";
-import { AXES, type AxisDef, type SampleRow } from "../model/sim";
+import { AXES, type AxisDef, FIXED_COLUMN_IDS, type SampleRow } from "../model/sim";
 import "./graph.scss";
 
 interface GraphProps {
   rows: SampleRow[];
-  xAxis: AxisDef["id"];
   yAxis: AxisDef["id"];
-  onChangeXAxis: (id: AxisDef["id"]) => void;
   onChangeYAxis: (id: AxisDef["id"]) => void;
   selectedRow: SampleRow | null;
 }
 
-const axisOptions = AXES.map((a) => ({ id: a.id, label: a.label }));
+// The x axis is fixed to "Years before collapse"; the y axis picks from the three fixed columns only.
+const X_AXIS = AXES.find((a) => a.id === "yearsBeforeCollapse") ?? AXES[0];
+const yAxisOptions = FIXED_COLUMN_IDS.map((id) => {
+  const a = AXES.find((ax) => ax.id === id);
+  return { id, label: a?.label ?? id };
+});
 
-export function Graph({
-  rows,
-  xAxis,
-  yAxis,
-  onChangeXAxis,
-  onChangeYAxis,
-  selectedRow,
-}: GraphProps) {
-  const x = AXES.find((a) => a.id === xAxis) ?? AXES[0];
-  const y = AXES.find((a) => a.id === yAxis) ?? AXES[1];
+export function Graph({ rows, yAxis, onChangeYAxis, selectedRow }: GraphProps) {
+  const x = X_AXIS;
+  const y =
+    AXES.find((a) => a.id === yAxis) ?? AXES.find((a) => a.id === FIXED_COLUMN_IDS[0]) ?? AXES[1];
   // Flatten each row to a plain {axisId: value} point (LineChart needs an
   // index-signature type), sorted ascending by the x axis.
   const data: Record<string, number>[] = [...rows]
@@ -33,7 +30,7 @@ export function Graph({
     <div className="graph">
       <div className="axis-picker axis-y">
         <Select
-          options={axisOptions}
+          options={yAxisOptions}
           selectedKey={yAxis}
           onSelectionChange={(k) => onChangeYAxis(k as AxisDef["id"])}
         />
@@ -53,11 +50,7 @@ export function Graph({
         emptyState={<span className="graph-empty">Add data points to plot.</span>}
       />
       <div className="axis-picker axis-x">
-        <Select
-          options={axisOptions}
-          selectedKey={xAxis}
-          onSelectionChange={(k) => onChangeXAxis(k as AxisDef["id"])}
-        />
+        <span className="axis-fixed-label">{x.label}</span>
       </div>
     </div>
   );

@@ -148,17 +148,12 @@ $thumb-col-width: 52px;
     align-items: stretch;
     gap: 1px;
   }
-  .col-select {
-    width: 100%;
-    max-width: 100%;
+  .col-name {
     padding: 1px 2px;
-    border: 1px solid tokens.$color-border;
-    border-radius: tokens.$radius-sm;
-    background: tokens.$white;
-    font-family: tokens.$font-family-base;
     font-size: tokens.$font-size-sm;
     font-weight: 700;
-    cursor: pointer;
+    line-height: 1.2;
+    white-space: nowrap; // keep the label (e.g. "Dissolved rock") on one line so the unit stays put
   }
   .col-meta {
     display: flex;

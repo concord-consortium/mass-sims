@@ -21,6 +21,21 @@
     border-radius: tokens.$radius-pill;
     background: linear-gradient(90deg, #8a97a6, #cfd6de);
   }
+
+  // When the timeline doubles as a control, invite clicking/dragging and show keyboard focus.
+  &.interactive {
+    cursor: pointer;
+    touch-action: none; // let pointer drag scrub instead of scrolling
+    border-radius: tokens.$radius-pill;
+
+    &:hover .sample-marker .sample-line {
+      background: #c23b3b; // slightly darker than the marker's red to signal it's draggable
+    }
+    &:focus-visible {
+      outline: 2px solid tokens.$color-focus-outline;
+      outline-offset: 4px;
+    }
+  }
 }
 
 .era-marker {
@@ -136,6 +151,15 @@
     font-weight: 700;
     line-height: 1.1;
     white-space: nowrap;
+
+    // The flag is centered on the marker by default; near an edge it re-anchors so it stays fully on
+    // screen. The marker's translateX(-50%) already centers it, so these nudge it by half its own width.
+    &.align-left {
+      transform: translateX(50%);
+    }
+    &.align-right {
+      transform: translateX(-50%);
+    }
   }
 
   .sample-age { font-weight: 500; }

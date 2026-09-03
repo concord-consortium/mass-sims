@@ -3,6 +3,7 @@ import {
   COLUMNS,
   type ColumnId,
   computeStat,
+  FIXED_COLUMN_IDS,
   formatValue,
   type SampleRow,
   STATS,
@@ -13,8 +14,6 @@ import "./data-table.scss";
 
 interface DataTableProps {
   rows: SampleRow[];
-  selectedColumns: ColumnId[];
-  onSetColumns: (cols: ColumnId[]) => void;
   summaryStat: StatId;
   onChangeSummaryStat: (stat: StatId) => void;
   onDeleteRow: (id: string) => void;
@@ -30,22 +29,21 @@ const sortGetter = (key: SortKey): ((r: SampleRow) => number) =>
     ? (r) => r.yearsBeforeCollapse
     : (COLUMNS.find((c) => c.id === key)?.get ?? ((r) => r.yearsBeforeCollapse));
 
-/** One experiment's table: pinned header/footer, a scrollable sortable body, and per-column
- *  measurement dropdowns (the "＋ column" and experiment name live in the sampler row). */
+// The three fixed columns, in order — not pickable or reorderable.
+const cols = FIXED_COLUMN_IDS.map((id) => COLUMNS.find((c) => c.id === id)).filter(
+  (c): c is (typeof COLUMNS)[number] => !!c,
+);
+
+/** One experiment's table: pinned header/footer and a scrollable, row-sortable body. The columns are
+ *  fixed (Erosion rate, Dissolved rock, Total depth); the experiment name lives in the sampler row. */
 export function DataTable({
   rows,
-  selectedColumns,
-  onSetColumns,
   summaryStat,
   onChangeSummaryStat,
   onDeleteRow,
   selectedRowId,
   onSelectRow,
 }: DataTableProps) {
-  const cols = selectedColumns
-    .map((id) => COLUMNS.find((col) => col.id === id))
-    .filter((col): col is (typeof COLUMNS)[number] => !!col);
-  const available = COLUMNS.filter((col) => !selectedColumns.includes(col.id));
   const colSpan = cols.length + 3; // landscape + year + data columns + delete
 
   const [sort, setSort] = useState<{ key: SortKey; dir: SortDir } | null>(null);
@@ -60,10 +58,6 @@ export function DataTable({
       )
     : rows;
 
-  const swapColumn = (oldId: ColumnId, value: string) => {
-    if (value === "__remove") onSetColumns(selectedColumns.filter((id) => id !== oldId));
-    else onSetColumns(selectedColumns.map((id) => (id === oldId ? (value as ColumnId) : id)));
-  };
   const sortGlyph = (key: SortKey) => (sort?.key === key ? (sort.dir === "asc" ? "▲" : "▼") : "⇅");
 
   return (
@@ -85,20 +79,7 @@ export function DataTable({
             {cols.map((col) => (
               <th key={col.id}>
                 <div className="col-picker">
-                  <select
-                    className="col-select"
-                    aria-label={`Measurement: ${col.label}`}
-                    value={col.id}
-                    onChange={(e) => swapColumn(col.id, e.target.value)}
-                  >
-                    <option value={col.id}>{col.label}</option>
-                    {available.map((o) => (
-                      <option key={o.id} value={o.id}>
-                        {o.label}
-                      </option>
-                    ))}
-                    <option value="__remove">— remove —</option>
-                  </select>
+                  <span className="col-name">{col.label}</span>
                   <div className="col-meta">
                     <span className="col-unit">{col.unit}</span>
                     <button
