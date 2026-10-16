@@ -41,3 +41,6 @@ Thumbs.db
 
 # Lerna
 .lerna_backup/
+
+# Brainstorm companion scratch
+.superpowers/
