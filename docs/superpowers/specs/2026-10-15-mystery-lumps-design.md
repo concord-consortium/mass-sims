@@ -69,49 +69,52 @@ paper assignment can ask about; the sim takes no position on it.
 
 ## What a student does
 
-The stage always shows all five lumps in a row. A test animates the chosen lump into its
-apparatus **in place**, and a spent lump keeps its end state afterwards — an empty tube where
-the salt dissolved, a puddle where the palm oil ran. The row is therefore a picture of the
-trial as well as a tray.
+The Simulation column is a **sample tray** across its full width and a **Test Lab** filling the
+rest below it.
 
-The two free actions are clicks on a lump in that row: **handle** it (a short animation of the
-surface being pressed and turned) or **waft** it. Both work on any lump at any time, including
-one whose test is already spent — which is how a student goes back and finds the rancid smell
-after the lamp.
+The tray holds the lumps that still have material, each a picture and a letter. **Clicking one
+puts it on the bench** — click to select rather than drag, so the tray is reachable by keyboard
+and screen reader like every other control in the repo. Drag-and-drop can be added later as a
+second way in, never as the only one.
 
-Destructive tests go through the settings grid, one at a time:
+The Test Lab is a drawing of a lab bench with the chosen lump on it. A row of controls along
+the bottom holds:
 
-1. Choose **Lump**, choose **Test**, and choose the test's **Setting** if it has one (the
-   Setting dropdown is disabled otherwise). Only lumps with material left are offered.
-2. **Run.** The chosen lump animates in its apparatus for about four seconds, captioned with
-   the time it stands for — "30 seconds", "two weeks under the lamp".
-3. The result lands in the trial's card and in the Data panel, and that lump leaves the Lump
-   dropdown.
-4. Repeat until the lumps are used up or the student has what they need.
+- **Test** — water, vinegar, warm bath, UV lamp. Choosing one brings that test's apparatus onto
+  the bench: a tube of vinegar, the lamp, and so on.
+- **Setting** — appears only for the bath and the lamp, greyed out otherwise so the row does not
+  jump as the test changes.
+- **Observe** and **Waft** — always available, never consume the lump. Observe is the handling
+  action; both act on whatever lump is on the bench.
+- **Run** and **Reset Trial**.
 
-**New** starts a fresh trial: five new lumps of the same five substances, every budget
-restored, and the previous trial's card stays on screen. **Reset Trial** clears the current
-trial's results in place — cheaper than a new trial but it erases the record of what was tried,
-which is why New is the better habit.
+Running a test spends the lump. **It then leaves the tray**, because there is no material left
+to test — but it **stays on the bench until the student picks a different lump**. That window is
+the only time Observe and Waft can still reach it, and it is how the rancid smell is found: put
+palm oil under the lamp, then waft it before moving on. Clear the bench first and the smell is
+gone for that trial. Everything already observed stays in the Data column regardless.
+
+**New** starts a fresh trial: five new lumps of the same five substances, every budget restored,
+and the previous trial's card stays on screen. **Reset Trial** clears the current trial's results
+in place — cheaper than a new trial but it erases the record of what was tried, which is why New
+is the better habit.
 
 Animations run about four seconds regardless of the time they represent. The compression is
-stated in the caption rather than hidden, and that caption doubles as the accessible
-description.
+stated in the caption rather than hidden, and that caption doubles as the accessible description.
 
 ## Layout
 
-Shared three-region frame, built to Nor'easter's shipped look — pale blue surface, white
-panels, blue borders, navy text, pill chips. (`docs/ui-design-plan.md` describes grey panels
-with notched chips; it is stale, and this sim does not follow it.)
+Shared three-region frame, built to Nor'easter's shipped look — pale blue surface, white panels,
+blue borders, navy text, pill chips. (`docs/ui-design-plan.md` describes grey panels with notched
+chips; it is stale, and this sim does not follow it.)
 
-- **Trials** — one tall card per trial, accumulating a row per lump: lump letter, the test it
-  was given, its setting, and a short result. `New` at the foot; reset on the selected card.
-- **Simulation** — settings grid across the top (Lump / Test / Setting), the five-lump stage
-  below it, `Run` and `Reset Trial` at the bottom. Handling and wafting are on the lumps
-  themselves, not in the controls, so a free action can never be mistaken for spending one.
-- **Data** — the selected trial's evidence in full: each lump's handling note and its test
-  result as complete prose, with a "copy for my write-up" affordance. Since the sim asks for
-  no identification, this panel is the deliverable.
+- **Trials** — one tall card per trial, accumulating a row per lump: lump letter, the test it was
+  given, and its setting. `New` at the foot; reset on the selected card.
+- **Simulation** — the sample tray across the full width at the top, the Test Lab below it with
+  its bench and its control row.
+- **Data** — the record, and the only place results persist once a lump has left the bench. Each
+  lump that has been observed or tested at all gets a picture of itself alongside its notes in
+  full prose. Since the sim asks for no identification, this panel is the deliverable.
 
 ## Under the hood
 
