@@ -1,9 +1,0 @@
-@use "@concord-consortium/mass-sims-shared/styles/tokens" as tokens;
-
-.empty {
-  color: tokens.$color-text-muted;
-  font-family: tokens.$font-family-base;
-  font-size: tokens.$font-size-sm;
-  margin: 0;
-  text-align: center;
-}

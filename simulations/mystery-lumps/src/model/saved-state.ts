@@ -1,14 +1,10 @@
-import type { RecordedTrial } from "./types";
+import type { Trial } from "./trial";
 
 /**
- * The shape persisted to / restored from Activity Player's `interactiveState`. Plain
- * JSON-serializable values only — `trials` is `RecordedTrial[]` whose `input`, `output`,
- * and `finalTransient` (when present) are also plain objects. Per-frame transient state
- * (the live walker positions, frame counter, and `liveSeries` from the in-progress run)
- * is intentionally NOT persisted; students restart trials from the beginning when they
- * return to the activity.
+ * Only plain JSON. Captions are not stored — they are derived from `observe()` on render, so a
+ * wording fix reaches work a student saved earlier. Animation progress is never persisted.
  */
 export interface SavedState {
-  trials: RecordedTrial[];
+  trials: Trial[];
   selectedId: string;
 }
