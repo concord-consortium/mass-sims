@@ -58,7 +58,9 @@ export function TestLab({
             <div className={clsx("apparatus", `tool-${test}`)} aria-hidden="true">
               <span className="tool-label">{toolLabel(test, setting)}</span>
             </div>
-            <div className="bench-lump">
+            {/* Staged means "at the apparatus": the lump travels there on Run and stays once
+                its test is spent, so the bench still reads as a record afterwards. */}
+            <div className={clsx("bench-lump", { staged: running || record?.result != null })}>
               <span className={clsx("bench-blob", `visual-${resting}`)} aria-hidden="true" />
               <span className="bench-letter">Lump {selectedLump}</span>
             </div>

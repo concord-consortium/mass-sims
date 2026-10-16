@@ -1,5 +1,9 @@
 @use "./lump-tray.scss" as tray;
 
+// How deep the worktop is. Everything that stands on the counter is anchored to this, so the
+// equipment and the lump share one floor rather than each guessing at it.
+$counter-height: 34px;
+
 .test-lab {
   background: #fff;
   border: 2px solid #4a7fc1;
@@ -23,7 +27,10 @@
   min-height: 178px;
   border: 1px solid #c3d2e3;
   border-radius: 5px;
-  background: linear-gradient(#eef4fa 0 78%, #c9b08a 78%);
+  background: linear-gradient(
+    #eef4fa 0 calc(100% - #{$counter-height}),
+    #c9b08a calc(100% - #{$counter-height})
+  );
   overflow: hidden;
 
   &.running {
@@ -39,50 +46,62 @@
   opacity: 0.8;
 }
 
-// Placeholder apparatus, sitting below the meter that hangs from the top edge. Each tool is a
-// different silhouette so switching tests is visible before any real art lands.
+// Placeholder apparatus. Each tool is a different silhouette so switching tests is visible
+// before any real art lands. Vessels stand on the counter like the lump does; the lamp is the
+// one piece that belongs in the air, so it hangs instead.
 .apparatus {
   position: absolute;
   left: 50%;
-  top: 52px;
+  bottom: $counter-height;
   transform: translateX(-50%);
-  text-align: center;
+  display: flex;
+  flex-direction: column-reverse; // label above the equipment, which is bottom-anchored
+  align-items: center;
+  gap: 3px;
   width: 104px;
+  // Above the lump, with translucent vessels, so a staged lump reads as being inside.
+  z-index: 2;
+  pointer-events: none;
 
   &::before {
     content: "";
     display: block;
-    margin: 0 auto 3px;
     border: 2px solid #7fa8cf;
   }
 
   &.tool-water::before {
-    width: 34px;
+    width: 38px;
     height: 44px;
     border-radius: 0 0 5px 5px;
-    background: linear-gradient(#eaf6ff 0 35%, #bfe0ff 36%);
+    background: linear-gradient(rgba(234, 246, 255, 0.55) 0 35%, rgba(191, 224, 255, 0.55) 36%);
   }
 
   &.tool-vinegar::before {
-    width: 24px;
+    width: 28px;
     height: 50px;
     border-radius: 0 0 12px 12px;
-    background: linear-gradient(#fdf6e3 0 30%, #ecdfae 31%);
+    background: linear-gradient(rgba(253, 246, 227, 0.55) 0 30%, rgba(236, 223, 174, 0.6) 31%);
   }
 
   &.tool-bath::before {
-    width: 58px;
+    width: 62px;
     height: 38px;
     border-radius: 3px;
-    background: linear-gradient(#e6f4ff 0 30%, #a9d4f5 31%);
+    background: linear-gradient(rgba(230, 244, 255, 0.5) 0 30%, rgba(169, 212, 245, 0.6) 31%);
   }
 
-  &.tool-lamp::before {
-    width: 54px;
-    height: 20px;
-    border-radius: 4px;
-    background: #6b4e9e;
-    box-shadow: 0 10px 16px -4px rgba(170, 120, 255, 0.75);
+  // The lamp shines down from above rather than standing on the counter.
+  &.tool-lamp {
+    bottom: auto;
+    top: 52px;
+
+    &::before {
+      width: 54px;
+      height: 18px;
+      border-radius: 4px;
+      background: #6b4e9e;
+      box-shadow: 0 14px 20px -4px rgba(170, 120, 255, 0.75);
+    }
   }
 }
 
@@ -91,11 +110,18 @@
   opacity: 0.75;
 }
 
+// Rests at the left of the counter and travels to the apparatus when a test is run.
 .bench-lump {
   position: absolute;
   left: 14px;
-  bottom: 6px;
+  bottom: $counter-height;
+  z-index: 1;
   text-align: center;
+  transition: left 700ms ease-in-out;
+
+  &.staged {
+    left: calc(50% - 18px);
+  }
 }
 
 .bench-blob {
@@ -104,7 +130,63 @@
   height: 27px;
   border-radius: 4px;
   margin: 0 auto 2px;
+  transform-origin: bottom center;
   @include tray.lump-visual;
+}
+
+// On the bench a dissolving lump starts as a lump and goes away; the dashed empty box those
+// styles draw is the end state, which suits the thumbnails but not something being watched.
+.bench-blob.visual-dissolving {
+  background: #ededed;
+  border-style: solid;
+}
+
+// The outcome plays once the lump has arrived, so the delay is the travel time. Anything that
+// neither dissolves nor softens simply sits there, which is itself a result worth seeing.
+.bench-lump.staged .bench-blob {
+  &.visual-dissolving {
+    animation: lump-dissolve 1700ms 800ms ease-in forwards;
+  }
+
+  &.visual-melting {
+    animation: lump-melt 1500ms 800ms ease-in forwards;
+  }
+
+  &.visual-softening {
+    animation: lump-soften 1500ms 800ms ease-in-out forwards;
+  }
+}
+
+@keyframes lump-dissolve {
+  to {
+    opacity: 0;
+    transform: scale(0.15);
+  }
+}
+
+// Flattens and spreads: it has run into a pool.
+@keyframes lump-melt {
+  to {
+    transform: scaleY(0.16) scaleX(1.6);
+  }
+}
+
+// Sags without losing its shape, which is the whole difference from melting.
+@keyframes lump-soften {
+  to {
+    transform: scaleY(0.78) scaleX(1.1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bench-lump {
+    transition: none;
+  }
+
+  .bench-lump.staged .bench-blob {
+    animation-duration: 1ms;
+    animation-delay: 0ms;
+  }
 }
 
 .bench-letter {
@@ -116,11 +198,12 @@
   position: absolute;
   right: 8px;
   bottom: 6px;
-  max-width: 58%;
+  max-width: 52%;
   margin: 0;
   text-align: right;
   font-size: 11px;
   background: rgba(255, 255, 255, 0.92);
   border-radius: 4px;
   padding: 3px 5px;
+  z-index: 3;
 }

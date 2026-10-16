@@ -89,6 +89,29 @@ describe("TestLab", () => {
     expect(getByRole("progressbar")).toHaveAttribute("aria-valuemax", "1209600");
   });
 
+  it("sends the lump to the apparatus for a run, and leaves it there once spent", () => {
+    const { container, rerender } = render(<TestLab {...base} selectedLump="A" />);
+    const lump = () => container.querySelector(".bench-lump");
+    // At rest on the counter before anything is run.
+    expect(lump()).not.toHaveClass("staged");
+
+    rerender(<TestLab {...base} selectedLump="A" running={true} />);
+    expect(lump()).toHaveClass("staged");
+
+    // The run is over but the lump stays in the apparatus, so the bench still reads as a record.
+    const trial = applyTest(makeEmptyTrial(), "A", "vinegar", null);
+    rerender(<TestLab {...base} trial={trial} selectedLump="A" running={false} />);
+    expect(lump()).toHaveClass("staged");
+  });
+
+  it("brings the lump back to rest when its test is reset", () => {
+    const trial = applyTest(makeEmptyTrial(), "A", "vinegar", null);
+    const { container, rerender } = render(<TestLab {...base} trial={trial} selectedLump="A" />);
+    expect(container.querySelector(".bench-lump")).toHaveClass("staged");
+    rerender(<TestLab {...base} selectedLump="A" />);
+    expect(container.querySelector(".bench-lump")).not.toHaveClass("staged");
+  });
+
   it("shows the latest observation", () => {
     const { getByText } = render(
       <TestLab {...base} selectedLump="A" message="A sharp, rancid smell." />,
