@@ -20,13 +20,29 @@ describe("LumpTray", () => {
     expect(onSelect).toHaveBeenCalledWith("C");
   });
 
-  it("drops a lump once its one test has been spent", () => {
+  it("keeps the slot once its lump is used up, but empties it", () => {
     const trial = applyTest(makeEmptyTrial(), "C", "water", null);
-    const { getAllByRole, queryByRole } = render(
+    const { container, getAllByRole, getByRole } = render(
       <LumpTray trial={trial} selectedLump="C" onSelect={() => undefined} />,
     );
-    expect(getAllByRole("button")).toHaveLength(4);
-    expect(queryByRole("button", { name: /C/ })).toBeNull();
+    // All five slots stay, so the tray never reflows under the student's hand.
+    expect(getAllByRole("button")).toHaveLength(5);
+    const spent = getByRole("button", { name: /lump c, used up/i });
+    expect(spent).toBeDisabled();
+    // The slot is there; the lump in it is not.
+    expect(spent.querySelector(".tray-empty-slot")).toBeInTheDocument();
+    expect(spent.querySelector(".tray-lump")).toBeNull();
+    expect(container.querySelectorAll(".tray-lump")).toHaveLength(4);
+  });
+
+  it("will not put a used-up lump back on the bench", () => {
+    const onSelect = vi.fn();
+    const trial = applyTest(makeEmptyTrial(), "C", "water", null);
+    const { getByRole } = render(
+      <LumpTray trial={trial} selectedLump={null} onSelect={onSelect} />,
+    );
+    fireEvent.click(getByRole("button", { name: /lump c, used up/i }));
+    expect(onSelect).not.toHaveBeenCalled();
   });
 
   it("marks the lump that is on the bench", () => {
@@ -42,10 +58,13 @@ describe("LumpTray", () => {
     for (const lump of ["A", "B", "C", "D", "E"] as const) {
       trial = applyTest(trial, lump, "water", null);
     }
-    const { getByText, queryAllByRole } = render(
+    const { container, getByText, getAllByRole } = render(
       <LumpTray trial={trial} selectedLump={null} onSelect={() => undefined} />,
     );
     expect(getByText(/every lump has been used/i)).toBeInTheDocument();
-    expect(queryAllByRole("button")).toHaveLength(0);
+    // Five empty slots, none of them selectable.
+    expect(getAllByRole("button")).toHaveLength(5);
+    expect(container.querySelectorAll(".tray-lump")).toHaveLength(0);
+    for (const slot of getAllByRole("button")) expect(slot).toBeDisabled();
   });
 });
