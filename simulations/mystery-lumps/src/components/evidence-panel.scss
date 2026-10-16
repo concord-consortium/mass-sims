@@ -1,3 +1,5 @@
+@use "./lump-tray.scss" as tray;
+
 .evidence-empty {
   margin: 0;
   font-size: 12px;
@@ -27,4 +29,18 @@
 
 .evidence-note {
   margin: 2px 0 0;
+}
+
+.evidence-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.evidence-blob {
+  width: 22px;
+  height: 19px;
+  border-radius: 3px;
+  flex: none;
+  @include tray.lump-visual;
 }

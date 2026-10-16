@@ -1,0 +1,106 @@
+// Shared placeholder art for a lump, used by the tray and the bench. Each visual key gets a
+// distinguishable treatment so the wiring can be read on screen before real art exists.
+@mixin lump-visual {
+  background: #ededed;
+  border: 1px solid #cfcfcf;
+
+  &.visual-unknown {
+    background: #ededed;
+  }
+  &.visual-crystals {
+    background: repeating-linear-gradient(45deg, #fff 0 3px, #dcdcdc 3px 6px);
+  }
+  &.visual-hard-smooth {
+    background: #e4e9ec;
+  }
+  &.visual-waxy {
+    background: #f2efe2;
+  }
+  &.visual-dissolving {
+    background: transparent;
+    border-style: dashed;
+  }
+  &.visual-fizzing {
+    background: radial-gradient(circle at 50% 70%, #cfe8ff 0 40%, #ededed 41%);
+  }
+  &.visual-glowing {
+    background: #d8ffb0;
+    box-shadow: 0 0 10px 3px rgba(150, 255, 90, 0.7);
+  }
+  &.visual-melting {
+    background: linear-gradient(#f2efe2 0 40%, #e8dfa8 41%);
+    border-radius: 0 0 16px 16px;
+  }
+  &.visual-softening {
+    background: #efe8cf;
+    border-radius: 4px 4px 12px 12px;
+  }
+  &.visual-degrading {
+    background: #ded7a0;
+    border-style: dotted;
+  }
+}
+
+.lump-tray {
+  background: #fff;
+  border: 2px solid #4a7fc1;
+  border-radius: 8px;
+  padding: 7px;
+}
+
+.tray-title {
+  font-weight: 700;
+  margin-bottom: 5px;
+}
+
+.tray-empty {
+  margin: 0;
+  font-size: 12px;
+}
+
+.tray-slots {
+  display: flex;
+  gap: 6px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+
+  li {
+    flex: 1 1 0;
+    min-width: 0;
+  }
+}
+
+.tray-slot {
+  width: 100%;
+  background: #fff;
+  border: 2px solid #4a7fc1;
+  border-radius: 7px;
+  padding: 5px 2px;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+
+  &:hover {
+    background: #f2f7fc;
+  }
+
+  &.selected {
+    border-color: #0a7;
+    background: #f2fbf6;
+    box-shadow: 0 0 0 2px rgba(0, 170, 119, 0.25);
+  }
+}
+
+.tray-lump {
+  width: 30px;
+  height: 26px;
+  border-radius: 4px;
+  @include lump-visual;
+}
+
+.tray-letter {
+  font-weight: 700;
+}

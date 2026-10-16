@@ -7,12 +7,15 @@ import {
 } from "@concord-consortium/mass-sims-shared";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { EvidencePanel } from "./components/evidence-panel";
-import { LumpRow } from "./components/lump-row";
-import { TestSettings } from "./components/test-settings";
+import { LabControls } from "./components/lab-controls";
+import { LumpTray } from "./components/lump-tray";
+import { TestLab } from "./components/test-lab";
 import { TrialCardBody } from "./components/trial-card-body";
+import { observe } from "./model/observe";
 import type { SavedState } from "./model/saved-state";
 import type { LumpId } from "./model/substances";
-import type { SettingId, TestId } from "./model/tests";
+import { LUMP_ASSIGNMENT } from "./model/substances";
+import { CONSUMING_TESTS, type SettingId, TESTS, type TestId } from "./model/tests";
 import {
   applyTest,
   clearTrial,
@@ -33,9 +36,15 @@ export function App() {
     const first = makeEmptyTrial();
     return { trials: [first] as Trial[], selectedId: first.id };
   });
-  // The lump currently animating, or null. Deliberately not persisted: a student who reloads
-  // mid-test comes back to the finished result, not to a frozen animation.
-  const [runningLump, setRunningLump] = useState<LumpId | null>(null);
+  // The lump on the bench. It stays there after its test is spent — that window is the only
+  // time Observe and Waft can still reach it, which is how the rancid smell is found.
+  const [selectedLump, setSelectedLump] = useState<LumpId | null>(null);
+  const [test, setTest] = useState<TestId>(CONSUMING_TESTS[0]);
+  const [setting, setSetting] = useState<SettingId | null>(null);
+  // The bench caption. Transient and never persisted, so a reload shows the Data column's
+  // record rather than a stale one-off line.
+  const [message, setMessage] = useState<string | null>(null);
+  const [running, setRunning] = useState(false);
   const runTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const logEvent = useLogEvent();
 
@@ -58,6 +67,13 @@ export function App() {
     [],
   );
 
+  // The dial belongs to the test, so changing test resets it to that test's first value (or to
+  // null for the two tests without one). Run then never meets a test whose setting is missing.
+  useEffect(() => {
+    const settings = TESTS[test].settings;
+    setSetting(settings.length > 0 ? settings[0].id : null);
+  }, [test]);
+
   const selected = trials.find((t) => t.id === selectedId) ?? trials[0];
   const anythingObserved = trials.some((t) =>
     Object.values(t.lumps).some((l) => l.result !== null || l.handled || l.wafted),
@@ -74,6 +90,8 @@ export function App() {
   const addTrial = useCallback(() => {
     const trial = makeEmptyTrial();
     logEvent("trial_started", {});
+    setSelectedLump(null);
+    setMessage(null);
     setState((prev) =>
       prev.trials.length >= TRIAL_LIMIT
         ? prev
@@ -82,6 +100,9 @@ export function App() {
   }, [logEvent]);
 
   const selectTrial = useCallback((id: string) => {
+    // A lump belongs to its trial, so the bench empties when the trial changes under it.
+    setSelectedLump(null);
+    setMessage(null);
     setState((prev) => (prev.selectedId === id ? prev : { ...prev, selectedId: id }));
   }, []);
 
@@ -89,38 +110,47 @@ export function App() {
     (id: string) => {
       logEvent("trial_reset", {});
       updateTrial(id, clearTrial);
+      setSelectedLump(null);
+      setMessage(null);
     },
     [logEvent, updateTrial],
   );
 
-  const handleLump = useCallback(
-    (lump: LumpId) => {
-      logEvent("lump_handled", { lump });
-      updateTrial(selected.id, (t) => markHandled(t, lump));
-    },
-    [logEvent, selected.id, updateTrial],
-  );
+  // Picking a different lump clears the bench caption: it described the lump that just left,
+  // and its record lives in the Data column now.
+  const pickLump = useCallback((lump: LumpId) => {
+    setSelectedLump(lump);
+    setMessage(null);
+  }, []);
 
-  const waftLump = useCallback(
-    (lump: LumpId) => {
-      logEvent("lump_wafted", { lump });
-      updateTrial(selected.id, (t) => markWafted(t, lump));
-    },
-    [logEvent, selected.id, updateTrial],
-  );
+  const observeLump = useCallback(() => {
+    if (!selectedLump) return;
+    logEvent("lump_handled", { lump: selectedLump });
+    updateTrial(selected.id, (t) => markHandled(t, selectedLump));
+    setMessage(observe(LUMP_ASSIGNMENT[selectedLump], "handle", null).caption);
+  }, [logEvent, selected.id, selectedLump, updateTrial]);
+
+  const waftLump = useCallback(() => {
+    if (!selectedLump) return;
+    logEvent("lump_wafted", { lump: selectedLump });
+    updateTrial(selected.id, (t) => markWafted(t, selectedLump));
+    // Wafting reads the lump's spent test, since only UV-degraded palm oil smells of anything.
+    const prior = selected.lumps[selectedLump].result;
+    setMessage(observe(LUMP_ASSIGNMENT[selectedLump], "waft", null, prior).caption);
+  }, [logEvent, selected, selectedLump, updateTrial]);
 
   // The result is committed up front and the animation is only a delay before the student may
   // act again, so a reload mid-run loses nothing.
-  const runTest = useCallback(
-    (lump: LumpId, test: TestId, setting: SettingId | null) => {
-      logEvent("test_run", { lump, test, setting: String(setting) });
-      updateTrial(selected.id, (t) => applyTest(t, lump, test, setting));
-      setRunningLump(lump);
-      if (runTimer.current) clearTimeout(runTimer.current);
-      runTimer.current = setTimeout(() => setRunningLump(null), RUN_MS);
-    },
-    [logEvent, selected.id, updateTrial],
-  );
+  const runTest = useCallback(() => {
+    if (!selectedLump) return;
+    logEvent("test_run", { lump: selectedLump, test, setting: String(setting) });
+    updateTrial(selected.id, (t) => applyTest(t, selectedLump, test, setting));
+    const result = observe(LUMP_ASSIGNMENT[selectedLump], test, setting);
+    setMessage(`${result.caption} (${result.elapsed})`);
+    setRunning(true);
+    if (runTimer.current) clearTimeout(runTimer.current);
+    runTimer.current = setTimeout(() => setRunning(false), RUN_MS);
+  }, [logEvent, selected.id, selectedLump, setting, test, updateTrial]);
 
   return (
     <SimulationFrame
@@ -161,18 +191,28 @@ export function App() {
         ) : null}
       </SimulationFrame.Trials>
 
-      <SimulationFrame.Simulation instruction="Each lump has enough for one test — handling is free">
-        <TestSettings
+      <SimulationFrame.Simulation instruction="Each lump has enough for one test — looking is free">
+        <LumpTray trial={selected} selectedLump={selectedLump} onSelect={pickLump} />
+        <TestLab
           trial={selected}
-          running={runningLump !== null}
+          selectedLump={selectedLump}
+          test={test}
+          setting={setting}
+          running={running}
+          message={message}
+        />
+        <LabControls
+          test={test}
+          setting={setting}
+          hasLump={selectedLump !== null}
+          spent={selectedLump !== null && selected.lumps[selectedLump].result !== null}
+          running={running}
+          onTestChange={setTest}
+          onSettingChange={setSetting}
+          onObserve={observeLump}
+          onWaft={waftLump}
           onRun={runTest}
           onResetTrial={() => resetTrial(selected.id)}
-        />
-        <LumpRow
-          trial={selected}
-          runningLump={runningLump}
-          onHandle={handleLump}
-          onWaft={waftLump}
         />
       </SimulationFrame.Simulation>
 

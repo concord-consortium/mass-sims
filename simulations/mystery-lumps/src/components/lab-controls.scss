@@ -1,0 +1,70 @@
+.lab-controls {
+  border-top: 1px solid #c8d6e6;
+  margin-top: 7px;
+  padding-top: 7px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.control-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.control-label {
+  font-weight: 700;
+}
+
+// A real fieldset for the radio-like group of tests, stripped of its default chrome; the
+// legend is the visible "Test" label rather than a second element beside it.
+.test-buttons {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  border: 0;
+  margin: 0;
+  padding: 0;
+  min-inline-size: 0;
+}
+
+.test-buttons .control-label {
+  float: none;
+  padding: 0 4px 0 0;
+}
+
+.test-button {
+  border: 1px solid #4a7fc1;
+  border-radius: 4px;
+  background: #fff;
+  padding: 3px 8px;
+  cursor: pointer;
+  font-size: 12px;
+
+  &:hover:not(:disabled) {
+    background: #f2f7fc;
+  }
+
+  &.chosen {
+    background: #1b3f7a;
+    border-color: #1b3f7a;
+    color: #fff;
+  }
+
+  &:disabled {
+    cursor: default;
+    opacity: 0.6;
+  }
+}
+
+// Pushed to the end of its row so the dial reads as the chosen test's, not as a fifth test.
+.setting-select {
+  margin-left: auto;
+}
+
+.actions {
+  .run-button {
+    margin-left: auto;
+  }
+}

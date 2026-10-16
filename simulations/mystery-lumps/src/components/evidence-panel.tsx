@@ -1,4 +1,5 @@
 import { DataSubsection } from "@concord-consortium/mass-sims-shared";
+import clsx from "clsx";
 import { observe } from "../model/observe";
 import { LUMP_ASSIGNMENT, LUMP_IDS } from "../model/substances";
 import { type SettingId, TESTS, type TestId } from "../model/tests";
@@ -14,15 +15,25 @@ function describeTest(test: TestId, setting: SettingId | null): string {
 }
 
 /**
- * Everything observed in this trial, in full prose. The sim asks for no identification, so this
- * panel is the deliverable — what a student copies onto the paper assignment.
+ * Everything observed in this trial, in full prose, each lump beside a picture of how it was
+ * last seen. This is the only place a result survives once the lump has left the bench, so it
+ * is both the running record and — since the sim asks for no identification — the deliverable
+ * a student copies onto the paper assignment.
  */
 export function EvidencePanel({ trial }: { trial: Trial }) {
   const rows = LUMP_IDS.map((lump) => {
     const record = trial.lumps[lump];
     const substance = LUMP_ASSIGNMENT[lump];
+    // The picture shows the lump as it was last seen: its test's end state if it has one,
+    // otherwise whatever handling revealed, otherwise the anonymous blob.
+    const visual = record.result
+      ? observe(substance, record.result.test, record.result.setting).visual
+      : record.handled
+        ? observe(substance, "handle", null).visual
+        : "unknown";
     return {
       lump,
+      visual,
       handled: record.handled ? observe(substance, "handle", null).caption : null,
       smell: record.wafted ? observe(substance, "waft", null, record.result).caption : null,
       test: record.result ? describeTest(record.result.test, record.result.setting) : null,
@@ -40,7 +51,13 @@ export function EvidencePanel({ trial }: { trial: Trial }) {
         <ul className="evidence-list">
           {rows.map((row) => (
             <li key={row.lump}>
-              <span className="evidence-lump">Lump {row.lump}</span>
+              <div className="evidence-head">
+                <span
+                  className={clsx("evidence-blob", `visual-${row.visual}`)}
+                  aria-hidden="true"
+                />
+                <span className="evidence-lump">Lump {row.lump}</span>
+              </div>
               {row.handled ? <p className="evidence-note">{row.handled}</p> : null}
               {row.test ? (
                 <p className="evidence-note">
