@@ -56,6 +56,18 @@ export function markWafted(trial: Trial, lump: LumpId): Trial {
   return withLump(trial, lump, { wafted: true });
 }
 
+/**
+ * Gives one lump its material back, undoing the test it was given. What the student already saw
+ * by handling or wafting it stays — they did look at it, and looking costs nothing.
+ *
+ * This is the narrow undo behind "Reset Test". Clearing a whole trial is `clearTrial`, reached
+ * only from the trial card.
+ */
+export function resetLumpTest(trial: Trial, lump: LumpId): Trial {
+  if (trial.lumps[lump].result === null) return trial;
+  return withLump(trial, lump, { result: null });
+}
+
 /** Empties a trial but keeps its identity, so its card stays in place. */
 export function clearTrial(trial: Trial): Trial {
   return { ...makeEmptyTrial(), id: trial.id };

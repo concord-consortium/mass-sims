@@ -10,9 +10,11 @@ import { EvidencePanel } from "./components/evidence-panel";
 import { LabControls } from "./components/lab-controls";
 import { LumpTray } from "./components/lump-tray";
 import { TestLab } from "./components/test-lab";
+import { RUN_MS } from "./components/test-timer";
 import { TrialCardBody } from "./components/trial-card-body";
 import { observe } from "./model/observe";
 import type { SavedState } from "./model/saved-state";
+import { formatSimTime, simDurationSeconds } from "./model/sim-time";
 import type { LumpId } from "./model/substances";
 import { LUMP_ASSIGNMENT } from "./model/substances";
 import { CONSUMING_TESTS, type SettingId, TESTS, type TestId } from "./model/tests";
@@ -22,14 +24,13 @@ import {
   makeEmptyTrial,
   markHandled,
   markWafted,
+  resetLumpTest,
   type Trial,
 } from "./model/trial";
 
 import "./app.scss";
 
 const TRIAL_LIMIT = 10; // Matches TrialCard's A–J letter cap.
-/** Every test animates for the same time, whatever span it stands for. */
-const RUN_MS = 4000;
 
 export function App() {
   const [{ trials, selectedId }, setState] = useState(() => {
@@ -45,6 +46,8 @@ export function App() {
   // record rather than a stale one-off line.
   const [message, setMessage] = useState<string | null>(null);
   const [running, setRunning] = useState(false);
+  // Bumped per run so the timer restarts even when the same test is run twice.
+  const [runId, setRunId] = useState(0);
   const runTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const logEvent = useLogEvent();
 
@@ -139,6 +142,15 @@ export function App() {
     setMessage(observe(LUMP_ASSIGNMENT[selectedLump], "waft", null, prior).caption);
   }, [logEvent, selected, selectedLump, updateTrial]);
 
+  // Undoes just this lump's test, leaving it on the bench with its material back. Resetting a
+  // whole trial stays on the trial card, which is the only control that reaches the other lumps.
+  const resetTest = useCallback(() => {
+    if (!selectedLump) return;
+    logEvent("test_reset", { lump: selectedLump });
+    updateTrial(selected.id, (t) => resetLumpTest(t, selectedLump));
+    setMessage(null);
+  }, [logEvent, selected.id, selectedLump, updateTrial]);
+
   // The result is committed up front and the animation is only a delay before the student may
   // act again, so a reload mid-run loses nothing.
   const runTest = useCallback(() => {
@@ -146,8 +158,9 @@ export function App() {
     logEvent("test_run", { lump: selectedLump, test, setting: String(setting) });
     updateTrial(selected.id, (t) => applyTest(t, selectedLump, test, setting));
     const result = observe(LUMP_ASSIGNMENT[selectedLump], test, setting);
-    setMessage(`${result.caption} (${result.elapsed})`);
+    setMessage(`${result.caption} (${formatSimTime(simDurationSeconds(test, setting))})`);
     setRunning(true);
+    setRunId((n) => n + 1);
     if (runTimer.current) clearTimeout(runTimer.current);
     runTimer.current = setTimeout(() => setRunning(false), RUN_MS);
   }, [logEvent, selected.id, selectedLump, setting, test, updateTrial]);
@@ -199,6 +212,7 @@ export function App() {
           test={test}
           setting={setting}
           running={running}
+          runId={runId}
           message={message}
         />
         <LabControls
@@ -212,7 +226,7 @@ export function App() {
           onObserve={observeLump}
           onWaft={waftLump}
           onRun={runTest}
-          onResetTrial={() => resetTrial(selected.id)}
+          onResetTest={resetTest}
         />
       </SimulationFrame.Simulation>
 

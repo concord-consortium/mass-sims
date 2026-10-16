@@ -1,0 +1,53 @@
+// Drops into the middle of the bench while a test runs, over whatever is on it.
+.test-timer {
+  position: absolute;
+  left: 50%;
+  top: 44%;
+  transform: translate(-50%, -50%);
+  width: 62%;
+  min-width: 150px;
+  background: rgba(255, 255, 255, 0.94);
+  border: 2px solid #4a7fc1;
+  border-radius: 6px;
+  padding: 6px 8px;
+  text-align: center;
+  animation: timer-descend 220ms ease-out;
+}
+
+// It arrives from above rather than appearing, so it reads as lowering into place.
+@keyframes timer-descend {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -140%);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, -50%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .test-timer {
+    animation: none;
+  }
+}
+
+.timer-track {
+  height: 14px;
+  border: 1px solid #7fa8cf;
+  border-radius: 3px;
+  background: #eef4fa;
+  overflow: hidden;
+}
+
+.timer-fill {
+  height: 100%;
+  background: linear-gradient(#5e9fe0, #3f82c8);
+  // No CSS transition: the width is driven frame by frame, and a transition would fight it.
+}
+
+.timer-label {
+  margin-top: 3px;
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}

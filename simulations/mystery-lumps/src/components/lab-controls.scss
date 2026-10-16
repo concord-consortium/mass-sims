@@ -34,28 +34,17 @@
   padding: 0 4px 0 0;
 }
 
-.test-button {
-  border: 1px solid #4a7fc1;
-  border-radius: 4px;
-  background: #fff;
-  padding: 3px 8px;
-  cursor: pointer;
-  font-size: 12px;
+// The test picker uses the shared Button, so height, font size and padding come from the
+// library and match Observe, Waft and Run exactly. Only the chosen state is ours.
+.test-button.chosen {
+  background: #1b3f7a;
+  border-color: #1b3f7a;
+  color: #fff;
+}
 
-  &:hover:not(:disabled) {
-    background: #f2f7fc;
-  }
-
-  &.chosen {
-    background: #1b3f7a;
-    border-color: #1b3f7a;
-    color: #fff;
-  }
-
-  &:disabled {
-    cursor: default;
-    opacity: 0.6;
-  }
+.test-button.chosen:hover,
+.test-button.chosen:focus-visible {
+  background: #24508f;
 }
 
 // Pushed to the end of its row so the dial reads as the chosen test's, not as a fifth test.

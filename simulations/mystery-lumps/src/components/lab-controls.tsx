@@ -17,7 +17,8 @@ export interface LabControlsProps {
   onObserve: () => void;
   onWaft: () => void;
   onRun: () => void;
-  onResetTrial: () => void;
+  /** Undoes the test on the lump that is on the bench, returning it to its slot. */
+  onResetTest: () => void;
 }
 
 /**
@@ -27,6 +28,9 @@ export interface LabControlsProps {
  *
  * Observe and Waft sit beside Run deliberately: all three act on the lump on the bench, but only
  * Run uses it up, so they stay enabled when Run no longer is.
+ *
+ * Reset Test is the narrow undo — it gives this one lump its material back. Clearing a whole
+ * trial is the trial card's job, which is the only place that reaches the other four lumps.
  */
 export function LabControls({
   test,
@@ -39,7 +43,7 @@ export function LabControls({
   onObserve,
   onWaft,
   onRun,
-  onResetTrial,
+  onResetTest,
 }: LabControlsProps) {
   const settings = TESTS[test].settings;
 
@@ -49,16 +53,15 @@ export function LabControls({
         <fieldset className="test-buttons">
           <legend className="control-label">Test</legend>
           {CONSUMING_TESTS.map((id) => (
-            <button
+            <Button
               key={id}
-              type="button"
               className={clsx("test-button", { chosen: id === test })}
               aria-pressed={id === test}
-              onClick={() => onTestChange(id)}
-              disabled={running}
+              onPress={() => onTestChange(id)}
+              isDisabled={running}
             >
               {TESTS[id].label}
-            </button>
+            </Button>
           ))}
         </fieldset>
         <Select
@@ -99,8 +102,8 @@ export function LabControls({
         >
           Run test
         </Button>
-        <Button className="reset-button" onPress={onResetTrial} isDisabled={running}>
-          Reset Trial
+        <Button className="reset-button" onPress={onResetTest} isDisabled={!spent || running}>
+          Reset Test
         </Button>
       </div>
     </div>

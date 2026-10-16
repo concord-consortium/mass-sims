@@ -3,6 +3,7 @@ import { observe } from "../model/observe";
 import { LUMP_ASSIGNMENT, type LumpId } from "../model/substances";
 import { type SettingId, TESTS, type TestId } from "../model/tests";
 import type { Trial } from "../model/trial";
+import { TestTimer } from "./test-timer";
 
 import "./test-lab.scss";
 
@@ -13,6 +14,8 @@ export interface TestLabProps {
   test: TestId;
   setting: SettingId | null;
   running: boolean;
+  /** Bumped on every Run, so the timer restarts even for a repeat of the same test. */
+  runId: number;
   /** The most recent observation's caption, cleared when a different lump comes to the bench. */
   message: string | null;
 }
@@ -24,7 +27,15 @@ export interface TestLabProps {
  * A spent lump stays here until a different one is picked, which is the window in which Observe
  * and Waft can still reach it — the only route to the rancid smell after the lamp.
  */
-export function TestLab({ trial, selectedLump, test, setting, running, message }: TestLabProps) {
+export function TestLab({
+  trial,
+  selectedLump,
+  test,
+  setting,
+  running,
+  runId,
+  message,
+}: TestLabProps) {
   const record = selectedLump ? trial.lumps[selectedLump] : null;
   const substance = selectedLump ? LUMP_ASSIGNMENT[selectedLump] : null;
   // Once spent, the lump wears the state its test left it in. Before that it is a plain blob,
@@ -53,6 +64,7 @@ export function TestLab({ trial, selectedLump, test, setting, running, message }
             </div>
           </>
         )}
+        {running ? <TestTimer key={runId} test={test} setting={setting} /> : null}
         {message ? <p className="bench-message">{message}</p> : null}
       </div>
     </div>

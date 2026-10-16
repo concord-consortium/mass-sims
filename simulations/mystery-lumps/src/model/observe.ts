@@ -20,8 +20,6 @@ export interface Observation {
   /** Describes what happens. Never names a substance or a class of substance. */
   caption: string;
   visual: VisualKey;
-  /** The time the four-second animation stands for, stated rather than hidden. */
-  elapsed: string;
 }
 
 export interface PriorResult {
@@ -35,37 +33,25 @@ const HANDLE: Record<SubstanceId, Observation> = {
   "sea-salt": {
     caption: "A crust of small cube-shaped crystals. They crumble between your fingers.",
     visual: "crystals",
-    elapsed: "a few seconds",
   },
   // The two hard lumps and the two waxy lumps are deliberately word-for-word identical:
   // handling sorts them into pairs and must never split a pair.
   seashell: {
     caption: "Hard and smooth, cool to the touch.",
     visual: "hard-smooth",
-    elapsed: "a few seconds",
   },
   "sea-glass": {
     caption: "Hard and smooth, cool to the touch.",
     visual: "hard-smooth",
-    elapsed: "a few seconds",
   },
   paraffin: {
     caption: "Waxy and pale. It gives a little under a fingernail.",
     visual: "waxy",
-    elapsed: "a few seconds",
   },
   "palm-oil": {
     caption: "Waxy and pale. It gives a little under a fingernail.",
     visual: "waxy",
-    elapsed: "a few seconds",
   },
-};
-
-const EXPOSURE_TIME: Record<string, string> = {
-  seconds: "a few seconds",
-  hour: "an hour",
-  day: "a day",
-  fortnight: "two weeks",
 };
 
 /**
@@ -83,22 +69,19 @@ function inWater(substance: SubstanceId, vinegar: boolean): Observation {
         ? "The lump shrinks away to nothing. No bubbles."
         : "The lump shrinks away to nothing. The water stays clear.",
       visual: "dissolving",
-      elapsed: "30 seconds",
     };
   }
   if (vinegar && substance === "seashell") {
     return {
       caption: "A steady stream of small bubbles rises from the lump.",
       visual: "fizzing",
-      elapsed: "30 seconds",
     };
   }
-  return { caption: NOTHING, visual: "none", elapsed: "30 seconds" };
+  return { caption: NOTHING, visual: "none" };
 }
 
 function inBath(substance: SubstanceId, setting: SettingId | null): Observation {
   const temp = Number(setting ?? "20");
-  const elapsed = "30 seconds";
   if (substance === "sea-salt") {
     return {
       caption:
@@ -106,31 +89,27 @@ function inBath(substance: SubstanceId, setting: SettingId | null): Observation 
           ? "The lump shrinks away quickly. The water stays clear."
           : "The lump shrinks away slowly. The water stays clear.",
       visual: "dissolving",
-      elapsed,
     };
   }
   if (substance === "palm-oil" && temp >= 40) {
     return {
       caption: "The lump slumps, then runs into a pool at the bottom.",
       visual: "melting",
-      elapsed,
     };
   }
   if (substance === "paraffin" && temp >= 60) {
     return {
       caption: "The lump turns glossy and sags at the edges, but keeps its shape.",
       visual: "softening",
-      elapsed,
     };
   }
-  return { caption: NOTHING, visual: "none", elapsed };
+  return { caption: NOTHING, visual: "none" };
 }
 
 function underLamp(substance: SubstanceId, setting: SettingId | null): Observation {
   const exposure = String(setting ?? "seconds");
-  const elapsed = EXPOSURE_TIME[exposure] ?? "a few seconds";
   if (substance === "sea-glass") {
-    return { caption: "The lump shines with a pale blue-white glow.", visual: "glowing", elapsed };
+    return { caption: "The lump shines with a pale blue-white glow.", visual: "glowing" };
   }
   if (substance === "palm-oil") {
     return {
@@ -138,7 +117,6 @@ function underLamp(substance: SubstanceId, setting: SettingId | null): Observati
         ? "The lump glows a dull yellow-green. Its surface looks damp and darkened."
         : "The lump glows a dull yellow-green.",
       visual: "glowing",
-      elapsed,
     };
   }
   if (substance === "paraffin" && exposure === PARAFFIN_DECAY_EXPOSURE) {
@@ -146,10 +124,9 @@ function underLamp(substance: SubstanceId, setting: SettingId | null): Observati
       caption:
         "The lump has turned yellow, its surface is powdery, and a corner has crumbled away.",
       visual: "degrading",
-      elapsed,
     };
   }
-  return { caption: "The lump stays dark. Nothing changes.", visual: "none", elapsed };
+  return { caption: "The lump stays dark. Nothing changes.", visual: "none" };
 }
 
 function waft(substance: SubstanceId, prior: PriorResult | null): Observation {
@@ -158,8 +135,8 @@ function waft(substance: SubstanceId, prior: PriorResult | null): Observation {
     prior?.test === "lamp" &&
     RANCID_EXPOSURES.has(String(prior.setting));
   return degraded
-    ? { caption: "A sharp, rancid smell.", visual: "rancid", elapsed: "a moment" }
-    : { caption: "No smell to speak of.", visual: "no-smell", elapsed: "a moment" };
+    ? { caption: "A sharp, rancid smell.", visual: "rancid" }
+    : { caption: "No smell to speak of.", visual: "no-smell" };
 }
 
 /**

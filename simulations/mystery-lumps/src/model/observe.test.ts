@@ -88,9 +88,4 @@ describe("observe", () => {
       }
     }
   });
-
-  it("states the time each test stands for", () => {
-    expect(observe("sea-glass", "lamp", "fortnight").elapsed).toBe("two weeks");
-    expect(observe("sea-salt", "water", null).elapsed).toBe("30 seconds");
-  });
 });

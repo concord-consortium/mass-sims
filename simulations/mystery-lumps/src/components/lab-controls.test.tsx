@@ -13,7 +13,7 @@ const base = {
   onObserve: () => undefined,
   onWaft: () => undefined,
   onRun: () => undefined,
-  onResetTrial: () => undefined,
+  onResetTest: () => undefined,
 };
 
 describe("LabControls", () => {
@@ -46,6 +46,29 @@ describe("LabControls", () => {
     expect(getByRole("button", { name: /observe/i })).toBeDisabled();
     expect(getByRole("button", { name: /waft/i })).toBeDisabled();
     expect(getByRole("button", { name: /run test/i })).toBeDisabled();
+  });
+
+  it("builds the test picker from the shared Button, so it matches the other controls", () => {
+    // Height, font size and padding come from the library; asserting the class is what keeps
+    // them matching Observe, Waft and Run without measuring anything in jsdom.
+    const { getByRole } = render(<LabControls {...base} />);
+    for (const label of ["Water", "UV lamp"]) {
+      expect(getByRole("button", { name: label })).toHaveClass("button");
+    }
+    expect(getByRole("button", { name: /observe/i })).toHaveClass("button");
+  });
+
+  it("offers Reset Test only once the lump's test is spent", () => {
+    const { getByRole, rerender } = render(<LabControls {...base} />);
+    expect(getByRole("button", { name: /reset test/i })).toBeDisabled();
+    rerender(<LabControls {...base} spent={true} />);
+    expect(getByRole("button", { name: /reset test/i })).toBeEnabled();
+  });
+
+  it("has no control for resetting the whole trial", () => {
+    // That belongs to the trial card; the bench reaches only the lump on it.
+    const { queryByRole } = render(<LabControls {...base} spent={true} />);
+    expect(queryByRole("button", { name: /reset trial/i })).toBeNull();
   });
 
   it("reports a change of test", () => {
