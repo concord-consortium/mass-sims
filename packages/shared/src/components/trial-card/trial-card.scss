@@ -2,7 +2,10 @@
 
 .trial-card-wrapper {
   flex-shrink: 0;
-  height: 136px;
+  // A minimum rather than a fixed height: a card with a handful of rows in it grows to fit
+  // instead of clipping them, while a sim whose cards carry one or two lines still gets the
+  // 120 x 136 footprint the design specifies.
+  min-height: 136px;
   position: relative;
   width: 120px;
 
@@ -11,9 +14,13 @@
     border: tokens.$border-strong;
     border-radius: tokens.$radius-md;
     cursor: pointer;
+    display: flex;
+    flex-direction: column;
     font-family: tokens.$font-family-condensed;
-    height: 100%;
-    padding: 0;
+    min-height: 136px;
+    // Top padding clears the absolutely positioned letter badge, which the body used to be
+    // positioned below rather than flow after.
+    padding: 38px tokens.$space-1 tokens.$space-1;
     position: relative;
     width: 100%;
   }
@@ -63,19 +70,17 @@
     color: tokens.$color-surface;
   }
 
+  // In normal flow, so the card can grow with it. Left-aligned and a size down from the body
+  // default: cards list what a trial was set to, and a ragged-right column of settings is
+  // easier to scan down than centred lines.
   .body {
-    bottom: tokens.$space-1;
     color: tokens.$color-text;
     display: flex;
     flex-direction: column;
-    font-size: tokens.$font-size-base;
-    gap: 1px;
-    left: tokens.$space-1;
+    font-size: tokens.$font-size-sm;
+    gap: 2px;
     line-height: 1.3;
-    position: absolute;
-    right: tokens.$space-1;
-    text-align: center;
-    top: 38px;
+    text-align: left;
   }
 
   .reset-button {
