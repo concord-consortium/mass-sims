@@ -1,14 +1,19 @@
 import { render } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { applyTest, makeEmptyTrial } from "../model/trial";
+import { paint, stubFrames } from "../test-utils/frames";
 import { TestLab } from "./test-lab";
+import { RUN_MS } from "./test-timer";
+
+beforeEach(stubFrames);
+afterEach(() => vi.unstubAllGlobals());
 
 const base = {
   trial: makeEmptyTrial(),
   test: "vinegar" as const,
   setting: null,
   running: false,
-  runId: 0,
+  timerEpoch: 0,
   message: null,
 };
 
@@ -45,15 +50,36 @@ describe("TestLab", () => {
     expect(getByRole("progressbar")).toBeInTheDocument();
   });
 
+  // These two fill the bar for real before checking it goes back to empty. Asserting it is at
+  // zero without painting first would pass even if nothing reset it, since jsdom never paints.
   it("restarts the bar when the chosen test changes", () => {
     const { getByRole, rerender } = render(
-      <TestLab {...base} selectedLump="A" test="lamp" setting="day" />,
+      <TestLab {...base} selectedLump="A" test="lamp" setting="day" running={true} />,
     );
-    expect(getByRole("progressbar")).toHaveAttribute("aria-valuemax", "86400");
-    rerender(<TestLab {...base} selectedLump="A" test="water" setting={null} />);
+    paint(0);
+    paint(RUN_MS);
+    expect(getByRole("progressbar")).toHaveAttribute("aria-valuenow", "86400");
+
+    rerender(<TestLab {...base} selectedLump="A" test="water" setting={null} running={true} />);
     const bar = getByRole("progressbar");
     expect(bar).toHaveAttribute("aria-valuemax", "120");
     expect(bar).toHaveAttribute("aria-valuenow", "0");
+  });
+
+  it("empties the bar when the lump's test is reset", () => {
+    const trial = applyTest(makeEmptyTrial(), "A", "vinegar", null);
+    const { getByRole, rerender } = render(
+      <TestLab {...base} trial={trial} selectedLump="A" running={true} />,
+    );
+    paint(0);
+    paint(RUN_MS);
+    expect(getByRole("progressbar")).toHaveAttribute("aria-valuenow", "120");
+
+    // What Reset Test does: the lump gets its material back and the epoch moves on.
+    rerender(
+      <TestLab {...base} selectedLump="A" running={false} timerEpoch={base.timerEpoch + 1} />,
+    );
+    expect(getByRole("progressbar")).toHaveAttribute("aria-valuenow", "0");
   });
 
   it("counts the lamp out over the exposure that was dialled in", () => {

@@ -14,8 +14,8 @@ export interface TestLabProps {
   test: TestId;
   setting: SettingId | null;
   running: boolean;
-  /** Bumped on every Run, so the timer restarts even for a repeat of the same test. */
-  runId: number;
+  /** Changes whenever the meter should start over — a new run, or a reset of the lump's test. */
+  timerEpoch: number;
   /** The most recent observation's caption, cleared when a different lump comes to the bench. */
   message: string | null;
 }
@@ -33,7 +33,7 @@ export function TestLab({
   test,
   setting,
   running,
-  runId,
+  timerEpoch,
   message,
 }: TestLabProps) {
   const record = selectedLump ? trial.lumps[selectedLump] : null;
@@ -66,7 +66,7 @@ export function TestLab({
         )}
         <TestTimer
           // Replaced rather than rewound: a new run, or a change of test, gets a fresh bar.
-          key={`${runId}:${test}:${setting}`}
+          key={`${timerEpoch}:${test}:${setting}`}
           test={test}
           setting={setting}
           running={running}

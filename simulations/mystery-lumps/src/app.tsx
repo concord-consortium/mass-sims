@@ -46,8 +46,9 @@ export function App() {
   // record rather than a stale one-off line.
   const [message, setMessage] = useState<string | null>(null);
   const [running, setRunning] = useState(false);
-  // Bumped per run so the timer restarts even when the same test is run twice.
-  const [runId, setRunId] = useState(0);
+  // Bumped whenever the meter should start over: a run, or a reset handing the lump back.
+  // Running the same test twice would otherwise leave the bar sitting full.
+  const [timerEpoch, setTimerEpoch] = useState(0);
   const runTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const logEvent = useLogEvent();
 
@@ -149,6 +150,7 @@ export function App() {
     logEvent("test_reset", { lump: selectedLump });
     updateTrial(selected.id, (t) => resetLumpTest(t, selectedLump));
     setMessage(null);
+    setTimerEpoch((n) => n + 1);
   }, [logEvent, selected.id, selectedLump, updateTrial]);
 
   // The result is committed up front and the animation is only a delay before the student may
@@ -160,7 +162,7 @@ export function App() {
     const result = observe(LUMP_ASSIGNMENT[selectedLump], test, setting);
     setMessage(`${result.caption} (${formatSimTime(simDurationSeconds(test, setting))})`);
     setRunning(true);
-    setRunId((n) => n + 1);
+    setTimerEpoch((n) => n + 1);
     if (runTimer.current) clearTimeout(runTimer.current);
     runTimer.current = setTimeout(() => setRunning(false), RUN_MS);
   }, [logEvent, selected.id, selectedLump, setting, test, updateTrial]);
@@ -212,7 +214,7 @@ export function App() {
           test={test}
           setting={setting}
           running={running}
-          runId={runId}
+          timerEpoch={timerEpoch}
           message={message}
         />
         <LabControls

@@ -1,24 +1,9 @@
-import { act, render } from "@testing-library/react";
+import { render } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { paint, stubFrames } from "../test-utils/frames";
 import { RUN_MS, TestTimer } from "./test-timer";
 
-// jsdom never fires rAF on its own, so the frame loop is driven by hand here. Without this the
-// bar can only ever be observed at zero, and a test asserting it stays there proves nothing.
-let pending: FrameRequestCallback[] = [];
-
-function paint(timestampMs: number) {
-  const due = pending;
-  pending = [];
-  act(() => {
-    for (const cb of due) cb(timestampMs);
-  });
-}
-
-beforeEach(() => {
-  pending = [];
-  vi.stubGlobal("requestAnimationFrame", (cb: FrameRequestCallback) => pending.push(cb));
-  vi.stubGlobal("cancelAnimationFrame", () => undefined);
-});
+beforeEach(stubFrames);
 
 afterEach(() => vi.unstubAllGlobals());
 
