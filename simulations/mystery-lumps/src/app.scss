@@ -1,0 +1,36 @@
+@use "@concord-consortium/mass-sims-shared/styles/tokens" as tokens;
+
+// "New trial" card — sim-owned (the shared TrialCard has no add variant); matches the TrialCard
+// 120 × 136 footprint.
+.new-trial-card {
+  align-items: center;
+  background: transparent;
+  border: 2px dashed tokens.$color-border;
+  border-radius: tokens.$radius-md;
+  color: tokens.$color-text;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  font-family: tokens.$font-family-base;
+  font-size: tokens.$font-size-base;
+  font-weight: 700;
+  gap: tokens.$space-1;
+  height: 136px;
+  justify-content: center;
+  width: 120px;
+}
+
+.new-trial-card:hover,
+.new-trial-card:focus-visible {
+  background: tokens.$color-surface-hover;
+}
+
+.new-trial-card:focus-visible {
+  outline: tokens.$focus-outline;
+  outline-offset: tokens.$focus-outline-offset;
+}
+
+.new-trial-icon {
+  font-size: 28px;
+  line-height: 1;
+}
