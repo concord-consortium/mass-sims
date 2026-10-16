@@ -64,7 +64,13 @@ export function TestLab({
             </div>
           </>
         )}
-        {running ? <TestTimer key={runId} test={test} setting={setting} /> : null}
+        <TestTimer
+          // Replaced rather than rewound: a new run, or a change of test, gets a fresh bar.
+          key={`${runId}:${test}:${setting}`}
+          test={test}
+          setting={setting}
+          running={running}
+        />
         {message ? <p className="bench-message">{message}</p> : null}
       </div>
     </div>

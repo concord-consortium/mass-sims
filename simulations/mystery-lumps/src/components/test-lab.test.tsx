@@ -31,13 +31,29 @@ describe("TestLab", () => {
     expect(getByText("Lump D")).toBeInTheDocument();
   });
 
-  it("counts out sim time only while a test is running", () => {
-    const { queryByRole, rerender } = render(<TestLab {...base} selectedLump="A" />);
-    expect(queryByRole("progressbar")).toBeNull();
-    rerender(<TestLab {...base} selectedLump="A" running={true} />);
-    const bar = queryByRole("progressbar");
+  it("shows the span a test will take before anything is run", () => {
+    // The meter is always on the bench, so a student can see what they are committing a lump to.
+    const { getByRole } = render(<TestLab {...base} selectedLump="A" />);
+    const bar = getByRole("progressbar");
     // Two minutes in the vinegar, whatever the seven real seconds the bar takes to fill.
     expect(bar).toHaveAttribute("aria-valuemax", "120");
+    expect(bar).toHaveAttribute("aria-valuenow", "0");
+  });
+
+  it("keeps the meter up with an empty bench", () => {
+    const { getByRole } = render(<TestLab {...base} selectedLump={null} />);
+    expect(getByRole("progressbar")).toBeInTheDocument();
+  });
+
+  it("restarts the bar when the chosen test changes", () => {
+    const { getByRole, rerender } = render(
+      <TestLab {...base} selectedLump="A" test="lamp" setting="day" />,
+    );
+    expect(getByRole("progressbar")).toHaveAttribute("aria-valuemax", "86400");
+    rerender(<TestLab {...base} selectedLump="A" test="water" setting={null} />);
+    const bar = getByRole("progressbar");
+    expect(bar).toHaveAttribute("aria-valuemax", "120");
+    expect(bar).toHaveAttribute("aria-valuenow", "0");
   });
 
   it("counts the lamp out over the exposure that was dialled in", () => {

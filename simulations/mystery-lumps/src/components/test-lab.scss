@@ -20,7 +20,7 @@
 .bench {
   position: relative;
   flex: 1 1 auto;
-  min-height: 140px;
+  min-height: 178px;
   border: 1px solid #c3d2e3;
   border-radius: 5px;
   background: linear-gradient(#eef4fa 0 78%, #c9b08a 78%);
@@ -39,12 +39,12 @@
   opacity: 0.8;
 }
 
-// Placeholder apparatus. Each tool is a different silhouette so switching tests is visible
-// before any real art lands.
+// Placeholder apparatus, sitting below the meter that hangs from the top edge. Each tool is a
+// different silhouette so switching tests is visible before any real art lands.
 .apparatus {
   position: absolute;
   left: 50%;
-  top: 10px;
+  top: 52px;
   transform: translateX(-50%);
   text-align: center;
   width: 104px;

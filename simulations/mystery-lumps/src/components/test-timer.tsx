@@ -11,6 +11,8 @@ export const RUN_MS = 7000;
 export interface TestTimerProps {
   test: TestId;
   setting: SettingId | null;
+  /** The bar only advances while a test is actually running; otherwise it sits where it is. */
+  running: boolean;
 }
 
 /**
@@ -19,16 +21,23 @@ export interface TestTimerProps {
  * two weeks under the lamp. Showing both is what keeps the compression honest rather than
  * hidden: the student can see that the clock on screen is not the clock in the story.
  *
- * It starts from zero on mount and has no reset of its own; the bench gives it a `key` per run,
- * so a repeat of the same test gets a fresh timer rather than a stale one told to rewind.
+ * It hangs off the top of the bench the whole time rather than appearing for a run, so a student
+ * can see how long the test they have chosen is going to stand for before committing a lump to
+ * it. Empty until Run, full afterwards.
+ *
+ * It starts from zero on mount and has no reset of its own; the bench gives it a `key` that
+ * changes whenever the run or the chosen test does, so it is replaced rather than rewound.
  */
-export function TestTimer({ test, setting }: TestTimerProps) {
+export function TestTimer({ test, setting, running }: TestTimerProps) {
   const total = simDurationSeconds(test, setting);
   const [elapsedMs, setElapsedMs] = useState(0);
 
-  useFrameLoop((deltaMs) => {
-    setElapsedMs((ms) => Math.min(RUN_MS, ms + deltaMs));
-  }, elapsedMs < RUN_MS);
+  useFrameLoop(
+    (deltaMs) => {
+      setElapsedMs((ms) => Math.min(RUN_MS, ms + deltaMs));
+    },
+    running && elapsedMs < RUN_MS,
+  );
 
   const progress = elapsedMs / RUN_MS;
 

@@ -1,35 +1,19 @@
-// Drops into the middle of the bench while a test runs, over whatever is on it.
+// Hangs off the middle of the bench's top edge, like a sign on a rail: squared where it meets
+// the edge, rounded where it hangs free. Always there, so the span a test stands for is visible
+// before a lump is committed to it.
 .test-timer {
   position: absolute;
   left: 50%;
-  top: 44%;
-  transform: translate(-50%, -50%);
-  width: 62%;
+  top: 0;
+  transform: translateX(-50%);
+  width: 58%;
   min-width: 150px;
   background: rgba(255, 255, 255, 0.94);
   border: 2px solid #4a7fc1;
-  border-radius: 6px;
-  padding: 6px 8px;
+  border-top: none;
+  border-radius: 0 0 6px 6px;
+  padding: 5px 8px 4px;
   text-align: center;
-  animation: timer-descend 220ms ease-out;
-}
-
-// It arrives from above rather than appearing, so it reads as lowering into place.
-@keyframes timer-descend {
-  from {
-    opacity: 0;
-    transform: translate(-50%, -140%);
-  }
-  to {
-    opacity: 1;
-    transform: translate(-50%, -50%);
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .test-timer {
-    animation: none;
-  }
 }
 
 .timer-track {
