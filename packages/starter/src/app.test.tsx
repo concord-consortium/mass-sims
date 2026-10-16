@@ -12,7 +12,7 @@ vi.mock("@concord-consortium/lara-interactive-api", () => ({
   setInteractiveState: setInteractiveStateMock,
 }));
 
-import { App } from "./app";
+import { App, SIM_TITLE } from "./app";
 
 // Run the currently-selected trial to completion by shortening it and stepping through.
 // The frames input is a shared <NumberField> (role "textbox") that commits on blur, so
@@ -32,9 +32,9 @@ beforeEach(() => {
 });
 
 describe("Starter App", () => {
-  it("renders the SimulationFrame with the Random Walk title", () => {
+  it("renders the SimulationFrame with the sim title", () => {
     const { getByRole } = render(<App />);
-    expect(getByRole("heading", { level: 1, name: "Random Walk" })).toBeInTheDocument();
+    expect(getByRole("heading", { level: 1, name: SIM_TITLE })).toBeInTheDocument();
   });
 
   it("renders the three slot regions with their canonical names", () => {

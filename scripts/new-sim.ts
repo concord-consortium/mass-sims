@@ -56,7 +56,9 @@ export function substituteInFile(
     return content.replace(`"name": "${oldName}"`, `"name": "${newName}"`);
   }
   if (relPath.endsWith("src/app.tsx")) {
-    return content.replace(/simTitle=".*?"/, `simTitle="<NEW SIM TITLE>"`);
+    // The title lives in one exported constant that the tests read too, so rewriting it here
+    // leaves the scaffolded sim's suite passing.
+    return content.replace(/SIM_TITLE = ".*?"/, `SIM_TITLE = "<NEW SIM TITLE>"`);
   }
   return content;
 }

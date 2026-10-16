@@ -8,6 +8,13 @@ import type { RecordedTrial, SimInput, SimOutput, SimTransient } from "./model/t
 
 import "./app.scss";
 
+/**
+ * The sim's display title. `yarn new-sim` rewrites this one line, so it is the only place the
+ * title is written down — a second copy in the tests is what used to leave a freshly scaffolded
+ * sim failing before anyone had touched it.
+ */
+export const SIM_TITLE = "Random Walk";
+
 const TRIAL_LIMIT = 10; // Matches TrialCard's A–J letter cap.
 const DEFAULT_PARAMS = { walkerCount: 50, stepSize: 1, framesPerTrial: 200 } as const;
 
@@ -127,7 +134,7 @@ export function App() {
 
   return (
     <SimulationFrame
-      simTitle="Random Walk"
+      simTitle={SIM_TITLE}
       tagline="An interactive starter simulation"
       infoModalContent={
         <p>

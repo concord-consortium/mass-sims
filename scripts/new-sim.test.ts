@@ -38,8 +38,8 @@ describe("substituteInFile", () => {
   });
 
   it("replaces the sim title in app.tsx", () => {
-    const before = `simTitle="Random Walk"`;
+    const before = `export const SIM_TITLE = "Random Walk";`;
     const after = substituteInFile(before, "starter", "bananas", "src/app.tsx");
-    expect(after).toContain(`simTitle="<NEW SIM TITLE>"`);
+    expect(after).toContain(`SIM_TITLE = "<NEW SIM TITLE>"`);
   });
 });
