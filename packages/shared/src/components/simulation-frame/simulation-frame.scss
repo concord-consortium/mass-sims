@@ -31,8 +31,11 @@ $titlebar-about-leading-space: 5px;   // margin-left on the About button → CC�
   // below — down to 767 px AP 2-col with the instructions panel visible.
   // `minmax(0, …fr)` lets the children actually shrink rather than refusing to
   // dip below their content's intrinsic width. See ui-design-plan.md §7.
+  // Overridable per sim: a sim whose trial cards carry several rows can widen the column from
+  // its own stylesheet without forking the frame. Defaults to the design's 155px.
+  --trials-column-width: #{tokens.$column-trials-width};
   grid-template-columns:
-    tokens.$column-trials-width
+    var(--trials-column-width)
     minmax(0, #{tokens.$column-simulation-flex}fr)
     minmax(0, #{tokens.$column-data-flex}fr);
   grid-template-rows: tokens.$frame-titlebar-height 1fr;

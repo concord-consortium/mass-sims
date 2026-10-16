@@ -7,7 +7,8 @@
   // 120 x 136 footprint the design specifies.
   min-height: 136px;
   position: relative;
-  width: 120px;
+  // Pairs with --trials-column-width: a sim that widens the column widens its cards to match.
+  width: var(--trial-card-width, 120px);
 
   .trial-card {
     background: tokens.$color-surface;

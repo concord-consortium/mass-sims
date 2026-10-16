@@ -38,3 +38,15 @@
 .trial-card-empty {
   opacity: 0.7;
 }
+
+// A trial card here lists up to five lumps with their test and its setting, so "Warm bath,
+// 60 °C" needs room to sit on one line. The extra width comes out of the two flexible columns,
+// which still leaves the tray and the bench their space at 1044px.
+.simulation-frame {
+  --trials-column-width: 205px;
+  --trial-card-width: 180px;
+}
+
+.new-trial-card {
+  width: var(--trial-card-width, 120px);
+}
