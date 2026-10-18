@@ -43,7 +43,7 @@ export function TestLab({
   const resting =
     substance && record?.result
       ? observe(substance, record.result.test, record.result.setting).visual
-      : substance && record?.handled
+      : substance && (record?.handled.before || record?.handled.after)
         ? observe(substance, "handle", null).visual
         : "unknown";
 

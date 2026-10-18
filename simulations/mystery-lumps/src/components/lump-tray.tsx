@@ -33,7 +33,7 @@ export function LumpTray({ trial, selectedLump, onSelect }: LumpTrayProps) {
           const usedUp = record.result !== null;
           // Unhandled lumps all look alike on purpose; the picture is the same placeholder
           // until the student has actually looked at one.
-          const visual = record.handled
+          const visual = record.handled.before
             ? observe(LUMP_ASSIGNMENT[lump], "handle", null).visual
             : "unknown";
           return (

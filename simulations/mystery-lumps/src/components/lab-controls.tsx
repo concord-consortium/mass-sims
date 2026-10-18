@@ -27,7 +27,9 @@ export interface LabControlsProps {
  * keeps its shape.
  *
  * Observe and Waft sit beside Run deliberately: all three act on the lump on the bench, but only
- * Run uses it up, so they stay enabled when Run no longer is.
+ * Run uses it up. They are available whenever there is a lump there at all — before a test,
+ * during one, and after — because looking at something costs nothing and what you see changes
+ * as the lump does.
  *
  * Reset Test is the narrow undo — it gives this one lump its material back. Clearing a whole
  * trial is the trial card's job, which is the only place that reaches the other four lumps.
@@ -80,17 +82,12 @@ export function LabControls({
         <Button
           className="observe-button"
           onPress={onObserve}
-          isDisabled={!hasLump || running}
+          isDisabled={!hasLump}
           action="lump_observed"
         >
           <span aria-hidden="true">🔍</span> Observe
         </Button>
-        <Button
-          className="waft-button"
-          onPress={onWaft}
-          isDisabled={!hasLump || running}
-          action="lump_wafted"
-        >
+        <Button className="waft-button" onPress={onWaft} isDisabled={!hasLump} action="lump_wafted">
           <span aria-hidden="true">〜</span> Waft
         </Button>
         <Button

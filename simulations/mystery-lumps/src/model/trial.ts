@@ -1,12 +1,24 @@
 import { LUMP_IDS, type LumpId } from "./substances";
 import type { SettingId, TestId } from "./tests";
 
+/**
+ * When a free action was taken, relative to the lump's one destructive test. Both are kept
+ * because both are real evidence and they can differ: a lump is waxy and pale before the bath
+ * and a greasy pool after it, and the pair of observations is the argument.
+ */
+export interface Touches {
+  before: boolean;
+  after: boolean;
+}
+
 export interface LumpRecord {
-  handled: boolean;
-  wafted: boolean;
+  handled: Touches;
+  wafted: Touches;
   /** The one destructive test this lump has been given, or null while it still has material. */
   result: { test: TestId; setting: SettingId | null } | null;
 }
+
+const UNTOUCHED: Touches = { before: false, after: false };
 
 export interface Trial {
   id: string;
@@ -20,7 +32,9 @@ function makeTrialId(): string {
 
 export function makeEmptyTrial(): Trial {
   const lumps = {} as Record<LumpId, LumpRecord>;
-  for (const id of LUMP_IDS) lumps[id] = { handled: false, wafted: false, result: null };
+  for (const id of LUMP_IDS) {
+    lumps[id] = { handled: { ...UNTOUCHED }, wafted: { ...UNTOUCHED }, result: null };
+  }
   return { id: makeTrialId(), lumps };
 }
 
@@ -48,24 +62,38 @@ export function applyTest(
   return withLump(trial, lump, { result: { test, setting } });
 }
 
+/** Whichever side of the lump's test we are on now. */
+function phase(record: LumpRecord): keyof Touches {
+  return record.result === null ? "before" : "after";
+}
+
 export function markHandled(trial: Trial, lump: LumpId): Trial {
-  return withLump(trial, lump, { handled: true });
+  const record = trial.lumps[lump];
+  return withLump(trial, lump, { handled: { ...record.handled, [phase(record)]: true } });
 }
 
 export function markWafted(trial: Trial, lump: LumpId): Trial {
-  return withLump(trial, lump, { wafted: true });
+  const record = trial.lumps[lump];
+  return withLump(trial, lump, { wafted: { ...record.wafted, [phase(record)]: true } });
 }
 
 /**
- * Gives one lump its material back, undoing the test it was given. What the student already saw
- * by handling or wafting it stays — they did look at it, and looking costs nothing.
+ * Gives one lump its material back, undoing the test it was given. What the student saw before
+ * the test stays — they did look at it, and looking costs nothing.
  *
  * This is the narrow undo behind "Reset Test". Clearing a whole trial is `clearTrial`, reached
  * only from the trial card.
  */
 export function resetLumpTest(trial: Trial, lump: LumpId): Trial {
-  if (trial.lumps[lump].result === null) return trial;
-  return withLump(trial, lump, { result: null });
+  const record = trial.lumps[lump];
+  if (record.result === null) return trial;
+  // The post-test observations described a state that no longer exists, so they go with it.
+  // What was seen beforehand still happened and stays.
+  return withLump(trial, lump, {
+    result: null,
+    handled: { ...record.handled, after: false },
+    wafted: { ...record.wafted, after: false },
+  });
 }
 
 /** Empties a trial but keeps its identity, so its card stays in place. */

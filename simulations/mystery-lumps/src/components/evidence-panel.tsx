@@ -24,29 +24,52 @@ export function EvidencePanel({ trial }: { trial: Trial }) {
   const rows = LUMP_IDS.map((lump) => {
     const record = trial.lumps[lump];
     const substance = LUMP_ASSIGNMENT[lump];
+    const result = record.result;
+
+    // In the order they happened: what the lump was like, what the test did, what it was like
+    // afterwards. The before-and-after pair is the argument a student writes up, so both sides
+    // are kept rather than the later one overwriting the earlier.
+    const lines: { key: string; label?: string; text: string }[] = [];
+    if (record.handled.before) {
+      lines.push({ key: "handled-before", text: observe(substance, "handle", null).caption });
+    }
+    if (record.wafted.before) {
+      lines.push({ key: "wafted-before", text: observe(substance, "waft", null).caption });
+    }
+    if (result) {
+      lines.push({
+        key: "result",
+        label: describeTest(result.test, result.setting),
+        text: observe(substance, result.test, result.setting).caption,
+      });
+    }
+    if (record.handled.after) {
+      lines.push({
+        key: "handled-after",
+        text: observe(substance, "handle", null, result).caption,
+      });
+    }
+    if (record.wafted.after) {
+      lines.push({ key: "wafted-after", text: observe(substance, "waft", null, result).caption });
+    }
+
     // The picture shows the lump as it was last seen: its test's end state if it has one,
     // otherwise whatever handling revealed, otherwise the anonymous blob.
-    const visual = record.result
-      ? observe(substance, record.result.test, record.result.setting).visual
-      : record.handled
+    const visual = result
+      ? observe(substance, result.test, result.setting).visual
+      : record.handled.before
         ? observe(substance, "handle", null).visual
         : "unknown";
-    return {
-      lump,
-      visual,
-      handled: record.handled ? observe(substance, "handle", null).caption : null,
-      smell: record.wafted ? observe(substance, "waft", null, record.result).caption : null,
-      test: record.result ? describeTest(record.result.test, record.result.setting) : null,
-      result: record.result
-        ? observe(substance, record.result.test, record.result.setting).caption
-        : null,
-    };
-  }).filter((r) => r.handled || r.smell || r.result);
+
+    return { lump, visual, lines };
+  }).filter((r) => r.lines.length > 0);
 
   return (
     <DataSubsection title="What you've observed">
       {rows.length === 0 ? (
-        <p className="evidence-empty">Nothing observed yet. Handle a lump, or run a test.</p>
+        <p className="evidence-empty">
+          Nothing observed yet. Put a lump on the bench and look at it.
+        </p>
       ) : (
         <ul className="evidence-list">
           {rows.map((row) => (
@@ -58,13 +81,13 @@ export function EvidencePanel({ trial }: { trial: Trial }) {
                 />
                 <span className="evidence-lump">Lump {row.lump}</span>
               </div>
-              {row.handled ? <p className="evidence-note">{row.handled}</p> : null}
-              {row.test ? (
-                <p className="evidence-note">
-                  <span className="evidence-test">{row.test}</span> — {row.result}
+              {row.lines.map((line) => (
+                <p className="evidence-note" key={line.key}>
+                  {line.label ? <span className="evidence-test">{line.label}</span> : null}
+                  {line.label ? " — " : null}
+                  {line.text}
                 </p>
-              ) : null}
-              {row.smell ? <p className="evidence-note">{row.smell}</p> : null}
+              ))}
             </li>
           ))}
         </ul>

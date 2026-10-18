@@ -80,7 +80,14 @@ export function App() {
 
   const selected = trials.find((t) => t.id === selectedId) ?? trials[0];
   const anythingObserved = trials.some((t) =>
-    Object.values(t.lumps).some((l) => l.result !== null || l.handled || l.wafted),
+    Object.values(t.lumps).some(
+      (l) =>
+        l.result !== null ||
+        l.handled.before ||
+        l.handled.after ||
+        l.wafted.before ||
+        l.wafted.after,
+    ),
   );
   useReloadWarning(!isEmbedded && anythingObserved);
 
@@ -131,8 +138,9 @@ export function App() {
     if (!selectedLump) return;
     logEvent("lump_handled", { lump: selectedLump });
     updateTrial(selected.id, (t) => markHandled(t, selectedLump));
-    setMessage(observe(LUMP_ASSIGNMENT[selectedLump], "handle", null).caption);
-  }, [logEvent, selected.id, selectedLump, updateTrial]);
+    const prior = selected.lumps[selectedLump].result;
+    setMessage(observe(LUMP_ASSIGNMENT[selectedLump], "handle", null, prior).caption);
+  }, [logEvent, selected, selectedLump, updateTrial]);
 
   const waftLump = useCallback(() => {
     if (!selectedLump) return;

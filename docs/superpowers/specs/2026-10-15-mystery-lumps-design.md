@@ -84,8 +84,11 @@ the bottom holds:
   the bench: a tube of vinegar, the lamp, and so on.
 - **Setting** — appears only for the bath and the lamp, greyed out otherwise so the row does not
   jump as the test changes.
-- **Observe** and **Waft** — always available, never consume the lump. Observe is the handling
-  action; both act on whatever lump is on the bench.
+- **Observe** and **Waft** — available whenever a lump is on the bench, before its test,
+  during it and after, and never consuming it. What they report changes as the lump does: palm
+  oil is waxy and pale beforehand and a greasy pool after the bath, dissolved salt cannot be
+  picked up at all. Both the before and the after observation are kept, because the pair is the
+  argument a student writes up.
 - **Run** and **Reset Trial**.
 
 Running a test spends the lump. **It then leaves the tray**, because there is no material left
@@ -141,9 +144,10 @@ selection; animation progress is never persisted.
 ### Saved state
 
 ```ts
+interface Touches { before: boolean; after: boolean }
 interface LumpRecord {
-  handled: boolean;
-  wafted: boolean;
+  handled: Touches;
+  wafted: Touches;
   result: { test: TestId; setting: SettingId | null } | null;
 }
 interface Trial { id: string; lumps: Record<LumpId, LumpRecord> }

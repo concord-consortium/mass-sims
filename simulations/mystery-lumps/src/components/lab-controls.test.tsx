@@ -33,11 +33,8 @@ describe("LabControls", () => {
     expect(container.querySelector(".setting-select")).not.toHaveAttribute("data-disabled");
   });
 
-  it("keeps Observe and Waft working after the lump's test is spent, but not Run", () => {
+  it("will not run a second test on a lump that has had one", () => {
     const { getByRole } = render(<LabControls {...base} spent={true} />);
-    // This is the whole reason a spent lump stays on the bench: the rancid smell is found here.
-    expect(getByRole("button", { name: /observe/i })).toBeEnabled();
-    expect(getByRole("button", { name: /waft/i })).toBeEnabled();
     expect(getByRole("button", { name: /run test/i })).toBeDisabled();
   });
 
@@ -56,6 +53,17 @@ describe("LabControls", () => {
       expect(getByRole("button", { name: label })).toHaveClass("button");
     }
     expect(getByRole("button", { name: /observe/i })).toHaveClass("button");
+  });
+
+  it("never shuts Observe or Waft out while a lump is on the bench", () => {
+    // Before a test, during one, and after it: looking costs nothing, and what you see changes
+    // as the lump does.
+    for (const state of [{}, { running: true }, { spent: true }]) {
+      const { getByRole, unmount } = render(<LabControls {...base} {...state} />);
+      expect(getByRole("button", { name: /observe/i })).toBeEnabled();
+      expect(getByRole("button", { name: /waft/i })).toBeEnabled();
+      unmount();
+    }
   });
 
   it("offers Reset Test only once the lump's test is spent", () => {

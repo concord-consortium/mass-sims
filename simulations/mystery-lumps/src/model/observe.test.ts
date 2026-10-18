@@ -74,6 +74,33 @@ describe("observe", () => {
     expect(observe("paraffin", "waft", null, degraded).visual).toBe("no-smell");
   });
 
+  it("describes what the lump is like now, not what it was before its test", () => {
+    const fresh = observe("palm-oil", "handle", null).caption;
+    const melted = observe("palm-oil", "handle", null, { test: "bath", setting: "60" }).caption;
+    expect(melted).not.toBe(fresh);
+    expect(melted).toMatch(/pool/i);
+
+    // Salt that has dissolved cannot be picked up at all.
+    expect(observe("sea-salt", "handle", null, { test: "water", setting: null }).caption).toMatch(
+      /nothing left/i,
+    );
+    // Paraffin left under the lamp for a fortnight crumbles.
+    expect(
+      observe("paraffin", "handle", null, { test: "lamp", setting: "fortnight" }).caption,
+    ).toMatch(/brittle|chalky/i);
+  });
+
+  it("leaves a lump that its test did not change feeling the same", () => {
+    const fresh = observe("sea-glass", "handle", null).caption;
+    // Glass glows under the lamp but is otherwise untouched by it.
+    expect(observe("sea-glass", "handle", null, { test: "lamp", setting: "day" }).caption).toBe(
+      fresh,
+    );
+    expect(observe("sea-glass", "handle", null, { test: "water", setting: null }).caption).toBe(
+      fresh,
+    );
+  });
+
   it("never interprets a result", () => {
     const banned = /carbonate|calcium|wax is|salt is|glass is|it is .*(oil|wax|shell|glass|salt)/i;
     for (const s of ["seashell", "sea-salt", "sea-glass", "palm-oil", "paraffin"] as const) {

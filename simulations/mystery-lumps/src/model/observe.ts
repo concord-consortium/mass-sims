@@ -129,6 +129,47 @@ function underLamp(substance: SubstanceId, setting: SettingId | null): Observati
   return { caption: "The lump stays dark. Nothing changes.", visual: "none" };
 }
 
+/**
+ * Handling a lump that has already been through a test describes what is there *now*, not what
+ * was there before. The prior test's own outcome says what happened to it, so this reads that
+ * rather than keeping a second table in step with the first.
+ */
+function handled(substance: SubstanceId, prior: PriorResult | null): Observation {
+  // Only a destructive test is ever stored as a result, but guard anyway: handling or wafting
+  // changes nothing, so there would be nothing new to describe.
+  if (!prior || prior.test === "handle" || prior.test === "waft") return HANDLE[substance];
+
+  const outcome = observe(substance, prior.test, prior.setting);
+  switch (outcome.visual) {
+    case "dissolving":
+      return { caption: "There is nothing left to pick up.", visual: "dissolving" };
+    case "melting":
+      return { caption: "A shallow, greasy pool. It smears under a finger.", visual: "melting" };
+    case "softening":
+      return { caption: "Softer than it was, and tacky to the touch.", visual: "softening" };
+    case "degrading":
+      return {
+        caption: "Dry and brittle. It leaves a chalky powder on your fingers.",
+        visual: "degrading",
+      };
+    case "fizzing":
+      return {
+        caption: "Rougher than it was, and pitted where the bubbles came from.",
+        visual: "fizzing",
+      };
+    case "glowing":
+      // Glowing alone changes nothing you can feel; a long exposure does.
+      return substance === "palm-oil" && RANCID_EXPOSURES.has(String(prior.setting))
+        ? {
+            caption: "Greasier than it was, and tacky where the surface has darkened.",
+            visual: "glowing",
+          }
+        : HANDLE[substance];
+    default:
+      return HANDLE[substance];
+  }
+}
+
 function waft(substance: SubstanceId, prior: PriorResult | null): Observation {
   const degraded =
     substance === "palm-oil" &&
@@ -144,8 +185,10 @@ function waft(substance: SubstanceId, prior: PriorResult | null): Observation {
  * here and nowhere else, which is why the unit tests point at this function rather than at
  * the components that render it.
  *
- * `prior` is the lump's already-spent test, which only wafting depends on: palm oil smells
- * rancid once the lamp has had long enough to break it down, and not before.
+ * `prior` is the lump's already-spent test. Handling and wafting both depend on it: a lump that
+ * has melted feels like a pool rather than a block, and palm oil smells rancid once the lamp has
+ * had long enough to break it down. The four destructive tests ignore it, since a lump only ever
+ * gets one of them.
  */
 export function observe(
   substance: SubstanceId,
@@ -155,7 +198,7 @@ export function observe(
 ): Observation {
   switch (test) {
     case "handle":
-      return HANDLE[substance];
+      return handled(substance, prior);
     case "waft":
       return waft(substance, prior);
     case "water":
