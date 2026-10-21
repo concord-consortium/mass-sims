@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 import { CollapsePage } from "../../pages/collapse-page";
-import { MAX_TRIALS } from "../../testdata/collapse-testdata";
+import { MAX_TRIALS, TRIAL_LETTERS } from "../../testdata/collapse-testdata";
 
 // CANONICAL SMOKE TEMPLATE. `yarn new-sim` copies this file as the starting point for every new
 // sim's smoke spec, so we keep it small, didactic, and representative of the conventions:
@@ -26,6 +26,7 @@ test("loads the sim shell", async () => {
   await expect(collapse.simulationSlot).toBeVisible();
   await expect(collapse.dataSlot).toHaveCount(0);
   await expect(collapse.trialsListbox).toBeVisible();
+  await expect(collapse.crossSectionRegion).toBeVisible();
 });
 
 test("About modal: opens via button, closes via close button, closes via Escape", async () => {
@@ -44,11 +45,22 @@ test("Reload warning does NOT fire on clean state", async () => {
   await collapse.assertReloadWarning(false);
 });
 
-test("Trial selector: A–D are seeded, A selected, in a vertical listbox", async () => {
+test("Trial selector: exactly A–D are seeded, A selected, in a vertical listbox", async () => {
   await expect(collapse.trialsListbox).toHaveAttribute("aria-orientation", "vertical");
+  await expect(collapse.trialOptions).toHaveCount(TRIAL_LETTERS.length);
+  for (const letter of TRIAL_LETTERS) await expect(collapse.trialOption(letter)).toBeVisible();
   await expect(collapse.trialOption("A")).toHaveAttribute("aria-selected", "true");
   await expect(collapse.trialOption("D")).toHaveAttribute("aria-selected", "false");
-  await expect(collapse.newTrialCard).toHaveCount(0);
+});
+
+test("Trial reset: a click on the selected card's reset reaches the button", async () => {
+  // The reset sits over the selected (lifted) card; this checks it is on top and takes the click.
+  // It stays aria-disabled until the trial has output, and nothing in this sim can produce output
+  // yet, so `force` skips Playwright's enabled check — the mouse still lands at the button's
+  // on-screen position, so a card painted over it would take the click (and the focus) instead.
+  await expect(collapse.trialOption("A")).toHaveAttribute("aria-selected", "true");
+  await collapse.trialResetButton("A").click({ force: true });
+  await expect(collapse.trialResetButton("A")).toBeFocused();
 });
 
 test("Keyboard nav: ArrowDown moves focus AND selection to the next trial", async ({ page }) => {
@@ -63,5 +75,5 @@ test("Cap values match expected literals", () => {
   // Single-source-of-truth safety net: MAX_TRIALS is imported from shared, but an import alone can't
   // flag a silent change to the value. An intentional cap change updates both; an accidental one
   // trips here.
-  expect(MAX_TRIALS).toBe(10);
+  expect(MAX_TRIALS).toBe(4);
 });
