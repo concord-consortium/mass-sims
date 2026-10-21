@@ -18,7 +18,9 @@ $titlebar-content-gap: (tokens.$section-chip-height - tokens.$border-strong-widt
 $content-row-height: tokens.$frame-height - tokens.$frame-titlebar-height - $titlebar-content-gap -
   tokens.$body-padding;
 
-.simulation-frame .trials-area {
+// `.section` in the selector so this outranks app.scss's `.simulation-frame .section` theme fill,
+// which loads later and would otherwise win.
+.simulation-frame .section.trials-area {
   // The cards sit on the frame, not in a panel. The "Trials" chip stays (shared Section renders it).
   background: none;
   border: none;
