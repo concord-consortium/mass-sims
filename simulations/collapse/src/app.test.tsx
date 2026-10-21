@@ -39,11 +39,11 @@ describe("Collapse App", () => {
     expect(getByText("Select a trial, then sample through time")).toBeInTheDocument();
   });
 
-  it("renders the three slot regions with their canonical names", () => {
-    const { getByRole } = render(<App />);
+  it("renders the Trials and Simulation regions and no Data region", () => {
+    const { getByRole, queryByRole } = render(<App />);
     expect(getByRole("region", { name: "Trials" })).toBeInTheDocument();
     expect(getByRole("region", { name: "Simulation" })).toBeInTheDocument();
-    expect(getByRole("region", { name: "Data" })).toBeInTheDocument();
+    expect(queryByRole("region", { name: "Data" })).not.toBeInTheDocument();
   });
 
   it("loads with an empty trial A and a New card (no B yet)", () => {

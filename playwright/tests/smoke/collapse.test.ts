@@ -24,7 +24,7 @@ test("loads the sim shell", async () => {
   await expect(collapse.aboutButton).toBeVisible();
   await expect(collapse.trialsSlot).toBeVisible();
   await expect(collapse.simulationSlot).toBeVisible();
-  await expect(collapse.dataSlot).toBeVisible();
+  await expect(collapse.dataSlot).toHaveCount(0);
   await expect(collapse.trialsListbox).toBeVisible();
 });
 

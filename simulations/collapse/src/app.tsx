@@ -9,9 +9,8 @@ import {
 } from "@concord-consortium/mass-sims-shared";
 import { reaction } from "mobx";
 import { observer } from "mobx-react-lite";
-import { applySnapshot, getSnapshot, onAction, onSnapshot } from "mobx-state-tree";
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { DataPanel } from "./components/data-panel";
+import { applySnapshot, getSnapshot, onSnapshot } from "mobx-state-tree";
+import { useEffect, useMemo } from "react";
 import { SimulationView } from "./components/simulation-view";
 import { TrialsPanel } from "./components/trials-panel/trials-panel";
 import { createRootStore, RootStoreProvider, type RootStoreSnapshotOut } from "./stores/root-store";
@@ -27,19 +26,11 @@ import "./app.scss";
  * stays in `<SimulationView>`'s `useModelState` / `useSimulationRunner`, NOT in MST. MST did not
  * replace those hooks; the two layers do different jobs.
  *
- * Live data flow: `SimulationView`'s `useModelState` holds the in-progress `transient` locally for
- * per-frame perf, but the Data panel's chart needs the avg-distance series as it grows. App hoists
- * just that slice via `onProgress` into `liveSeries` state (React state, NOT MST — it's per-frame
- * transient) and forwards it to `DataPanel`. The panel prefers the live series while set; once a trial
- * completes (or selection / reset fires) `liveSeries` is cleared (see the three subscriptions below)
- * and the panel falls back to the trial's recorded `output.avgDistanceSeries`.
+ * Collapse has no Data slot: without `<SimulationFrame.Data>` the shared frame lays out two columns
+ * (Trials + Simulation).
  */
 export const App = observer(function App() {
   const rootStore = useMemo(() => createRootStore({ rng: Math.random }), []);
-  // Most-recent in-progress avg-distance series from the running trial, or null when no run is
-  // active. Cleared on every trial-list-mutating boundary so the Data panel never shows a stale
-  // series belonging to a different (or cancelled) run — see the three subscriptions below.
-  const [liveSeries, setLiveSeries] = useState<number[] | null>(null);
 
   // AP saved-state sync: restore on init, push on change. Standalone-safe — outside AP,
   // useInitMessage stays null and setInteractiveState is a no-op. See infra-plan §3.
@@ -101,49 +92,9 @@ export const App = observer(function App() {
     return onSnapshot(rootStore, save);
   }, [rootStore]);
 
-  // THREE subscriptions clear `liveSeries`. The mutations now happen inside <TrialsPanel> and
-  // TrialModel, so App bridges them via store subscriptions rather than callbacks:
-
-  // 1. selection change — covers select-from-card, keyboard nav, AND the post-add auto-select.
-  useEffect(
-    () =>
-      reaction(
-        () => rootStore.ui.selectedTrialLetter,
-        () => setLiveSeries(null),
-      ),
-    [rootStore],
-  );
-  // 2. active trial's output transitions — covers complete (null → output) AND resetting a
-  //    COMPLETED trial (output → null).
-  useEffect(
-    () =>
-      reaction(
-        () => rootStore.activeTrial.output,
-        () => setLiveSeries(null),
-      ),
-    [rootStore],
-  );
-
-  // 3. resetTrial action invocation — catches resetting a trial MID-RUN, where `output` was
-  //    already null and stays null, so reaction #2 never fires. `onAction` fires on the action
-  //    call regardless of any state diff; filter to `resetTrial` so other actions don't clear.
-  useEffect(
-    () =>
-      onAction(rootStore, (call) => {
-        if (call.name === "resetTrial") setLiveSeries(null);
-      }),
-    [rootStore],
-  );
-
   // Warn before unload once any trial has been run — standalone only. When embedded, AP persists
   // every change, so the prompt would be wrong and would fire during AP's own navigation.
   useReloadWarning(!isEmbedded && rootStore.hasAnyProgress);
-
-  const handleProgress = useCallback((series: readonly number[]) => {
-    // The runner emits a fresh array per sample; copy defensively to keep the state value
-    // immutable from this side of the callback boundary.
-    setLiveSeries([...series]);
-  }, []);
 
   const activeTrial = rootStore.activeTrial;
   const selectedLetter = rootStore.ui.selectedTrialLetter;
@@ -184,13 +135,8 @@ export const App = observer(function App() {
               onInputChange={(input) => activeTrial.setInput(input)}
               onComplete={(output, finalTransient) => activeTrial.setOutput(output, finalTransient)}
               onReset={() => rootStore.resetTrial()}
-              onProgress={handleProgress}
             />
           </SimulationFrame.Simulation>
-
-          <SimulationFrame.Data>
-            <DataPanel trial={activeTrial} liveSeries={liveSeries} />
-          </SimulationFrame.Data>
         </SimulationFrame>
       </Announcer>
     </RootStoreProvider>
