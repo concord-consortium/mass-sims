@@ -56,6 +56,13 @@ takes an optional `title` override (defaults `"Trials"` / `"Simulation"` / `"Dat
 also takes `instruction?: ReactNode` (shown in its title chip after a `•`). The About panel is a
 draggable, **non-modal** `complementary` landmark — see [accessibility.md](../../docs/accessibility.md).
 
+> **Column hooks and the two-column frame.** A sim retunes the columns by declaring custom properties
+> on `.simulation-frame` (they inherit down to `.sim-main`): `--sim-frame-trials-width` (default
+> `tokens.$column-trials-width`), `--sim-frame-simulation-min`, `--sim-frame-simulation-flex`, and
+> `--sim-frame-data-flex`. A sim that renders no `<SimulationFrame.Data>` gets a two-column frame
+> automatically (a `:has()` rule on `.sim-main`): Trials + Simulation, with the Simulation panel taking
+> all the remaining width.
+
 ```tsx
 <SimulationFrame simTitle="Bananas" tagline="An interactive genetics simulation" infoModalContent={<About />}>
   <SimulationFrame.Trials>{/* TrialCards */}</SimulationFrame.Trials>
@@ -93,7 +100,9 @@ keyboard-focusable-when-overflowing ring), `className?`, `children`. Generates i
 > the shared `.trial-card-wrapper` height **and** the panel-reset position (`trial-reset-position` in
 > `mixins.scss` reads the same property, so the reset stays aligned over the selected card). The sim's own
 > `.new-trial-card` must also read `var(--trial-card-height, #{tokens.$trial-card-height})` so the `+ New`
-> card tracks the cards (the starter template already does).
+> card tracks the cards (the starter template already does). Card width works the same way:
+> `--trial-card-width` (default `tokens.$trial-card-width`) retunes the wrapper width and the reset's
+> horizontal position.
 
 **`<TrialResetButton>`** — the reset affordance for the selected trial, rendered by the sim **outside**
 the listbox (a listbox must not own focusable non-options). Props: `letter: string` (for the accessible

@@ -198,6 +198,8 @@ column gaps (10 + 10), and the body padding (10 + 10) — in the 564 : 285 ratio
 
 The flex ratio is expressed as the unitless `$column-simulation-flex` (564) and `$column-data-flex` (285) tokens, applied as `minmax(0, 564fr)` / `minmax(0, 285fr)` so the columns shrink rather than refusing to dip below their content's intrinsic width.
 
+A sim that renders no Data slot (e.g. Collapse) gets a two-column frame instead: Trials + Simulation, with Simulation taking all the remaining width. The Trials width can be retuned per sim with the `--sim-frame-trials-width` hook.
+
 ---
 
 ## 8. Responsive behavior — columns flex, no separate narrow mode
