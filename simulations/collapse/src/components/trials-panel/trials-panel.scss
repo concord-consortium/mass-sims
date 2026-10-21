@@ -1,0 +1,89 @@
+@use "@concord-consortium/mass-sims-shared/styles/tokens" as tokens;
+@use "@concord-consortium/mass-sims-shared/styles/mixins" as mixins;
+
+.collapse-trials-panel {
+  align-items: flex-start;
+  display: flex;
+  flex-direction: column;
+  gap: tokens.$column-gap;
+  position: relative;
+  width: 100%;
+
+  // The listbox holds only the option cards; the `+ New`/notice + reset are siblings outside it.
+  // A flex column with `$column-gap` between cards (and the outer panel repeats that gap between
+  // the listbox and the `+ New` card below it).
+  .collapse-trials-listbox {
+    align-items: flex-start;
+    display: flex;
+    flex-direction: column;
+    gap: tokens.$column-gap;
+    width: 100%;
+  }
+
+  // Panel-level reset: position it over the selected card by index (shared formula;
+  // `--selected-index` is set inline). Neutral reset colors come from the shared
+  // trial-reset-button.scss (Starter adds no theme override).
+  .reset-button {
+    @include mixins.trial-reset-position;
+  }
+}
+
+// "New trial" card — sim-owned (the shared TrialCard has no add variant); matches the TrialCard
+// 120 × 136 footprint.
+.new-trial-card {
+  align-items: center;
+  background: transparent;
+  border: tokens.$border-strong;
+  border-radius: tokens.$radius-md;
+  color: tokens.$color-text;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  font-family: tokens.$font-family-base;
+  font-size: tokens.$font-size-base;
+  font-weight: 700;
+  gap: tokens.$space-1;
+  height: var(--trial-card-height, #{tokens.$trial-card-height});
+  justify-content: center;
+  width: tokens.$trial-card-width;
+
+  &:hover,
+  &:focus-visible {
+    background: tokens.$color-surface-hover;
+  }
+
+  &:focus-visible {
+    outline: tokens.$focus-outline;
+    outline-offset: tokens.$focus-outline-offset;
+  }
+}
+
+.new-trial-card-icon {
+  color: tokens.$color-text;
+  height: 24px;
+  width: 24px;
+}
+
+.new-trial-card-text {
+  font-weight: 700;
+}
+
+// Trial card body (the shared <TrialCard>'s children, inside its `.body`): stacks the avg / σ rows.
+.trial-card-body {
+  align-items: center;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  width: 100%;
+}
+
+// "Max number of trials reached" notice — replaces the `+ New` card at the cap.
+.max-trials-notice {
+  color: tokens.$color-text;
+  font-family: tokens.$font-family-base;
+  font-size: tokens.$font-size-base;
+  font-style: italic;
+  text-align: center;
+  width: 100%;
+}
