@@ -7,8 +7,8 @@
 // overlaps the panel's and the two draw as one line.
 $card-offset: 7px;
 
-// Matches the 8px corner radius of the cards and the panel.
-$flare-size: 8px;
+// Matches the corner radius of the cards and the panel.
+$flare-size: tokens.$radius-lg;
 
 // Same as the private `$titlebar-content-gap` in the shared simulation-frame.scss.
 $titlebar-content-gap: (tokens.$section-chip-height - tokens.$border-strong-width) * 0.5;
@@ -175,20 +175,20 @@ $content-row-height: tokens.$frame-height - tokens.$frame-titlebar-height - $tit
 
       &::before {
         background: radial-gradient(
-          circle 8px at 0 0,
-          transparent 0 6px,
-          theme.$border 6px 8px,
-          theme.$trial-selected-bg 8px
+          circle $flare-size at 0 0,
+          transparent 0 ($flare-size - tokens.$border-strong-width),
+          theme.$border ($flare-size - tokens.$border-strong-width) $flare-size,
+          theme.$trial-selected-bg $flare-size
         );
         top: -$flare-size;
       }
 
       &::after {
         background: radial-gradient(
-          circle 8px at 0 100%,
-          transparent 0 6px,
-          theme.$border 6px 8px,
-          theme.$trial-selected-bg 8px
+          circle $flare-size at 0 100%,
+          transparent 0 ($flare-size - tokens.$border-strong-width),
+          theme.$border ($flare-size - tokens.$border-strong-width) $flare-size,
+          theme.$trial-selected-bg $flare-size
         );
         bottom: -$flare-size;
       }
