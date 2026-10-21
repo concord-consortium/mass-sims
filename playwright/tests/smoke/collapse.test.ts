@@ -72,8 +72,8 @@ test("Keyboard nav: ArrowDown moves focus AND selection to the next trial", asyn
 });
 
 test("Cap values match expected literals", () => {
-  // Single-source-of-truth safety net: MAX_TRIALS is imported from shared, but an import alone can't
-  // flag a silent change to the value. An intentional cap change updates both; an accidental one
-  // trips here.
+  // Single-source-of-truth safety net: MAX_TRIALS comes from the sim's own trial list
+  // (simulations/collapse/src/trial-conditions.ts), but an import alone can't flag a silent change
+  // to the value. An intentional change updates both; an accidental one trips here.
   expect(MAX_TRIALS).toBe(4);
 });

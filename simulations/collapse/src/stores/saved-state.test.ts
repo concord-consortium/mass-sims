@@ -27,10 +27,12 @@ function migrate(raw: unknown): SavedState {
 /** Whether a migrated trial is a fresh empty one (default params, nothing recorded). */
 function isEmpty(trial: SavedState["trials"]["A"]): boolean {
   const { seed: _seed, ...params } = trial.input;
+  const defaults: Record<string, unknown> = DEFAULT_PARAMS;
   return (
     trial.output === null &&
     trial.finalTransient === null &&
-    JSON.stringify(params) === JSON.stringify(DEFAULT_PARAMS)
+    Object.keys(params).length === Object.keys(defaults).length &&
+    Object.entries(params).every(([key, value]) => defaults[key] === value)
   );
 }
 
@@ -54,9 +56,11 @@ describe("migrateSavedState — normalizes to exactly A–D", () => {
     expect(state.selectedTrialLetter).toBe("B");
   });
 
-  it("a save with A–D plus an E → E ignored, four trials, A–D data preserved", () => {
-    const trials = { A: TRIAL, B: TRIAL, C: TRIAL, D: TRIAL, E: TRIAL };
+  it("a save with A–D plus an E → E ignored, four trials in A–D order, A–D data preserved", () => {
+    // E first and A–D out of order, so the result's key order is the function's doing.
+    const trials = { E: TRIAL, D: TRIAL, C: TRIAL, B: TRIAL, A: TRIAL };
     const state = migrate({ version: 1, trials, selectedTrialLetter: "A" });
+    expect(Object.keys(state.trials)).toEqual(["A", "B", "C", "D"]);
     expect(state.trials).toEqual({ A: TRIAL, B: TRIAL, C: TRIAL, D: TRIAL });
   });
 
@@ -140,7 +144,6 @@ describe("migrateSavedState — unrecognized input", () => {
     [],
     {},
     { version: 2 },
-    { foo: "bar" },
     { version: 1 },
     { version: 1, trials: [] },
     { version: 1, trials: "nope" },

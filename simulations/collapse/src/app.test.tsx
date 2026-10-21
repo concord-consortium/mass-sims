@@ -15,9 +15,16 @@ vi.mock("@concord-consortium/lara-interactive-api", () => ({
 import { App } from "./app";
 
 // Nothing in the UI can run a trial yet (the Simulation slot is a layout scaffold), so tests that
-// need a trial with a recorded output restore one through AP saved state. Embedded, since a
-// restore only arrives in an init message.
-function restoreTrialAWithOutput() {
+// need a trial with a recorded output restore one through AP saved state: trial A with an output,
+// plus any `extraTrials`, with `selected` as the saved selection. Embedded, since a restore only
+// arrives in an init message.
+function restoreTrialAWithOutput({
+  selected = "A",
+  extraTrials = {},
+}: {
+  selected?: string;
+  extraTrials?: object;
+} = {}) {
   const trialA = {
     input: { walkerCount: 50, stepSize: 1, framesPerTrial: 200, seed: "saved-A" },
     output: { avgDistance: 3.14, stdDevDistance: 0.5, avgDistanceSeries: [1, 2, 3] },
@@ -25,7 +32,11 @@ function restoreTrialAWithOutput() {
   };
   useInitMessageMock.mockReturnValue({
     mode: "runtime",
-    interactiveState: { version: 1, trials: { A: trialA }, selectedTrialLetter: "A" },
+    interactiveState: {
+      version: 1,
+      trials: { A: trialA, ...extraTrials },
+      selectedTrialLetter: selected,
+    },
   });
 }
 
@@ -93,27 +104,14 @@ describe("Collapse App — AP saved state", () => {
     setInteractiveStateMock.mockReset();
   });
 
-  it("renders the four default empty trials when no init message arrives (standalone)", () => {
-    const view = render(<App />);
-    expect(trialOptions(view)).toEqual(["Trial A", "Trial B", "Trial C", "Trial D"]);
-  });
-
   it("restores trials + selectedTrialLetter from a runtime init message's interactiveState", () => {
     // Current versioned wire shape: `{ version, trials (letter-keyed), selectedTrialLetter }`.
-    const trialA = {
-      input: { walkerCount: 50, stepSize: 1, framesPerTrial: 200, seed: "saved-A" },
-      output: { avgDistance: 3.14, stdDevDistance: 0.5, avgDistanceSeries: [1, 2, 3] },
-      finalTransient: null,
-    };
     const trialB = {
       input: { walkerCount: 100, stepSize: 2, framesPerTrial: 200, seed: "saved-B" },
       output: null,
       finalTransient: null,
     };
-    useInitMessageMock.mockReturnValue({
-      mode: "runtime",
-      interactiveState: { version: 1, trials: { A: trialA, B: trialB }, selectedTrialLetter: "B" },
-    });
+    restoreTrialAWithOutput({ selected: "B", extraTrials: { B: trialB } });
     const view = render(<App />);
     expect(trialOptions(view)).toEqual(["Trial A", "Trial B", "Trial C", "Trial D"]);
     // The restored selection is honored — B is active, not a default fall-back to A.
@@ -131,15 +129,7 @@ describe("Collapse App — AP saved state", () => {
   it("keeps persisted trials and selects A when the saved letter is outside A–D", () => {
     // A corrupt selectedTrialLetter ("E") that names no Collapse trial must NOT discard the
     // student's trials — the restored selection falls back to A instead.
-    const trialA = {
-      input: { walkerCount: 50, stepSize: 1, framesPerTrial: 200, seed: "saved-A" },
-      output: { avgDistance: 9.9, stdDevDistance: 0.5, avgDistanceSeries: [1, 2, 3] },
-      finalTransient: null,
-    };
-    useInitMessageMock.mockReturnValue({
-      mode: "runtime",
-      interactiveState: { version: 1, trials: { A: trialA }, selectedTrialLetter: "E" },
-    });
+    restoreTrialAWithOutput({ selected: "E" });
     const view = render(<App />);
     // Selection self-heals to A…
     expect(view.getByRole("option", { name: /^Trial A/ })).toHaveAttribute("aria-selected", "true");

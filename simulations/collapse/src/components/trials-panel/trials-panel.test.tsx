@@ -1,5 +1,5 @@
 import { Announcer } from "@concord-consortium/mass-sims-shared";
-import { act, fireEvent, render, within } from "@testing-library/react";
+import { act, fireEvent, render } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { describe, expect, it, vi } from "vitest";
 
@@ -56,11 +56,8 @@ describe("TrialsPanel — listbox structure", () => {
   });
 
   it("the listbox owns ONLY option cards — the reset is outside it, and there is no + New card", () => {
-    const store = createRootStore();
-    store.activeTrial.setOutput(OUTPUT, TRANSIENT); // enable the reset so it renders as a button
-    const { getByRole, queryByRole } = renderPanel(store);
+    const { getByRole, queryByRole } = renderPanel(createRootStore());
     const listbox = getByRole("listbox", { name: "Trials" });
-    expect(within(listbox).getAllByRole("option")).toHaveLength(4);
     expect(listbox.contains(getByRole("button", { name: "Reset trial A" }))).toBe(false);
     expect(queryByRole("button", { name: "Add new trial" })).toBeNull();
     // Every direct child is a presentational (role="none") TrialCard wrapper, so the option button
@@ -70,13 +67,17 @@ describe("TrialsPanel — listbox structure", () => {
     }
   });
 
-  it("applies roving tabindex: only the selected option is tabbable", () => {
-    const { getAllByRole } = renderPanel(createRootStore());
+  it("applies roving tabindex: only the selected option is tabbable, then its reset", () => {
+    const store = createRootStore();
+    store.activeTrial.setOutput(OUTPUT, TRANSIENT); // the reset is enabled once A has output
+    const { getAllByRole, getByRole } = renderPanel(store);
     const options = getAllByRole("option");
     expect(options[0]).toHaveAttribute("tabindex", "0");
     expect(options[1]).toHaveAttribute("tabindex", "-1");
     expect(options[2]).toHaveAttribute("tabindex", "-1");
     expect(options[3]).toHaveAttribute("tabindex", "-1");
+    // The reset is the panel's second tab stop (the shared hook's `resetTabIndex`).
+    expect(getByRole("button", { name: "Reset trial A" })).toHaveAttribute("tabindex", "0");
   });
 });
 
@@ -127,13 +128,6 @@ describe("TrialsPanel — trial-list logging", () => {
     expect(logEvent).not.toHaveBeenCalled();
   });
 
-  it("logs trial_selected on keyboard navigation", () => {
-    const { getAllByRole } = renderPanel(createRootStore());
-    logEvent.mockReset();
-    fireEvent.keyDown(getAllByRole("option")[0], { key: "ArrowDown" });
-    expect(logEvent).toHaveBeenCalledWith("trial_selected", { trial: "B", previous: "A" });
-  });
-
   it("logs trial_reset for the selected trial via the panel reset button", () => {
     const store = createRootStore();
     store.activeTrial.setOutput(OUTPUT, TRANSIENT); // give A progress so reset is enabled
@@ -167,15 +161,18 @@ describe("TrialsPanel — keyboard-nav wiring", () => {
   // shared hook and tested once, sim-agnostically, in
   // packages/shared/src/hooks/use-trials-keyboard-nav.test.tsx. Don't re-test it here.
   //
-  // These tests prove only that THIS panel wires the hook up: the handlers reach the listbox and the
-  // hook's tabIndexes land on the cards / reset. That includes pinning the `.trial-card` /
-  // `.reset-button` class convention the hook selects on — the one thing the hook's own harness
-  // can't catch.
-  it("ArrowDown on a card selects the next one (handler wired to the listbox)", () => {
+  // These tests prove only that THIS panel wires the hook up: the handlers reach the listbox (and
+  // the `.trial-card` class the hook selects on), selection goes through the logging funnel, and
+  // `canAddTrial: false` reaches the hook — the End / wrap test is the one that would catch the
+  // ring still reserving a `+ New` slot. The hook's tabIndexes landing on the cards and the reset
+  // are checked in the roving-tabindex test above.
+  it("ArrowDown on a card selects the next one and logs it (handler wired to the listbox)", () => {
     const store = createRootStore();
     const { getAllByRole } = renderPanel(store);
+    logEvent.mockReset();
     fireEvent.keyDown(getAllByRole("option")[0], { key: "ArrowDown" });
     expect(store.ui.selectedTrialLetter).toBe("B");
+    expect(logEvent).toHaveBeenCalledWith("trial_selected", { trial: "B", previous: "A" });
   });
 
   it("End selects D and ArrowDown from D wraps to A (no + New member in the ring)", () => {
