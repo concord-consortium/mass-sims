@@ -1,14 +1,9 @@
-import {
-  TRIAL_LETTERS_DEFAULT,
-  type TrialLetter,
-  toVersionedSavedState,
-} from "@concord-consortium/mass-sims-shared";
+import { type TrialLetter, toVersionedSavedState } from "@concord-consortium/mass-sims-shared";
+import { COLLAPSE_TRIAL_LETTERS, type CollapseTrialLetter } from "../trial-conditions";
 import type { RootStoreSnapshotOut } from "./root-store";
-import type { TrialState } from "./trial-model";
+import { emptyTrialSnapshot, makeSeed, type TrialState } from "./trial-model";
 
 export const SAVED_STATE_VERSION = 1;
-
-const VALID_LETTERS = new Set<string>(TRIAL_LETTERS_DEFAULT);
 
 function isObject(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
@@ -57,7 +52,7 @@ function isSimTransient(value: unknown): boolean {
  * Whether a persisted trial value can hydrate into a *runnable* `TrialModel`. `input` / `output` /
  * `finalTransient` are stored as `types.frozen`, so MST does NOT validate their inner shape — an
  * `{ input: {} }` would otherwise hydrate a broken trial (zero walkers, a run that never completes)
- * rather than falling back to the seeded store. So the field shapes are checked explicitly here.
+ * rather than being replaced by an empty trial. So the field shapes are checked explicitly here.
  * `input` is required; `output` / `finalTransient` are nullable but must match their shape when set.
  */
 function isHydratableTrial(value: unknown): boolean {
@@ -70,13 +65,13 @@ function isHydratableTrial(value: unknown): boolean {
 }
 
 /**
- * The shape persisted to / restored from Activity Player's `interactiveState`: the multi-trial map
- * (keyed by letter A–J) plus the active trial letter, tagged with a `version` for forward migration.
+ * The shape persisted to / restored from Activity Player's `interactiveState`: the four-trial map
+ * (keyed by letter A–D) plus the active trial letter, tagged with a `version` for forward migration.
  * Per-frame transient state is never persisted.
  */
 export interface SavedState {
   version: typeof SAVED_STATE_VERSION;
-  trials: Partial<Record<TrialLetter, TrialState>>;
+  trials: Record<CollapseTrialLetter, TrialState>;
   selectedTrialLetter: TrialLetter;
 }
 
@@ -86,33 +81,36 @@ export function toSavedState(snap: RootStoreSnapshotOut): SavedState {
 }
 
 /**
- * Validate a restored `interactiveState` into a `SavedState`, or `null` when it's unrecognized or
- * malformed (the caller then keeps its fresh seeded store). The `version` field is the
- * forward-migration hook: today only version 1 exists, so this validates the current shape; future
- * shape changes would branch on `version` here. (This sim has never shipped, so there is no
- * pre-versioned saved state to migrate from.)
+ * Normalize a restored `interactiveState` into a `SavedState` with exactly the four trials A–D, in
+ * that order, or `null` when it's unrecognized (a wrong `version`, or a non-object payload or
+ * `trials`; the caller then keeps its fresh seeded store). It *selects* rather than rejects: each
+ * of A–D keeps its saved trial if that trial is hydratable and is otherwise replaced by an empty
+ * one (one bad trial doesn't discard the other three), and keys outside A–D are ignored. The result
+ * is built in A–D order because the object's key order is the order `applySnapshot` puts into the
+ * trials map, which is the order the Trials panel renders. A `selectedTrialLetter` outside A–D
+ * becomes "A".
+ *
+ * `rng` seeds the replacement trials (App passes the same `Math.random` it gives `createRootStore`;
+ * tests pass a seeded PRNG). The `version` field is the forward-migration hook: today only version 1
+ * exists, so future shape changes would branch on `version` here. (This sim has never shipped, so
+ * there is no pre-versioned saved state to migrate from.)
  */
-export function migrateSavedState(raw: unknown): SavedState | null {
-  if (!raw || typeof raw !== "object") return null;
-  const { version, trials, selectedTrialLetter } = raw as Record<string, unknown>;
+export function migrateSavedState(raw: unknown, rng: () => number): SavedState | null {
+  if (!isObject(raw)) return null;
+  const { version, trials, selectedTrialLetter } = raw;
   if (version !== SAVED_STATE_VERSION) return null;
-  // The selected letter must be A–J, else the UiStore enumeration throws on hydrate.
-  if (typeof selectedTrialLetter !== "string" || !VALID_LETTERS.has(selectedTrialLetter)) {
-    return null;
+  if (!isObject(trials)) return null;
+  const normalized = {} as Record<CollapseTrialLetter, TrialState>;
+  for (const letter of COLLAPSE_TRIAL_LETTERS) {
+    const trial = trials[letter];
+    normalized[letter] = isHydratableTrial(trial)
+      ? (trial as TrialState)
+      : emptyTrialSnapshot(makeSeed(rng));
   }
-  if (!trials || typeof trials !== "object" || Array.isArray(trials)) return null;
-  const entries = Object.entries(trials);
-  if (entries.length === 0) return null;
-  // Every key must be a valid A–J letter and every value a hydratable trial, else `applySnapshot`
-  // would throw mid-hydrate. A valid-but-absent `selectedTrialLetter` is NOT rejected — App's
-  // normalization reaction re-selects the first trial, so the persisted trials are kept rather than
-  // discarded (parity with Bananas).
-  for (const [letter, trial] of entries) {
-    if (!VALID_LETTERS.has(letter) || !isHydratableTrial(trial)) return null;
-  }
+  const selected = COLLAPSE_TRIAL_LETTERS.find((letter) => letter === selectedTrialLetter) ?? "A";
   return {
     version: SAVED_STATE_VERSION,
-    trials: trials as SavedState["trials"],
-    selectedTrialLetter: selectedTrialLetter as TrialLetter,
+    trials: normalized,
+    selectedTrialLetter: selected,
   };
 }

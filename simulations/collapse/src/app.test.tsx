@@ -25,6 +25,17 @@ function runSelectedTrial(view: ReturnType<typeof render>, frames = 2) {
   for (let i = 0; i < frames; i++) fireEvent.click(stepButton);
 }
 
+/** The four trial options, in rendered order. */
+function trialOptions(view: ReturnType<typeof render>) {
+  return view.getAllByRole("option").map((o) => o.getAttribute("aria-label")?.slice(0, 7));
+}
+
+/** Whether the selected trial has a recorded output (its reset is enabled only then). */
+function selectedHasOutput(view: ReturnType<typeof render>, letter: string) {
+  const reset = view.getByRole("button", { name: `Reset trial ${letter}` });
+  return reset.getAttribute("aria-disabled") !== "true";
+}
+
 // Default every test to standalone — App derives `isEmbedded = initMsg !== null`, and the
 // real useInitMessage returns null (not undefined) with no AP parent. Embedded tests override.
 beforeEach(() => {
@@ -46,39 +57,29 @@ describe("Collapse App", () => {
     expect(queryByRole("region", { name: "Data" })).not.toBeInTheDocument();
   });
 
-  it("loads with an empty trial A and a New card (no B yet)", () => {
-    const { getByRole, queryByRole, queryByText } = render(<App />);
-    expect(getByRole("option", { name: /^Trial A/ })).toBeInTheDocument();
-    expect(getByRole("button", { name: "Add new trial" })).toBeInTheDocument();
-    expect(queryByRole("option", { name: /^Trial B/ })).toBeNull();
-    // Empty trial → no recorded stats yet.
-    expect(queryByText(/avg \d/i)).toBeNull();
+  it("loads with four empty trials A–D, A selected, and no New card", () => {
+    const view = render(<App />);
+    expect(trialOptions(view)).toEqual(["Trial A", "Trial B", "Trial C", "Trial D"]);
+    expect(view.getByRole("option", { name: /^Trial A/ })).toHaveAttribute("aria-selected", "true");
+    expect(view.queryByRole("button", { name: "Add new trial" })).toBeNull();
+    expect(selectedHasOutput(view, "A")).toBe(false);
   });
 
-  it("running the selected trial fills its card without adding a new one", () => {
+  it("running the selected trial records its output without adding a trial", () => {
     const view = render(<App />);
     runSelectedTrial(view);
-    // Trial A's card now shows recorded stats…
-    expect(view.getByText(/avg \d/i)).toBeInTheDocument();
-    // …and no Trial B appeared (completion updates the selected trial, not appends).
-    expect(view.queryByRole("option", { name: /^Trial B/ })).toBeNull();
-  });
-
-  it("adds an empty Trial B only when the New card is clicked", () => {
-    const { getByRole, queryByRole } = render(<App />);
-    expect(queryByRole("option", { name: /^Trial B/ })).toBeNull();
-    fireEvent.click(getByRole("button", { name: "Add new trial" }));
-    expect(getByRole("option", { name: /^Trial B/ })).toBeInTheDocument();
+    expect(selectedHasOutput(view, "A")).toBe(true);
+    expect(view.getAllByRole("option")).toHaveLength(4);
   });
 
   it("resets a completed trial back to empty without deleting the card", () => {
     const view = render(<App />);
     runSelectedTrial(view);
-    expect(view.getByText(/avg \d/i)).toBeInTheDocument();
+    expect(selectedHasOutput(view, "A")).toBe(true);
     // The selected card's reset affordance clears it (trials are reset, not deleted).
     fireEvent.click(view.getByRole("button", { name: "Reset trial A" }));
     expect(view.getByRole("option", { name: /^Trial A/ })).toBeInTheDocument();
-    expect(view.queryByText(/avg \d/i)).toBeNull();
+    expect(selectedHasOutput(view, "A")).toBe(false);
   });
 
   it("does NOT register a beforeunload listener before any trial is run", () => {
@@ -104,10 +105,9 @@ describe("Collapse App — AP saved state", () => {
     setInteractiveStateMock.mockReset();
   });
 
-  it("renders the default empty trial when no init message arrives (standalone)", () => {
-    const { getByRole, queryByRole } = render(<App />);
-    expect(getByRole("option", { name: /^Trial A/ })).toBeInTheDocument();
-    expect(queryByRole("option", { name: /^Trial B/ })).toBeNull();
+  it("renders the four default empty trials when no init message arrives (standalone)", () => {
+    const view = render(<App />);
+    expect(trialOptions(view)).toEqual(["Trial A", "Trial B", "Trial C", "Trial D"]);
   });
 
   it("restores trials + selectedTrialLetter from a runtime init message's interactiveState", () => {
@@ -127,21 +127,22 @@ describe("Collapse App — AP saved state", () => {
       interactiveState: { version: 1, trials: { A: trialA, B: trialB }, selectedTrialLetter: "B" },
     });
     const view = render(<App />);
-    expect(view.getByRole("option", { name: /^Trial A/ })).toBeInTheDocument();
-    expect(view.getByRole("option", { name: /^Trial B/ })).toBeInTheDocument();
+    expect(trialOptions(view)).toEqual(["Trial A", "Trial B", "Trial C", "Trial D"]);
     // The restored selection is honored — B is active, not a default fall-back to A.
     expect(view.getByRole("option", { name: /^Trial B/ })).toHaveAttribute("aria-selected", "true");
     expect(view.getByRole("option", { name: /^Trial A/ })).toHaveAttribute(
       "aria-selected",
       "false",
     );
-    // /avg 3/ matches trial A's saved avgDistance (3.14).
-    expect(view.getByText(/avg 3/i)).toBeInTheDocument();
+    expect(selectedHasOutput(view, "B")).toBe(false);
+    // Trial A's saved output was restored: selecting it enables its reset.
+    fireEvent.click(view.getByRole("option", { name: /^Trial A/ }));
+    expect(selectedHasOutput(view, "A")).toBe(true);
   });
 
-  it("keeps persisted trials and re-selects the first when the saved letter is absent", () => {
-    // A corrupt/dangling selectedTrialLetter ("C") that names no present trial must NOT discard the
-    // student's trials — the normalization reaction re-selects the first present trial instead.
+  it("keeps persisted trials and selects A when the saved letter is outside A–D", () => {
+    // A corrupt selectedTrialLetter ("E") that names no Collapse trial must NOT discard the
+    // student's trials — the restored selection falls back to A instead.
     const trialA = {
       input: { walkerCount: 50, stepSize: 1, framesPerTrial: 200, seed: "saved-A" },
       output: { avgDistance: 9.9, stdDevDistance: 0.5, avgDistanceSeries: [1, 2, 3] },
@@ -149,35 +150,41 @@ describe("Collapse App — AP saved state", () => {
     };
     useInitMessageMock.mockReturnValue({
       mode: "runtime",
-      interactiveState: { version: 1, trials: { A: trialA }, selectedTrialLetter: "C" },
+      interactiveState: { version: 1, trials: { A: trialA }, selectedTrialLetter: "E" },
     });
     const view = render(<App />);
-    // Trial A is preserved (not discarded to a fresh seed)…
-    expect(view.getByText(/avg 9/i)).toBeInTheDocument();
-    // …and selection self-heals to A.
+    // Selection self-heals to A…
     expect(view.getByRole("option", { name: /^Trial A/ })).toHaveAttribute("aria-selected", "true");
+    // …and Trial A is preserved (not discarded to a fresh seed).
+    expect(selectedHasOutput(view, "A")).toBe(true);
   });
 
   it("does NOT restore when the init message has interactiveState: null (first session)", () => {
     useInitMessageMock.mockReturnValue({ mode: "runtime", interactiveState: null });
     const view = render(<App />);
-    expect(view.getByRole("option", { name: /^Trial A/ })).toBeInTheDocument();
-    expect(view.queryByRole("option", { name: /^Trial B/ })).toBeNull();
+    expect(trialOptions(view)).toEqual(["Trial A", "Trial B", "Trial C", "Trial D"]);
+    expect(selectedHasOutput(view, "A")).toBe(false);
   });
 
-  it("calls setInteractiveState on every trial-list change (add / complete / reset)", () => {
+  it("calls setInteractiveState on every trial-list change (complete / reset)", () => {
     const view = render(<App />);
     // Initial mount triggers at least one push (the default state).
     expect(setInteractiveStateMock).toHaveBeenCalled();
     setInteractiveStateMock.mockClear();
 
-    // Add Trial B → push. Trials are now a letter-keyed map (not an array).
-    fireEvent.click(view.getByRole("button", { name: "Add new trial" }));
+    // Complete Trial A → push. Trials are a letter-keyed map (not an array) of all four trials.
+    runSelectedTrial(view);
     expect(setInteractiveStateMock).toHaveBeenCalled();
     const lastCall = setInteractiveStateMock.mock.calls.at(-1)?.[0] as {
-      trials: Record<string, unknown>;
+      trials: Record<string, { output: unknown }>;
     };
-    expect(Object.keys(lastCall.trials)).toHaveLength(2);
+    expect(Object.keys(lastCall.trials)).toEqual(["A", "B", "C", "D"]);
+    expect(lastCall.trials.A.output).not.toBeNull();
+
+    // Reset Trial A → push.
+    setInteractiveStateMock.mockClear();
+    fireEvent.click(view.getByRole("button", { name: "Reset trial A" }));
+    expect(setInteractiveStateMock).toHaveBeenCalled();
   });
 
   it("does NOT register a beforeunload listener when embedded (AP persists progress)", () => {

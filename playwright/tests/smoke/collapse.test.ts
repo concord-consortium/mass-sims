@@ -67,17 +67,14 @@ test("Reload warning does NOT fire on clean state", async () => {
   await collapse.assertReloadWarning(false);
 });
 
-test("Trial selector: A is seeded as the selected option in a vertical listbox", async () => {
+test("Trial selector: A–D are seeded, A selected, in a vertical listbox", async () => {
   await expect(collapse.trialsListbox).toHaveAttribute("aria-orientation", "vertical");
   await expect(collapse.trialOption("A")).toHaveAttribute("aria-selected", "true");
-  await expect(collapse.trialOption("B")).toHaveCount(0);
-  await expect(collapse.newTrialCard).toBeVisible();
+  await expect(collapse.trialOption("D")).toHaveAttribute("aria-selected", "false");
+  await expect(collapse.newTrialCard).toHaveCount(0);
 });
 
 test("Keyboard nav: ArrowDown moves focus AND selection to the next trial", async ({ page }) => {
-  // Add a second trial (auto-selected), then go back to A so ArrowDown has somewhere to move.
-  await collapse.addTrial();
-  await collapse.selectTrial("A");
   await collapse.trialOption("A").focus();
   await page.keyboard.press("ArrowDown");
   await expect(collapse.trialOption("B")).toHaveAttribute("aria-selected", "true");

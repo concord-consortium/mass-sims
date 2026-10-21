@@ -1,13 +1,10 @@
 import {
-  addTrial as addTrialToMap,
   hasAnyProgress as anyTrialHasProgress,
-  canAddTrial as computeCanAddTrial,
   trialLetters as listTrialLetters,
   activeTrial as resolveActiveTrial,
   UiStore,
 } from "@concord-consortium/mass-sims-shared";
 import {
-  getEnv,
   getSnapshot,
   type Instance,
   type SnapshotIn,
@@ -15,6 +12,7 @@ import {
   types,
 } from "mobx-state-tree";
 import { createContext, createElement, type ReactNode, useContext } from "react";
+import { COLLAPSE_TRIAL_LETTERS } from "../trial-conditions";
 import { emptyTrialSnapshot, makeSeed, TrialModel, type TrialModelInstance } from "./trial-model";
 
 export const RootStore = types
@@ -23,10 +21,6 @@ export const RootStore = types
     ui: UiStore,
   })
   .actions((self) => ({
-    addTrial(): string | null {
-      const { rng } = getEnv<{ rng: () => number }>(self);
-      return addTrialToMap(self.trials, () => TrialModel.create(emptyTrialSnapshot(makeSeed(rng))));
-    },
     resetTrial(letter?: string) {
       const target = letter ?? self.ui.selectedTrialLetter;
       const trial = self.trials.get(target);
@@ -37,8 +31,9 @@ export const RootStore = types
     get activeTrial(): TrialModelInstance {
       return resolveActiveTrial(self.trials, self.ui.selectedTrialLetter);
     },
+    // Collapse's four trials are fixed at creation, so there is never a trial to add.
     get canAddTrial(): boolean {
-      return computeCanAddTrial(self.trials);
+      return false;
     },
     get trialLetters(): readonly string[] {
       return listTrialLetters(self.trials);
@@ -53,15 +48,17 @@ export type RootStoreSnapshotIn = SnapshotIn<typeof RootStore>;
 export type RootStoreSnapshotOut = SnapshotOut<typeof RootStore>;
 
 /**
- * Create a root store seeded with a single empty trial "A". The `rng` is passed as MST's
- * *environment* (the second `create` argument) rather than a stored property; actions read it via
- * `getEnv(self)`. Production omits `rng` (defaults to `Math.random`); tests pass a seeded PRNG for
+ * Create a root store seeded with the four empty trials A–D, in that order, with A selected. The
+ * `rng` makes each trial's seed; it is also passed as MST's *environment* (the second `create`
+ * argument). Production omits `rng` (defaults to `Math.random`); tests pass a seeded PRNG for
  * determinism.
  */
 export function createRootStore({ rng = Math.random }: { rng?: () => number } = {}) {
   return RootStore.create(
     {
-      trials: { A: emptyTrialSnapshot(makeSeed(rng)) },
+      trials: Object.fromEntries(
+        COLLAPSE_TRIAL_LETTERS.map((letter) => [letter, emptyTrialSnapshot(makeSeed(rng))]),
+      ),
       ui: { selectedTrialLetter: "A" },
     },
     { rng },

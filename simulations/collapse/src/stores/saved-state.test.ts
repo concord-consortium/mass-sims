@@ -1,3 +1,4 @@
+import { seededRandom } from "@concord-consortium/mass-sims-shared";
 import { applySnapshot, getSnapshot } from "mobx-state-tree";
 import { describe, expect, it } from "vitest";
 import type { SimInput, SimOutput } from "../model/types";
@@ -8,141 +9,143 @@ import {
   type SavedState,
   toSavedState,
 } from "./saved-state";
+import { DEFAULT_PARAMS } from "./trial-model";
 
 const INPUT: SimInput = { walkerCount: 50, stepSize: 1, framesPerTrial: 200, seed: "s" };
 const OUTPUT: SimOutput = { avgDistance: 12.3, stdDevDistance: 2.1, avgDistanceSeries: [1, 2, 3] };
+const TRIAL = { input: INPUT, output: OUTPUT, finalTransient: null };
 
-describe("migrateSavedState — current versioned shape", () => {
-  it("passes a valid versioned state through unchanged", () => {
+const rng = seededRandom("saved-state-test");
+
+/** Migrate, asserting a non-null result. */
+function migrate(raw: unknown): SavedState {
+  const state = migrateSavedState(raw, rng);
+  if (!state) throw new Error("expected a migrated state");
+  return state;
+}
+
+/** Whether a migrated trial is a fresh empty one (default params, nothing recorded). */
+function isEmpty(trial: SavedState["trials"]["A"]): boolean {
+  const { seed: _seed, ...params } = trial.input;
+  return (
+    trial.output === null &&
+    trial.finalTransient === null &&
+    JSON.stringify(params) === JSON.stringify(DEFAULT_PARAMS)
+  );
+}
+
+describe("migrateSavedState — normalizes to exactly A–D", () => {
+  it("passes a state with four valid trials through unchanged", () => {
     const state: SavedState = {
       version: 1,
-      trials: { A: { input: INPUT, output: OUTPUT, finalTransient: null } },
-      selectedTrialLetter: "A",
+      trials: { A: TRIAL, B: TRIAL, C: TRIAL, D: TRIAL },
+      selectedTrialLetter: "C",
     };
-    expect(migrateSavedState(state)).toEqual(state);
+    expect(migrate(state)).toEqual(state);
   });
 
-  it("returns null for a versioned state with no trials", () => {
-    expect(migrateSavedState({ version: 1, trials: {}, selectedTrialLetter: "A" })).toBeNull();
+  it("a B-only save → A, B, C, D in that order, B intact, A/C/D empty", () => {
+    const state = migrate({ version: 1, trials: { B: TRIAL }, selectedTrialLetter: "B" });
+    expect(Object.keys(state.trials)).toEqual(["A", "B", "C", "D"]);
+    expect(state.trials.B).toEqual(TRIAL);
+    expect(isEmpty(state.trials.A)).toBe(true);
+    expect(isEmpty(state.trials.C)).toBe(true);
+    expect(isEmpty(state.trials.D)).toBe(true);
+    expect(state.selectedTrialLetter).toBe("B");
   });
 
-  it("returns null for a versioned state missing selectedTrialLetter", () => {
-    expect(migrateSavedState({ version: 1, trials: { A: {} } })).toBeNull();
+  it("a save with A–D plus an E → E ignored, four trials, A–D data preserved", () => {
+    const trials = { A: TRIAL, B: TRIAL, C: TRIAL, D: TRIAL, E: TRIAL };
+    const state = migrate({ version: 1, trials, selectedTrialLetter: "A" });
+    expect(state.trials).toEqual({ A: TRIAL, B: TRIAL, C: TRIAL, D: TRIAL });
+  });
+
+  it('selectedTrialLetter "E" → "A"', () => {
+    const state = migrate({ version: 1, trials: { A: TRIAL }, selectedTrialLetter: "E" });
+    expect(state.selectedTrialLetter).toBe("A");
+  });
+
+  it('a missing or non-string selectedTrialLetter → "A"', () => {
+    expect(migrate({ version: 1, trials: { A: TRIAL } }).selectedTrialLetter).toBe("A");
+    expect(
+      migrate({ version: 1, trials: { A: TRIAL }, selectedTrialLetter: 3 }).selectedTrialLetter,
+    ).toBe("A");
+  });
+
+  it("one malformed C entry → C empty, A/B/D intact", () => {
+    const trials = { A: TRIAL, B: TRIAL, C: { input: {} }, D: TRIAL };
+    const state = migrate({ version: 1, trials, selectedTrialLetter: "A" });
+    expect(isEmpty(state.trials.C)).toBe(true);
+    expect(state.trials.A).toEqual(TRIAL);
+    expect(state.trials.B).toEqual(TRIAL);
+    expect(state.trials.D).toEqual(TRIAL);
+  });
+
+  it("empty trials → four empty trials with distinct seeds", () => {
+    const state = migrate({ version: 1, trials: {}, selectedTrialLetter: "A" });
+    expect(Object.keys(state.trials)).toEqual(["A", "B", "C", "D"]);
+    for (const trial of Object.values(state.trials)) expect(isEmpty(trial)).toBe(true);
+    expect(new Set(Object.values(state.trials).map((t) => t.input.seed)).size).toBe(4);
   });
 });
 
-describe("migrateSavedState — rejects payloads that can't hydrate cleanly", () => {
-  const trial = { input: INPUT, output: OUTPUT, finalTransient: null };
+describe("migrateSavedState — replaces trials that can't hydrate cleanly", () => {
+  const replaced = (A: unknown) =>
+    isEmpty(migrate({ version: 1, trials: { A }, selectedTrialLetter: "A" }).trials.A);
 
-  it("rejects a selected letter outside A–J (would throw the enumeration on hydrate)", () => {
-    expect(
-      migrateSavedState({ version: 1, trials: { A: trial }, selectedTrialLetter: "Z" }),
-    ).toBeNull();
+  it("replaces a trial missing its required input", () => {
+    expect(replaced({ output: null, finalTransient: null })).toBe(true);
   });
 
-  it("accepts a valid-but-absent selected letter (App's reaction re-selects; trials preserved)", () => {
-    const state = { version: 1, trials: { A: trial }, selectedTrialLetter: "B" };
-    expect(migrateSavedState(state)).toEqual(state);
+  it("replaces a trial whose output is malformed (non-object, non-null)", () => {
+    expect(replaced({ input: INPUT, output: "garbage" })).toBe(true);
   });
 
-  it("rejects a trial keyed by a non-letter", () => {
+  it("replaces a trial whose input fields are missing or wrong-typed", () => {
+    expect(replaced({ input: {} })).toBe(true);
+    expect(replaced({ input: { walkerCount: 50, stepSize: 1, framesPerTrial: 200 } })).toBe(true);
     expect(
-      migrateSavedState({ version: 1, trials: { A: trial, foo: trial }, selectedTrialLetter: "A" }),
-    ).toBeNull();
+      replaced({ input: { walkerCount: "50", stepSize: 1, framesPerTrial: 200, seed: "x" } }),
+    ).toBe(true);
   });
 
-  it("rejects a trial missing its required input", () => {
+  it("replaces non-positive run parameters (zero walkers / a run that never completes)", () => {
+    expect(replaced({ input: { ...INPUT, walkerCount: 0 } })).toBe(true);
+    expect(replaced({ input: { ...INPUT, framesPerTrial: 0 } })).toBe(true);
+  });
+
+  it("replaces malformed output / finalTransient inner shapes", () => {
     expect(
-      migrateSavedState({
-        version: 1,
-        trials: { A: { output: null, finalTransient: null } },
-        selectedTrialLetter: "A",
+      replaced({
+        input: INPUT,
+        output: { avgDistance: "x", stdDevDistance: 1, avgDistanceSeries: [] },
       }),
-    ).toBeNull();
-  });
-
-  it("rejects a trial whose output is malformed (non-object, non-null)", () => {
+    ).toBe(true);
+    // walker missing `y`
     expect(
-      migrateSavedState({
-        version: 1,
-        trials: { A: { input: INPUT, output: "garbage" } },
-        selectedTrialLetter: "A",
+      replaced({
+        input: INPUT,
+        finalTransient: { frame: 1, walkers: [{ x: 1 }], avgDistanceSeries: [] },
       }),
-    ).toBeNull();
-  });
-
-  it("rejects a trial whose input fields are missing or wrong-typed", () => {
-    const cases = [
-      {}, // empty input
-      { walkerCount: 50, stepSize: 1, framesPerTrial: 200 }, // missing seed
-      { walkerCount: "50", stepSize: 1, framesPerTrial: 200, seed: "x" }, // wrong type
-    ];
-    for (const input of cases) {
-      expect(
-        migrateSavedState({ version: 1, trials: { A: { input } }, selectedTrialLetter: "A" }),
-      ).toBeNull();
-    }
-  });
-
-  it("rejects non-positive run parameters (zero walkers / a run that never completes)", () => {
-    const zeroWalkers = { walkerCount: 0, stepSize: 1, framesPerTrial: 200, seed: "x" };
-    const zeroFrames = { walkerCount: 50, stepSize: 1, framesPerTrial: 0, seed: "x" };
-    expect(
-      migrateSavedState({
-        version: 1,
-        trials: { A: { input: zeroWalkers } },
-        selectedTrialLetter: "A",
-      }),
-    ).toBeNull();
-    expect(
-      migrateSavedState({
-        version: 1,
-        trials: { A: { input: zeroFrames } },
-        selectedTrialLetter: "A",
-      }),
-    ).toBeNull();
-  });
-
-  it("rejects malformed output / finalTransient inner shapes", () => {
-    expect(
-      migrateSavedState({
-        version: 1,
-        trials: {
-          A: {
-            input: INPUT,
-            output: { avgDistance: "x", stdDevDistance: 1, avgDistanceSeries: [] },
-          },
-        },
-        selectedTrialLetter: "A",
-      }),
-    ).toBeNull();
-    expect(
-      migrateSavedState({
-        version: 1,
-        // walker missing `y`
-        trials: {
-          A: {
-            input: INPUT,
-            finalTransient: { frame: 1, walkers: [{ x: 1 }], avgDistanceSeries: [] },
-          },
-        },
-        selectedTrialLetter: "A",
-      }),
-    ).toBeNull();
+    ).toBe(true);
   });
 });
 
-describe("migrateSavedState — malformed / unknown input", () => {
+describe("migrateSavedState — unrecognized input", () => {
   it.each([
     null,
     undefined,
     42,
     "nope",
+    [],
     {},
     { version: 2 },
     { foo: "bar" },
+    { version: 1 },
+    { version: 1, trials: [] },
+    { version: 1, trials: "nope" },
   ])("returns null for %o", (raw) => {
-    expect(migrateSavedState(raw)).toBeNull();
+    expect(migrateSavedState(raw, rng)).toBeNull();
   });
 });
 
@@ -157,50 +160,37 @@ describe("toSavedState + hydrate round-trip", () => {
     const state = toSavedState(getSnapshot(store));
     expect(state.version).toBe(SAVED_STATE_VERSION);
     expect(state.selectedTrialLetter).toBe("A");
-    expect(state.trials.A?.output).toEqual(OUTPUT);
+    expect(state.trials.A.output).toEqual(OUTPUT);
   });
 
-  it("a validated state hydrates a store via the { trials, ui } projection", () => {
-    const saved: SavedState = {
-      version: 1,
-      trials: {
-        A: { input: INPUT, output: OUTPUT, finalTransient: null },
-        B: { input: { ...INPUT, seed: "b" }, output: null, finalTransient: null },
-      },
-      selectedTrialLetter: "B",
-    };
-    const migrated = migrateSavedState(saved);
-    expect(migrated).not.toBeNull();
+  it("a normalized B-only save hydrates a store to four trials in A–D order", () => {
+    const migrated = migrate({ version: 1, trials: { B: TRIAL }, selectedTrialLetter: "B" });
     const store = createRootStore();
-    if (migrated) {
-      applySnapshot(store, {
-        trials: migrated.trials,
-        ui: { selectedTrialLetter: migrated.selectedTrialLetter },
-      });
-    }
-    expect(store.trialLetters).toEqual(["A", "B"]);
+    applySnapshot(store, {
+      trials: migrated.trials,
+      ui: { selectedTrialLetter: migrated.selectedTrialLetter },
+    });
+    expect(store.trialLetters).toEqual(["A", "B", "C", "D"]);
     expect(store.ui.selectedTrialLetter).toBe("B");
-    expect(store.trials.get("A")?.output).toEqual(OUTPUT);
+    expect(store.trials.get("B")?.output).toEqual(OUTPUT);
   });
 
   it("round-trips a persisted state back through migrate + hydrate unchanged", () => {
     const store = createRootStore();
-    store.addTrial(); // B
+    store.ui.selectTrial("B");
     store.activeTrial.setOutput(OUTPUT, {
       frame: 200,
       walkers: [{ x: 2, y: 2 }],
       avgDistanceSeries: [4, 5, 6],
     });
     const saved = toSavedState(getSnapshot(store));
-    const migrated = migrateSavedState(saved);
+    const migrated = migrate(saved);
 
     const restored = createRootStore();
-    if (migrated) {
-      applySnapshot(restored, {
-        trials: migrated.trials,
-        ui: { selectedTrialLetter: migrated.selectedTrialLetter },
-      });
-    }
+    applySnapshot(restored, {
+      trials: migrated.trials,
+      ui: { selectedTrialLetter: migrated.selectedTrialLetter },
+    });
     expect(toSavedState(getSnapshot(restored))).toEqual(saved);
   });
 });

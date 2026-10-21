@@ -26,11 +26,17 @@ function makeRng(seed: number): () => number {
 }
 
 describe("createRootStore", () => {
-  it("seeds a single empty trial A, selected", () => {
+  it("seeds four empty trials A–D, in order, with A selected", () => {
     const store = createRootStore({ rng: makeRng(1) });
-    expect(store.trialLetters).toEqual(["A"]);
+    expect(store.trialLetters).toEqual(["A", "B", "C", "D"]);
     expect(store.ui.selectedTrialLetter).toBe("A");
-    expect(store.activeTrial.output).toBeNull();
+    for (const letter of store.trialLetters) expect(store.trials.get(letter)?.output).toBeNull();
+  });
+
+  it("gives each seeded trial a distinct seed", () => {
+    const store = createRootStore({ rng: makeRng(2) });
+    const seeds = store.trialLetters.map((letter) => store.trials.get(letter)?.input.seed);
+    expect(new Set(seeds).size).toBe(4);
   });
 
   it("RNG injection is the determinism seam: same seeded PRNG → same trial seed", () => {
@@ -43,20 +49,9 @@ describe("createRootStore", () => {
   });
 });
 
-describe("RootStore.addTrial", () => {
-  it("appends the next letter and gives each trial a distinct seed", () => {
-    const store = createRootStore({ rng: makeRng(2) });
-    expect(store.addTrial()).toBe("B");
-    expect(store.trialLetters).toEqual(["A", "B"]);
-    expect(store.trials.get("A")?.input.seed).not.toBe(store.trials.get("B")?.input.seed);
-  });
-
-  it("returns null at the cap and does not grow past 10", () => {
-    const store = createRootStore({ rng: makeRng(3) });
-    while (store.canAddTrial) store.addTrial();
-    expect(store.trialLetters).toHaveLength(10);
-    expect(store.addTrial()).toBeNull();
-    expect(store.trialLetters).toHaveLength(10);
+describe("RootStore.canAddTrial", () => {
+  it("is always false (the four trials are fixed)", () => {
+    expect(createRootStore({ rng: makeRng(3) }).canAddTrial).toBe(false);
   });
 });
 
@@ -73,7 +68,6 @@ describe("RootStore.resetTrial (sim-local)", () => {
 
   it("resets the named trial without touching others", () => {
     const store = createRootStore({ rng: makeRng(5) });
-    store.addTrial(); // B
     store.trials.get("A")?.setOutput(OUTPUT, TRANSIENT);
     store.trials.get("B")?.setOutput(OUTPUT, TRANSIENT);
     store.resetTrial("B");
@@ -90,14 +84,13 @@ describe("RootStore.resetTrial (sim-local)", () => {
 describe("RootStore views consume the shared logic", () => {
   it("activeTrial falls back to the first trial on a dangling selection", () => {
     const store = createRootStore({ rng: makeRng(7) });
-    // "B" is a valid letter but absent → fall back to A rather than throw.
-    store.ui.selectTrial("B");
+    // "E" is a valid letter but absent → fall back to A rather than throw.
+    store.ui.selectTrial("E");
     expect(store.activeTrial).toBe(store.trials.get("A"));
   });
 
   it("hasAnyProgress reflects any trial having output, not just the active one", () => {
     const store = createRootStore({ rng: makeRng(8) });
-    store.addTrial(); // B
     expect(store.hasAnyProgress).toBe(false);
     store.trials.get("B")?.setOutput(OUTPUT, TRANSIENT);
     expect(store.ui.selectedTrialLetter).toBe("A");
@@ -109,7 +102,7 @@ describe("RootStore views consume the shared logic", () => {
     const snap = getSnapshot(store);
     expect(Object.keys(snap)).toEqual(["trials", "ui"]);
     expect(snap.ui.selectedTrialLetter).toBe("A");
-    expect(Object.keys(snap.trials)).toEqual(["A"]);
+    expect(Object.keys(snap.trials)).toEqual(["A", "B", "C", "D"]);
   });
 });
 

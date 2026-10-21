@@ -1,17 +1,49 @@
 @use "@concord-consortium/mass-sims-shared/styles/tokens" as tokens;
 @use "@concord-consortium/mass-sims-shared/styles/mixins" as mixins;
+@use "../../theme" as theme;
+
+// How far an unselected card sits right of the Trials column's left edge. The column is 127px and
+// the gap 10px, so the Simulation panel's left border is at 137–139; a 132px card offset by 7px puts
+// its right border on the same 137–139, so the two render as one line.
+$card-offset: 7px;
+
+// Row gap between the title bar and the content row (the chip's overhang above the panel border).
+// Private to the shared simulation-frame.scss, so recomputed here from the same tokens.
+$titlebar-content-gap: (tokens.$section-chip-height - tokens.$border-strong-width) * 0.5;
+
+// Height of the frame's content row, which the four cards fill exactly: 562 − 50 − 17 − 10 = 485px.
+$content-row-height: tokens.$frame-height - tokens.$frame-titlebar-height - $titlebar-content-gap -
+  tokens.$body-padding;
+
+.simulation-frame .trials-area {
+  // The cards sit on the frame, not in a panel. The "Trials" chip stays (shared Section renders it).
+  background: none;
+  border: none;
+
+  // Four fixed cards fill the content row exactly, so nothing scrolls and the cards may overhang
+  // the column to meet the Simulation panel.
+  .content-wrap,
+  .content {
+    overflow: visible;
+  }
+
+  .content {
+    padding: 0;
+  }
+}
 
 .collapse-trials-panel {
-  align-items: flex-start;
-  display: flex;
-  flex-direction: column;
-  gap: tokens.$column-gap;
+  // Card footprint. Width from the mockup (132.48 → 132). Height: the content row is
+  // $frame-height − $frame-titlebar-height − chip overhang (17) − $body-padding = 485px;
+  // four cards and three $column-gap gaps → (485 − 30) / 4 = 113.75px.
+  --trial-card-width: 132px;
+  --trial-card-height: #{($content-row-height - 3 * tokens.$column-gap) * 0.25};
+
   position: relative;
   width: 100%;
 
-  // The listbox holds only the option cards; the `+ New`/notice + reset are siblings outside it.
-  // A flex column with `$column-gap` between cards (and the outer panel repeats that gap between
-  // the listbox and the `+ New` card below it).
+  // The listbox holds only the option cards; the reset is a sibling outside it. A flex column with
+  // `$column-gap` between cards.
   .collapse-trials-listbox {
     align-items: flex-start;
     display: flex;
@@ -20,70 +52,174 @@
     width: 100%;
   }
 
+  // Each card is a tab that joins the Simulation panel on its right edge. Every z-index in this
+  // column goes on the wrapper, never on the `.trial-card` button: unselected → auto (under the
+  // panel's left border), selected → 2 (above the panel, so the join is seamless), and the reset → 4.
+  .trial-card-wrapper {
+    margin-left: $card-offset;
+    // margin-left, NOT transform: a transform would make the wrapper its own stacking context and
+    // trap the focus ring under the panel. Width grows by exactly what the offset loses, so the
+    // card's right edge stays put during the slide.
+    transition:
+      margin-left tokens.$duration-quick ease,
+      width tokens.$duration-quick ease;
+
+    .trial-card {
+      background: theme.$surface;
+      border-color: theme.$border;
+      // Square on the panel side; 8px on the left, like the panel's own corners.
+      border-radius: tokens.$radius-lg 0 0 tokens.$radius-lg;
+
+      &:hover,
+      &:focus-visible {
+        background: theme.$hover;
+      }
+
+      &:active {
+        background: theme.$active;
+      }
+    }
+
+    .letter-badge {
+      background: theme.$trial-label-bg;
+    }
+
+    // The selected card stops offsetting, widens by the same 7px, laps the panel's left border, and
+    // takes the panel's fill, so it reads as joined to the panel. Same border color as an unselected
+    // card (as in the mockup): selection is carried by the fill and the letter badge.
+    &.selected {
+      margin-left: 0;
+      width: calc(var(--trial-card-width) + #{$card-offset});
+      z-index: 2;
+
+      .trial-card {
+        background: theme.$trial-selected-bg;
+        border-color: theme.$border;
+        border-right: none;
+        box-shadow: none;
+      }
+
+      .letter-badge {
+        background: theme.$heading;
+        color: theme.$trial-label-bg;
+      }
+    }
+
+    // Card body: the shared `.body` frame is centered with a 4px inset; Collapse left-aligns it and
+    // moves it 2px down (bottom up by the same 2px, so the box keeps its height). Port of the
+    // mockup's `.collapse-trials .trial-card-stats`.
+    .body {
+      align-items: stretch;
+      bottom: 3px;
+      padding-left: 4px; // 2 card border + 4 box inset + 4 = 10px from the card's left edge to the icons
+      text-align: left;
+      top: 40px;
+    }
+  }
+
   // Panel-level reset: position it over the selected card by index (shared formula;
-  // `--selected-index` is set inline). Neutral reset colors come from the shared
-  // trial-reset-button.scss (Starter adds no theme override).
+  // `--selected-index` is set inline), then apply the Collapse theme colors. Box color on the
+  // ::before (stays opaque when disabled); arrow color on the icon (dims when disabled). The shared
+  // button ships `z-index: 1` to clear a plain card; here the selected card is lifted to 2 (3 when
+  // focused), so the reset must sit above both or it is painted over and its clicks are swallowed.
   .reset-button {
     @include mixins.trial-reset-position;
+
+    z-index: 4;
+  }
+
+  .reset-button::before {
+    background: theme.$surface;
+  }
+
+  .reset-button-icon {
+    color: theme.$heading;
+  }
+
+  .reset-button:hover:not([aria-disabled="true"])::before,
+  .reset-button:focus-visible:not([aria-disabled="true"])::before {
+    background: theme.$hover;
+  }
+
+  .reset-button:active:not([aria-disabled="true"])::before {
+    background: theme.$active;
   }
 }
 
-// "New trial" card — sim-owned (the shared TrialCard has no add variant); matches the TrialCard
-// 120 × 136 footprint.
-.new-trial-card {
-  align-items: center;
-  background: transparent;
-  border: tokens.$border-strong;
-  border-radius: tokens.$radius-md;
-  color: tokens.$color-text;
-  cursor: pointer;
-  display: flex;
-  flex-direction: column;
-  flex-shrink: 0;
-  font-family: tokens.$font-family-base;
-  font-size: tokens.$font-size-base;
-  font-weight: 700;
-  gap: tokens.$space-1;
-  height: var(--trial-card-height, #{tokens.$trial-card-height});
-  justify-content: center;
-  width: tokens.$trial-card-width;
-
-  &:hover,
-  &:focus-visible {
-    background: tokens.$color-surface-hover;
-  }
-
-  &:focus-visible {
-    outline: tokens.$focus-outline;
-    outline-offset: tokens.$focus-outline-offset;
+@media (prefers-reduced-motion: reduce) {
+  .collapse-trials-panel .trial-card-wrapper {
+    transition: none;
   }
 }
 
-.new-trial-card-icon {
-  color: tokens.$color-text;
-  height: 24px;
-  width: 24px;
-}
-
-.new-trial-card-text {
-  font-weight: 700;
-}
-
-// Trial card body (the shared <TrialCard>'s children, inside its `.body`): stacks the avg / σ rows.
+// Trial card body: the rock-type row, then the moisture row with its note on the line below.
 .trial-card-body {
-  align-items: center;
   display: flex;
   flex-direction: column;
-  gap: 1px;
+  gap: 4px;
   width: 100%;
-}
 
-// "Max number of trials reached" notice — replaces the `+ New` card at the cap.
-.max-trials-notice {
-  color: tokens.$color-text;
-  font-family: tokens.$font-family-base;
-  font-size: tokens.$font-size-base;
-  font-style: italic;
-  text-align: center;
-  width: 100%;
+  .collapse-attr-row {
+    // Top-aligned so the note line cannot drag the icon to the block's middle.
+    align-items: flex-start;
+    display: flex;
+    gap: 5px;
+    // The icon's negative margin pulls it out of this box, which would otherwise shrink a one-line
+    // row and close the gap between rows.
+    min-height: 22px;
+  }
+
+  // The icon files carry their own width/height attributes, so the svg itself is sized.
+  .collapse-attr-icon {
+    display: block;
+    flex-shrink: 0;
+    height: 22px;
+    // (22 − 18) / 2: centers the icon on the label's first line.
+    margin-top: -2px;
+    width: 22px;
+
+    svg {
+      display: block;
+      height: 22px;
+      width: 22px;
+    }
+  }
+
+  .collapse-attr-label {
+    color: tokens.$color-text;
+    font-family: tokens.$font-family-condensed;
+    font-size: tokens.$font-size-base;
+    font-weight: 500;
+    line-height: 18px;
+  }
+
+  // -3px, paired with the icon's -5px below, centers the label's line box on the icon.
+  .collapse-attr-label.has-note {
+    position: relative;
+    top: -3px;
+  }
+
+  .collapse-attr-row:has(.collapse-attr-label.has-note) .collapse-attr-icon {
+    margin-top: -5px;
+  }
+
+  // The moisture note is its own line under the label, starting at the icon's left edge (which is
+  // what lets ">50 rainy days/yr" fit on one line). Absolute, so it does not add to the row's
+  // height: 17px down = the label's −3px plus its 18px line height, less 1px.
+  .collapse-attr-row:has(.collapse-attr-noteline) {
+    position: relative;
+  }
+
+  .collapse-attr-noteline {
+    color: tokens.$color-text;
+    font-family: tokens.$font-family-condensed;
+    font-size: tokens.$font-size-base;
+    font-weight: 400;
+    left: 0;
+    letter-spacing: 0.16px;
+    line-height: 18px;
+    position: absolute;
+    top: 17px;
+    white-space: nowrap;
+  }
 }

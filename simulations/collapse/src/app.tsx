@@ -66,7 +66,7 @@ export const App = observer(function App() {
   // (`{ trials, ui: {...} }`), so we project from one to the other.
   useEffect(() => {
     if (initMsg && "interactiveState" in initMsg && initMsg.interactiveState) {
-      const state = migrateSavedState(initMsg.interactiveState);
+      const state = migrateSavedState(initMsg.interactiveState, Math.random);
       if (state) {
         applySnapshot(rootStore, {
           trials: state.trials,
