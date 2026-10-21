@@ -39,29 +39,6 @@ test("About modal: not open on initial load", async () => {
   await expect(collapse.aboutPanel).toBeHidden();
 });
 
-test("Simulation controls render with a sensible default disabled state", async () => {
-  await expect(collapse.playButton).toBeEnabled();
-  await expect(collapse.stepButton).toBeEnabled();
-  await expect(collapse.resetButton).toBeDisabled();
-});
-
-test("Play / pause cycle", async () => {
-  await expect(collapse.playButton).toBeVisible();
-  // Play: the button toggles to "Pause" and the run advances (Reset enables once frame > 0) —
-  // that enablement is the visible proof the simulation is actually running.
-  await collapse.playButton.click();
-  await expect(collapse.pauseButton).toBeVisible();
-  await expect(collapse.resetButton).toBeEnabled();
-  // Pause: the button toggles back to "Play", confirming the runner stopped.
-  await collapse.pauseButton.click();
-  await expect(collapse.playButton).toBeVisible();
-});
-
-test("Reload warning fires after a trial completes", async () => {
-  await collapse.completeOneTrial();
-  await collapse.assertReloadWarning(true);
-});
-
 test("Reload warning does NOT fire on clean state", async () => {
   // Fresh load, no trial run → output is null → no beforeunload prompt.
   await collapse.assertReloadWarning(false);

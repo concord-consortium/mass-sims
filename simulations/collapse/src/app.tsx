@@ -19,12 +19,12 @@ import { migrateSavedState, type SavedState, toSavedState } from "./stores/saved
 import "./app.scss";
 
 /**
- * Collapse! simulation — still the Starter random-walk model until the real model replaces it.
+ * Collapse! simulation — the trial store still carries the Starter random-walk `input` / `output`
+ * shape until the real model replaces it; `<SimulationView>` is a layout-only scaffold for now.
  *
  * TWO-LAYER STATE MODEL: MST owns the trial LIST — what trials exist, which is selected, each trial's
- * recorded input/output. The per-frame transient run state (live walker positions, frame counter)
- * stays in `<SimulationView>`'s `useModelState` / `useSimulationRunner`, NOT in MST. MST did not
- * replace those hooks; the two layers do different jobs.
+ * recorded input/output. Per-frame transient run state belongs in `<SimulationView>` (via
+ * `useModelState` / `useSimulationRunner`) once the model story adds it, NOT in MST.
  *
  * Collapse has no Data slot: without `<SimulationFrame.Data>` the shared frame lays out two columns
  * (Trials + Simulation).
@@ -122,20 +122,11 @@ export const App = observer(function App() {
 
           <SimulationFrame.Simulation instruction="Select a trial, then sample through time">
             {/*
-            The `key` forces <SimulationView> to remount whenever the selected trial changes OR the
-            active trial's output transitions between empty and done. This matters because
-            <SimulationView>'s `useModelState` only consumes initial input values on MOUNT — without
-            the remount, switching trials or resetting would leave stale per-frame transient state.
-            Sourcing the key from store reads is fine; dropping it is a stale-input bug.
+            The `key` remounts <SimulationView> whenever the selected trial changes OR the active
+            trial's output transitions between empty and done. The view is layout-only for now, so
+            this is harmless; it stays because the model story's per-trial view state will need it.
           */}
-            <SimulationView
-              key={`${selectedLetter}:${activeTrial.output ? "done" : "empty"}`}
-              trial={activeTrial}
-              trialLabel={selectedLetter}
-              onInputChange={(input) => activeTrial.setInput(input)}
-              onComplete={(output, finalTransient) => activeTrial.setOutput(output, finalTransient)}
-              onReset={() => rootStore.resetTrial()}
-            />
+            <SimulationView key={`${selectedLetter}:${activeTrial.output ? "done" : "empty"}`} />
           </SimulationFrame.Simulation>
         </SimulationFrame>
       </Announcer>

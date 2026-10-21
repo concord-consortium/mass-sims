@@ -14,15 +14,19 @@ vi.mock("@concord-consortium/lara-interactive-api", () => ({
 
 import { App } from "./app";
 
-// Run the currently-selected trial to completion by shortening it and stepping through.
-// The frames input is a shared <NumberField> (role "textbox") that commits on blur, so
-// change + blur to push the shortened value into the trial before stepping.
-function runSelectedTrial(view: ReturnType<typeof render>, frames = 2) {
-  const framesInput = view.getByRole("textbox", { name: /frames per trial/i });
-  fireEvent.change(framesInput, { target: { value: String(frames) } });
-  fireEvent.blur(framesInput);
-  const stepButton = view.getByRole("button", { name: /step/i });
-  for (let i = 0; i < frames; i++) fireEvent.click(stepButton);
+// Nothing in the UI can run a trial yet (the Simulation slot is a layout scaffold), so tests that
+// need a trial with a recorded output restore one through AP saved state. Embedded, since a
+// restore only arrives in an init message.
+function restoreTrialAWithOutput() {
+  const trialA = {
+    input: { walkerCount: 50, stepSize: 1, framesPerTrial: 200, seed: "saved-A" },
+    output: { avgDistance: 3.14, stdDevDistance: 0.5, avgDistanceSeries: [1, 2, 3] },
+    finalTransient: null,
+  };
+  useInitMessageMock.mockReturnValue({
+    mode: "runtime",
+    interactiveState: { version: 1, trials: { A: trialA }, selectedTrialLetter: "A" },
+  });
 }
 
 /** The four trial options, in rendered order. */
@@ -65,16 +69,9 @@ describe("Collapse App", () => {
     expect(selectedHasOutput(view, "A")).toBe(false);
   });
 
-  it("running the selected trial records its output without adding a trial", () => {
-    const view = render(<App />);
-    runSelectedTrial(view);
-    expect(selectedHasOutput(view, "A")).toBe(true);
-    expect(view.getAllByRole("option")).toHaveLength(4);
-  });
-
   it("resets a completed trial back to empty without deleting the card", () => {
+    restoreTrialAWithOutput();
     const view = render(<App />);
-    runSelectedTrial(view);
     expect(selectedHasOutput(view, "A")).toBe(true);
     // The selected card's reset affordance clears it (trials are reset, not deleted).
     fireEvent.click(view.getByRole("button", { name: "Reset trial A" }));
@@ -86,15 +83,6 @@ describe("Collapse App", () => {
     const addSpy = vi.spyOn(window, "addEventListener");
     render(<App />);
     expect(addSpy).not.toHaveBeenCalledWith("beforeunload", expect.any(Function));
-    addSpy.mockRestore();
-  });
-
-  it("registers a beforeunload listener once a trial has been run", () => {
-    const addSpy = vi.spyOn(window, "addEventListener");
-    const view = render(<App />);
-    runSelectedTrial(view);
-    // After the trial completes, the reload-warning listener is attached.
-    expect(addSpy).toHaveBeenCalledWith("beforeunload", expect.any(Function));
     addSpy.mockRestore();
   });
 });
@@ -166,33 +154,34 @@ describe("Collapse App — AP saved state", () => {
     expect(selectedHasOutput(view, "A")).toBe(false);
   });
 
-  it("calls setInteractiveState on every trial-list change (complete / reset)", () => {
+  it("calls setInteractiveState on every trial-list change (restore / reset)", () => {
+    restoreTrialAWithOutput();
     const view = render(<App />);
-    // Initial mount triggers at least one push (the default state).
+    // Mount + restore push the restored state. Trials are a letter-keyed map (not an array) of
+    // all four trials.
     expect(setInteractiveStateMock).toHaveBeenCalled();
-    setInteractiveStateMock.mockClear();
-
-    // Complete Trial A → push. Trials are a letter-keyed map (not an array) of all four trials.
-    runSelectedTrial(view);
-    expect(setInteractiveStateMock).toHaveBeenCalled();
-    const lastCall = setInteractiveStateMock.mock.calls.at(-1)?.[0] as {
+    const restored = setInteractiveStateMock.mock.calls.at(-1)?.[0] as {
       trials: Record<string, { output: unknown }>;
     };
-    expect(Object.keys(lastCall.trials)).toEqual(["A", "B", "C", "D"]);
-    expect(lastCall.trials.A.output).not.toBeNull();
+    expect(Object.keys(restored.trials)).toEqual(["A", "B", "C", "D"]);
+    expect(restored.trials.A.output).not.toBeNull();
 
     // Reset Trial A → push.
     setInteractiveStateMock.mockClear();
     fireEvent.click(view.getByRole("button", { name: "Reset trial A" }));
     expect(setInteractiveStateMock).toHaveBeenCalled();
+    const reset = setInteractiveStateMock.mock.calls.at(-1)?.[0] as {
+      trials: Record<string, { output: unknown }>;
+    };
+    expect(reset.trials.A.output).toBeNull();
   });
 
   it("does NOT register a beforeunload listener when embedded (AP persists progress)", () => {
-    // Embedded: AP persists progress, so the standalone reload warning stays off.
-    useInitMessageMock.mockReturnValue({ mode: "runtime", interactiveState: null });
+    // Embedded with a trial that has progress: AP persists it, so the reload warning stays off.
+    restoreTrialAWithOutput();
     const addSpy = vi.spyOn(window, "addEventListener");
     const view = render(<App />);
-    runSelectedTrial(view);
+    expect(selectedHasOutput(view, "A")).toBe(true);
     expect(addSpy).not.toHaveBeenCalledWith("beforeunload", expect.any(Function));
     addSpy.mockRestore();
   });

@@ -1,64 +1,92 @@
 @use "@concord-consortium/mass-sims-shared/styles/tokens" as tokens;
+@use "../theme" as theme;
 
-.simulation-view {
-  align-items: center;
+// Drop the Simulation slot's bottom padding so the stage row (flex: 1) reaches down to its 10px
+// margin above the panel's bottom border. Direct child only, so the nested Cross Section's own
+// `.content` is left alone.
+.simulation-frame .section.simulation-area > .content {
+  padding-bottom: 0;
+}
+
+.collapse-simulation {
   display: flex;
   flex-direction: column;
-  font-family: tokens.$font-family-base;
-  font-size: tokens.$font-size-base;
-  gap: tokens.$space-2;
-  padding: tokens.$space-2;
+  height: 100%;
+  min-height: 0;
 
-  // Trial-indicator badge in the panel's upper-left. With no positioned ancestor here it anchors
-  // to the enclosing `.section`, which puts it in the panel corner and lets it escape the
-  // Simulation slot's `overflow: hidden`.
-  .trial-badge {
-    align-items: center;
-    background: tokens.$color-trial-badge-bg-selected;
-    border-radius: tokens.$radius-sm;
-    color: tokens.$color-surface;
-    display: flex;
-    font-size: tokens.$font-size-lg;
-    font-weight: 700;
-    height: 32px;
-    justify-content: center;
-    left: tokens.$space-1;
-    line-height: 1;
-    position: absolute;
-    top: tokens.$space-1;
-    width: 32px;
+  // Placeholder: reserves the timeline's space until the Timeline story fills it. Height measured
+  // from the mockup (Collapse, 1024 px default width), where it is sized by its content; the -4px
+  // top margin is the mockup's own.
+  .collapse-timeline {
+    flex-shrink: 0;
+    height: 124px;
+    margin-top: -4px;
   }
 
-  canvas {
+  // Placeholder: reserves the controls row's space until the controls story fills it. Height
+  // measured from the mockup (Collapse, 1024 px default width), where it is sized by its content.
+  .collapse-controls {
+    flex-shrink: 0;
+    height: 64px;
+  }
+
+  .collapse-stage-row {
+    // One source for the Cross Section box's width: a straight line between two measured states,
+    // so the table takes more than its share as things get tight:
+    //   full width (row 842.5)  -> 280.91px, where the shared border with the table sat under
+    //                              the old Reset Trial button
+    //   narrowest  (row 586.5)  -> 206.9px, 20px off what it was, handing the table those 20px
+    //                              where it is tightest
+    // A percentage resolves against the row, so calc() states that line directly. The 150px floor
+    // is below both ends and only guards a row narrower than this app reaches; the maximum pins
+    // the full-width alignment.
+    --data-w: clamp(150px, calc(28.9102% + 37.34px), 280.91px);
+
+    display: flex;
+    flex: 1;
+    margin: 0 10px 10px;
+    min-height: 0;
+  }
+
+  // The table and the Cross Section box side by side, sharing one border: square where they meet,
+  // and the table laps 2px over the Cross Section box so their borders paint as one line.
+  .collapse-table-box {
     background: tokens.$color-surface;
-    height: 200px;
-    margin: 0 calc(-1 * #{tokens.$space-2});
-    width: calc(100% + #{tokens.$space-2} * 2);
+    border: tokens.$border-strong;
+    border-color: theme.$border;
+    border-radius: tokens.$radius-md;
+    border-bottom-right-radius: 0;
+    border-top-right-radius: 0;
+    flex: 1 1 0;
+    margin-right: -(tokens.$border-strong-width);
+    min-width: 0;
   }
 
-  .controls {
-    align-items: start;
-    column-gap: tokens.$space-6;
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    padding: 0 10px;
-    row-gap: tokens.$space-2;
-    width: 100%;
+  .section.collapse-cross-section {
+    background: tokens.$color-surface;
+    border-color: theme.$border;
+    border-radius: tokens.$radius-md;
+    border-bottom-left-radius: 0;
+    border-top-left-radius: 0;
+    flex: 0 0 var(--data-w);
+    min-width: 0;
+
+    .content {
+      align-items: center;
+      display: flex;
+      justify-content: center;
+      padding: tokens.$space-3;
+    }
   }
 
-  .display-options {
-    align-items: center;
-    column-gap: tokens.$space-5;
-    display: flex;
-    flex-wrap: wrap;
-    padding: 0 10px;
-    row-gap: tokens.$space-1;
-    width: 100%;
+  .collapse-placeholder {
+    color: tokens.$color-text;
+    font-size: tokens.$font-size-base;
+    margin: 0;
+    text-align: center;
   }
 
-  .buttons {
-    display: flex;
-    gap: tokens.$space-2;
-    margin-top: 5px;
+  .collapse-table-box .collapse-placeholder {
+    padding-top: tokens.$space-4;
   }
 }
