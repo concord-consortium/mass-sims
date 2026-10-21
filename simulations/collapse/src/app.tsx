@@ -156,7 +156,7 @@ export const App = observer(function App() {
       <Announcer>
         <SimulationFrame
           simTitle="Collapse!"
-          tagline="Lorem ipsum dolor sit amet"
+          tagline="Which conditions form caves?"
           infoModalContent={
             <p>
               Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor
@@ -169,7 +169,7 @@ export const App = observer(function App() {
             <TrialsPanel />
           </SimulationFrame.Trials>
 
-          <SimulationFrame.Simulation instruction="Choose parameters, then press Play">
+          <SimulationFrame.Simulation instruction="Select a trial, then sample through time">
             {/*
             The `key` forces <SimulationView> to remount whenever the selected trial changes OR the
             active trial's output transitions between empty and done. This matters because

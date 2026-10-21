@@ -1,1 +1,93 @@
-// Add sim-specific App-level style adjustments here.
+@use "@concord-consortium/mass-sims-shared/styles/tokens" as tokens;
+@use "./theme" as theme;
+
+// Collapse theme. The sim's CSS loads after the shared library's, so these equal-specificity
+// overrides win the cascade without extra wrappers.
+.simulation-frame {
+  background: theme.$surface;
+
+  // Column sizes for Collapse, set via the frame's `--sim-frame-*` override hooks (they inherit down
+  // to `.sim-main`).
+  --sim-frame-trials-width: 127px; // mockup: 127.48; cards overhang this column (see trials-panel.scss)
+  --sim-frame-simulation-min: 390px; // keep the single content area usable at 767px
+
+  &.standalone {
+    border-color: theme.$border;
+  }
+
+  .title-bar {
+    background: theme.$title-bar;
+  }
+
+  .sim-title {
+    color: theme.$heading;
+    font-family: "Fontdiner Swanky", #{tokens.$font-family-base};
+    font-weight: 400;
+    letter-spacing: 2px;
+  }
+
+  .info-button {
+    background: theme.$surface;
+    border-color: theme.$border;
+
+    &:hover,
+    &:focus-visible {
+      background: theme.$hover;
+    }
+
+    &:active {
+      background: theme.$active;
+    }
+
+    .info-button-icon {
+      color: theme.$heading;
+    }
+  }
+
+  .section {
+    background: theme.$surface;
+    border-color: theme.$border;
+
+    &.simulation-area {
+      background: theme.$title-bar;
+    }
+
+    .chip {
+      background: theme.$tab;
+      border-color: theme.$border;
+    }
+
+    .title {
+      color: theme.$heading;
+    }
+
+    .instruction {
+      background: theme.$surface;
+    }
+  }
+
+  .simulation-frame-info-modal {
+    border-color: theme.$border;
+
+    .modal-drag-handle {
+      background: theme.$surface;
+      border-bottom-color: theme.$border;
+    }
+
+    .modal-header-icon,
+    .modal-close-icon {
+      color: theme.$heading;
+    }
+
+    .modal-close {
+      &:hover,
+      &:focus-visible {
+        background: theme.$hover;
+      }
+
+      &:active {
+        background: theme.$active;
+      }
+    }
+  }
+}

@@ -32,9 +32,11 @@ beforeEach(() => {
 });
 
 describe("Collapse App", () => {
-  it("renders the SimulationFrame with the Collapse! title", () => {
-    const { getByRole } = render(<App />);
+  it("renders the SimulationFrame with the Collapse! title, tagline, and instruction", () => {
+    const { getByRole, getByText } = render(<App />);
     expect(getByRole("heading", { level: 1, name: "Collapse!" })).toBeInTheDocument();
+    expect(getByText("Which conditions form caves?")).toBeInTheDocument();
+    expect(getByText("Select a trial, then sample through time")).toBeInTheDocument();
   });
 
   it("renders the three slot regions with their canonical names", () => {
