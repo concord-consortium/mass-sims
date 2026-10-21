@@ -11,6 +11,25 @@
   --sim-frame-trials-width: 127px; // mockup: 127.48; cards overhang this column (see trials-panel.scss)
   --sim-frame-simulation-min: 390px; // keep the single content area usable at 767px
 
+  // The joined card's edge is a straight line: square the panel corner it meets, while that card is
+  // selected or keyboard-focused (a focused card hides its notch filler). A is always the first
+  // option, D the last (the listbox holds only option wrappers; the reset is a sibling outside it).
+  // NOT transitioned: the notch filler disappears instantly on selection, so the radius must change
+  // on the same frame or a chink shows.
+  &:has(.collapse-trials-listbox > .trial-card-wrapper:first-child.selected),
+  &:has(.collapse-trials-listbox > .trial-card-wrapper:first-child .trial-card:focus-visible) {
+    .simulation-area {
+      border-top-left-radius: 0;
+    }
+  }
+
+  &:has(.collapse-trials-listbox > .trial-card-wrapper:last-child.selected),
+  &:has(.collapse-trials-listbox > .trial-card-wrapper:last-child .trial-card:focus-visible) {
+    .simulation-area {
+      border-bottom-left-radius: 0;
+    }
+  }
+
   &.standalone {
     border-color: theme.$border;
   }

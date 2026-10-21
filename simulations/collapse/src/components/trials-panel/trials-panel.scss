@@ -7,6 +7,9 @@
 // its right border on the same 137–139, so the two render as one line.
 $card-offset: 7px;
 
+// The flares' size: 8px, matching the card's own left corners and the panel's corners.
+$flare-size: 8px;
+
 // Row gap between the title bar and the content row (the chip's overhang above the panel border).
 // Private to the shared simulation-frame.scss, so recomputed here from the same tokens.
 $titlebar-content-gap: (tokens.$section-chip-height - tokens.$border-strong-width) * 0.5;
@@ -43,26 +46,28 @@ $content-row-height: tokens.$frame-height - tokens.$frame-titlebar-height - $tit
   width: 100%;
 
   // The listbox holds only the option cards; the reset is a sibling outside it. A flex column with
-  // `$column-gap` between cards.
+  // `$column-gap` between cards. It is as wide as a selected card (overhanging the 127px column) and
+  // right-aligns the cards, so every card's right edge is the listbox's right edge, which lands on the
+  // Simulation panel's left border. An unselected card is 7px narrower, so it sits 7px in.
   .collapse-trials-listbox {
-    align-items: flex-start;
+    align-items: flex-end;
     display: flex;
     flex-direction: column;
     gap: tokens.$column-gap;
-    width: 100%;
+    width: calc(var(--trial-card-width) + #{$card-offset});
   }
 
   // Each card is a tab that joins the Simulation panel on its right edge. Every z-index in this
   // column goes on the wrapper, never on the `.trial-card` button: unselected → auto (under the
-  // panel's left border), selected → 2 (above the panel, so the join is seamless), and the reset → 4.
+  // panel's left border), selected → 2 (above the panel, so the join is seamless), focused → 3, and
+  // the reset → 4.
   .trial-card-wrapper {
-    margin-left: $card-offset;
-    // margin-left, NOT transform: a transform would make the wrapper its own stacking context and
-    // trap the focus ring under the panel. Width grows by exactly what the offset loses, so the
-    // card's right edge stays put during the slide.
-    transition:
-      margin-left tokens.$duration-quick ease,
-      width tokens.$duration-quick ease;
+    // Only the width animates; the right edge is fixed by the listbox's right alignment, so the flares
+    // (pinned to that edge) stay on the panel border for the whole slide. Animating margin-left and
+    // width together instead leaves the edge a fraction of a pixel off until the slide ends. Not a
+    // transform: that would make the wrapper its own stacking context and trap the focus ring under
+    // the panel.
+    transition: width tokens.$duration-quick ease;
 
     .trial-card {
       background: theme.$surface;
@@ -84,11 +89,10 @@ $content-row-height: tokens.$frame-height - tokens.$frame-titlebar-height - $tit
       background: theme.$trial-label-bg;
     }
 
-    // The selected card stops offsetting, widens by the same 7px, laps the panel's left border, and
-    // takes the panel's fill, so it reads as joined to the panel. Same border color as an unselected
+    // The selected card widens by 7px to the left, laps the panel's left border, and takes the panel's
+    // fill, so it reads as joined to the panel. Same border color as an unselected
     // card (as in the mockup): selection is carried by the fill and the letter badge.
     &.selected {
-      margin-left: 0;
       width: calc(var(--trial-card-width) + #{$card-offset});
       z-index: 2;
 
@@ -103,6 +107,113 @@ $content-row-height: tokens.$frame-height - tokens.$frame-titlebar-height - $tit
         background: theme.$heading;
         color: theme.$trial-label-bg;
       }
+    }
+
+    // Notch filler. While the panel's corner is rounded, its border curves away from the cards and
+    // leaves a notch of frame background beside each card's square corner. Every unselected card
+    // drops its own right border (the panel draws that line anyway) and carries its fill and
+    // top/bottom borders 12px further right, under the panel. `--card-fill` mirrors the card's
+    // hover / active fills so the extension matches the card it belongs to. The wrapper is exactly
+    // the card's border box, so `top: 0` / `bottom: 0` line the extension's borders up with the
+    // card's own; it starts one border width inside the card's right edge so its straight borders
+    // cover the angled ends the card's top / bottom borders get from the transparent right border.
+    // (The selected card's flares live on the button, so this `::after` is only ever the filler.)
+    --card-fill: #{theme.$surface};
+
+    &:hover,
+    &:has(.trial-card:focus-visible) {
+      --card-fill: #{theme.$hover};
+    }
+
+    &:active {
+      --card-fill: #{theme.$active};
+    }
+
+    &:not(.selected) .trial-card {
+      border-right-color: transparent;
+    }
+
+    &:not(.selected)::after {
+      background: var(--card-fill);
+      border-bottom: tokens.$border-strong-width solid theme.$border;
+      border-top: tokens.$border-strong-width solid theme.$border;
+      bottom: 0;
+      box-sizing: border-box;
+      content: "";
+      left: calc(100% - #{tokens.$border-strong-width});
+      position: absolute;
+      top: 0;
+      width: 12px + tokens.$border-strong-width;
+    }
+
+    // Focus ring lift: the shared outline on an unselected card would be clipped on its right side
+    // by the panel (later in DOM), so lift the wrapper above it. That brings the card's whole box up,
+    // so restore its right border (the 2px over the panel's border redraws the same line instead of
+    // showing pale fill) and hide the notch filler, which would paint a pale band over the panel.
+    // Safe only because app.scss squares the adjacent panel corner while the card is focused.
+    &:has(.trial-card:focus-visible) {
+      z-index: 3;
+    }
+
+    &:not(.selected) .trial-card:focus-visible {
+      border-right-color: theme.$border;
+    }
+
+    &:not(.selected):has(.trial-card:focus-visible)::after {
+      display: none;
+    }
+
+    // Flares: where the selected card's top and bottom borders meet the panel they sweep through an
+    // 8px arc instead of a right angle, so the tab looks like it widens into the panel. Each flare is
+    // an 8×8 box just outside the card's end, painted as a ring from a radial gradient (a
+    // border-radius would clip the fill and leave an unpainted corner). The two color stops are 2px
+    // apart: the border weight the arc traces. Port of the mockup, which puts them on the card
+    // button: `top` / `bottom` are measured from inside the button's 2px border, so each box overlaps
+    // the end of the card's top / bottom border, and its fill paints over that end so the border runs
+    // into the arc instead of through it.
+    &.selected .trial-card {
+      // Its own stacking context (no z-index, so the wrapper-level stacking is unchanged): the
+      // flares' `z-index: -1` then paints above the button's background and border but below its
+      // content and focus ring.
+      isolation: isolate;
+
+      &::before,
+      &::after {
+        box-sizing: border-box;
+        content: "";
+        height: $flare-size;
+        pointer-events: none;
+        position: absolute;
+        right: 0;
+        width: $flare-size;
+        z-index: -1;
+      }
+
+      &::before {
+        background: radial-gradient(
+          circle 8px at 0 0,
+          transparent 0 6px,
+          theme.$border 6px 8px,
+          theme.$trial-selected-bg 8px
+        );
+        top: -$flare-size;
+      }
+
+      &::after {
+        background: radial-gradient(
+          circle 8px at 0 100%,
+          transparent 0 6px,
+          theme.$border 6px 8px,
+          theme.$trial-selected-bg 8px
+        );
+        bottom: -$flare-size;
+      }
+    }
+
+    // The end cards meet the panel's own (now square) corners — no straight edge to flare into.
+    &.selected:first-child .trial-card::before,
+    &.selected:last-child .trial-card::after {
+      display: none;
     }
 
     // Card body: the shared `.body` frame is centered with a 4px inset; Collapse left-aligns it and
