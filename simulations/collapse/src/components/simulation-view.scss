@@ -1,9 +1,8 @@
 @use "@concord-consortium/mass-sims-shared/styles/tokens" as tokens;
 @use "../theme" as theme;
 
-// Drop the Simulation slot's bottom padding so the stage row (flex: 1) reaches down to its 10px
-// margin above the panel's bottom border. Direct child only, so the nested Cross Section's own
-// `.content` is left alone.
+// No bottom padding, so the stage row's 10px margin sets its gap to the panel's bottom. Direct child
+// only, so the nested Cross Section's `.content` keeps its padding.
 .simulation-frame .section.simulation-area > .content {
   padding-bottom: 0;
 }
@@ -14,32 +13,25 @@
   height: 100%;
   min-height: 0;
 
-  // Placeholder: reserves the timeline's space until the Timeline story fills it. Height measured
-  // from the mockup (Collapse, 1024 px default width), where it is sized by its content; the -4px
-  // top margin is the mockup's own.
+  // Placeholder for the Timeline story. Height measured from the design mockup at 1024px, where
+  // content sets it; the -4px top margin also comes from the mockup.
   .collapse-timeline {
     flex-shrink: 0;
     height: 124px;
     margin-top: -4px;
   }
 
-  // Placeholder: reserves the controls row's space until the controls story fills it. Height
-  // measured from the mockup (Collapse, 1024 px default width), where it is sized by its content.
+  // Placeholder for the controls story. Height measured from the design mockup at 1024px, where
+  // content sets it.
   .collapse-controls {
     flex-shrink: 0;
     height: 64px;
   }
 
   .collapse-stage-row {
-    // One source for the Cross Section box's width: a straight line between two measured states,
-    // so the table takes more than its share as things get tight:
-    //   full width (row 842.5)  -> 280.91px, where the shared border with the table sat under
-    //                              the old Reset Trial button
-    //   narrowest  (row 586.5)  -> 206.9px, 20px off what it was, handing the table those 20px
-    //                              where it is tightest
-    // A percentage resolves against the row, so calc() states that line directly. The 150px floor
-    // is below both ends and only guards a row narrower than this app reaches; the maximum pins
-    // the full-width alignment.
+    // The Cross Section box's width: a straight line through two design values, 280.91px at a row
+    // width of 842.5 and 206.9px at 586.5, so the table gains the most where space is tightest. The
+    // 150px floor only guards rows narrower than any target width.
     --data-w: clamp(150px, calc(28.9102% + 37.34px), 280.91px);
 
     display: flex;
@@ -48,8 +40,8 @@
     min-height: 0;
   }
 
-  // The table and the Cross Section box side by side, sharing one border: square where they meet,
-  // and the table laps 2px over the Cross Section box so their borders paint as one line.
+  // The two boxes share one border: square where they meet, with the table lapping 2px over the
+  // Cross Section box.
   .collapse-table-box {
     background: tokens.$color-surface;
     border: tokens.$border-strong;

@@ -31,7 +31,7 @@ export const RootStore = types
     get activeTrial(): TrialModelInstance {
       return resolveActiveTrial(self.trials, self.ui.selectedTrialLetter);
     },
-    // Collapse's four trials are fixed at creation, so there is never a trial to add.
+    // The four trials are fixed at creation.
     get canAddTrial(): boolean {
       return false;
     },
@@ -48,10 +48,8 @@ export type RootStoreSnapshotIn = SnapshotIn<typeof RootStore>;
 export type RootStoreSnapshotOut = SnapshotOut<typeof RootStore>;
 
 /**
- * Create a root store seeded with the four empty trials A–D, in that order, with A selected. The
- * `rng` makes each trial's seed; it is also passed as MST's *environment* (the second `create`
- * argument). Production omits `rng` (defaults to `Math.random`); tests pass a seeded PRNG for
- * determinism.
+ * A root store with four empty trials A–D, in that order, and A selected. `rng` makes each trial's
+ * seed and is also the MST environment; tests pass a seeded PRNG for determinism.
  */
 export function createRootStore({ rng = Math.random }: { rng?: () => number } = {}) {
   return RootStore.create(
@@ -83,5 +81,5 @@ export function useStores(): RootStoreInstance {
   return store;
 }
 
-// Re-exported so callers (and the snapshot/hydrate path) have a single import site for snapshots.
+// Re-exported so callers have one import site for snapshots.
 export { getSnapshot };

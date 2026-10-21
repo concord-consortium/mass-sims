@@ -1,8 +1,7 @@
 import { fireEvent, render } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-// Mock the lara-interactive-api surface used for AP saved-state sync. vi.hoisted so the
-// mocks exist when vi.mock runs; defaults to standalone (null), overridden per-case.
+// `vi.hoisted` so the mocks exist when `vi.mock` runs.
 const { useInitMessageMock, setInteractiveStateMock } = vi.hoisted(() => ({
   useInitMessageMock: vi.fn(),
   setInteractiveStateMock: vi.fn(),
@@ -14,10 +13,9 @@ vi.mock("@concord-consortium/lara-interactive-api", () => ({
 
 import { App } from "./app";
 
-// Nothing in the UI can run a trial yet (the Simulation slot is a layout scaffold), so tests that
-// need a trial with a recorded output restore one through AP saved state: trial A with an output,
-// plus any `extraTrials`, with `selected` as the saved selection. Embedded, since a restore only
-// arrives in an init message.
+// Nothing in the UI can run a trial yet, so tests that need a recorded output restore one (trial A,
+// plus any `extraTrials`) through AP saved state. This makes the sim embedded, because a restore
+// only arrives in an AP init message.
 function restoreTrialAWithOutput({
   selected = "A",
   extraTrials = {},
@@ -40,19 +38,18 @@ function restoreTrialAWithOutput({
   });
 }
 
-/** The four trial options, in rendered order. */
+/** The trial options' "Trial X" names, in rendered order. */
 function trialOptions(view: ReturnType<typeof render>) {
   return view.getAllByRole("option").map((o) => o.getAttribute("aria-label")?.slice(0, 7));
 }
 
-/** Whether the selected trial has a recorded output (its reset is enabled only then). */
+/** Whether the selected trial has a recorded output, read from whether its reset is enabled. */
 function selectedHasOutput(view: ReturnType<typeof render>, letter: string) {
   const reset = view.getByRole("button", { name: `Reset trial ${letter}` });
   return reset.getAttribute("aria-disabled") !== "true";
 }
 
-// Default every test to standalone — App derives `isEmbedded = initMsg !== null`, and the
-// real useInitMessage returns null (not undefined) with no AP parent. Embedded tests override.
+// Standalone by default: the real `useInitMessage` returns null (not undefined) outside AP.
 beforeEach(() => {
   useInitMessageMock.mockReturnValue(null);
 });
@@ -84,7 +81,6 @@ describe("Collapse App", () => {
     restoreTrialAWithOutput();
     const view = render(<App />);
     expect(selectedHasOutput(view, "A")).toBe(true);
-    // The selected card's reset affordance clears it (trials are reset, not deleted).
     fireEvent.click(view.getByRole("button", { name: "Reset trial A" }));
     expect(view.getByRole("option", { name: /^Trial A/ })).toBeInTheDocument();
     expect(selectedHasOutput(view, "A")).toBe(false);
@@ -105,7 +101,6 @@ describe("Collapse App — AP saved state", () => {
   });
 
   it("restores trials + selectedTrialLetter from a runtime init message's interactiveState", () => {
-    // Current versioned wire shape: `{ version, trials (letter-keyed), selectedTrialLetter }`.
     const trialB = {
       input: { walkerCount: 100, stepSize: 2, framesPerTrial: 200, seed: "saved-B" },
       output: null,
@@ -114,26 +109,22 @@ describe("Collapse App — AP saved state", () => {
     restoreTrialAWithOutput({ selected: "B", extraTrials: { B: trialB } });
     const view = render(<App />);
     expect(trialOptions(view)).toEqual(["Trial A", "Trial B", "Trial C", "Trial D"]);
-    // The restored selection is honored — B is active, not a default fall-back to A.
     expect(view.getByRole("option", { name: /^Trial B/ })).toHaveAttribute("aria-selected", "true");
     expect(view.getByRole("option", { name: /^Trial A/ })).toHaveAttribute(
       "aria-selected",
       "false",
     );
     expect(selectedHasOutput(view, "B")).toBe(false);
-    // Trial A's saved output was restored: selecting it enables its reset.
+    // Trial A's saved output was restored too.
     fireEvent.click(view.getByRole("option", { name: /^Trial A/ }));
     expect(selectedHasOutput(view, "A")).toBe(true);
   });
 
   it("keeps persisted trials and selects A when the saved letter is outside A–D", () => {
-    // A corrupt selectedTrialLetter ("E") that names no Collapse trial must NOT discard the
-    // student's trials — the restored selection falls back to A instead.
+    // A bad selected letter must not discard the student's trials.
     restoreTrialAWithOutput({ selected: "E" });
     const view = render(<App />);
-    // Selection self-heals to A…
     expect(view.getByRole("option", { name: /^Trial A/ })).toHaveAttribute("aria-selected", "true");
-    // …and Trial A is preserved (not discarded to a fresh seed).
     expect(selectedHasOutput(view, "A")).toBe(true);
   });
 
@@ -147,8 +138,7 @@ describe("Collapse App — AP saved state", () => {
   it("calls setInteractiveState on every trial-list change (restore / reset)", () => {
     restoreTrialAWithOutput();
     const view = render(<App />);
-    // Mount + restore push the restored state. Trials are a letter-keyed map (not an array) of
-    // all four trials.
+    // Mount and restore push the restored state.
     expect(setInteractiveStateMock).toHaveBeenCalled();
     const restored = setInteractiveStateMock.mock.calls.at(-1)?.[0] as {
       trials: Record<string, { output: unknown }>;
@@ -156,7 +146,6 @@ describe("Collapse App — AP saved state", () => {
     expect(Object.keys(restored.trials)).toEqual(["A", "B", "C", "D"]);
     expect(restored.trials.A.output).not.toBeNull();
 
-    // Reset Trial A → push.
     setInteractiveStateMock.mockClear();
     fireEvent.click(view.getByRole("button", { name: "Reset trial A" }));
     expect(setInteractiveStateMock).toHaveBeenCalled();
@@ -167,7 +156,7 @@ describe("Collapse App — AP saved state", () => {
   });
 
   it("does NOT register a beforeunload listener when embedded (AP persists progress)", () => {
-    // Embedded with a trial that has progress: AP persists it, so the reload warning stays off.
+    // Embedded with progress: AP saves it, so there is no reload warning.
     restoreTrialAWithOutput();
     const addSpy = vi.spyOn(window, "addEventListener");
     const view = render(<App />);

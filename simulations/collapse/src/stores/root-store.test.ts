@@ -13,9 +13,8 @@ const TRANSIENT: SimTransient = {
 };
 
 /**
- * A self-contained deterministic RNG (LCG). Unlike the shared `seededRandom`, which is keyed and
- * stateful across calls, two `makeRng(n)` with the same `n` are independent and produce identical
- * sequences — exactly what the determinism-seam test needs.
+ * A deterministic RNG (LCG). Unlike the shared `seededRandom`, which caches one stateful PRNG per
+ * key, two `makeRng(n)` calls with the same `n` give independent, identical sequences.
  */
 function makeRng(seed: number): () => number {
   let s = seed >>> 0;
@@ -84,7 +83,7 @@ describe("RootStore.resetTrial (sim-local)", () => {
 describe("RootStore views consume the shared logic", () => {
   it("activeTrial falls back to the first trial on a dangling selection", () => {
     const store = createRootStore({ rng: makeRng(7) });
-    // "E" is a valid letter but absent → fall back to A rather than throw.
+    // "E" is a valid letter but names no trial, so this falls back to A instead of throwing.
     store.ui.selectTrial("E");
     expect(store.activeTrial).toBe(store.trials.get("A"));
   });

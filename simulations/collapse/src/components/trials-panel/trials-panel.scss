@@ -2,31 +2,28 @@
 @use "@concord-consortium/mass-sims-shared/styles/mixins" as mixins;
 @use "../../theme" as theme;
 
-// How far an unselected card sits right of the Trials column's left edge. The column is 127px and
-// the gap 10px, so the Simulation panel's left border is at 137–139; a 132px card offset by 7px puts
-// its right border on the same 137–139, so the two render as one line.
+// How far an unselected card sits in from the column's left edge. Column 127 + gap 10 puts the
+// panel's left border at 137–139; a 132px card offset by 7px ends at 139, so its right border
+// overlaps the panel's and the two draw as one line.
 $card-offset: 7px;
 
-// The flares' size: 8px, matching the card's own left corners and the panel's corners.
+// Matches the 8px corner radius of the cards and the panel.
 $flare-size: 8px;
 
-// Row gap between the title bar and the content row (the chip's overhang above the panel border).
-// Private to the shared simulation-frame.scss, so recomputed here from the same tokens.
+// Same as the private `$titlebar-content-gap` in the shared simulation-frame.scss.
 $titlebar-content-gap: (tokens.$section-chip-height - tokens.$border-strong-width) * 0.5;
 
-// Height of the frame's content row, which the four cards fill exactly: 562 − 50 − 17 − 10 = 485px.
+// The frame's content row, which the four cards fill exactly: 562 − 50 − 17 − 10 = 485px.
 $content-row-height: tokens.$frame-height - tokens.$frame-titlebar-height - $titlebar-content-gap -
   tokens.$body-padding;
 
-// `.section` in the selector so this outranks app.scss's `.simulation-frame .section` theme fill,
-// which loads later and would otherwise win.
+// `.section` outranks app.scss's `.simulation-frame .section` fill, which loads later.
 .simulation-frame .section.trials-area {
-  // The cards sit on the frame, not in a panel. The "Trials" chip stays (shared Section renders it).
+  // The cards sit on the frame, not in a panel.
   background: none;
   border: none;
 
-  // Four fixed cards fill the content row exactly, so nothing scrolls and the cards may overhang
-  // the column to meet the Simulation panel.
+  // Nothing scrolls, and the cards overhang the column to meet the Simulation panel.
   .content-wrap,
   .content {
     overflow: visible;
@@ -38,19 +35,16 @@ $content-row-height: tokens.$frame-height - tokens.$frame-titlebar-height - $tit
 }
 
 .collapse-trials-panel {
-  // Card footprint. Width from the mockup (132.48 → 132). Height: the content row is
-  // $frame-height − $frame-titlebar-height − chip overhang (17) − $body-padding = 485px;
-  // four cards and three $column-gap gaps → (485 − 30) / 4 = 113.75px.
+  // Width: design value 132.48, rounded. Height: four cards and three gaps fill the content row,
+  // (485 − 30) / 4 = 113.75px.
   --trial-card-width: 132px;
   --trial-card-height: #{($content-row-height - 3 * tokens.$column-gap) * 0.25};
 
   position: relative;
   width: 100%;
 
-  // The listbox holds only the option cards; the reset is a sibling outside it. A flex column with
-  // `$column-gap` between cards. It is as wide as a selected card (overhanging the 127px column) and
-  // right-aligns the cards, so every card's right edge is the listbox's right edge, which lands on the
-  // Simulation panel's left border. An unselected card is 7px narrower, so it sits 7px in.
+  // As wide as a selected card and right-aligned, so every card's right edge lands on the panel's
+  // left border. An unselected card is 7px narrower.
   .collapse-trials-listbox {
     align-items: flex-end;
     display: flex;
@@ -59,22 +53,20 @@ $content-row-height: tokens.$frame-height - tokens.$frame-titlebar-height - $tit
     width: calc(var(--trial-card-width) + #{$card-offset});
   }
 
-  // Each card is a tab that joins the Simulation panel on its right edge. Every z-index in this
-  // column goes on the wrapper, never on the `.trial-card` button: unselected → auto (under the
-  // panel's left border), selected → 2 (above the panel, so the join is seamless), focused → 3, and
-  // the reset → 4.
+  // Every z-index in this column is on the wrapper, never on the `.trial-card` button: unselected
+  // auto (under the panel's border), selected 2 (above the panel, for a seamless join), focused 3,
+  // and the reset 4.
   .trial-card-wrapper {
-    // Only the width animates; the right edge is fixed by the listbox's right alignment, so the flares
-    // (pinned to that edge) stay on the panel border for the whole slide. Animating margin-left and
-    // width together instead leaves the edge a fraction of a pixel off until the slide ends. Not a
-    // transform: that would make the wrapper its own stacking context and trap the focus ring under
-    // the panel.
+    // Only the width animates, so the right alignment holds the right edge (and the flares pinned to
+    // it) on the panel border. Animating margin-left as well leaves the edge a fraction of a pixel
+    // off until the slide ends. Not a transform: that would make the wrapper a stacking context and
+    // trap the focus ring under the panel.
     transition: width tokens.$duration-quick ease;
 
     .trial-card {
       background: theme.$surface;
       border-color: theme.$border;
-      // Square on the panel side; 8px on the left, like the panel's own corners.
+      // Square on the panel side.
       border-radius: tokens.$radius-lg 0 0 tokens.$radius-lg;
 
       &:hover,
@@ -91,9 +83,8 @@ $content-row-height: tokens.$frame-height - tokens.$frame-titlebar-height - $tit
       background: theme.$trial-label-bg;
     }
 
-    // The selected card widens by 7px to the left, laps the panel's left border, and takes the panel's
-    // fill, so it reads as joined to the panel. Same border color as an unselected
-    // card (as in the mockup): selection is carried by the fill and the letter badge.
+    // The selected card widens 7px to the left, laps the panel's border, and takes the panel's fill,
+    // so it reads as joined. Its border keeps the unselected color; the fill and badge show selection.
     &.selected {
       width: calc(var(--trial-card-width) + #{$card-offset});
       z-index: 2;
@@ -111,15 +102,11 @@ $content-row-height: tokens.$frame-height - tokens.$frame-titlebar-height - $tit
       }
     }
 
-    // Notch filler. While the panel's corner is rounded, its border curves away from the cards and
-    // leaves a notch of frame background beside each card's square corner. Every unselected card
-    // drops its own right border (the panel draws that line anyway) and carries its fill and
-    // top/bottom borders 12px further right, under the panel. `--card-fill` mirrors the card's
-    // hover / active fills so the extension matches the card it belongs to. The wrapper is exactly
-    // the card's border box, so `top: 0` / `bottom: 0` line the extension's borders up with the
-    // card's own; it starts one border width inside the card's right edge so its straight borders
-    // cover the angled ends the card's top / bottom borders get from the transparent right border.
-    // (The selected card's flares live on the button, so this `::after` is only ever the filler.)
+    // Notch filler: where the panel corner is rounded, a notch of frame background shows beside the
+    // card's square corner. An unselected card drops its right border (the panel draws that line),
+    // and this `::after` carries its fill and top/bottom borders 12px under the panel. It starts one
+    // border width inside the card to cover the angled ends that the transparent right border gives
+    // the top and bottom borders. `--card-fill` tracks the card's hover and active fills.
     --card-fill: #{theme.$surface};
 
     &:hover,
@@ -148,11 +135,10 @@ $content-row-height: tokens.$frame-height - tokens.$frame-titlebar-height - $tit
       width: 12px + tokens.$border-strong-width;
     }
 
-    // Focus ring lift: the shared outline on an unselected card would be clipped on its right side
-    // by the panel (later in DOM), so lift the wrapper above it. That brings the card's whole box up,
-    // so restore its right border (the 2px over the panel's border redraws the same line instead of
-    // showing pale fill) and hide the notch filler, which would paint a pale band over the panel.
-    // Safe only because app.scss squares the adjacent panel corner while the card is focused.
+    // Focus lift: the panel (later in the DOM) would cover the right side of an unselected card's
+    // focus ring, so lift the wrapper. Then restore the card's right border, so the 2px over the panel
+    // border redraws that line, and hide the notch filler, which would paint over the panel. This
+    // relies on app.scss squaring the adjacent panel corner while the card is focused.
     &:has(.trial-card:focus-visible) {
       z-index: 3;
     }
@@ -165,18 +151,14 @@ $content-row-height: tokens.$frame-height - tokens.$frame-titlebar-height - $tit
       display: none;
     }
 
-    // Flares: where the selected card's top and bottom borders meet the panel they sweep through an
-    // 8px arc instead of a right angle, so the tab looks like it widens into the panel. Each flare is
-    // an 8×8 box just outside the card's end, painted as a ring from a radial gradient (a
-    // border-radius would clip the fill and leave an unpainted corner). The two color stops are 2px
-    // apart: the border weight the arc traces. Port of the mockup, which puts them on the card
-    // button: `top` / `bottom` are measured from inside the button's 2px border, so each box overlaps
-    // the end of the card's top / bottom border, and its fill paints over that end so the border runs
-    // into the arc instead of through it.
+    // Flares: where the selected card's top and bottom borders meet the panel, they curve through an
+    // 8px arc, so the tab appears to widen into the panel. Each is an 8×8 box outside the card's end,
+    // painted as a ring with a radial gradient (a border-radius would clip the fill); the two color
+    // stops are 2px apart, the border width. Positioned from inside the button's border, each box
+    // overlaps the end of the card's top or bottom border, so that border runs into the arc.
     &.selected .trial-card {
-      // Its own stacking context (no z-index, so the wrapper-level stacking is unchanged): the
-      // flares' `z-index: -1` then paints above the button's background and border but below its
-      // content and focus ring.
+      // A stacking context without a z-index, so the flares' `z-index: -1` paints above the button's
+      // border but below its content and focus ring.
       isolation: isolate;
 
       &::before,
@@ -212,29 +194,25 @@ $content-row-height: tokens.$frame-height - tokens.$frame-titlebar-height - $tit
       }
     }
 
-    // The end cards meet the panel's own (now square) corners — no straight edge to flare into.
+    // A and D meet the panel's square corners, so there is nothing to flare into.
     &.selected:first-child .trial-card::before,
     &.selected:last-child .trial-card::after {
       display: none;
     }
 
-    // Card body: the shared `.body` frame is centered with a 4px inset; Collapse left-aligns it and
-    // moves it 2px down (bottom up by the same 2px, so the box keeps its height). Port of the
-    // mockup's `.collapse-trials .trial-card-stats`.
+    // Left-align the shared `.body` and move it 2px down, keeping its height.
     .body {
       align-items: stretch;
       bottom: 3px;
-      padding-left: 4px; // 2 card border + 4 box inset + 4 = 10px from the card's left edge to the icons
+      padding-left: 4px; // with the 2px border and 4px inset, puts the icons 10px from the card edge
       text-align: left;
       top: 40px;
     }
   }
 
-  // Panel-level reset: position it over the selected card by index (shared formula;
-  // `--selected-index` is set inline), then apply the Collapse theme colors. Box color on the
-  // ::before (stays opaque when disabled); arrow color on the icon (dims when disabled). The shared
-  // button ships `z-index: 1` to clear a plain card; here the selected card is lifted to 2 (3 when
-  // focused), so the reset must sit above both or it is painted over and its clicks are swallowed.
+  // `--selected-index` is set inline. The shared button's `z-index: 1` would leave it under the
+  // lifted selected (2) or focused (3) card, which would then take its clicks. The box color is on
+  // `::before` so it stays opaque when disabled; only the icon dims.
   .reset-button {
     @include mixins.trial-reset-position;
 
@@ -265,7 +243,7 @@ $content-row-height: tokens.$frame-height - tokens.$frame-titlebar-height - $tit
   }
 }
 
-// Trial card body: the rock-type row, then the moisture row with its note on the line below.
+// The rock row, then the moisture row with its note on the line below.
 .trial-card-body {
   display: flex;
   flex-direction: column;
@@ -273,16 +251,15 @@ $content-row-height: tokens.$frame-height - tokens.$frame-titlebar-height - $tit
   width: 100%;
 
   .collapse-attr-row {
-    // Top-aligned so the note line cannot drag the icon to the block's middle.
+    // Top-aligned so the note line can't pull the icon down.
     align-items: flex-start;
     display: flex;
     gap: 5px;
-    // The icon's negative margin pulls it out of this box, which would otherwise shrink a one-line
-    // row and close the gap between rows.
+    // Keeps a one-line row's height despite the icon's negative margin.
     min-height: 22px;
   }
 
-  // The icon files carry their own width/height attributes, so the svg itself is sized.
+  // The SVG files set their own width and height, so size the svg itself.
   .collapse-attr-icon {
     display: block;
     flex-shrink: 0;
@@ -316,9 +293,8 @@ $content-row-height: tokens.$frame-height - tokens.$frame-titlebar-height - $tit
     margin-top: -5px;
   }
 
-  // The moisture note is its own line under the label, starting at the icon's left edge (which is
-  // what lets ">50 rainy days/yr" fit on one line). Absolute, so it does not add to the row's
-  // height: 17px down = the label's −3px plus its 18px line height, less 1px.
+  // The note has its own line, starting at the icon's left edge so ">50 rainy days/yr" fits.
+  // Absolute, so it adds no row height; 17px = the label's −3px offset + its 18px line height − 1px.
   .collapse-attr-row:has(.collapse-attr-noteline) {
     position: relative;
   }

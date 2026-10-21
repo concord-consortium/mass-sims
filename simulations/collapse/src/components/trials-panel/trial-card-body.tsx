@@ -10,7 +10,7 @@ import {
   TRIAL_CONDITIONS,
 } from "../../trial-conditions";
 
-// Multi-color art: each icon keeps the colors in its own file (no `currentColor` theming).
+// Multi-color icons: they keep their own colors instead of taking `currentColor`.
 const ROCK_ICONS: Record<RockType, typeof LimestoneIcon> = {
   Limestone: LimestoneIcon,
   Granite: GraniteIcon,
@@ -18,20 +18,15 @@ const ROCK_ICONS: Record<RockType, typeof LimestoneIcon> = {
 const MOISTURE_ICONS: Record<Moisture, typeof WetIcon> = { Wet: WetIcon, Dry: DryIcon };
 
 /**
- * The enriched screen-reader label for a trial card, built from the trial's fixed conditions:
- * "Trial A. Limestone, Dry, fewer than 10 rainy days per year. Not yet sampled". Sample counts come
- * with the data table story. Passed to the shared `<TrialCard>` via its `ariaLabel` prop.
+ * A trial card's screen-reader name, e.g. "Trial A. Limestone, Dry, fewer than 10 rainy days per
+ * year. Not yet sampled". Sample counts come with the data table story.
  */
 export function trialAriaLabel(letter: CollapseTrialLetter): string {
   const { rock, moisture } = TRIAL_CONDITIONS[letter];
   return `Trial ${letter}. ${rock}, ${moisture}, ${MOISTURE_NOTES[moisture].spoken}. Not yet sampled`;
 }
 
-/**
- * The visible body of a trial card (the shared `<TrialCard>`'s `children`): the rock-type row and the
- * moisture row, each an icon plus a label, with the moisture note on its own line below. `aria-hidden`
- * because the card's accessible name is the enriched `ariaLabel` (see `trialAriaLabel`).
- */
+/** The visible card body. `aria-hidden` because `trialAriaLabel` already names the card. */
 export function TrialCardBody({ letter }: { letter: CollapseTrialLetter }) {
   const { rock, moisture } = TRIAL_CONDITIONS[letter];
   const RockIcon = ROCK_ICONS[rock];

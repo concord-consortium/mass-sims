@@ -17,14 +17,13 @@ const TRIAL = { input: INPUT, output: OUTPUT, finalTransient: null };
 
 const rng = seededRandom("saved-state-test");
 
-/** Migrate, asserting a non-null result. */
 function migrate(raw: unknown): SavedState {
   const state = migrateSavedState(raw, rng);
   if (!state) throw new Error("expected a migrated state");
   return state;
 }
 
-/** Whether a migrated trial is a fresh empty one (default params, nothing recorded). */
+/** Whether a migrated trial is a fresh empty one: default params and nothing recorded. */
 function isEmpty(trial: SavedState["trials"]["A"]): boolean {
   const { seed: _seed, ...params } = trial.input;
   const defaults: Record<string, unknown> = DEFAULT_PARAMS;
@@ -57,7 +56,7 @@ describe("migrateSavedState — normalizes to exactly A–D", () => {
   });
 
   it("a save with A–D plus an E → E ignored, four trials in A–D order, A–D data preserved", () => {
-    // E first and A–D out of order, so the result's key order is the function's doing.
+    // Out of order, so the result's A–D key order must come from the function.
     const trials = { E: TRIAL, D: TRIAL, C: TRIAL, B: TRIAL, A: TRIAL };
     const state = migrate({ version: 1, trials, selectedTrialLetter: "A" });
     expect(Object.keys(state.trials)).toEqual(["A", "B", "C", "D"]);

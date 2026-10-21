@@ -180,8 +180,7 @@ $titlebar-about-leading-space: 5px;   // margin-left on the About button â†’ CCâ
     column-gap: tokens.$column-gap;
     min-height: 0; // let the panels' internal scroll regions size within the content row
 
-    // Two-column frame: a sim that renders no Data slot gets Trials + Simulation only, and the
-    // Simulation panel takes the whole remaining width.
+    // A sim with no Data slot gets two columns; Simulation takes the rest of the width.
     &:not(:has(> .data-area)) {
       grid-template-areas: "trials simulation";
       grid-template-columns:

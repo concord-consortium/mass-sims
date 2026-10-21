@@ -4,12 +4,9 @@ import type { SimInput, SimOutput, SimTransient } from "../model/types";
 export const DEFAULT_PARAMS = { walkerCount: 50, stepSize: 1, framesPerTrial: 200 } as const;
 
 /**
- * One trial's state. Sim-specific because the `input` / `output` / `finalTransient` shapes are
- * Starter-domain (a random walk). The trial's identity is its letter — the key in the RootStore's
- * `trials` map — so there is no `id` field.
- *
- * `input` / `output` / `finalTransient` are `types.frozen` plain objects: they are leaf data the UI
- * reads wholesale and the seeded run reproduces exactly, never partially-mutated through MST.
+ * One trial's state, still the placeholder random-walk shape. A trial's identity is its letter (its
+ * key in the root store's `trials` map), so there is no `id` field. The fields are `types.frozen`
+ * because they are always read and replaced whole, never edited in place through MST.
  */
 export const TrialModel = types
   .model("Trial", {
@@ -30,7 +27,7 @@ export const TrialModel = types
       self.output = output;
       self.finalTransient = finalTransient;
     },
-    /** Clear the recorded result back to "not yet run", keeping the input (and its fixed seed). */
+    /** Clears the recorded result, keeping the input and its seed. */
     reset() {
       self.output = null;
       self.finalTransient = null;
@@ -39,24 +36,17 @@ export const TrialModel = types
 
 export type TrialModelInstance = Instance<typeof TrialModel>;
 
-/**
- * The per-trial wire format, derived from `TrialModel` so it can't drift from the store.
- */
+/** The per-trial saved-state format, derived from `TrialModel` so the two can't drift apart. */
 export type TrialState = SnapshotOut<typeof TrialModel>;
 
-/**
- * Build a fresh seed string from an injected RNG. Seeds aren't security-sensitive; sourcing them
- * from the MST environment RNG (rather than `Math.random` inline) keeps trials deterministic under a
- * seeded PRNG in tests while staying random in production.
- */
+/** A seed string from the injected RNG, so tests with a seeded PRNG get deterministic trials. */
 export function makeSeed(rng: () => number): string {
   return `trial-${rng().toString(36).slice(2, 10)}`;
 }
 
 /**
- * Factory (not a shared constant): each call returns a fresh snapshot so resets and separate trials
- * never share a mutable object. The seed is generated up front from the caller's RNG so each trial
- * runs a distinct walk even with identical parameters.
+ * A factory, not a constant, so trials never share one mutable snapshot. Each call gets its own
+ * seed, so trials with the same parameters still run different walks.
  */
 export function emptyTrialSnapshot(seed: string) {
   return {

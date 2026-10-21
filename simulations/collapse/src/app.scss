@@ -1,21 +1,17 @@
 @use "@concord-consortium/mass-sims-shared/styles/tokens" as tokens;
 @use "./theme" as theme;
 
-// Collapse theme. The sim's CSS loads after the shared library's, so these equal-specificity
-// overrides win the cascade without extra wrappers.
+// Collapse theme. The sim's CSS loads after the shared CSS, so these equal-specificity overrides win.
 .simulation-frame {
   background: theme.$surface;
 
-  // Column sizes for Collapse, set via the frame's `--sim-frame-*` override hooks (they inherit down
-  // to `.sim-main`).
-  --sim-frame-trials-width: 127px; // mockup: 127.48; cards overhang this column (see trials-panel.scss)
-  --sim-frame-simulation-min: 390px; // keep the single content area usable at 767px
+  --sim-frame-trials-width: 127px; // design: 127.48; the cards overhang it (see trials-panel.scss)
+  --sim-frame-simulation-min: 390px; // keeps the Simulation area usable at 767px
 
-  // The joined card's edge is a straight line: square the panel corner it meets, while that card is
-  // selected or keyboard-focused (a focused card hides its notch filler). A is always the first
-  // option, D the last (the listbox holds only option wrappers; the reset is a sibling outside it).
-  // NOT transitioned: the notch filler disappears instantly on selection, so the radius must change
-  // on the same frame or a chink shows.
+  // When end card A or D is selected or keyboard-focused, square the panel corner it meets so the
+  // joined edge is straight. A and D are always the listbox's first and last children. Not
+  // transitioned: the notch filler disappears at once on selection, so the radius must change on
+  // the same frame or a gap shows.
   &:has(.collapse-trials-listbox > .trial-card-wrapper:first-child.selected),
   &:has(.collapse-trials-listbox > .trial-card-wrapper:first-child .trial-card:focus-visible) {
     .simulation-area {

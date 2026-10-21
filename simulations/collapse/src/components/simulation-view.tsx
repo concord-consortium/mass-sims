@@ -1,11 +1,7 @@
 import { Section } from "@concord-consortium/mass-sims-shared";
 import "./simulation-view.scss";
 
-/**
- * The Simulation slot's layout: the containers the other Collapse stories fill in. Top to bottom:
- * the timeline, the controls row ("Years before collapse" stepper + Sample), then the stage row
- * with the data table beside the Cross Section box. Layout only for now — no model wiring.
- */
+/** The Simulation slot's layout. Each container is a placeholder that a later story fills in. */
 export function SimulationView() {
   return (
     <div className="collapse-simulation">
@@ -14,7 +10,7 @@ export function SimulationView() {
       {/* Controls story: "Years before collapse" stepper + Sample */}
       <div className="collapse-controls" />
       <div className="collapse-stage-row">
-        {/* Data Table story */}
+        {/* Data table story */}
         <div className="collapse-table-box">
           <p className="collapse-placeholder">
             Pick a year, then click <b>Sample</b>

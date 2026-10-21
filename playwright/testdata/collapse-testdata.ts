@@ -1,6 +1,4 @@
-// Test data for the `collapse` sim, scaffolded from starter-testdata.ts by `yarn new-sim`.
-// Collapse has exactly four fixed trials, so it uses its own letter list rather than the shared
-// trial-list defaults (keep any imported sim modules pure — no React / vite-svg / scss).
+// Test data for the `collapse` sim. Keep any imported sim modules pure: no React, SVG, or SCSS.
 
 export {
   COLLAPSE_TRIAL_LETTERS as TRIAL_LETTERS,

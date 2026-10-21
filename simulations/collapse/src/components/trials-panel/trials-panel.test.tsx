@@ -3,9 +3,8 @@ import { act, fireEvent, render } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { describe, expect, it, vi } from "vitest";
 
-// TrialsPanel consumes useLogEvent directly, so mock the hook (the seam it uses) while preserving the
-// real shared exports it also imports (TrialCard, constants). vi.hoisted so the spy exists when
-// vi.mock runs.
+// Mock only `useLogEvent`, keeping the real shared exports. `vi.hoisted` so the spy exists when
+// `vi.mock` runs.
 const { logEvent } = vi.hoisted(() => ({ logEvent: vi.fn() }));
 vi.mock("@concord-consortium/mass-sims-shared", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@concord-consortium/mass-sims-shared")>()),
@@ -28,7 +27,6 @@ const TRANSIENT: SimTransient = {
 };
 
 function renderPanel(store: RootStoreInstance) {
-  // Under the shared <Announcer> so reset narration can be asserted.
   const wrapper = ({ children }: { children: ReactNode }) => (
     <RootStoreProvider store={store}>
       <Announcer>{children}</Announcer>
@@ -60,8 +58,7 @@ describe("TrialsPanel — listbox structure", () => {
     const listbox = getByRole("listbox", { name: "Trials" });
     expect(listbox.contains(getByRole("button", { name: "Reset trial A" }))).toBe(false);
     expect(queryByRole("button", { name: "Add new trial" })).toBeNull();
-    // Every direct child is a presentational (role="none") TrialCard wrapper, so the option button
-    // inside each reads as a direct child of the listbox — no unannotated <div> in the owned chain.
+    // Every child is a `role="none"` wrapper, so each option reads as a direct child of the listbox.
     for (const child of Array.from(listbox.children)) {
       expect(child).toHaveAttribute("role", "none");
     }
@@ -76,14 +73,13 @@ describe("TrialsPanel — listbox structure", () => {
     expect(options[1]).toHaveAttribute("tabindex", "-1");
     expect(options[2]).toHaveAttribute("tabindex", "-1");
     expect(options[3]).toHaveAttribute("tabindex", "-1");
-    // The reset is the panel's second tab stop (the shared hook's `resetTabIndex`).
+    // The reset is the panel's second tab stop.
     expect(getByRole("button", { name: "Reset trial A" })).toHaveAttribute("tabindex", "0");
   });
 });
 
 describe("TrialsPanel — narration", () => {
   it("announces 'Trial A reset.' when the panel reset is pressed", () => {
-    // Seed A with output so its (selected-trial) reset is enabled.
     const store = createRootStore();
     act(() => store.activeTrial.setOutput(OUTPUT, TRANSIENT));
     const { getByRole, region } = renderPanel(store);
@@ -140,8 +136,7 @@ describe("TrialsPanel — trial-list logging", () => {
 
 describe("TrialsPanel — scroll selected into view", () => {
   it("scrolls the newly selected trial card into view on click", () => {
-    // jsdom doesn't implement scrollIntoView, so define it before spying — capture the original
-    // and restore it afterward so the stub doesn't leak into later tests.
+    // jsdom has no `scrollIntoView`, so stub it before spying and restore the original afterward.
     const originalScrollIntoView = HTMLElement.prototype.scrollIntoView;
     HTMLElement.prototype.scrollIntoView = () => {};
     const scrollSpy = vi
@@ -157,15 +152,10 @@ describe("TrialsPanel — scroll selected into view", () => {
 });
 
 describe("TrialsPanel — keyboard-nav wiring", () => {
-  // The ring itself (ArrowDown/Up/Home/End across the cards, wrapping) is BEHAVIOR owned by the
-  // shared hook and tested once, sim-agnostically, in
-  // packages/shared/src/hooks/use-trials-keyboard-nav.test.tsx. Don't re-test it here.
-  //
-  // These tests prove only that THIS panel wires the hook up: the handlers reach the listbox (and
-  // the `.trial-card` class the hook selects on), selection goes through the logging funnel, and
-  // `canAddTrial: false` reaches the hook — the End / wrap test is the one that would catch the
-  // ring still reserving a `+ New` slot. The hook's tabIndexes landing on the cards and the reset
-  // are checked in the roving-tabindex test above.
+  // The ring's behavior is tested in the shared use-trials-keyboard-nav.test.tsx. These tests check
+  // only that this panel wires the hook up: the handlers reach the listbox, selection goes through
+  // the logging funnel, and `canAddTrial: false` reaches the hook (the End / wrap test would catch
+  // a reserved `+ New` slot). The tab order is checked in the roving-tabindex test above.
   it("ArrowDown on a card selects the next one and logs it (handler wired to the listbox)", () => {
     const store = createRootStore();
     const { getAllByRole } = renderPanel(store);
@@ -185,8 +175,7 @@ describe("TrialsPanel — keyboard-nav wiring", () => {
   });
 
   it("ignores Enter in the listbox handler (native button activation selects — no double)", () => {
-    // The listbox onKeyDown handles only arrows/Home/End; Enter/Space are the option button's
-    // native job, so a keydown Enter on an unselected option does NOT select via the handler.
+    // The listbox handler ignores Enter; the option button's native click does the selecting.
     const store = createRootStore();
     const { getAllByRole } = renderPanel(store);
     fireEvent.keyDown(getAllByRole("option")[1], { key: "Enter" });

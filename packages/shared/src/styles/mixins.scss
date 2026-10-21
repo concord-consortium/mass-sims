@@ -13,9 +13,8 @@
 // `--selected-index` custom property inline to the selected card's row index. Shared here because
 // the formula is identical across sims (only the reset's colors differ per sim).
 @mixin trial-reset-position {
-  // Width and height read the same `--trial-card-width` / `--trial-card-height` custom properties the
-  // card wrapper does (tokens as the fallback), so a sim that retunes its footprint (e.g. Nor'easter's
-  // taller cards) keeps the reset aligned over the selected card without re-implementing this formula.
+  // Reads the same `--trial-card-width` / `--trial-card-height` properties as the card wrapper, so
+  // the reset follows a sim's card-size override.
   left: calc(var(--trial-card-width, #{tokens.$trial-card-width}) - #{tokens.$touch-target-min} + 2px);
   top: calc(
     var(--selected-index, 0) *

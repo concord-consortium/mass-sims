@@ -17,11 +17,9 @@ import { TrialCardBody, trialAriaLabel } from "./trial-card-body";
 import "./trials-panel.scss";
 
 /**
- * The Trials column orchestrator: a single-select `role="listbox"` of the four fixed trial `option`s
- * (one shared `<TrialCard>` each, drawn as tabs that join the Simulation panel), and a single
- * panel-level reset button for the selected trial (outside the listbox — a listbox must not own
- * focusable non-options). There is no `+ New` card: Collapse's four trials are fixed at creation.
- * `observer`-wrapped so the selection and reset state track store mutations.
+ * The Trials column: a single-select listbox of the four fixed trials (shared `<TrialCard>`s drawn
+ * as tabs joined to the Simulation panel), plus one reset button for the selected trial. The reset
+ * is outside the listbox because a listbox must not contain focusable non-options.
  */
 export const TrialsPanel = observer(function TrialsPanel() {
   const store = useStores();
@@ -29,20 +27,14 @@ export const TrialsPanel = observer(function TrialsPanel() {
   const announce = useAnnounce();
   const selectedLetter = store.ui.selectedTrialLetter;
   const listRef = useScrollSelectedTrialIntoView<HTMLDivElement>(selectedLetter);
-  // The rendered selection, roving tabindex, keyboard nav, and panel reset all key off one clamped
-  // fallback. A transiently dangling `selectedLetter` (a malformed hydrate, before the store's
-  // normalization fixes it) matches no card; clamping the index to a real trial keeps exactly one
-  // option selected and tabbable (never a listbox with no tab stop), positions the reset over that
-  // card (cards are fixed-height, so the CSS reads `--selected-index`), and stops reset from
-  // narrating or targeting a letter that isn't there. In the normal case these equal the selection.
-  // `activeTrial` is resettable once it has a recorded output.
+  // Clamped to a real trial, so a briefly dangling `selectedLetter` (before App's safety net fixes
+  // it) still leaves exactly one selected, tabbable card and a reset aimed at a real trial.
   const selectedIndex = Math.max(0, store.trialLetters.indexOf(selectedLetter));
   const selectedOptionLetter = store.trialLetters[selectedIndex] ?? selectedLetter;
   const activeTrial = store.activeTrial;
 
-  // Single funnel for every trial-selection change (card click, keyboard nav) so the no-op skip and
-  // the `trial_selected` emit live in exactly one place. `selectTrial` itself stays pure (hydration
-  // depends on that).
+  // Every user selection goes through here, so the no-op skip and the `trial_selected` log live in
+  // one place. `selectTrial` itself doesn't log, because App's safety net also calls it.
   const navigateTo = (newLetter: string) => {
     const prev = store.ui.selectedTrialLetter;
     if (newLetter === prev) return;
@@ -50,9 +42,7 @@ export const TrialsPanel = observer(function TrialsPanel() {
     store.ui.selectTrial(newLetter);
   };
 
-  // Roving-tabindex keyboard nav for the cards (one tab stop), driven by the shared hook. Its
-  // handlers go on the listbox (which delegates for the cards) — NOT on the panel wrapper, which
-  // stays non-interactive. `canAddTrial` is always false, so the ring has no `+ New` member.
+  // The handlers go on the listbox, which delegates for the cards, not on the panel wrapper.
   const nav = useTrialsKeyboardNav({
     containerRef: listRef,
     letters: store.trialLetters,
@@ -61,8 +51,7 @@ export const TrialsPanel = observer(function TrialsPanel() {
     selectLetter: navigateTo,
   });
 
-  // Reset the selected trial (the only one the panel reset targets). Emit before the reset so the
-  // payload reads the trial being reset, then narrate it.
+  // Log before resetting so the payload names the trial being reset.
   const handleReset = () => {
     logEvent("trial_reset", { trial: selectedOptionLetter });
     store.resetTrial(selectedOptionLetter);
@@ -95,8 +84,7 @@ export const TrialsPanel = observer(function TrialsPanel() {
           );
         })}
       </div>
-      {/* Panel-level reset for the selected trial — outside the listbox, positioned over the
-          selected card by index via `--selected-index` (see trials-panel.scss). */}
+      {/* Positioned over the selected card by `--selected-index` (see trials-panel.scss). */}
       <TrialResetButton
         letter={selectedOptionLetter}
         disabled={activeTrial.output === null}

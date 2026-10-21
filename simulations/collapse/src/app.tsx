@@ -19,34 +19,25 @@ import { migrateSavedState, type SavedState, toSavedState } from "./stores/saved
 import "./app.scss";
 
 /**
- * Collapse! simulation — the trial store still carries the Starter random-walk `input` / `output`
- * shape until the real model replaces it; `<SimulationView>` is a layout-only scaffold for now.
+ * Collapse! simulation. Until the model story, the trial store keeps the placeholder random-walk
+ * `input` / `output` shape and `<SimulationView>` is layout only.
  *
- * TWO-LAYER STATE MODEL: MST owns the trial LIST — what trials exist, which is selected, each trial's
- * recorded input/output. Per-frame transient run state belongs in `<SimulationView>` (via
- * `useModelState` / `useSimulationRunner`) once the model story adds it, NOT in MST.
- *
- * Collapse has no Data slot: without `<SimulationFrame.Data>` the shared frame lays out two columns
- * (Trials + Simulation).
+ * MST owns the trial list: which trials exist, which is selected, and each one's recorded result.
+ * Per-frame run state will live in `<SimulationView>` (`useModelState` / `useSimulationRunner`),
+ * not in MST.
  */
 export const App = observer(function App() {
   const rootStore = useMemo(() => createRootStore({ rng: Math.random }), []);
 
-  // AP saved-state sync: restore on init, push on change. Standalone-safe — outside AP,
-  // useInitMessage stays null and setInteractiveState is a no-op. See infra-plan §3.
+  // Outside AP, `useInitMessage` stays null and `setInteractiveState` is a no-op.
   const initMsg = useInitMessage<SavedState>();
-  // Embedded = running inside AP (or any iframe host).
   const isEmbedded = initMsg !== null || inIframe();
 
-  // Tell the host (Activity Player) our render height so it doesn't leave white space below the
-  // embedded sim. No-op when standalone.
   useReportHeight(isEmbedded);
 
-  // Defensive normalization: if `selectedTrialLetter` ever names a trial that doesn't exist (e.g. a
-  // restored saved state whose active letter wasn't among its trials), re-select the first available
-  // letter. Set up BEFORE the hydrate effect so the reaction is already observing when applySnapshot
-  // writes the restored letter. `activeTrial` falls back on the read side too; this fixes the stored
-  // letter so the matching card shows selected.
+  // Safety net: if the selected letter names no trial, select the first one, so a card always shows
+  // as selected. Registered before the hydrate effect so it already observes the letter that
+  // `applySnapshot` writes.
   useEffect(() => {
     return reaction(
       () => rootStore.trials.has(rootStore.ui.selectedTrialLetter),
@@ -61,9 +52,8 @@ export const App = observer(function App() {
     );
   }, [rootStore]);
 
-  // Hydrate from LARA's saved state once it arrives. Construct the MST snapshot shape explicitly —
-  // the wire format (`{ version, trials, selectedTrialLetter }`) is NOT the store snapshot
-  // (`{ trials, ui: {...} }`), so we project from one to the other.
+  // The saved-state format `{ version, trials, selectedTrialLetter }` differs from the store
+  // snapshot `{ trials, ui }`, so map one onto the other.
   useEffect(() => {
     if (initMsg && "interactiveState" in initMsg && initMsg.interactiveState) {
       const state = migrateSavedState(initMsg.interactiveState, Math.random);
@@ -76,9 +66,7 @@ export const App = observer(function App() {
     }
   }, [initMsg, rootStore]);
 
-  // Persist the store to LARA as the `{ version, trials, selectedTrialLetter }` projection. Watch the
-  // whole store via `onSnapshot` (fires on the actual snapshot-emit boundary), with an explicit
-  // initial save on mount and a serialized-payload dedup so identical payloads aren't re-emitted.
+  // Save on mount and on every store snapshot, skipping a payload identical to the last one sent.
   useEffect(() => {
     let lastSaved = "";
     const save = (snap: RootStoreSnapshotOut) => {
@@ -88,12 +76,12 @@ export const App = observer(function App() {
       lastSaved = serialized;
       setInteractiveState<SavedState>(state);
     };
-    save(getSnapshot(rootStore)); // initial save on mount
+    save(getSnapshot(rootStore));
     return onSnapshot(rootStore, save);
   }, [rootStore]);
 
-  // Warn before unload once any trial has been run — standalone only. When embedded, AP persists
-  // every change, so the prompt would be wrong and would fire during AP's own navigation.
+  // Standalone only: when embedded, AP saves every change, and the prompt would fire during AP's
+  // own navigation.
   useReloadWarning(!isEmbedded && rootStore.hasAnyProgress);
 
   const activeTrial = rootStore.activeTrial;
@@ -101,9 +89,7 @@ export const App = observer(function App() {
 
   return (
     <RootStoreProvider store={rootStore}>
-      {/* One shared polite live region for the sim's narration. For now it carries the
-          trials-panel reset / max-trials-cap announcements; future narration should route
-          through the same channel. */}
+      {/* The sim's single polite live region: route all narration through it. */}
       <Announcer>
         <SimulationFrame
           simTitle="Collapse!"
@@ -121,11 +107,8 @@ export const App = observer(function App() {
           </SimulationFrame.Trials>
 
           <SimulationFrame.Simulation instruction="Select a trial, then sample through time">
-            {/*
-            The `key` remounts <SimulationView> whenever the selected trial changes OR the active
-            trial's output transitions between empty and done. The view is layout-only for now, so
-            this is harmless; it stays because the model story's per-trial view state will need it.
-          */}
+            {/* Remounts the view when the selection or the active trial's done state changes. The
+                layout-only view doesn't need this yet; the model story's per-trial state will. */}
             <SimulationView key={`${selectedLetter}:${activeTrial.output ? "done" : "empty"}`} />
           </SimulationFrame.Simulation>
         </SimulationFrame>
