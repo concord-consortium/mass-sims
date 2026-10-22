@@ -29,6 +29,14 @@ $content-row-height: tokens.$frame-height - tokens.$frame-titlebar-height -
   .content {
     padding: 0;
   }
+
+  .chip {
+    // The shared `top` is measured from inside the panel border, which this panel drops, so set the
+    // same 17px overhang as the other chips from the outer edge instead.
+    top: -(tokens.$section-chip-overlap);
+    // Shifted right so the chip looks centered over the unselected tabs, which sit 7px in.
+    transform: translateX(calc(-50% + 6.385px));
+  }
 }
 
 .collapse-trials-panel {
@@ -214,6 +222,9 @@ $content-row-height: tokens.$frame-height - tokens.$frame-titlebar-height -
   .reset-button {
     @include mixins.trial-reset-position;
 
+    // The shared `left` assumes an unselected-width card with a right border. The selected card is
+    // `$card-offset` wider and has no right border, so put the button's right edge 4px past it.
+    left: calc(var(--trial-card-width) + #{$card-offset} - #{tokens.$touch-target-min} + 4px);
     z-index: 4;
   }
 
