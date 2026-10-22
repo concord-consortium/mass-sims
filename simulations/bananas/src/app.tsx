@@ -70,8 +70,11 @@ export const App = observer(function App({ rng = Math.random }: AppProps = {}) {
   // the entire rootStore so adding or selecting a trial triggers a save, but skip redundant writes:
   // transient UI-only changes (e.g. selecting a cross row, which `toSavedState` drops) would
   // otherwise re-emit an identical payload on every click. `onSnapshot` fires only on changes after
-  // setup, so the explicit initial call saves the starting state on mount.
+  // setup, so the explicit initial call sends the starting state. Sending waits for AP's init
+  // message, so AP never receives the default store before the saved state is restored (the
+  // hydrate effect above runs first on that render). Standalone, nothing is sent.
   useEffect(() => {
+    if (initMsg === null) return;
     let lastSaved = "";
     const save = (snap: RootStoreSnapshotOut) => {
       const state = toSavedState(snap);
@@ -82,7 +85,7 @@ export const App = observer(function App({ rng = Math.random }: AppProps = {}) {
     };
     save(getSnapshot(rootStore));
     return onSnapshot(rootStore, save);
-  }, [rootStore]);
+  }, [initMsg, rootStore]);
 
   // Defensive normalization: if `selectedTrialLetter` ever points at a trial that doesn't exist,
   // fall back to the first available letter (always "A" in practice). Can't happen via locked

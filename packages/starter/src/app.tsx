@@ -87,8 +87,11 @@ export const App = observer(function App() {
 
   // Persist the store to LARA as the `{ version, trials, selectedTrialLetter }` projection. Watch the
   // whole store via `onSnapshot` (fires on the actual snapshot-emit boundary), with an explicit
-  // initial save on mount and a serialized-payload dedup so identical payloads aren't re-emitted.
+  // initial send and a serialized-payload dedup so identical payloads aren't re-emitted. Sending
+  // waits for AP's init message, so AP never receives the default store before the saved state is
+  // restored (the hydrate effect above runs first on that render). Standalone, nothing is sent.
   useEffect(() => {
+    if (initMsg === null) return;
     let lastSaved = "";
     const save = (snap: RootStoreSnapshotOut) => {
       const state = toSavedState(snap);
@@ -97,9 +100,9 @@ export const App = observer(function App() {
       lastSaved = serialized;
       setInteractiveState<SavedState>(state);
     };
-    save(getSnapshot(rootStore)); // initial save on mount
+    save(getSnapshot(rootStore));
     return onSnapshot(rootStore, save);
-  }, [rootStore]);
+  }, [initMsg, rootStore]);
 
   // THREE subscriptions clear `liveSeries`. The mutations now happen inside <TrialsPanel> and
   // TrialModel, so App bridges them via store subscriptions rather than callbacks:

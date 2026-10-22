@@ -263,8 +263,10 @@ describe("Nor'easter App — AP saved state", () => {
   });
 
   it("calls setInteractiveState on a trial-list change (add)", () => {
+    // Embedded, first session: sending starts once the init message has arrived.
+    useInitMessageMock.mockReturnValue({ mode: "runtime", interactiveState: null });
     const view = render(<App />);
-    // Initial mount triggers at least one push (the default state).
+    // The initial send is the default state.
     expect(setInteractiveStateMock).toHaveBeenCalled();
     setInteractiveStateMock.mockClear();
 
@@ -275,5 +277,36 @@ describe("Nor'easter App — AP saved state", () => {
       trials: Record<string, unknown>;
     };
     expect(Object.keys(lastCall.trials)).toHaveLength(2);
+  });
+
+  it("waits for the init message before sending state to AP, then sends the restored state first", () => {
+    // Stateful, like the real hook: App is memoized, so a rerender with identical props would
+    // never re-read the mock. `deliver` sends the late init message.
+    let deliver: (msg: unknown) => void = () => {};
+    useInitMessageMock.mockImplementation(() => {
+      const [msg, setMsg] = useState<unknown>(null);
+      deliver = setMsg;
+      return msg;
+    });
+    render(<App />);
+    expect(setInteractiveStateMock).not.toHaveBeenCalled();
+    const strongTrial = {
+      landPathway: "N/NW",
+      landHumidity: "Dry",
+      landTemperature: "Cold",
+      oceanPathway: "S/SE",
+      oceanHumidity: "Humid",
+      outcome: "strong",
+    };
+    act(() =>
+      deliver({
+        mode: "runtime",
+        interactiveState: { version: 1, trials: { A: strongTrial }, selectedTrialLetter: "A" },
+      }),
+    );
+    const first = setInteractiveStateMock.mock.calls[0]?.[0] as {
+      trials: Record<string, { outcome: unknown }>;
+    };
+    expect(first.trials.A.outcome).toBe("strong");
   });
 });

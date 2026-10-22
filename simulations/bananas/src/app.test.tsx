@@ -1,5 +1,6 @@
 import { seededRandom } from "@concord-consortium/mass-sims-shared";
-import { fireEvent, render } from "@testing-library/react";
+import { act, fireEvent, render } from "@testing-library/react";
+import { useState } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // Mock the lara-interactive-api surface used across the App tree: `log` (the shared <Button>/
@@ -516,7 +517,9 @@ describe("Bananas App — AP saved state", () => {
     expect(queryByRole("status")).not.toBeInTheDocument();
   });
 
-  it("pushes state via setInteractiveState on mount and on every trial change", () => {
+  it("pushes state via setInteractiveState on init and on every trial change", () => {
+    // Embedded, first session: sending starts once the init message has arrived.
+    useInitMessage.mockReturnValue({ mode: "runtime", interactiveState: null });
     const { getByRole } = render(<App />);
     expect(setInteractiveState).toHaveBeenCalled(); // initial empty trial
     setInteractiveState.mockClear();
@@ -525,6 +528,22 @@ describe("Bananas App — AP saved state", () => {
     expect(setInteractiveState).toHaveBeenCalled();
     const lastArg = setInteractiveState.mock.calls.at(-1)?.[0] as SavedState;
     expect(lastArg.trials.A?.p1).toBe("wild-w1");
+  });
+
+  it("waits for the init message before sending state to AP, then sends the restored state first", () => {
+    // Stateful, like the real hook: App is memoized, so a rerender with identical props would
+    // never re-read the mock. `deliver` sends the late init message.
+    let deliver: (msg: unknown) => void = () => {};
+    useInitMessage.mockImplementation(() => {
+      const [msg, setMsg] = useState<unknown>(null);
+      deliver = setMsg;
+      return msg;
+    });
+    render(<App />);
+    expect(setInteractiveState).not.toHaveBeenCalled();
+    act(() => deliver({ mode: "runtime", interactiveState: savedState }));
+    const first = setInteractiveState.mock.calls[0]?.[0] as SavedState;
+    expect(first.trials.A).toEqual(savedTrial);
   });
 
   it("registers a beforeunload listener once there's progress (standalone)", () => {
@@ -568,9 +587,10 @@ describe("Bananas App — MST snapshot hydrate + reactive save", () => {
     selectedTrialLetter: "A",
   };
 
-  it("starts from the empty trial snapshot and saves it on mount", () => {
+  it("starts from the empty trial snapshot and sends it once the init message arrives", () => {
+    // Embedded, first session: the initial send is the single empty trial "A", selected.
+    useInitMessage.mockReturnValue({ mode: "runtime", interactiveState: null });
     render(<App />);
-    // fireImmediately pushes the initial state on mount: the single empty trial "A", selected.
     const firstArg = setInteractiveState.mock.calls[0]?.[0];
     expect(firstArg).toEqual({
       version: 1,
@@ -592,6 +612,7 @@ describe("Bananas App — MST snapshot hydrate + reactive save", () => {
   });
 
   it("persists a snapshot whose crosses.length === 1 after a single cross", () => {
+    useInitMessage.mockReturnValue({ mode: "runtime", interactiveState: null });
     const { getByRole } = render(<App rng={seededRandom("mst-save")} />);
     selectBothParents(getByRole);
     setInteractiveState.mockClear();

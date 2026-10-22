@@ -47,8 +47,11 @@ export const App = observer(function App() {
     }
   }, [initMsg, rootStore]);
 
-  // Save on mount and on every store snapshot, skipping a payload identical to the last one sent.
+  // Send the state to AP once its init message arrives, then on every store snapshot, skipping a
+  // payload identical to the last one sent. Sending earlier could give AP the default store before
+  // the saved state is restored (the hydrate effect above runs first on that render).
   useEffect(() => {
+    if (initMsg === null) return;
     let lastSaved = "";
     const save = (snap: RootStoreSnapshotOut) => {
       const state = toSavedState(snap);
@@ -59,7 +62,7 @@ export const App = observer(function App() {
     };
     save(getSnapshot(rootStore));
     return onSnapshot(rootStore, save);
-  }, [rootStore]);
+  }, [initMsg, rootStore]);
 
   // Standalone only: when embedded, AP saves every change, and the prompt would fire during AP's
   // own navigation.

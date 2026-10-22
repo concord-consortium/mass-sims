@@ -1,4 +1,5 @@
-import { fireEvent, render } from "@testing-library/react";
+import { act, fireEvent, render } from "@testing-library/react";
+import { useState } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // Mock the lara-interactive-api surface the Starter uses for AP saved-state sync. vi.hoisted
@@ -164,8 +165,10 @@ describe("Starter App — AP saved state", () => {
   });
 
   it("calls setInteractiveState on every trial-list change (add / complete / reset)", () => {
+    // Embedded, first session: sending starts once the init message has arrived.
+    useInitMessageMock.mockReturnValue({ mode: "runtime", interactiveState: null });
     const view = render(<App />);
-    // Initial mount triggers at least one push (the default state).
+    // The initial send is the default state.
     expect(setInteractiveStateMock).toHaveBeenCalled();
     setInteractiveStateMock.mockClear();
 
@@ -176,6 +179,34 @@ describe("Starter App — AP saved state", () => {
       trials: Record<string, unknown>;
     };
     expect(Object.keys(lastCall.trials)).toHaveLength(2);
+  });
+
+  it("waits for the init message before sending state to AP, then sends the restored state first", () => {
+    // Stateful, like the real hook: App is memoized, so a rerender with identical props would
+    // never re-read the mock. `deliver` sends the late init message.
+    let deliver: (msg: unknown) => void = () => {};
+    useInitMessageMock.mockImplementation(() => {
+      const [msg, setMsg] = useState<unknown>(null);
+      deliver = setMsg;
+      return msg;
+    });
+    render(<App />);
+    expect(setInteractiveStateMock).not.toHaveBeenCalled();
+    const trialA = {
+      input: { walkerCount: 50, stepSize: 1, framesPerTrial: 200, seed: "saved-A" },
+      output: { avgDistance: 3.14, stdDevDistance: 0.5, avgDistanceSeries: [1, 2, 3] },
+      finalTransient: null,
+    };
+    act(() =>
+      deliver({
+        mode: "runtime",
+        interactiveState: { version: 1, trials: { A: trialA }, selectedTrialLetter: "A" },
+      }),
+    );
+    const first = setInteractiveStateMock.mock.calls[0]?.[0] as {
+      trials: Record<string, { output: unknown }>;
+    };
+    expect(first.trials.A.output).toEqual(trialA.output);
   });
 
   it("does NOT register a beforeunload listener when embedded (AP persists progress)", () => {
