@@ -200,7 +200,8 @@ $content-row-height: tokens.$frame-height - tokens.$frame-titlebar-height - $tit
       display: none;
     }
 
-    // Left-align the shared `.body` and move it 2px down, keeping its height.
+    // Left-align the shared `.body` and use the design's insets (40px top, 3px bottom, instead of the
+    // shared 38px and 4px).
     .body {
       align-items: stretch;
       bottom: 3px;
@@ -294,7 +295,7 @@ $content-row-height: tokens.$frame-height - tokens.$frame-titlebar-height - $tit
   }
 
   // The note has its own line, starting at the icon's left edge so ">50 rainy days/yr" fits.
-  // Absolute, so it adds no row height; 17px = the label's −3px offset + its 18px line height − 1px.
+  // Absolute, so it adds no row height; `top: 17px` sets it just below the label's line.
   .collapse-attr-row:has(.collapse-attr-noteline) {
     position: relative;
   }

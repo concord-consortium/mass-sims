@@ -29,5 +29,4 @@ transports silently no-op when unavailable. Event names are snake_case; payloads
   when the target is already the active trial — re-clicking or keyboard-navigating back onto the
   selected card logs nothing.
 - Collapse has four fixed trials (A–D), so there is no `trial_added` event.
-- These are the only events for now. The timeline, year stepper, Sample button, and data table add
-  their own events in their stories.
+- These are the only events Collapse logs; new interactions add their events to this file.

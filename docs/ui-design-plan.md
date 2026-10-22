@@ -333,7 +333,7 @@ Inherited from earlier drafts and confirmed compatible with the demo's gap / pad
 | `$frame-width-ap-2col-hidden` | 989 px | AP 2-Column, resources hidden |
 | `$frame-width-ap-2col-shown` | 767 px | AP 2-Column, instructions panel visible |
 | `$frame-titlebar-height` | 50 px | The single sim title bar |
-| `$column-trials-width` | 155 px | Trials column — fixed across all layouts |
+| `$column-trials-width` | 155 px | Trials column default; a sim can override it with `--sim-frame-trials-width` |
 | `$column-simulation-flex` | 564 (unitless) | Simulation column flex ratio (shares space with Data) |
 | `$column-data-flex` | 285 (unitless) | Data column flex ratio (shares space with Simulation) |
 | `$column-gap` | 10 px | Gap between the three columns |
