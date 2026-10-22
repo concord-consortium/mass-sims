@@ -12,6 +12,25 @@ export class CollapsePage extends SimulationFramePage {
     return this.page.getByRole("region", { name: "Cross Section" });
   }
 
+  // --- Timeline + year stepper --------------------------------------------
+
+  get timelineSlider(): Locator {
+    return this.page.getByRole("slider", { name: "Years before collapse" });
+  }
+
+  get earlierButton(): Locator {
+    return this.page.getByRole("button", { name: "Earlier, more years before collapse" });
+  }
+
+  get laterButton(): Locator {
+    return this.page.getByRole("button", { name: "Later, fewer years before collapse" });
+  }
+
+  /** The stepper's digital display. It is `aria-hidden`, so it has no role to find it by. */
+  get yearDisplay(): Locator {
+    return this.page.locator(".collapse-step-value");
+  }
+
   // --- Trials panel -------------------------------------------------------
 
   get trialsListbox(): Locator {
