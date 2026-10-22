@@ -29,7 +29,7 @@
 }
 
 // "New trial" card — sim-owned (the shared TrialCard has no add variant); matches the TrialCard
-// 120 × 136 footprint.
+// footprint, including a sim's `--trial-card-width` / `--trial-card-height` overrides.
 .new-trial-card {
   align-items: center;
   background: transparent;
@@ -46,7 +46,7 @@
   gap: tokens.$space-1;
   height: var(--trial-card-height, #{tokens.$trial-card-height});
   justify-content: center;
-  width: tokens.$trial-card-width;
+  width: var(--trial-card-width, #{tokens.$trial-card-width});
 
   &:hover,
   &:focus-visible {
