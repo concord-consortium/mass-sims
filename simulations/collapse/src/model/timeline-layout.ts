@@ -8,17 +8,20 @@ import type { TimelineSegment, TimelineStop } from "./timeline";
 export const LABEL_PAD = 11;
 
 /**
- * The rail at the design width, with the Simulation panel at its full size. The last two gaps are
- * reproduced from this at every width so they never shrink; if the panel's full width changes, this
- * has to change with it.
+ * The two spans the layout blends between. Both are the mockup's (v1.29) values, kept on purpose so
+ * the dots land where the mockup draws them; the 20 stop's `at` was worked out from them.
+ *
+ * They are not the rail's actual widest and narrowest spans. Measured in `/__preview`, the span is
+ * 794.28 at 1044 and 517.28 at 767 (the mockup's own layout gives the same), so at full width the
+ * layout extrapolates a little past `DESIGN_SPAN`. That is fine: the blend is not clamped and still
+ * fills the rail.
+ *
+ * `DESIGN_SPAN` sets the design gaps. The last two gaps keep their design size at every width, so
+ * they never shrink.
  */
 export const DESIGN_SPAN = 759.49;
 
-/**
- * The narrowest the rail gets. Dots reach their equal-spacing positions exactly at this span.
- * Measured as the span, not as the timeline's own width: the row is inset from it. Follows the
- * Simulation panel's width, like `DESIGN_SPAN`.
- */
+/** Where every gap reaches equal spacing. See `DESIGN_SPAN`. */
 export const MIN_SPAN = 503.5;
 
 /** A stop is as wide as its widest label line, but never narrower than its 24px icon slot. */

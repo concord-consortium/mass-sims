@@ -1,12 +1,12 @@
 import { Section } from "@concord-consortium/mass-sims-shared";
+import { Timeline } from "./timeline/timeline";
 import "./simulation-view.scss";
 
-/** The Simulation slot's layout. Each container is a placeholder that a later story fills in. */
+/** The Simulation slot's layout. The remaining placeholders are filled in by later stories. */
 export function SimulationView() {
   return (
     <div className="collapse-simulation">
-      {/* Timeline story */}
-      <div className="collapse-timeline" aria-hidden="true" />
+      <Timeline />
       {/* Controls story: "Years before collapse" stepper + Sample */}
       <div className="collapse-controls" />
       <div className="collapse-stage-row">

@@ -13,11 +13,9 @@
   height: 100%;
   min-height: 0;
 
-  // Placeholder for the Timeline story. Height measured from the design mockup at 1024px, where
-  // content sets it; the -4px top margin also comes from the mockup.
+  // Content-sized. The -4px top margin pulls the flag up to 8px below the Simulation chip.
   .collapse-timeline {
     flex-shrink: 0;
-    height: 124px;
     margin-top: -4px;
   }
 

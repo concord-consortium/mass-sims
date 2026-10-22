@@ -7,3 +7,12 @@ $hover: #dbf5e6; // interactive hover fill
 $active: #70eba3; // interactive active fill
 $trial-label-bg: #dbf5e6; // trial letter-badge background (unselected) + active-trial badge letter
 $trial-selected-bg: $title-bar; // selected trial card fill; must match the Simulation panel's fill
+
+// The timeline flag uses blues instead of greens, so it reads as an instrument sitting on the green
+// panel rather than part of it. Default → hover → dragging.
+$timeline-flag-bg: #b3d9ff;
+$timeline-flag-hover: #a8d1fb;
+$timeline-flag-active: #9cc9f7;
+$timeline-flag-border: #4680b8; // also the handle's stem and ring
+$timeline-flag-border-active: #1e3f6e;
+$timeline-ring-fill: rgba(#f0f6fe, 0.5); // see-through, so the rail reads through the ring
