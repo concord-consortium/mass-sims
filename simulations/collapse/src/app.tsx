@@ -47,8 +47,12 @@ export const App = observer(function App() {
     }
   }, [initMsg, rootStore]);
 
-  // Save on mount and on every store snapshot, skipping a payload identical to the last one sent.
+  // Send the `{ version, trials, selectedTrialLetter }` projection to AP once its init message
+  // arrives (none comes in standalone mode), then on every store snapshot, skipping a payload
+  // identical to the last one sent. The hydrate effect above runs first, so AP first gets the
+  // restored state.
   useEffect(() => {
+    if (initMsg === null) return;
     let lastSaved = "";
     const save = (snap: RootStoreSnapshotOut) => {
       const state = toSavedState(snap);
@@ -59,7 +63,7 @@ export const App = observer(function App() {
     };
     save(getSnapshot(rootStore));
     return onSnapshot(rootStore, save);
-  }, [rootStore]);
+  }, [initMsg, rootStore]);
 
   // Standalone only: when embedded, AP saves every change, and the prompt would fire during AP's
   // own navigation.

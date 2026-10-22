@@ -25,6 +25,20 @@ beforeEach(() => {
   logMock.mockReset();
 });
 
+// The real useInitMessage returns null, then the message when it arrives, re-rendering App. Model that
+// with a STATEFUL mock: a plain mockReturnValue + rerender can't, because `observer` memoizes App, so
+// identical props bail out and the hook is never re-read. Returns `deliver`, which pushes the late message
+// (wrapped, because each render replaces the setter it calls).
+function mockLateInitMessage() {
+  let deliver: (msg: unknown) => void = () => {};
+  useInitMessageMock.mockImplementation(() => {
+    const [msg, setMsg] = useState<unknown>(null);
+    deliver = setMsg;
+    return msg;
+  });
+  return (msg: unknown) => deliver(msg);
+}
+
 describe("Nor'easter App", () => {
   it("renders the SimulationFrame with the Nor'easter title", () => {
     const { getByRole } = render(<App />);
@@ -204,15 +218,7 @@ describe("Nor'easter App — AP saved state", () => {
   });
 
   it("cancels an in-flight run when saved state hydrates (no stale run against restored trials)", () => {
-    // The real useInitMessage returns null, then the message when it arrives, re-rendering App. Model that
-    // with a STATEFUL mock: a plain mockReturnValue + rerender can't, because `observer` memoizes App, so
-    // identical props bail out and the hook is never re-read. `deliver` pushes the late message.
-    let deliver: (msg: unknown) => void = () => {};
-    useInitMessageMock.mockImplementation(() => {
-      const [msg, setMsg] = useState<unknown>(null);
-      deliver = setMsg;
-      return msg;
-    });
+    const deliver = mockLateInitMessage();
 
     // Standalone first, so a deferred run is genuinely in flight when the init message arrives.
     const view = render(<App />);
@@ -263,8 +269,10 @@ describe("Nor'easter App — AP saved state", () => {
   });
 
   it("calls setInteractiveState on a trial-list change (add)", () => {
+    // Embedded, first session: sending starts once the init message has arrived.
+    useInitMessageMock.mockReturnValue({ mode: "runtime", interactiveState: null });
     const view = render(<App />);
-    // Initial mount triggers at least one push (the default state).
+    // The initial send is the default state.
     expect(setInteractiveStateMock).toHaveBeenCalled();
     setInteractiveStateMock.mockClear();
 
@@ -275,5 +283,29 @@ describe("Nor'easter App — AP saved state", () => {
       trials: Record<string, unknown>;
     };
     expect(Object.keys(lastCall.trials)).toHaveLength(2);
+  });
+
+  it("waits for the init message before sending state to AP, then sends the restored state first", () => {
+    const deliver = mockLateInitMessage();
+    render(<App />);
+    expect(setInteractiveStateMock).not.toHaveBeenCalled();
+    const strongTrial = {
+      landPathway: "N/NW",
+      landHumidity: "Dry",
+      landTemperature: "Cold",
+      oceanPathway: "S/SE",
+      oceanHumidity: "Humid",
+      outcome: "strong",
+    };
+    act(() =>
+      deliver({
+        mode: "runtime",
+        interactiveState: { version: 1, trials: { A: strongTrial }, selectedTrialLetter: "A" },
+      }),
+    );
+    const first = setInteractiveStateMock.mock.calls[0]?.[0] as {
+      trials: Record<string, { outcome: unknown }>;
+    };
+    expect(first.trials.A.outcome).toBe("strong");
   });
 });

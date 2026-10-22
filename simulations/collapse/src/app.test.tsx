@@ -1,4 +1,5 @@
-import { fireEvent, render } from "@testing-library/react";
+import { act, fireEvent, render } from "@testing-library/react";
+import { useState } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // `vi.hoisted` so the mocks exist when `vi.mock` runs.
@@ -15,7 +16,7 @@ import { App } from "./app";
 
 // Nothing in the UI can run a trial yet, so tests that need a recorded output restore one (trial A,
 // plus any `extraTrials`) through AP saved state. This makes the sim embedded, because a restore
-// only arrives in an AP init message.
+// only arrives in an AP init message. Returns that message and trial A.
 function restoreTrialAWithOutput({
   selected = "A",
   extraTrials = {},
@@ -28,14 +29,16 @@ function restoreTrialAWithOutput({
     output: { avgDistance: 3.14, stdDevDistance: 0.5, avgDistanceSeries: [1, 2, 3] },
     finalTransient: null,
   };
-  useInitMessageMock.mockReturnValue({
+  const initMsg = {
     mode: "runtime",
     interactiveState: {
       version: 1,
       trials: { A: trialA, ...extraTrials },
       selectedTrialLetter: selected,
     },
-  });
+  };
+  useInitMessageMock.mockReturnValue(initMsg);
+  return { initMsg, trialA };
 }
 
 /** The trial options' "Trial X" names, in rendered order. */
@@ -153,6 +156,25 @@ describe("Collapse App — AP saved state", () => {
       trials: Record<string, { output: unknown }>;
     };
     expect(reset.trials.A.output).toBeNull();
+  });
+
+  it("waits for the init message before sending state to AP, then sends the restored state first", () => {
+    const { initMsg, trialA } = restoreTrialAWithOutput();
+    // Stateful, like the real hook: App is memoized, so a rerender with identical props would
+    // never re-read the mock. `deliver` sends the late init message.
+    let deliver: (msg: unknown) => void = () => {};
+    useInitMessageMock.mockImplementation(() => {
+      const [msg, setMsg] = useState<unknown>(null);
+      deliver = setMsg;
+      return msg;
+    });
+    render(<App />);
+    expect(setInteractiveStateMock).not.toHaveBeenCalled();
+    act(() => deliver(initMsg));
+    const first = setInteractiveStateMock.mock.calls[0]?.[0] as {
+      trials: Record<string, { output: unknown }>;
+    };
+    expect(first.trials.A.output).toEqual(trialA.output);
   });
 
   it("does NOT register a beforeunload listener when embedded (AP persists progress)", () => {

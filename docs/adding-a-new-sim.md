@@ -185,9 +185,11 @@ useEffect(() => {
   }
 }, [initMsg, rootStore]);
 
-// Persist via onSnapshot (fires on the snapshot-emit boundary), with an initial save on mount and a
-// serialized-payload dedup so identical payloads aren't re-emitted.
+// Send the saved state to AP once its init message arrives (none comes in standalone mode), then on
+// every store snapshot, skipping a payload identical to the last one sent. The hydrate effect above
+// runs first, so the first send is the restored state.
 useEffect(() => {
+  if (initMsg === null) return;
   let lastSaved = "";
   const save = (snap: RootStoreSnapshotOut) => {
     const state = toSavedState(snap);
@@ -198,7 +200,7 @@ useEffect(() => {
   };
   save(getSnapshot(rootStore));
   return onSnapshot(rootStore, save);
-}, [rootStore]);
+}, [initMsg, rootStore]);
 
 // Warn before unload ONLY in standalone — when embedded, AP persists every change, so the data isn't
 // at risk on reload and the prompt would fire during AP's own navigation.
