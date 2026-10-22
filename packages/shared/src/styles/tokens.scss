@@ -127,7 +127,6 @@ $body-padding:                       10px;
 
 // Section title chip (notched overlay on the panel's top edge).
 $section-chip-height:                36px;
-$section-chip-overlap:               17px;
 
 // Trial card footprint
 $trial-card-width:                   120px;
@@ -153,6 +152,10 @@ $border-strong-width:    2px;                              // strong-border widt
 $border-strong:          $border-strong-width solid $color-border;   // Section, button, card, chip
 $border-subtle:          1px solid $color-border-subtle;   // modal header rule
 $border-divider:         1px solid $color-divider;         // DataSubsection separator
+
+// How far the section chip reaches above and below the panel's top border; the chip is centered on
+// it. Defined here because it needs `$border-strong-width`.
+$section-chip-overlap:   ($section-chip-height - $border-strong-width) * 0.5;
 
 
 // =============================================================================

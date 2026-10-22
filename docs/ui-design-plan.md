@@ -339,7 +339,7 @@ Inherited from earlier drafts and confirmed compatible with the demo's gap / pad
 | `$column-gap` | 10 px | Gap between the three columns |
 | `$body-padding` | 10 px | Padding around the body region |
 | `$section-chip-height` | 36 px | The notched title chip |
-| `$section-chip-overlap` | 17 px | How much of the chip overlaps the panel top |
+| `$section-chip-overlap` | 17 px | How far the chip reaches above and below the panel's top border (derived from the chip height and border width) |
 | `$touch-target-min` | 44 px | WCAG / iOS / Material minimum |
 
 `$frame-projectbar-height` (40 px) is **removed** — there is no project bar in the sim. The previous `$frame-subheader-height` is renamed to `$frame-titlebar-height` and bumped from 48 to 50 px.

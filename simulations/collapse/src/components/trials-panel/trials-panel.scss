@@ -10,12 +10,9 @@ $card-offset: 7px;
 // Matches the corner radius of the cards and the panel.
 $flare-size: tokens.$radius-lg;
 
-// Same as the private `$titlebar-content-gap` in the shared simulation-frame.scss.
-$titlebar-content-gap: (tokens.$section-chip-height - tokens.$border-strong-width) * 0.5;
-
 // The frame's content row, which the four cards fill exactly: 562 − 50 − 17 − 10 = 485px.
-$content-row-height: tokens.$frame-height - tokens.$frame-titlebar-height - $titlebar-content-gap -
-  tokens.$body-padding;
+$content-row-height: tokens.$frame-height - tokens.$frame-titlebar-height -
+  tokens.$section-chip-overlap - tokens.$body-padding;
 
 // `.section` outranks app.scss's `.simulation-frame .section` fill, which loads later.
 .simulation-frame .section.trials-area {
