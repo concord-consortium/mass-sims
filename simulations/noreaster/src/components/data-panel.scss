@@ -1,9 +1,9 @@
 @use "@concord-consortium/mass-sims-shared/styles/tokens" as tokens;
 @use "../theme" as theme;
 
-// The "Data" chip's overhang below the section's inner top edge (it's pulled up by half its box). The panel
-// adds this to its top padding to clear the overlaid chip. Matches simulation-frame's `$titlebar-content-gap`.
-$chip-overhang: (tokens.$section-chip-height - tokens.$border-strong-width) * 0.5;
+// The "Data" chip's overhang below the section's inner top edge. The panel adds this to its top
+// padding to clear the overlaid chip.
+$chip-overhang: tokens.$section-chip-overlap;
 
 // Drop the shared Data-content inset so the panel is full-bleed to the section's inner border (the backdrop
 // must reach the edge); the panel re-applies the inset on itself below. Selector is 0-5-0 to beat both shared

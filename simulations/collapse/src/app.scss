@@ -1,0 +1,108 @@
+@use "@concord-consortium/mass-sims-shared/styles/tokens" as tokens;
+@use "./theme" as theme;
+
+// Collapse theme. The sim's CSS loads after the shared CSS, so these equal-specificity overrides win.
+.simulation-frame {
+  background: theme.$surface;
+
+  --sim-frame-trials-width: 127px; // design: 127.48; the cards overhang it (see trials-panel.scss)
+  --sim-frame-simulation-min: 390px; // keeps the Simulation area usable at 767px
+
+  // When end card A or D is selected or keyboard-focused, square the panel corner it meets so the
+  // joined edge is straight. A and D are always the listbox's first and last children. Not
+  // transitioned: the notch filler disappears at once on selection, so the radius must change on
+  // the same frame or a gap shows.
+  &:has(.collapse-trials-listbox > .trial-card-wrapper:first-child.selected),
+  &:has(.collapse-trials-listbox > .trial-card-wrapper:first-child .trial-card:focus-visible) {
+    .simulation-area {
+      border-top-left-radius: 0;
+    }
+  }
+
+  &:has(.collapse-trials-listbox > .trial-card-wrapper:last-child.selected),
+  &:has(.collapse-trials-listbox > .trial-card-wrapper:last-child .trial-card:focus-visible) {
+    .simulation-area {
+      border-bottom-left-radius: 0;
+    }
+  }
+
+  &.standalone {
+    border-color: theme.$border;
+  }
+
+  .title-bar {
+    background: theme.$title-bar;
+  }
+
+  .sim-title {
+    color: theme.$heading;
+    font-family: "Fontdiner Swanky", #{tokens.$font-family-base};
+    font-weight: 400;
+    letter-spacing: 2px;
+  }
+
+  .info-button {
+    background: theme.$surface;
+    border-color: theme.$border;
+
+    &:hover,
+    &:focus-visible {
+      background: theme.$hover;
+    }
+
+    &:active {
+      background: theme.$active;
+    }
+
+    .info-button-icon {
+      color: theme.$heading;
+    }
+  }
+
+  .section {
+    background: theme.$surface;
+    border-color: theme.$border;
+
+    &.simulation-area {
+      background: theme.$title-bar;
+    }
+
+    .chip {
+      background: theme.$tab;
+      border-color: theme.$border;
+    }
+
+    .title {
+      color: theme.$heading;
+    }
+
+    .instruction {
+      background: theme.$surface;
+    }
+  }
+
+  .simulation-frame-info-modal {
+    border-color: theme.$border;
+
+    .modal-drag-handle {
+      background: theme.$surface;
+      border-bottom-color: theme.$border;
+    }
+
+    .modal-header-icon,
+    .modal-close-icon {
+      color: theme.$heading;
+    }
+
+    .modal-close {
+      &:hover,
+      &:focus-visible {
+        background: theme.$hover;
+      }
+
+      &:active {
+        background: theme.$active;
+      }
+    }
+  }
+}

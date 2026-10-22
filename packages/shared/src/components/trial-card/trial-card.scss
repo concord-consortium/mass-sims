@@ -2,11 +2,10 @@
 
 .trial-card-wrapper {
   flex-shrink: 0;
-  // A sim can retune its card footprint with one declaration (e.g. Nor'easter's taller cards); the
-  // token is the default.
+  // Sims can override the card size with these custom properties; the tokens are the defaults.
   height: var(--trial-card-height, #{tokens.$trial-card-height});
   position: relative;
-  width: tokens.$trial-card-width;
+  width: var(--trial-card-width, #{tokens.$trial-card-width});
 
   .trial-card {
     background: tokens.$color-surface;

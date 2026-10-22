@@ -198,6 +198,8 @@ column gaps (10 + 10), and the body padding (10 + 10) — in the 564 : 285 ratio
 
 The flex ratio is expressed as the unitless `$column-simulation-flex` (564) and `$column-data-flex` (285) tokens, applied as `minmax(0, 564fr)` / `minmax(0, 285fr)` so the columns shrink rather than refusing to dip below their content's intrinsic width.
 
+A sim that renders no Data slot (e.g. Collapse) gets a two-column frame instead: Trials + Simulation, with Simulation taking all the remaining width. The Trials width can be retuned per sim with the `--sim-frame-trials-width` hook.
+
 ---
 
 ## 8. Responsive behavior — columns flex, no separate narrow mode
@@ -331,13 +333,13 @@ Inherited from earlier drafts and confirmed compatible with the demo's gap / pad
 | `$frame-width-ap-2col-hidden` | 989 px | AP 2-Column, resources hidden |
 | `$frame-width-ap-2col-shown` | 767 px | AP 2-Column, instructions panel visible |
 | `$frame-titlebar-height` | 50 px | The single sim title bar |
-| `$column-trials-width` | 155 px | Trials column — fixed across all layouts |
+| `$column-trials-width` | 155 px | Trials column default; a sim can override it with `--sim-frame-trials-width` |
 | `$column-simulation-flex` | 564 (unitless) | Simulation column flex ratio (shares space with Data) |
 | `$column-data-flex` | 285 (unitless) | Data column flex ratio (shares space with Simulation) |
 | `$column-gap` | 10 px | Gap between the three columns |
 | `$body-padding` | 10 px | Padding around the body region |
 | `$section-chip-height` | 36 px | The notched title chip |
-| `$section-chip-overlap` | 17 px | How much of the chip overlaps the panel top |
+| `$section-chip-overlap` | 17 px | How far the chip reaches above and below the panel's top border (derived from the chip height and border width) |
 | `$touch-target-min` | 44 px | WCAG / iOS / Material minimum |
 
 `$frame-projectbar-height` (40 px) is **removed** — there is no project bar in the sim. The previous `$frame-subheader-height` is renamed to `$frame-titlebar-height` and bumped from 48 to 50 px.

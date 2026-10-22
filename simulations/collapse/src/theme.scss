@@ -1,0 +1,9 @@
+$surface: #f0faf4; // panel / frame / section background
+$title-bar: #cef3dd; // title-bar background, and the Simulation panel accent
+$border: #358d5a; // panel + control borders
+$heading: #124929; // title text, section titles, icons, selected badges
+$tab: #a8faca; // section chip background
+$hover: #dbf5e6; // interactive hover fill
+$active: #70eba3; // interactive active fill
+$trial-label-bg: #dbf5e6; // trial letter-badge background (unselected) + active-trial badge letter
+$trial-selected-bg: $title-bar; // selected trial card fill; must match the Simulation panel's fill

@@ -3,7 +3,7 @@
 // Row gap between the title bar and the content row, sized so each section chip
 // — lifted by its own negative margin — lands with its top at the title bar's
 // bottom edge. Equals the chip's overhang above the panel border.
-$titlebar-content-gap: (tokens.$section-chip-height - tokens.$border-strong-width) * 0.5;
+$titlebar-content-gap: tokens.$section-chip-overlap;
 
 // How far the title-bar background bleeds below the bar, forming the lip the
 // section chips overlap onto.
@@ -170,7 +170,7 @@ $titlebar-about-leading-space: 5px;   // margin-left on the About button → CC�
     display: grid;
     grid-template-areas: "trials simulation data";
     grid-template-columns:
-      tokens.$column-trials-width
+      var(--sim-frame-trials-width, #{tokens.$column-trials-width})
       minmax(
         var(--sim-frame-simulation-min, 0),
         var(--sim-frame-simulation-flex, #{tokens.$column-simulation-flex}fr)
@@ -179,6 +179,14 @@ $titlebar-about-leading-space: 5px;   // margin-left on the About button → CC�
     grid-template-rows: minmax(0, 1fr);
     column-gap: tokens.$column-gap;
     min-height: 0; // let the panels' internal scroll regions size within the content row
+
+    // A sim with no Data slot gets two columns; Simulation takes the rest of the width.
+    &:not(:has(> .data-area)) {
+      grid-template-areas: "trials simulation";
+      grid-template-columns:
+        var(--sim-frame-trials-width, #{tokens.$column-trials-width})
+        minmax(var(--sim-frame-simulation-min, 0), 1fr);
+    }
   }
 
   // Grid-area assignments applied to each slot's Section root (a grid child of .sim-main) via
