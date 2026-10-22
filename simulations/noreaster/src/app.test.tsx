@@ -25,6 +25,20 @@ beforeEach(() => {
   logMock.mockReset();
 });
 
+// The real useInitMessage returns null, then the message when it arrives, re-rendering App. Model that
+// with a STATEFUL mock: a plain mockReturnValue + rerender can't, because `observer` memoizes App, so
+// identical props bail out and the hook is never re-read. Returns `deliver`, which pushes the late message
+// (wrapped, because each render replaces the setter it calls).
+function mockLateInitMessage() {
+  let deliver: (msg: unknown) => void = () => {};
+  useInitMessageMock.mockImplementation(() => {
+    const [msg, setMsg] = useState<unknown>(null);
+    deliver = setMsg;
+    return msg;
+  });
+  return (msg: unknown) => deliver(msg);
+}
+
 describe("Nor'easter App", () => {
   it("renders the SimulationFrame with the Nor'easter title", () => {
     const { getByRole } = render(<App />);
@@ -204,15 +218,7 @@ describe("Nor'easter App — AP saved state", () => {
   });
 
   it("cancels an in-flight run when saved state hydrates (no stale run against restored trials)", () => {
-    // The real useInitMessage returns null, then the message when it arrives, re-rendering App. Model that
-    // with a STATEFUL mock: a plain mockReturnValue + rerender can't, because `observer` memoizes App, so
-    // identical props bail out and the hook is never re-read. `deliver` pushes the late message.
-    let deliver: (msg: unknown) => void = () => {};
-    useInitMessageMock.mockImplementation(() => {
-      const [msg, setMsg] = useState<unknown>(null);
-      deliver = setMsg;
-      return msg;
-    });
+    const deliver = mockLateInitMessage();
 
     // Standalone first, so a deferred run is genuinely in flight when the init message arrives.
     const view = render(<App />);
@@ -280,14 +286,7 @@ describe("Nor'easter App — AP saved state", () => {
   });
 
   it("waits for the init message before sending state to AP, then sends the restored state first", () => {
-    // Stateful, like the real hook: App is memoized, so a rerender with identical props would
-    // never re-read the mock. `deliver` sends the late init message.
-    let deliver: (msg: unknown) => void = () => {};
-    useInitMessageMock.mockImplementation(() => {
-      const [msg, setMsg] = useState<unknown>(null);
-      deliver = setMsg;
-      return msg;
-    });
+    const deliver = mockLateInitMessage();
     render(<App />);
     expect(setInteractiveStateMock).not.toHaveBeenCalled();
     const strongTrial = {
