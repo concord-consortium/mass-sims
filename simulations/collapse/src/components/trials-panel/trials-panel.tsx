@@ -27,14 +27,14 @@ export const TrialsPanel = observer(function TrialsPanel() {
   const announce = useAnnounce();
   const selectedLetter = store.ui.selectedTrialLetter;
   const listRef = useScrollSelectedTrialIntoView<HTMLDivElement>(selectedLetter);
-  // Clamped to a real trial, so a briefly dangling `selectedLetter` (before App's safety net fixes
-  // it) still leaves exactly one selected, tabbable card and a reset aimed at a real trial.
+  // Defensive: if `selectedLetter` ever names no trial, fall back to the first card, so exactly one
+  // card is selected and tabbable and the reset targets a real trial.
   const selectedIndex = Math.max(0, store.trialLetters.indexOf(selectedLetter));
   const selectedOptionLetter = store.trialLetters[selectedIndex] ?? selectedLetter;
   const activeTrial = store.activeTrial;
 
   // Every user selection goes through here, so the no-op skip and the `trial_selected` log live in
-  // one place. `selectTrial` itself doesn't log, because App's safety net also calls it.
+  // one place.
   const navigateTo = (newLetter: string) => {
     const prev = store.ui.selectedTrialLetter;
     if (newLetter === prev) return;

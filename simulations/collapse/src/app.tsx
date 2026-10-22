@@ -3,11 +3,9 @@ import {
   Announcer,
   inIframe,
   SimulationFrame,
-  TRIAL_LETTERS_DEFAULT,
   useReloadWarning,
   useReportHeight,
 } from "@concord-consortium/mass-sims-shared";
-import { reaction } from "mobx";
 import { observer } from "mobx-react-lite";
 import { applySnapshot, getSnapshot, onSnapshot } from "mobx-state-tree";
 import { useEffect, useMemo } from "react";
@@ -34,23 +32,6 @@ export const App = observer(function App() {
   const isEmbedded = initMsg !== null || inIframe();
 
   useReportHeight(isEmbedded);
-
-  // Safety net: if the selected letter names no trial, select the first one, so a card always shows
-  // as selected. Registered before the hydrate effect so it already observes the letter that
-  // `applySnapshot` writes.
-  useEffect(() => {
-    return reaction(
-      () => rootStore.trials.has(rootStore.ui.selectedTrialLetter),
-      (exists) => {
-        if (!exists) {
-          const first = rootStore.trialLetters.find((l) =>
-            (TRIAL_LETTERS_DEFAULT as readonly string[]).includes(l),
-          );
-          if (first) rootStore.ui.selectTrial(first);
-        }
-      },
-    );
-  }, [rootStore]);
 
   // The saved-state format `{ version, trials, selectedTrialLetter }` differs from the store
   // snapshot `{ trials, ui }`, so map one onto the other.
