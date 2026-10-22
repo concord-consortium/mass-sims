@@ -21,8 +21,18 @@ describe("SimulationView", () => {
     expect(crossSection).toHaveTextContent("Select a row in the table to see its cross section.");
   });
 
-  it("renders the timeline slider", () => {
+  it("renders the timeline slider and the year stepper", () => {
     const { getByRole } = renderView();
     expect(getByRole("slider", { name: "Years before collapse" })).toBeInTheDocument();
+    expect(
+      getByRole("button", { name: "Earlier, more years before collapse" }),
+    ).toBeInTheDocument();
+    expect(getByRole("button", { name: "Later, fewer years before collapse" })).toBeInTheDocument();
+  });
+
+  it("holds Sample's place with a slot that is not a button and is hidden from assistive tech", () => {
+    const { container, queryByRole } = renderView();
+    expect(container.querySelector(".collapse-sample-slot")).toHaveAttribute("aria-hidden", "true");
+    expect(queryByRole("button", { name: /Sample/ })).toBeNull();
   });
 });

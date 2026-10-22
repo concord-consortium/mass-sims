@@ -8,6 +8,13 @@
 }
 
 .collapse-simulation {
+  // The Cross Section box's width: a straight line through two design values, 280.91px at a row
+  // width of 842.5 and 206.9px at 586.5, so the table gains the most where space is tightest. The
+  // 150px floor only guards rows narrower than any target width. Set here so the controls row can
+  // use it too. The percentage resolves against the box that uses it; the stage row and the
+  // controls row's content area are both the panel width less 20px, so both get the same value.
+  --data-w: clamp(150px, calc(28.9102% + 37.34px), 280.91px);
+
   display: flex;
   flex-direction: column;
   height: 100%;
@@ -19,19 +26,39 @@
     margin-top: -4px;
   }
 
-  // Placeholder for the controls story. Height measured from the design mockup at 1024px, where
-  // content sets it.
+  // Content-sized, with its controls centered as a group. The top padding is the whole gap to the
+  // timeline above.
   .collapse-controls {
+    align-items: flex-start;
+    display: flex;
     flex-shrink: 0;
-    height: 64px;
+    gap: 10px;
+    justify-content: center;
+    padding: 10px;
+
+    // A margin as wide as the Cross Section box (less the 2px the table laps over it) on the last
+    // control centers the group over the table instead of the panel.
+    > :last-child {
+      margin-right: calc(var(--data-w) - #{tokens.$border-strong-width});
+    }
+  }
+
+  // Sized like the real Sample button will be: the padding and no-shrink of the sims' icon buttons
+  // (see Nor'easter's control bar), and the `<button>` element's normal letter-spacing, which a
+  // `<span>` would otherwise inherit from the body.
+  .collapse-sample-slot {
+    flex-shrink: 0;
+    letter-spacing: normal;
+    padding: 8px 12px 8px 8px;
+    visibility: hidden;
+  }
+
+  .collapse-sample-slot-icon {
+    height: 24px;
+    width: 24px;
   }
 
   .collapse-stage-row {
-    // The Cross Section box's width: a straight line through two design values, 280.91px at a row
-    // width of 842.5 and 206.9px at 586.5, so the table gains the most where space is tightest. The
-    // 150px floor only guards rows narrower than any target width.
-    --data-w: clamp(150px, calc(28.9102% + 37.34px), 280.91px);
-
     display: flex;
     flex: 1;
     margin: 0 10px 10px;

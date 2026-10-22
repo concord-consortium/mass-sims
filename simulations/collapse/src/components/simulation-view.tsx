@@ -1,5 +1,6 @@
 import { Section } from "@concord-consortium/mass-sims-shared";
 import { Timeline } from "./timeline/timeline";
+import { YearStepper } from "./year-stepper/year-stepper";
 import "./simulation-view.scss";
 
 /** The Simulation slot's layout. The remaining placeholders are filled in by later stories. */
@@ -7,8 +8,15 @@ export function SimulationView() {
   return (
     <div className="collapse-simulation">
       <Timeline />
-      {/* Controls story: "Years before collapse" stepper + Sample */}
-      <div className="collapse-controls" />
+      <div className="collapse-controls">
+        <YearStepper />
+        {/* Holds Sample's place (data-table story) so the stepper does not move when it arrives.
+            Built like the shared Button with an icon, so it is as wide as the real one will be. */}
+        <span className="button collapse-sample-slot" aria-hidden="true">
+          <span className="collapse-sample-slot-icon" />
+          Sample
+        </span>
+      </div>
       <div className="collapse-stage-row">
         {/* Data table story */}
         <div className="collapse-table-box">
