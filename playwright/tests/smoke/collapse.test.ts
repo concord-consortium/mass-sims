@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 import { CollapsePage } from "../../pages/collapse-page";
-import { MAX_TRIALS, TRIAL_LETTERS } from "../../testdata/collapse-testdata";
+import { TRIAL_LETTERS } from "../../testdata/collapse-testdata";
 
 // Runs once per target width (1044 / 1024 / 989 / 767).
 
@@ -20,6 +20,7 @@ test("loads the sim shell", async () => {
   await expect(collapse.dataSlot).toHaveCount(0);
   await expect(collapse.trialsListbox).toBeVisible();
   await expect(collapse.crossSectionRegion).toBeVisible();
+  expect(Math.abs(await collapse.simulationSlotRightGap())).toBeLessThanOrEqual(1);
 });
 
 test("About modal: opens via button, closes via close button, closes via Escape", async () => {
@@ -38,6 +39,7 @@ test("Reload warning does NOT fire on clean state", async () => {
 });
 
 test("Trial selector: exactly A–D are seeded, A selected, in a vertical listbox", async () => {
+  expect(TRIAL_LETTERS).toEqual(["A", "B", "C", "D"]);
   await expect(collapse.trialsListbox).toHaveAttribute("aria-orientation", "vertical");
   await expect(collapse.trialOptions).toHaveCount(TRIAL_LETTERS.length);
   for (const letter of TRIAL_LETTERS) await expect(collapse.trialOption(letter)).toBeVisible();
@@ -60,9 +62,4 @@ test("Keyboard nav: ArrowDown moves focus AND selection to the next trial", asyn
   await expect(collapse.trialOption("B")).toHaveAttribute("aria-selected", "true");
   // Roving tabindex moves focus too, not just selection.
   expect(await collapse.focusedAriaLabel()).toMatch(/^Trial B\b/);
-});
-
-test("Cap values match expected literals", () => {
-  // `MAX_TRIALS` comes from the sim's trial list; this catches an accidental change to it.
-  expect(MAX_TRIALS).toBe(4);
 });

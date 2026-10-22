@@ -35,6 +35,24 @@ export class CollapsePage extends SimulationFramePage {
     await this.trialOption(letter).click();
   }
 
+  /**
+   * Gap between the Simulation slot's right edge and the right edge of `.sim-main`'s content box. Near
+   * zero when the shared frame's two-column rule gives Simulation the whole row.
+   */
+  async simulationSlotRightGap(): Promise<number> {
+    return this.page.evaluate(() => {
+      const main = document.querySelector(".sim-main");
+      const sim = document.querySelector(".simulation-area");
+      if (!main || !sim) throw new Error("frame regions not found");
+      const style = getComputedStyle(main);
+      const contentRight =
+        main.getBoundingClientRect().right -
+        Number.parseFloat(style.paddingRight) -
+        Number.parseFloat(style.borderRightWidth);
+      return contentRight - sim.getBoundingClientRect().right;
+    });
+  }
+
   async focusedAriaLabel(): Promise<string | null> {
     return this.page.evaluate(() => document.activeElement?.getAttribute("aria-label") ?? null);
   }

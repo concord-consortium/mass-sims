@@ -14,6 +14,8 @@ import { DEFAULT_PARAMS } from "./trial-model";
 const INPUT: SimInput = { walkerCount: 50, stepSize: 1, framesPerTrial: 200, seed: "s" };
 const OUTPUT: SimOutput = { avgDistance: 12.3, stdDevDistance: 2.1, avgDistanceSeries: [1, 2, 3] };
 const TRIAL = { input: INPUT, output: OUTPUT, finalTransient: null };
+/** A trial told apart by its seed, so a test can tell which saved trial landed under which letter. */
+const trialWithSeed = (seed: string) => ({ ...TRIAL, input: { ...INPUT, seed } });
 
 const rng = seededRandom("saved-state-test");
 
@@ -39,7 +41,12 @@ describe("migrateSavedState — normalizes to exactly A–D", () => {
   it("passes a state with four valid trials through unchanged", () => {
     const state: SavedState = {
       version: 1,
-      trials: { A: TRIAL, B: TRIAL, C: TRIAL, D: TRIAL },
+      trials: {
+        A: trialWithSeed("a"),
+        B: trialWithSeed("b"),
+        C: trialWithSeed("c"),
+        D: trialWithSeed("d"),
+      },
       selectedTrialLetter: "C",
     };
     expect(migrate(state)).toEqual(state);
@@ -56,11 +63,23 @@ describe("migrateSavedState — normalizes to exactly A–D", () => {
   });
 
   it("a save with A–D plus an E → E ignored, four trials in A–D order, A–D data preserved", () => {
-    // Out of order, so the result's A–D key order must come from the function.
-    const trials = { E: TRIAL, D: TRIAL, C: TRIAL, B: TRIAL, A: TRIAL };
+    // Out of order, so the result's A–D key order must come from the function, and distinct trials,
+    // so each must land under its own letter.
+    const trials = {
+      E: trialWithSeed("e"),
+      D: trialWithSeed("d"),
+      C: trialWithSeed("c"),
+      B: trialWithSeed("b"),
+      A: trialWithSeed("a"),
+    };
     const state = migrate({ version: 1, trials, selectedTrialLetter: "A" });
     expect(Object.keys(state.trials)).toEqual(["A", "B", "C", "D"]);
-    expect(state.trials).toEqual({ A: TRIAL, B: TRIAL, C: TRIAL, D: TRIAL });
+    expect(state.trials).toEqual({
+      A: trialWithSeed("a"),
+      B: trialWithSeed("b"),
+      C: trialWithSeed("c"),
+      D: trialWithSeed("d"),
+    });
   });
 
   it('selectedTrialLetter "E" → "A"', () => {
