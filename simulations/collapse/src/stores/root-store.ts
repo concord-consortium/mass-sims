@@ -2,7 +2,6 @@ import {
   hasAnyProgress as anyTrialHasProgress,
   trialLetters as listTrialLetters,
   activeTrial as resolveActiveTrial,
-  UiStore,
 } from "@concord-consortium/mass-sims-shared";
 import {
   getSnapshot,
@@ -14,6 +13,7 @@ import {
 import { createContext, createElement, type ReactNode, useContext } from "react";
 import { COLLAPSE_TRIAL_LETTERS } from "../trial-conditions";
 import { emptyTrialSnapshot, makeSeed, TrialModel, type TrialModelInstance } from "./trial-model";
+import { UiStore } from "./ui-store";
 
 export const RootStore = types
   .model("Root", {
