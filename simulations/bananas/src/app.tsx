@@ -66,13 +66,11 @@ export const App = observer(function App({ rng = Math.random }: AppProps = {}) {
     }
   }, [initMsg, rootStore]);
 
-  // Persist the whole store to LARA as the `{ trials, selectedTrialLetter }` projection. We watch
-  // the entire rootStore so adding or selecting a trial triggers a save, but skip redundant writes:
-  // transient UI-only changes (e.g. selecting a cross row, which `toSavedState` drops) would
-  // otherwise re-emit an identical payload on every click. `onSnapshot` fires only on changes after
-  // setup, so the explicit initial call sends the starting state. Sending waits for AP's init
-  // message, so AP never receives the default store before the saved state is restored (the
-  // hydrate effect above runs first on that render). Standalone, nothing is sent.
+  // Send the `{ trials, selectedTrialLetter }` projection to AP once its init message arrives (none
+  // comes in standalone mode), then on every store snapshot. Skip a payload identical to the last
+  // one sent: transient UI-only changes (e.g. selecting a cross row, which `toSavedState` drops)
+  // would otherwise re-send it on every click. The hydrate effect above runs first, so the first
+  // send is the restored state.
   useEffect(() => {
     if (initMsg === null) return;
     let lastSaved = "";

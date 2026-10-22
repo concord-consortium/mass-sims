@@ -47,9 +47,10 @@ export const App = observer(function App() {
     }
   }, [initMsg, rootStore]);
 
-  // Send the state to AP once its init message arrives, then on every store snapshot, skipping a
-  // payload identical to the last one sent. Sending earlier could give AP the default store before
-  // the saved state is restored (the hydrate effect above runs first on that render).
+  // Send the `{ version, trials, selectedTrialLetter }` projection to AP once its init message
+  // arrives (none comes in standalone mode), then on every store snapshot, skipping a payload
+  // identical to the last one sent. The hydrate effect above runs first, so AP first gets the
+  // restored state.
   useEffect(() => {
     if (initMsg === null) return;
     let lastSaved = "";

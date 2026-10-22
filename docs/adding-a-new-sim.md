@@ -185,10 +185,9 @@ useEffect(() => {
   }
 }, [initMsg, rootStore]);
 
-// Persist via onSnapshot (fires on the snapshot-emit boundary), with an initial send and a
-// serialized-payload dedup so identical payloads aren't re-emitted. Sending waits for AP's init
-// message, so AP never receives the default store before the saved state is restored (the hydrate
-// effect above runs first on that render). Standalone, nothing is sent.
+// Send the saved state to AP once its init message arrives (none comes in standalone mode), then on
+// every store snapshot, skipping a payload identical to the last one sent. The hydrate effect above
+// runs first, so the first send is the restored state.
 useEffect(() => {
   if (initMsg === null) return;
   let lastSaved = "";

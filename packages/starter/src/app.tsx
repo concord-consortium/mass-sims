@@ -85,11 +85,10 @@ export const App = observer(function App() {
     }
   }, [initMsg, rootStore]);
 
-  // Persist the store to LARA as the `{ version, trials, selectedTrialLetter }` projection. Watch the
-  // whole store via `onSnapshot` (fires on the actual snapshot-emit boundary), with an explicit
-  // initial send and a serialized-payload dedup so identical payloads aren't re-emitted. Sending
-  // waits for AP's init message, so AP never receives the default store before the saved state is
-  // restored (the hydrate effect above runs first on that render). Standalone, nothing is sent.
+  // Send the `{ version, trials, selectedTrialLetter }` projection to AP once its init message
+  // arrives (none comes in standalone mode), then on every store snapshot, skipping a payload
+  // identical to the last one sent. The hydrate effect above runs first, so AP first gets the
+  // restored state.
   useEffect(() => {
     if (initMsg === null) return;
     let lastSaved = "";
