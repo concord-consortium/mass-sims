@@ -245,5 +245,7 @@
   position: absolute;
   right: 0;
   top: 11px;
+  // Sideways drags are the slider's; vertical scrolling and pinch-zoom still work over the band.
+  touch-action: pan-y pinch-zoom;
   z-index: 1;
 }
