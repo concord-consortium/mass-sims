@@ -36,8 +36,16 @@ afterEach(() => {
 
 // jsdom has no `PointerEvent`, so `fireEvent.pointerDown` would drop `clientX`. A `MouseEvent` with
 // the pointer event's name carries it, and React handles it as that pointer event.
-function pointer(el: Element, type: string, clientX: number) {
-  fireEvent(el, new MouseEvent(type, { bubbles: true, cancelable: true, clientX }));
+function pointer(
+  el: Element,
+  type: string,
+  clientX: number,
+  mouse?: { button?: number; ctrlKey?: boolean },
+) {
+  const event = new MouseEvent(type, { bubbles: true, cancelable: true, clientX, ...mouse });
+  // `MouseEvent` has no `pointerType`; set it when the test needs a real mouse press.
+  if (mouse) Object.defineProperty(event, "pointerType", { value: "mouse" });
+  fireEvent(el, event);
 }
 
 function setup() {
@@ -129,6 +137,33 @@ describe("Timeline", () => {
     expect(store.ui.timelineIndex).toBe(10);
     expect(nearestValueIndexByPx(LAYOUT.valuePx, target + 70)).not.toBe(10);
     pointer(slider, "pointerup", 0);
+  });
+
+  it("ignores right, middle, and Ctrl mouse presses", () => {
+    const { view, store, band, slider } = setup();
+    const track = view.container.querySelector(".collapse-tl") as HTMLElement;
+    const x = LAYOUT.valuePx[6];
+    for (const mouse of [{ button: 2 }, { button: 1 }, { button: 0, ctrlKey: true }]) {
+      pointer(band, "pointerdown", x, mouse);
+      pointer(slider, "pointerdown", x, mouse);
+      pointer(band, "pointermove", LAYOUT.valuePx[9]);
+      expect(store.ui.timelineIndex).toBe(0);
+      expect(track).not.toHaveClass("dragging");
+    }
+    // A plain primary-button mouse press still works.
+    pointer(band, "pointerdown", x, { button: 0 });
+    expect(store.ui.timelineIndex).toBe(6);
+  });
+
+  it("ends the drag when the pointer capture is lost", () => {
+    const { view, store, band } = setup();
+    const track = view.container.querySelector(".collapse-tl") as HTMLElement;
+    pointer(band, "pointerdown", LAYOUT.valuePx[3]);
+    expect(track).toHaveClass("dragging");
+    pointer(band, "lostpointercapture", 0);
+    expect(track).not.toHaveClass("dragging");
+    pointer(band, "pointermove", LAYOUT.valuePx[9]);
+    expect(store.ui.timelineIndex).toBe(3);
   });
 
   it("marks the track as dragging only while a drag is live", () => {

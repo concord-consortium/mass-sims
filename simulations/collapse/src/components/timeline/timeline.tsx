@@ -114,6 +114,11 @@ export const Timeline = observer(function Timeline() {
   const pointerX = (e: PointerEvent) =>
     e.clientX - (tlRef.current?.getBoundingClientRect().left ?? 0);
 
+  // Only a plain primary-button mouse press starts a drag. A right, middle, or (macOS) Ctrl press
+  // would change the value and could open a context menu that swallows the `pointerup`.
+  const isPrimaryPress = (e: PointerEvent) =>
+    e.pointerType !== "mouse" || (e.button === 0 && !e.ctrlKey);
+
   const beginDrag = (e: PointerEvent<HTMLDivElement>, offset: number) => {
     grabOffset.current = offset;
     setDragging(true);
@@ -122,7 +127,7 @@ export const Timeline = observer(function Timeline() {
   };
 
   const onBandPointerDown = (e: PointerEvent<HTMLDivElement>) => {
-    if (!measured) return;
+    if (!measured || !isPrimaryPress(e)) return;
     set(nearestValueIndexByPx(measured.layout.valuePx, pointerX(e)), "slider");
     beginDrag(e, 0);
     setNoRing(true);
@@ -133,7 +138,7 @@ export const Timeline = observer(function Timeline() {
   };
 
   const onFlagPointerDown = (e: PointerEvent<HTMLDivElement>) => {
-    if (!measured) return;
+    if (!measured || !isPrimaryPress(e)) return;
     beginDrag(e, pointerX(e) - measured.layout.valuePx[ui.timelineIndex]);
     setNoRing(true);
   };
@@ -166,6 +171,7 @@ export const Timeline = observer(function Timeline() {
     onPointerMove,
     onPointerUp: onPointerEnd,
     onPointerCancel: onPointerEnd,
+    onLostPointerCapture: onPointerEnd,
   };
 
   // Positions: measured pixels, or the design fractions until the first measurement.
