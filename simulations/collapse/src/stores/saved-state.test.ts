@@ -184,6 +184,16 @@ describe("toSavedState + hydrate round-trip", () => {
     expect(state.trials.A.output).toEqual(OUTPUT);
   });
 
+  it("leaves the saved state unchanged when the timeline value changes", () => {
+    // The app skips a save whose serialized payload matches the last one, so an unchanged
+    // projection means a timeline change sends nothing.
+    const store = createRootStore();
+    const before = JSON.stringify(toSavedState(getSnapshot(store)));
+    store.ui.setTimelineIndex(5);
+    expect(store.ui.timelineIndex).toBe(5);
+    expect(JSON.stringify(toSavedState(getSnapshot(store)))).toBe(before);
+  });
+
   it("a normalized B-only save hydrates a store to four trials in A–D order", () => {
     const migrated = migrate({ version: 1, trials: { B: TRIAL }, selectedTrialLetter: "B" });
     const store = createRootStore();

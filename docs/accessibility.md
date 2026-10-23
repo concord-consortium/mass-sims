@@ -137,6 +137,35 @@ testable without observing outlines: one keypress must flip the `role="switch"` 
 
 ---
 
+## Custom slider (Collapse timeline)
+
+The Collapse timeline's flag is a hand-rolled **`role="slider"`**, not the shared `<Slider>`: its
+values sit at non-linear positions measured from the label widths, which react-aria's linear thumb
+can't express.
+
+- **Keys (APG slider):** ArrowRight / ArrowDown step one value later, ArrowLeft / ArrowUp one earlier,
+  Home / End jump to the ends. There are only sixteen values, so there is no PageUp / PageDown. The
+  name is the fixed `"Years before collapse"`; `aria-valuetext` reads `"<n> years before collapse"`.
+- **The landmarks are a readable list, separate from the value.** The dated stops are an `<ol>` named
+  `"Timeline landmarks"`, one `<li>` per stop in order, with the icons and dots `aria-hidden`. Two
+  items get visually-hidden context: the 0 stop adds "(the collapse)" and the end marker reads
+  "current year <year>". The list is not focusable; the slider is the one tab stop.
+- **Pressing the flag never changes the value.** A press on the flag keeps the pointer's offset from
+  the handle, so the value moves only once the handle is dragged to another value. A press anywhere
+  else on the timeline (a landmark's icon, dot, or label, or the rail between them) snaps to the
+  nearest value. Either press focuses the flag, so the arrow keys work at once.
+- **No focus ring after a pointer press.** Chrome shows `:focus-visible` when a press focuses the
+  flag, so a `no-ring` class hides the outline after a press. Any other focus, a blur, or a key
+  brings it back.
+- **Narration:** the slider does not announce; `aria-valuetext` is how a slider reports its value. The
+  stepper's Earlier / Later arrows do announce the new value through the shared `<Announcer>`, since
+  their names say what they do, not where they landed. The stepper's number is `aria-hidden`, so the
+  value is not read a third time.
+- The arrows are shared `<Button>`s, so at either end they are `aria-disabled` and stay focusable (see
+  the disabled-control split above).
+
+---
+
 ## Charts
 
 - A chart **given an `ariaLabel`** is a **`role="img"`** region named by it (internals `aria-hidden`);

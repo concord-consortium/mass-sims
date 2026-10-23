@@ -1,0 +1,137 @@
+@use "@concord-consortium/mass-sims-shared/styles/tokens" as tokens;
+@use "../../theme" as theme;
+
+.collapse-stepper-wrap {
+  align-items: center;
+  display: flex;
+  flex: 0 0 auto;
+  // 8px, not the 10px between larger blocks: it matches the space Nor'easter shows between
+  // "Air Mass" and its Pathway button.
+  gap: 8px;
+}
+
+// Two fixed lines, so it never rewraps against the stepper. 700 / 20px to match Nor'easter's
+// "Land / Air Mass" label; the two lines fit inside the stepper's 44px.
+.collapse-step-caption {
+  color: tokens.$color-text;
+  font-family: tokens.$font-family-base;
+  font-size: tokens.$font-size-base;
+  font-weight: 700;
+  letter-spacing: 0.32px;
+  line-height: 20px;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.collapse-stepper {
+  align-items: stretch;
+  background: theme.$surface;
+  border: tokens.$border-strong;
+  border-color: theme.$border;
+  border-radius: tokens.$radius-md;
+  box-sizing: border-box;
+  display: flex;
+  height: tokens.$touch-target-min;
+}
+
+// Overrides the shared `.button` look: the arrows are parts of the stepper, not boxes of their own.
+.button.collapse-step-arrow {
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  color: theme.$heading;
+  flex: 0 0 auto;
+  height: tokens.$touch-target-min;
+  // Pulls the button over the stepper's 2px border, so the hit area is a full 44 × 44 while the
+  // stepper stays 44 tall.
+  margin: -(tokens.$border-strong-width) 0;
+  min-height: 0;
+  min-width: 0;
+  padding: 0;
+  position: relative;
+  width: tokens.$touch-target-min;
+
+  // The fill is inset back inside the border, so the stepper needs no `overflow: hidden` to keep
+  // its rounded corners, and the focus ring is not clipped.
+  &::before {
+    content: "";
+    inset: tokens.$border-strong-width 0;
+    position: absolute;
+    transition: tokens.$transition-interactive;
+  }
+
+  svg {
+    position: relative;
+  }
+
+  // The outer ends also overlap the border, so the focus ring clears the stepper by the same 2px
+  // on every side and follows its radius.
+  &:first-child {
+    border-radius: tokens.$radius-md 0 0 tokens.$radius-md;
+    margin-left: -(tokens.$border-strong-width);
+    padding-left: tokens.$border-strong-width;
+    width: tokens.$touch-target-min + tokens.$border-strong-width;
+
+    &::before {
+      border-radius: tokens.$radius-sm 0 0 tokens.$radius-sm;
+      inset: tokens.$border-strong-width 0 tokens.$border-strong-width tokens.$border-strong-width;
+    }
+  }
+
+  &:last-child {
+    border-radius: 0 tokens.$radius-md tokens.$radius-md 0;
+    margin-right: -(tokens.$border-strong-width);
+    padding-right: tokens.$border-strong-width;
+    width: tokens.$touch-target-min + tokens.$border-strong-width;
+
+    &::before {
+      border-radius: 0 tokens.$radius-sm tokens.$radius-sm 0;
+      inset: tokens.$border-strong-width tokens.$border-strong-width tokens.$border-strong-width 0;
+    }
+  }
+
+  // The right arrow is the left one mirrored, so the two always match.
+  &.later svg {
+    transform: scaleX(-1);
+  }
+
+  &[data-hovered]:not([aria-disabled="true"]),
+  &:focus-visible:not([aria-disabled="true"]) {
+    background: transparent;
+
+    &::before {
+      background: theme.$hover;
+    }
+  }
+
+  &[data-pressed]:not([aria-disabled="true"]) {
+    background: transparent;
+
+    &::before {
+      background: theme.$active;
+    }
+  }
+
+  &[aria-disabled="true"] {
+    color: theme.$heading;
+  }
+}
+
+// Sized for the widest value ("200,000" in Lato 700, plus padding), so the arrows never move as
+// the number changes.
+.collapse-step-value {
+  align-items: center;
+  background: tokens.$color-surface;
+  color: tokens.$color-text;
+  display: flex;
+  flex: 0 0 auto;
+  font-family: tokens.$font-family-base;
+  font-size: tokens.$font-size-base;
+  font-weight: 700;
+  justify-content: center;
+  letter-spacing: 0.32px;
+  line-height: 18px;
+  min-width: 90px;
+  padding: 0 tokens.$space-2;
+  white-space: nowrap;
+}
