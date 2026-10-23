@@ -1,7 +1,6 @@
 @use "@concord-consortium/mass-sims-shared/styles/tokens" as tokens;
 @use "../../theme" as theme;
 
-// The caption sits to the left of the stepper, right-aligned.
 .collapse-stepper-wrap {
   align-items: center;
   display: flex;
@@ -91,7 +90,7 @@
     }
   }
 
-  // The right arrow is the left one mirrored, so the two are identical by construction.
+  // The right arrow is the left one mirrored, so the two always match.
   &.later svg {
     transform: scaleX(-1);
   }
@@ -118,8 +117,8 @@
   }
 }
 
-// Sized for the widest value ("200,000" in Lato 700, plus padding and air), so the arrows never
-// move as the number changes.
+// Sized for the widest value ("200,000" in Lato 700, plus padding), so the arrows never move as
+// the number changes.
 .collapse-step-value {
   align-items: center;
   background: tokens.$color-surface;

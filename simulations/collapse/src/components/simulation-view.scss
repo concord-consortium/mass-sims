@@ -36,8 +36,8 @@
     justify-content: center;
     padding: 10px;
 
-    // A margin as wide as the Cross Section box (less the 2px the table laps over it) on the last
-    // control centers the group over the table instead of the panel.
+    // A margin as wide as the Cross Section box (less the 2px where the table overlaps it) on the
+    // last control centers the group over the table instead of the panel.
     > :last-child {
       margin-right: calc(var(--data-w) - #{tokens.$border-strong-width});
     }

@@ -10,8 +10,8 @@ export function SimulationView() {
       <Timeline />
       <div className="collapse-controls">
         <YearStepper />
-        {/* Holds Sample's place (data-table story) so the stepper does not move when it arrives.
-            Built like the shared Button with an icon, so it is as wide as the real one will be. */}
+        {/* TODO (data-table story): replace with the Sample button. Until then this holds its place,
+            at the same width, so the stepper does not move when it arrives. */}
         <span className="button collapse-sample-slot" aria-hidden="true">
           <span className="collapse-sample-slot-icon" />
           Sample

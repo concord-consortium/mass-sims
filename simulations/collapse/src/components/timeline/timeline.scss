@@ -1,8 +1,8 @@
 @use "@concord-consortium/mass-sims-shared/styles/tokens" as tokens;
 @use "../../theme" as theme;
 
-// Geometry is anchored on the rail: icons sit 12px above it, dots straddle it. Stop, handle, flag,
-// and rail positions are set inline from the measured layout.
+// Vertical positions are measured from the rail: icons sit 12px above it, and the dots are centered
+// on it. Horizontal positions are set inline from the measured layout.
 .collapse-timeline {
   padding: 0 10px;
 }
@@ -19,8 +19,7 @@
   top: 58px;
 }
 
-// The run past the collapse holds no landable value: it is after the event the axis counts down to,
-// so it is drawn as a dashed continuation rather than track.
+// Past the collapse there is no landable value, so the rail continues as a dashed line.
 .collapse-tl-rail-tail {
   background-image: repeating-linear-gradient(
     to right,
@@ -60,9 +59,9 @@
   margin-bottom: 7px;
   width: 24px;
 
-  // Wider-than-tall artwork keeps the slot's 24px layout height and hangs over it, so the dot below
-  // stays centered on the rail. It overflows upward into the row's top padding and sideways past the
-  // stop, which is why it is not clipped.
+  // Artwork wider or taller than the slot keeps the slot's 24px height and extends past it, up into
+  // the row's top padding and out to the sides, so the dot below stays centered on the rail. That
+  // is why it is not clipped.
   &.art {
     align-items: flex-end;
     display: flex;
@@ -120,15 +119,14 @@
   position: absolute;
   top: 48px;
   width: 0;
-  // Above the landmark row (2) and the flag (5), so the stem runs unbroken through both white
-  // keylines.
+  // Above the landmark row (2) and the flag (5), so the stem is drawn over both white outlines.
   z-index: 6;
 }
 
 .collapse-tl-stem {
   background: theme.$timeline-flag-border;
-  // White down each side only: a spread shadow would also lay white across the flag's bottom border
-  // and the ring's top, notching both.
+  // White on the two sides only: a spread shadow would also paint white over the flag's bottom
+  // border and the ring's top.
   box-shadow:
     2px 0 0 0 tokens.$white,
     -2px 0 0 0 tokens.$white;
@@ -137,7 +135,7 @@
   position: absolute;
   top: 0;
   width: 2px;
-  // In front of the ring, whose white keyline would otherwise clip the stem's last 2px.
+  // In front of the ring, whose white outline would otherwise cover the stem's last 2px.
   z-index: 2;
 }
 
@@ -161,8 +159,8 @@
   border: 2px solid theme.$timeline-flag-border;
   border-radius: tokens.$radius-lg;
   box-sizing: border-box;
-  // The flag crosses an event icon at most stops, and its border reaches only ~2:1 against that
-  // artwork; the white keyline is what separates them.
+  // The flag crosses an icon at most stops, and its border has only ~2:1 contrast against that
+  // artwork; the white outline is what separates them.
   box-shadow: 0 0 0 2px tokens.$white;
   color: tokens.$color-text;
   cursor: grab;
@@ -235,9 +233,9 @@
   }
 }
 
-// The press-and-drag band. Spans each whole stop, from the top of the tallest artwork (36px tall,
-// hanging 12px above the 24px slot) down to the bottom of the deepest label, so the icons and text
-// are press targets too. The rail is press-to-jump; only the flag shows a grab cursor.
+// The press-and-drag band. It covers each whole stop, from the top of the tallest artwork (36px,
+// 12px above the 24px slot) to the bottom of the deepest label, so icons and text can be pressed
+// too. Only the flag shows a grab cursor.
 .collapse-tl-hit {
   bottom: 0;
   cursor: pointer;

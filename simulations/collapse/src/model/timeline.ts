@@ -24,10 +24,9 @@ export interface TimelineStop {
 }
 
 /**
- * The dots are spaced for reading, not by log scale. A log rail was tried and rejected: it left a
- * wide empty stretch between 4,600 and 20, crowded the left pair, and pushed 0 and the year marker
- * apart. Each gap is wide enough for the labels on either side. Where the sample values fall between
- * the dots is what carries meaning; see `segmentsFor`.
+ * The dots are spaced so each gap fits the labels on either side, not by log scale: a log scale
+ * leaves a wide empty stretch between 4,600 and 20 and crowds the left pair. Where the values fall
+ * between the dots is what carries meaning; see `segmentsFor`.
  *
  * 11,700 and 4,600 are reference marks, not landable values: the handle never stops on them.
  */
@@ -86,7 +85,6 @@ export const TIMELINE_STOPS: readonly TimelineStop[] = [
     art: CollapseArt,
     end: true,
   },
-  // The current calendar year. Its position never moves; only its text changes.
   { years: null, at: 1, eventLines: [], end: true },
 ];
 

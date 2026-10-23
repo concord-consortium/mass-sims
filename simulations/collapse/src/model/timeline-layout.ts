@@ -8,16 +8,12 @@ import type { TimelineSegment, TimelineStop } from "./timeline";
 export const LABEL_PAD = 11;
 
 /**
- * The two spans the layout blends between. Both are the mockup's (v1.29) values, kept on purpose so
- * the dots land where the mockup draws them; the 20 stop's `at` was worked out from them.
+ * The two spans the layout blends between, and `DESIGN_SPAN` also sets the design gaps. Both are the
+ * mockup's values, so the dots land where the mockup draws them; the 20 stop's `at` depends on them.
  *
- * They are not the rail's actual widest and narrowest spans. Measured in `/__preview`, the span is
- * 794.28 at 1044 and 517.28 at 767 (the mockup's own layout gives the same), so at full width the
- * layout extrapolates a little past `DESIGN_SPAN`. That is fine: the blend is not clamped and still
- * fills the rail.
- *
- * `DESIGN_SPAN` sets the design gaps. The last two gaps keep their design size at every width, so
- * they never shrink.
+ * They are not the rail's real widest and narrowest spans, which are 794.28 at 1044 and 517.28 at
+ * 767 (measured in `/__preview`). So at full width the layout goes a little past `DESIGN_SPAN`,
+ * which is fine: see `layoutTimeline`.
  */
 export const DESIGN_SPAN = 759.49;
 
@@ -59,8 +55,8 @@ export interface TimelineLayout {
  * always lands on the right edge. Deliberately not clamped: outside the two widths it extrapolates
  * along the same line and still fills the rail.
  *
- * In both layouts the last two gaps (20 → 0 → year marker) are their design size in pixels, so that
- * cluster slides as a rigid block and never compresses.
+ * In both layouts the last two gaps (20 → 0 → year marker) keep their design size in pixels, so
+ * those three stops move together and their gaps never shrink.
  */
 export function layoutTimeline({
   rowWidth,
@@ -90,7 +86,7 @@ export function layoutTimeline({
   const designGap = stops.map((st, i) => (i ? (st.at - stops[i - 1].at) * DESIGN_SPAN : 0));
   const tailPx = designGap[nGaps] + designGap[nGaps - 1];
 
-  // END: the head shares what is left of the narrowest rail as equal spacing.
+  // END: the first four gaps share what is left of the narrowest rail equally.
   const ink = need.map((n, i) => (i ? n - LABEL_PAD : 0));
   let inkHead = 0;
   for (let i = 1; i <= nGaps - 2; i++) inkHead += ink[i];
@@ -106,7 +102,6 @@ export function layoutTimeline({
   const t = (span - MIN_SPAN) / (DESIGN_SPAN - MIN_SPAN);
   const dotPx = stops.map((_, i) => inset + endAt[i] + t * (startAt[i] - endAt[i]));
 
-  // The values follow the dots they are pinned between.
   const valuePx = segments.map((sg) => dotPx[sg.hi] + sg.t * (dotPx[sg.hi + 1] - dotPx[sg.hi]));
 
   return { inset, span, dotPx, valuePx, railSplit: dotPx[dotPx.length - 2] };
