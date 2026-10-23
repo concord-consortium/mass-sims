@@ -177,6 +177,19 @@ describe("Collapse App — AP saved state", () => {
     expect(first.trials.A.output).toEqual(trialA.output);
   });
 
+  it("does NOT call setInteractiveState when the timeline value changes", () => {
+    // Embedded, because the app sends state to AP only after an init message.
+    restoreTrialAWithOutput();
+    const { getByRole } = render(<App />);
+    expect(setInteractiveStateMock).toHaveBeenCalled();
+    const slider = getByRole("slider", { name: "Years before collapse" });
+    setInteractiveStateMock.mockClear();
+    fireEvent.keyDown(slider, { key: "ArrowRight" });
+    fireEvent.click(getByRole("button", { name: "Later, fewer years before collapse" }));
+    expect(slider).toHaveAttribute("aria-valuenow", "100000");
+    expect(setInteractiveStateMock).not.toHaveBeenCalled();
+  });
+
   it("does NOT register a beforeunload listener when embedded (AP persists progress)", () => {
     // Embedded with progress: AP saves it, so there is no reload warning.
     restoreTrialAWithOutput();

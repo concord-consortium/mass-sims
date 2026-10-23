@@ -1,6 +1,15 @@
-import { Announcer } from "@concord-consortium/mass-sims-shared";
 import { act, fireEvent, render } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
+// Mock only `useLogEvent`, keeping the real shared exports. `vi.hoisted` so the spy exists when
+// `vi.mock` runs.
+const { logEvent } = vi.hoisted(() => ({ logEvent: vi.fn() }));
+vi.mock("@concord-consortium/mass-sims-shared", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@concord-consortium/mass-sims-shared")>()),
+  useLogEvent: () => logEvent,
+}));
+
+import { Announcer } from "@concord-consortium/mass-sims-shared";
 import { TIMELINE_VALUES } from "../../model/timeline";
 import { createRootStore, RootStoreProvider } from "../../stores/root-store";
 import { YearStepper } from "./year-stepper";
@@ -24,7 +33,26 @@ function setup() {
   };
 }
 
+beforeEach(() => {
+  logEvent.mockClear();
+});
+
 describe("YearStepper", () => {
+  it("logs its changes with the stepper as the source", () => {
+    const { earlier, later } = setup();
+    fireEvent.click(later);
+    expect(logEvent).toHaveBeenLastCalledWith(
+      "sample_years_set",
+      expect.objectContaining({ value: 150000, previous: 200000, source: "stepper" }),
+    );
+    fireEvent.click(earlier);
+    expect(logEvent).toHaveBeenLastCalledWith(
+      "sample_years_set",
+      expect.objectContaining({ value: 200000, previous: 150000, source: "stepper" }),
+    );
+    expect(logEvent).toHaveBeenCalledTimes(2);
+  });
+
   it("steps the store and announces the new value", () => {
     const { store, earlier, later, region } = setup();
     fireEvent.click(later);

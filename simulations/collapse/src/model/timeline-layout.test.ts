@@ -65,6 +65,30 @@ describe("layoutTimeline", () => {
     }
   });
 
+  it("gives the four free gaps equal spacing between labels at the min span", () => {
+    const layout = layoutAtSpan(MIN_SPAN);
+    // The space left between two neighbors' labels, on the line where they come closest.
+    const spacing = (i: number) => {
+      const a = LINES[i - 1];
+      const b = LINES[i];
+      let widest = 0;
+      for (let r = 0; r < Math.min(a.length, b.length); r++) {
+        widest = Math.max(widest, (a[r] + b[r]) / 2);
+      }
+      return layout.dotPx[i] - layout.dotPx[i - 1] - widest;
+    };
+    const free = [1, 2, 3, 4].map(spacing);
+    for (const s of free) expect(s).toBeCloseTo(free[0]);
+    expect(free[0]).toBeGreaterThan(0);
+  });
+
+  it("keeps the dots in order at any span", () => {
+    for (const span of [MIN_SPAN - 40, MIN_SPAN, 600, 700, DESIGN_SPAN, DESIGN_SPAN + 40]) {
+      const { dotPx } = layoutAtSpan(span);
+      for (let i = 1; i < dotPx.length; i++) expect(dotPx[i]).toBeGreaterThan(dotPx[i - 1]);
+    }
+  });
+
   it("splits the rail at the 0 dot", () => {
     const layout = layoutAtSpan(650);
     const zero = TIMELINE_STOPS.findIndex((s) => s.years === 0);

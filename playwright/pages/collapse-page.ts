@@ -31,6 +31,29 @@ export class CollapsePage extends SimulationFramePage {
     return this.page.locator(".collapse-step-value");
   }
 
+  /** The timeline track; it carries the `dragging` class while a drag is live. */
+  get timelineTrack(): Locator {
+    return this.page.locator(".collapse-tl");
+  }
+
+  /** The page position of a landmark's dot (`index` in list order, 0 = 200,000 yr). */
+  async stopDotCenter(index: number): Promise<{ x: number; y: number }> {
+    const box = await this.page
+      .locator(".collapse-tl-stop")
+      .nth(index)
+      .locator(".collapse-tl-dot")
+      .boundingBox();
+    if (!box) throw new Error(`stop ${index} has no dot`);
+    return { x: box.x + box.width / 2, y: box.y + box.height / 2 };
+  }
+
+  /** The page x of the handle (the ring under the flag), which marks the chosen value. */
+  async handleX(): Promise<number> {
+    const box = await this.page.locator(".collapse-tl-handle").boundingBox();
+    if (!box) throw new Error("handle not found");
+    return box.x;
+  }
+
   // --- Trials panel -------------------------------------------------------
 
   get trialsListbox(): Locator {

@@ -1,18 +1,34 @@
 import { act, fireEvent, render, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+// Mock only `useLogEvent`, keeping the real shared exports. `vi.hoisted` so the spy exists when
+// `vi.mock` runs.
+const { logEvent } = vi.hoisted(() => ({ logEvent: vi.fn() }));
+vi.mock("@concord-consortium/mass-sims-shared", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@concord-consortium/mass-sims-shared")>()),
+  useLogEvent: () => logEvent,
+}));
+
 // jsdom does not lay out text, so each label line gets a fixed width.
 vi.mock("./measure-line-widths", () => ({
   measureLineWidths: (stop: HTMLElement) =>
     Array.from(stop.querySelectorAll(".collapse-tl-yr, .collapse-tl-ev"), () => 60),
 }));
 
-import { currentYear, TIMELINE_SEGMENTS, TIMELINE_STOPS } from "../../model/timeline";
+import {
+  currentYear,
+  TIMELINE_SEGMENTS,
+  TIMELINE_STOPS,
+  TIMELINE_VALUES,
+} from "../../model/timeline";
 import { layoutTimeline, nearestValueIndexByPx } from "../../model/timeline-layout";
 import { createRootStore, RootStoreProvider } from "../../stores/root-store";
 import { Timeline } from "./timeline";
 
 const ROW_WIDTH = 800;
+/** The flag's design width; jsdom's `offsetWidth` is 0, so the component falls back to it. */
+const FLAG_WIDTH = 158;
+const LAST = TIMELINE_VALUES.length - 1;
 
 // The layout the component computes from the mocked widths, so a test can aim at a value's x.
 const LAYOUT = layoutTimeline({
@@ -25,6 +41,7 @@ const LAYOUT = layoutTimeline({
 let clientWidth: ReturnType<typeof vi.spyOn>;
 
 beforeEach(() => {
+  logEvent.mockClear();
   // jsdom reports every width as 0; the timeline skips layout until its row has a width.
   clientWidth = vi.spyOn(HTMLElement.prototype, "clientWidth", "get").mockReturnValue(ROW_WIDTH);
 });
@@ -79,6 +96,54 @@ describe("Timeline", () => {
     expect(slider).toHaveAttribute("aria-valuenow", "200000");
     expect(slider).toHaveAttribute("aria-valuetext", "200,000 years before collapse");
     expect(slider).toHaveTextContent("Sampling: 200,000");
+  });
+
+  it("places the stops, rails, handle, and flag from the measured layout", () => {
+    const { view, store, slider } = setup();
+    const el = (selector: string) => view.container.querySelector(selector) as HTMLElement;
+    const stops = Array.from(view.container.querySelectorAll<HTMLElement>(".collapse-tl-stop"));
+    stops.forEach((stop, i) => {
+      expect(stop.style.left).toBe(`${LAYOUT.dotPx[i]}px`);
+    });
+    // Solid from the first dot to the 0 dot, dashed from there to the end marker.
+    expect(el(".collapse-tl-rail").style.left).toBe(`${LAYOUT.inset}px`);
+    expect(el(".collapse-tl-rail").style.width).toBe(`${LAYOUT.railSplit - LAYOUT.inset}px`);
+    expect(el(".collapse-tl-rail-tail").style.left).toBe(`${LAYOUT.railSplit}px`);
+    expect(el(".collapse-tl-rail-tail").style.width).toBe(
+      `${LAYOUT.inset + LAYOUT.span - LAYOUT.railSplit}px`,
+    );
+
+    // The handle sits on the value; the flag is centered on it, but never leaves the track.
+    const handle = el(".collapse-tl-handle");
+    expect(handle.style.left).toBe(`${LAYOUT.valuePx[0]}px`);
+    expect(LAYOUT.valuePx[0] - FLAG_WIDTH / 2).toBeLessThan(0);
+    expect(slider.style.left).toBe("0px");
+
+    act(() => store.ui.setTimelineIndex(8));
+    const center = LAYOUT.valuePx[8];
+    expect(center - FLAG_WIDTH / 2).toBeGreaterThan(0);
+    expect(center + FLAG_WIDTH / 2).toBeLessThan(ROW_WIDTH);
+    expect(handle.style.left).toBe(`${center}px`);
+    expect(slider.style.left).toBe(`${center - FLAG_WIDTH / 2}px`);
+
+    act(() => store.ui.setTimelineIndex(LAST));
+    expect(LAYOUT.valuePx[LAST] + FLAG_WIDTH / 2).toBeGreaterThan(ROW_WIDTH);
+    expect(slider.style.left).toBe(`${ROW_WIDTH - FLAG_WIDTH}px`);
+  });
+
+  it("logs its changes with the slider as the source", () => {
+    const { slider, band } = setup();
+    fireEvent.keyDown(slider, { key: "ArrowRight" });
+    expect(logEvent).toHaveBeenLastCalledWith(
+      "sample_years_set",
+      expect.objectContaining({ value: 150000, source: "slider" }),
+    );
+    pointer(band, "pointerdown", LAYOUT.valuePx[5]);
+    expect(logEvent).toHaveBeenLastCalledWith(
+      "sample_years_set",
+      expect.objectContaining({ value: 10000, source: "slider" }),
+    );
+    expect(logEvent).toHaveBeenCalledTimes(2);
   });
 
   it("steps one value per arrow key", () => {
