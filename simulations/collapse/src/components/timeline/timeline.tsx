@@ -61,8 +61,8 @@ export const Timeline = observer(function Timeline() {
   const flagRef = useRef<HTMLDivElement>(null);
   const [measured, setMeasured] = useState<Measured | null>(null);
   const [dragging, setDragging] = useState(false);
-  // The pointer's x offset from the handle while a drag is live; `null` when not dragging.
-  const grabOffset = useRef<number | null>(null);
+  // The live drag: the pointer that started it, and that pointer's x offset from the handle.
+  const drag = useRef<{ pointerId: number; offset: number } | null>(null);
   // Chrome shows the focus ring when a pointer press focuses the flag, but the ring is for keyboard
   // users. `noRing` hides it after a press; any other focus, a blur, or a key brings it back.
   // `pressFocus` marks the focus a press causes, which is the one focus that keeps it.
@@ -119,8 +119,14 @@ export const Timeline = observer(function Timeline() {
   const isPrimaryPress = (e: PointerEvent) =>
     e.pointerType !== "mouse" || (e.button === 0 && !e.ctrlKey);
 
+  // Pointer capture does not stop events from other pointers, such as a second finger, so those are
+  // ignored while a drag is live. A new press from the same pointer starts a new drag, in case the
+  // old one ended without an event.
+  const isOtherPointer = (e: PointerEvent) =>
+    drag.current !== null && e.pointerId !== drag.current.pointerId;
+
   const beginDrag = (e: PointerEvent<HTMLDivElement>, offset: number) => {
-    grabOffset.current = offset;
+    drag.current = { pointerId: e.pointerId, offset };
     setDragging(true);
     e.currentTarget.setPointerCapture?.(e.pointerId);
     e.preventDefault();
@@ -136,26 +142,29 @@ export const Timeline = observer(function Timeline() {
   };
 
   const onBandPointerDown = (e: PointerEvent<HTMLDivElement>) => {
-    if (!measured || !isPrimaryPress(e)) return;
+    if (!measured || !isPrimaryPress(e) || isOtherPointer(e)) return;
     set(nearestValueIndexByPx(measured.layout.valuePx, pointerX(e)), "slider");
     beginDrag(e, 0);
     focusFlagFromPress();
   };
 
   const onFlagPointerDown = (e: PointerEvent<HTMLDivElement>) => {
-    if (!measured || !isPrimaryPress(e)) return;
+    if (!measured || !isPrimaryPress(e) || isOtherPointer(e)) return;
     beginDrag(e, pointerX(e) - measured.layout.valuePx[ui.timelineIndex]);
     focusFlagFromPress();
   };
 
   const onPointerMove = (e: PointerEvent<HTMLDivElement>) => {
-    if (grabOffset.current === null || !measured) return;
-    set(nearestValueIndexByPx(measured.layout.valuePx, pointerX(e) - grabOffset.current), "slider");
+    if (!drag.current || isOtherPointer(e) || !measured) return;
+    set(
+      nearestValueIndexByPx(measured.layout.valuePx, pointerX(e) - drag.current.offset),
+      "slider",
+    );
   };
 
   const onPointerEnd = (e: PointerEvent<HTMLDivElement>) => {
-    if (grabOffset.current === null) return;
-    grabOffset.current = null;
+    if (!drag.current || isOtherPointer(e)) return;
+    drag.current = null;
     setDragging(false);
     if (e.currentTarget.hasPointerCapture?.(e.pointerId)) {
       e.currentTarget.releasePointerCapture(e.pointerId);

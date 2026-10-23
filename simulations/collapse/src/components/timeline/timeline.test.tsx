@@ -58,10 +58,12 @@ function pointer(
   type: string,
   clientX: number,
   mouse?: { button?: number; ctrlKey?: boolean },
+  pointerId?: number,
 ) {
   const event = new MouseEvent(type, { bubbles: true, cancelable: true, clientX, ...mouse });
-  // `MouseEvent` has no `pointerType`; set it when the test needs a real mouse press.
+  // `MouseEvent` has no `pointerType` or `pointerId`; set them when a test needs them.
   if (mouse) Object.defineProperty(event, "pointerType", { value: "mouse" });
+  if (pointerId !== undefined) Object.defineProperty(event, "pointerId", { value: pointerId });
   fireEvent(el, event);
 }
 
@@ -218,6 +220,33 @@ describe("Timeline", () => {
     // A plain primary-button mouse press still works.
     pointer(band, "pointerdown", x, { button: 0 });
     expect(store.ui.timelineIndex).toBe(6);
+  });
+
+  it("ignores a second pointer while a drag is live", () => {
+    const { view, store, band, slider } = setup();
+    const track = view.container.querySelector(".collapse-tl") as HTMLElement;
+    const first = 1;
+    const second = 2;
+    pointer(slider, "pointerdown", LAYOUT.valuePx[0], undefined, first);
+
+    pointer(band, "pointerdown", LAYOUT.valuePx[6], undefined, second);
+    pointer(band, "pointermove", LAYOUT.valuePx[9], undefined, second);
+    expect(store.ui.timelineIndex).toBe(0);
+    pointer(band, "pointerup", 0, undefined, second);
+    expect(track).toHaveClass("dragging");
+
+    pointer(slider, "pointermove", LAYOUT.valuePx[3], undefined, first);
+    expect(store.ui.timelineIndex).toBe(3);
+    pointer(slider, "pointerup", 0, undefined, first);
+    expect(track).not.toHaveClass("dragging");
+  });
+
+  it("starts a new drag when the same pointer presses again", () => {
+    const { store, band } = setup();
+    pointer(band, "pointerdown", LAYOUT.valuePx[3], undefined, 1);
+    // No `pointerup`: the old drag ended without an event.
+    pointer(band, "pointerdown", LAYOUT.valuePx[7], undefined, 1);
+    expect(store.ui.timelineIndex).toBe(7);
   });
 
   it("ends the drag when the pointer capture is lost", () => {
