@@ -49,8 +49,8 @@ const pct = (fraction: number) => `${fraction * 100}%`;
  * `TIMELINE_VALUES`. Stop positions come from measured label widths (`layoutTimeline`), so they are
  * re-laid out on resize and after the web font loads.
  *
- * Two press targets behave differently on purpose. Pressing the stops band snaps to the nearest value
- * and keeps following the pointer. Pressing the flag does not change the value: the drag keeps the
+ * Two press targets behave differently on purpose. Pressing anywhere on the timeline except the flag
+ * snaps to the nearest value and keeps following the pointer. Pressing the flag does not change the value: the drag keeps the
  * pointer's offset from the handle, so the value only moves once the handle is dragged to another one.
  */
 export const Timeline = observer(function Timeline() {
@@ -63,9 +63,9 @@ export const Timeline = observer(function Timeline() {
   const [dragging, setDragging] = useState(false);
   // The pointer's x offset from the handle while a drag is live; `null` when not dragging.
   const grabOffset = useRef<number | null>(null);
-  // Chrome shows the focus ring when a pointer press on the band focuses the flag, but the ring is
-  // for keyboard users. `noRing` hides it after a press; any other focus, a blur, or a key brings it
-  // back. `pressFocus` marks the focus a band press causes, which is the one focus that keeps it.
+  // Chrome shows the focus ring when a pointer press focuses the flag, but the ring is for keyboard
+  // users. `noRing` hides it after a press; any other focus, a blur, or a key brings it back.
+  // `pressFocus` marks the focus a press causes, which is the one focus that keeps it.
   const [noRing, setNoRing] = useState(false);
   const pressFocus = useRef(false);
 
@@ -126,21 +126,26 @@ export const Timeline = observer(function Timeline() {
     e.preventDefault();
   };
 
-  const onBandPointerDown = (e: PointerEvent<HTMLDivElement>) => {
-    if (!measured || !isPrimaryPress(e)) return;
-    set(nearestValueIndexByPx(measured.layout.valuePx, pointerX(e)), "slider");
-    beginDrag(e, 0);
+  // `beginDrag`'s `preventDefault` also stops the browser from focusing on press. Focusing the flag
+  // here lets the arrow keys work at once.
+  const focusFlagFromPress = () => {
     setNoRing(true);
-    // So the arrow keys work at once.
     pressFocus.current = true;
     flagRef.current?.focus({ preventScroll: true });
     pressFocus.current = false;
   };
 
+  const onBandPointerDown = (e: PointerEvent<HTMLDivElement>) => {
+    if (!measured || !isPrimaryPress(e)) return;
+    set(nearestValueIndexByPx(measured.layout.valuePx, pointerX(e)), "slider");
+    beginDrag(e, 0);
+    focusFlagFromPress();
+  };
+
   const onFlagPointerDown = (e: PointerEvent<HTMLDivElement>) => {
     if (!measured || !isPrimaryPress(e)) return;
     beginDrag(e, pointerX(e) - measured.layout.valuePx[ui.timelineIndex]);
-    setNoRing(true);
+    focusFlagFromPress();
   };
 
   const onPointerMove = (e: PointerEvent<HTMLDivElement>) => {

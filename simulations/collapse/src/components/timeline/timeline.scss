@@ -31,7 +31,7 @@
   top: 58px;
 }
 
-// A readable list of landmarks, not a control: the band below takes the presses.
+// A readable list of landmarks, not a control. Presses pass through it to the press area.
 .collapse-tl-row {
   box-sizing: border-box;
   height: 124px;
@@ -182,7 +182,7 @@
   user-select: none;
   white-space: nowrap;
   width: 158px;
-  // In front of the stops band, so a press on the flag is the flag's.
+  // In front of the press area, so a press on the flag is the flag's.
   z-index: 5;
 
   b {
@@ -233,9 +233,9 @@
   }
 }
 
-// The press-and-drag band. It covers each whole stop, from the top of the tallest artwork (36px,
-// 12px above the 24px slot) to the bottom of the deepest label, so icons and text can be pressed
-// too. Only the flag shows a grab cursor.
+// The press area: everything on the timeline except the flag. It covers each whole stop, from the
+// top of the tallest artwork (36px, 12px above the 24px slot) to the bottom of the deepest label, so
+// icons and text can be pressed too. Only the flag shows a grab cursor.
 .collapse-tl-hit {
   bottom: 0;
   cursor: pointer;
@@ -243,7 +243,7 @@
   position: absolute;
   right: 0;
   top: 11px;
-  // Sideways drags are the slider's; vertical scrolling and pinch-zoom still work over the band.
+  // Sideways drags are the slider's; vertical scrolling and pinch-zoom still work over this area.
   touch-action: pan-y pinch-zoom;
   z-index: 1;
 }

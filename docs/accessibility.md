@@ -151,10 +151,11 @@ can't express.
   items get visually-hidden context: the 0 stop adds "(the collapse)" and the end marker reads
   "current year <year>". The list is not focusable; the slider is the one tab stop.
 - **Pressing the flag never changes the value.** A press on the flag keeps the pointer's offset from
-  the handle, so the value moves only once the handle is dragged to another value. A press on the
-  stops band below snaps to the nearest value, then focuses the flag so the arrow keys work at once.
-- **No focus ring after a pointer press.** Chrome shows `:focus-visible` when the band press focuses
-  the flag, so a `no-ring` class hides the outline after a press. Any other focus, a blur, or a key
+  the handle, so the value moves only once the handle is dragged to another value. A press anywhere
+  else on the timeline (a landmark's icon, dot, or label, or the rail between them) snaps to the
+  nearest value. Either press focuses the flag, so the arrow keys work at once.
+- **No focus ring after a pointer press.** Chrome shows `:focus-visible` when a press focuses the
+  flag, so a `no-ring` class hides the outline after a press. Any other focus, a blur, or a key
   brings it back.
 - **Narration:** the slider does not announce; `aria-valuetext` is how a slider reports its value. The
   stepper's Earlier / Later arrows do announce the new value through the shared `<Announcer>`, since

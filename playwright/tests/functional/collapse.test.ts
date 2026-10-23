@@ -58,6 +58,19 @@ test.describe("Timeline pointer input", () => {
     await expect(collapse.timelineTrack).not.toHaveClass(/\bdragging\b/);
   });
 
+  test("pressing the flag focuses the slider, so the arrow keys work at once", async ({ page }) => {
+    await collapse.laterButton.click();
+    await expect(collapse.laterButton).toBeFocused();
+    await expect(collapse.timelineSlider).toHaveAttribute("aria-valuenow", "150000");
+
+    const flag = await collapse.timelineSlider.boundingBox();
+    if (!flag) throw new Error("flag not found");
+    await page.mouse.click(flag.x + flag.width / 2, flag.y + flag.height / 2);
+    await expect(collapse.timelineSlider).toBeFocused();
+    await page.keyboard.press("ArrowRight");
+    await expect(collapse.timelineSlider).toHaveAttribute("aria-valuenow", "100000");
+  });
+
   test("a right-click on the stops changes nothing", async ({ page }) => {
     const dot = await collapse.stopDotCenter(1);
     await page.mouse.click(dot.x, dot.y, { button: "right" });

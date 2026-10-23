@@ -175,7 +175,7 @@ describe("Timeline", () => {
     expect(store.ui.timelineIndex).toBe(0);
   });
 
-  it("snaps to the nearest value when the stops band is pressed, and follows the drag", () => {
+  it("snaps to the nearest value when the timeline outside the flag is pressed, and follows the drag", () => {
     const { store, band, slider } = setup();
     const x = LAYOUT.valuePx[4] + 3;
     pointer(band, "pointerdown", x);
@@ -255,11 +255,24 @@ describe("Timeline", () => {
     fireEvent.blur(slider);
     expect(slider).not.toHaveClass("no-ring");
 
-    // A focus that a band press did not cause (Tab) shows the ring.
+    // A focus that a press did not cause (Tab) shows the ring.
     pointer(slider, "pointerdown", LAYOUT.valuePx[4]);
     expect(slider).toHaveClass("no-ring");
     fireEvent.focus(slider);
     expect(slider).not.toHaveClass("no-ring");
+  });
+
+  it("focuses the slider without the ring when the flag is pressed", () => {
+    const { view, store, slider } = setup();
+    const elsewhere = document.createElement("button");
+    view.container.append(elsewhere);
+    elsewhere.focus();
+    pointer(slider, "pointerdown", LAYOUT.valuePx[0]);
+    pointer(slider, "pointerup", 0);
+    expect(slider).toHaveFocus();
+    expect(slider).toHaveClass("no-ring");
+    fireEvent.keyDown(slider, { key: "ArrowRight" });
+    expect(store.ui.timelineIndex).toBe(1);
   });
 
   it("shows the current calendar year on the end marker", () => {
