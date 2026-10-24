@@ -18,8 +18,8 @@ const ROCK_ICONS: Record<RockType, typeof LimestoneIcon> = {
 const MOISTURE_ICONS: Record<Moisture, typeof WetIcon> = { Wet: WetIcon, Dry: DryIcon };
 
 /**
- * A trial card's screen-reader name, e.g. "Trial A. Limestone, Dry, fewer than 10 rainy days per
- * year. Not yet sampled". Sample counts come with the data table story.
+ * A trial card's screen-reader name, e.g. "Trial A. Limestone, Dry, under 10 rainy days a year. Not
+ * yet sampled". Sample counts come with the data table story.
  */
 export function trialAriaLabel(letter: CollapseTrialLetter): string {
   const { rock, moisture } = TRIAL_CONDITIONS[letter];

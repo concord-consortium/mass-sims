@@ -92,10 +92,10 @@ describe("TrialsPanel — enriched aria-label and card body", () => {
   it("labels each card with its letter and conditions", () => {
     const { getAllByRole } = renderPanel(createRootStore());
     expect(getAllByRole("option").map((o) => o.getAttribute("aria-label"))).toEqual([
-      "Trial A. Limestone, Dry, fewer than 10 rainy days per year. Not yet sampled",
-      "Trial B. Limestone, Wet, more than 50 rainy days per year. Not yet sampled",
-      "Trial C. Granite, Dry, fewer than 10 rainy days per year. Not yet sampled",
-      "Trial D. Granite, Wet, more than 50 rainy days per year. Not yet sampled",
+      "Trial A. Limestone, Dry, under 10 rainy days a year. Not yet sampled",
+      "Trial B. Limestone, Wet, more than 50 rainy days a year. Not yet sampled",
+      "Trial C. Granite, Dry, under 10 rainy days a year. Not yet sampled",
+      "Trial D. Granite, Wet, more than 50 rainy days a year. Not yet sampled",
     ]);
   });
 

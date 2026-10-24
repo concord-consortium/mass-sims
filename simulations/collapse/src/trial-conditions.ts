@@ -7,8 +7,8 @@ export type Moisture = "Wet" | "Dry";
 
 /** What each moisture level means: `text` for the card, `spoken` for its screen-reader label. */
 export const MOISTURE_NOTES: Record<Moisture, { text: string; spoken: string }> = {
-  Dry: { text: "<10 rainy days/yr", spoken: "fewer than 10 rainy days per year" },
-  Wet: { text: ">50 rainy days/yr", spoken: "more than 50 rainy days per year" },
+  Dry: { text: "<10 rainy days/yr", spoken: "under 10 rainy days a year" },
+  Wet: { text: ">50 rainy days/yr", spoken: "more than 50 rainy days a year" },
 };
 
 /** Each trial's fixed conditions. Display only until the model story moves them into `TrialModel`. */
