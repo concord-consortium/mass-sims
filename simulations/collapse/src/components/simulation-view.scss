@@ -1,6 +1,9 @@
 @use "@concord-consortium/mass-sims-shared/styles/tokens" as tokens;
 @use "../theme" as theme;
 
+// The gap between the table and the Cross Section box.
+$stage-gap: 10px;
+
 // No bottom padding, so the stage row's 10px margin sets its gap to the panel's bottom. Direct child
 // only, so the nested Cross Section's `.content` keeps its padding.
 .simulation-frame .section.simulation-area > .content {
@@ -36,8 +39,8 @@
     justify-content: center;
     padding: 10px;
 
-    // A margin as wide as the Cross Section box (less the 2px where the table overlaps it) on the
-    // last control centers the group over the table instead of the panel.
+    // The table is the stage row's width less `--data-w`, plus 2px (see the Cross Section box), so
+    // this margin on the last control centers the group over the table instead of the panel.
     > :last-child {
       margin-right: calc(var(--data-w) - #{tokens.$border-strong-width});
     }
@@ -65,17 +68,12 @@
     min-height: 0;
   }
 
-  // The two boxes share one border: square where they meet, with the table lapping 2px over the
-  // Cross Section box.
   .collapse-table-box {
     background: tokens.$color-surface;
     border: tokens.$border-strong;
     border-color: theme.$border;
     border-radius: tokens.$radius-md;
-    border-bottom-right-radius: 0;
-    border-top-right-radius: 0;
     flex: 1 1 0;
-    margin-right: -(tokens.$border-strong-width);
     min-width: 0;
   }
 
@@ -83,16 +81,33 @@
     background: tokens.$color-surface;
     border-color: theme.$border;
     border-radius: tokens.$radius-md;
-    border-bottom-left-radius: 0;
-    border-top-left-radius: 0;
-    flex: 0 0 var(--data-w);
+    // `$stage-gap` plus a border width narrower than `--data-w`, so the table keeps the width it had
+    // when it overlapped this box by 2px.
+    flex: 0 0 calc(var(--data-w) - #{$stage-gap} - #{tokens.$border-strong-width});
+    margin-left: $stage-gap;
+    // Down by the chip's overhang, so the chip's top is level with the table's top.
+    margin-top: tokens.$section-chip-overlap;
     min-width: 0;
+
+    // Overlaid, like the shared Trials chip, so the content fills the whole box and the prompt is
+    // centered on the box rather than on the space below the chip.
+    .chip {
+      left: 50%;
+      margin-top: 0;
+      position: absolute;
+      top: calc(-1 * (#{tokens.$section-chip-overlap} + #{tokens.$border-strong-width}));
+      transform: translateX(-50%);
+    }
 
     .content {
       align-items: center;
       display: flex;
       justify-content: center;
-      padding: tokens.$space-3;
+      padding: 10px 20px;
+    }
+
+    .collapse-placeholder {
+      line-height: tokens.$line-height-sm;
     }
   }
 
