@@ -39,6 +39,8 @@
     font-family: "Fontdiner Swanky", #{tokens.$font-family-base};
     font-weight: 400;
     letter-spacing: 2px;
+    position: relative;
+    top: 2px;
   }
 
   .info-button {
