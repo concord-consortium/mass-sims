@@ -2,11 +2,11 @@ import { type RefObject, useCallback, useEffect, useState } from "react";
 
 /**
  * Makes a scrollable region keyboard-operable. A region that overflows is given `tabindex="0"`
- * so keyboard-only users can focus it and scroll with the arrow keys; a region that fits loses
- * the attribute so it isn't a dead tab stop. Re-evaluates whenever the element resizes
- * (ResizeObserver) or its content changes (MutationObserver). Pair with the shared
- * `.scroll-region` + sibling `.scroll-focus-ring` styles, which draw the inset focus ring only
- * on `:focus-visible`.
+ * so keyboard-only users can focus it and scroll with the arrow keys; a region that fits, or that
+ * can't scroll (`overflow-y` other than `auto` / `scroll`), loses the attribute so it isn't a dead
+ * tab stop. Re-evaluates whenever the element resizes (ResizeObserver) or its content changes
+ * (MutationObserver). Pair with the shared `.scroll-region` + sibling `.scroll-focus-ring` styles,
+ * which draw the inset focus ring only on `:focus-visible`.
  *
  * Returns a **callback ref** (not a RefObject): the tracked element is held in state, so the
  * effect re-runs when a conditionally-rendered scroller (e.g. the About modal body) mounts or
@@ -31,7 +31,10 @@ export function useScrollFocusRing<T extends HTMLElement = HTMLDivElement>(
     const el = element;
 
     const update = () => {
-      if (el.scrollHeight > el.clientHeight) el.setAttribute("tabindex", "0");
+      // A region that can't scroll gets no tab stop, even when it overflows. Fractional layout can
+      // also report a pixel or two of overflow on content that fits, e.g. Collapse's Trials column.
+      const scrollable = /^(auto|scroll)$/.test(getComputedStyle(el).overflowY);
+      if (scrollable && el.scrollHeight > el.clientHeight) el.setAttribute("tabindex", "0");
       else el.removeAttribute("tabindex");
     };
     update();

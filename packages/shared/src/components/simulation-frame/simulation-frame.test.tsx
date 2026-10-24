@@ -209,19 +209,27 @@ describe("SimulationFrame", () => {
 
   it("makes the About body focusable (tabindex 0) when its content overflows", async () => {
     mockOverflow(500, 100);
-    const { getByRole } = render(
-      <SimulationFrame simTitle="S" tagline="t" infoModalContent={<p>about this sim</p>}>
-        <SimulationFrame.Trials>a</SimulationFrame.Trials>
-        <SimulationFrame.Simulation>b</SimulationFrame.Simulation>
-        <SimulationFrame.Data>c</SimulationFrame.Data>
-      </SimulationFrame>,
-    );
-    fireEvent.click(getByRole("button", { name: /about/i }));
-    // The body mounts only when the panel opens, so the callback ref must attach to the
-    // late-mounted node and mark it keyboard-scrollable once it overflows.
-    await waitFor(() =>
-      expect(document.querySelector(".modal-body")).toHaveAttribute("tabindex", "0"),
-    );
+    // The component stylesheet isn't loaded here; give the body the `overflow-y` it really has.
+    const style = document.createElement("style");
+    style.textContent = ".modal-body { overflow-y: auto; }";
+    document.head.appendChild(style);
+    try {
+      const { getByRole } = render(
+        <SimulationFrame simTitle="S" tagline="t" infoModalContent={<p>about this sim</p>}>
+          <SimulationFrame.Trials>a</SimulationFrame.Trials>
+          <SimulationFrame.Simulation>b</SimulationFrame.Simulation>
+          <SimulationFrame.Data>c</SimulationFrame.Data>
+        </SimulationFrame>,
+      );
+      fireEvent.click(getByRole("button", { name: /about/i }));
+      // The body mounts only when the panel opens, so the callback ref must attach to the
+      // late-mounted node and mark it keyboard-scrollable once it overflows.
+      await waitFor(() =>
+        expect(document.querySelector(".modal-body")).toHaveAttribute("tabindex", "0"),
+      );
+    } finally {
+      style.remove();
+    }
   });
 
   it("titles the modal contextually from simTitle", () => {

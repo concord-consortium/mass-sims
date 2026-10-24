@@ -21,6 +21,8 @@ test("loads the sim shell", async () => {
   await expect(collapse.trialsListbox).toBeVisible();
   await expect(collapse.crossSectionRegion).toBeVisible();
   expect(Math.abs(await collapse.simulationSlotRightGap())).toBeLessThanOrEqual(1);
+  // The Trials column never scrolls, so it is not a tab stop.
+  await expect(collapse.trialsScrollRegion).not.toHaveAttribute("tabindex");
 });
 
 test("About modal: opens via button, closes via close button, closes via Escape", async () => {
