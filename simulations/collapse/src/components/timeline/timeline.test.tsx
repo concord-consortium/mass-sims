@@ -141,9 +141,57 @@ describe("Timeline", () => {
       expect.objectContaining({ value: 150000, source: "slider" }),
     );
     pointer(band, "pointerdown", LAYOUT.valuePx[5]);
+    pointer(band, "pointerup", 0);
     expect(logEvent).toHaveBeenLastCalledWith(
       "sample_years_set",
       expect.objectContaining({ value: 10000, source: "slider" }),
+    );
+    expect(logEvent).toHaveBeenCalledTimes(2);
+  });
+
+  it("logs a drag once, from its starting value, when it ends", () => {
+    const { store, band } = setup();
+    pointer(band, "pointerdown", LAYOUT.valuePx[3]);
+    pointer(band, "pointermove", LAYOUT.valuePx[6]);
+    pointer(band, "pointermove", LAYOUT.valuePx[9]);
+    expect(store.ui.timelineIndex).toBe(9);
+    expect(logEvent).not.toHaveBeenCalled();
+    pointer(band, "pointerup", 0);
+    expect(logEvent).toHaveBeenCalledTimes(1);
+    expect(logEvent).toHaveBeenCalledWith("sample_years_set", {
+      value: TIMELINE_VALUES[9],
+      previous: 200000,
+      trial: "A",
+      source: "slider",
+    });
+  });
+
+  it("logs nothing for a drag that ends on its starting value", () => {
+    const { slider, band } = setup();
+    // A press on the flag that does not move it.
+    pointer(slider, "pointerdown", LAYOUT.valuePx[0]);
+    pointer(slider, "pointerup", 0);
+    // A drag that leaves and comes back.
+    pointer(band, "pointerdown", LAYOUT.valuePx[4]);
+    pointer(band, "pointermove", LAYOUT.valuePx[0]);
+    pointer(band, "pointercancel", 0);
+    expect(logEvent).not.toHaveBeenCalled();
+  });
+
+  it("logs a drag that ends by cancel, or by a new press from the same pointer", () => {
+    const { band } = setup();
+    pointer(band, "pointerdown", LAYOUT.valuePx[2]);
+    pointer(band, "pointercancel", 0);
+    expect(logEvent).toHaveBeenLastCalledWith(
+      "sample_years_set",
+      expect.objectContaining({ value: TIMELINE_VALUES[2], previous: 200000 }),
+    );
+    pointer(band, "pointerdown", LAYOUT.valuePx[5], undefined, 1);
+    // No `pointerup`: the same pointer presses again.
+    pointer(band, "pointerdown", LAYOUT.valuePx[8], undefined, 1);
+    expect(logEvent).toHaveBeenLastCalledWith(
+      "sample_years_set",
+      expect.objectContaining({ value: TIMELINE_VALUES[5], previous: TIMELINE_VALUES[2] }),
     );
     expect(logEvent).toHaveBeenCalledTimes(2);
   });

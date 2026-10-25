@@ -55,14 +55,15 @@ const pct = (fraction: number) => `${fraction * 100}%`;
  */
 export const Timeline = observer(function Timeline() {
   const { ui } = useStores();
-  const { set, step } = useSetSampleYears();
+  const { set, step, setWithoutLog, logChange } = useSetSampleYears();
   const tlRef = useRef<HTMLDivElement>(null);
   const rowRef = useRef<HTMLOListElement>(null);
   const flagRef = useRef<HTMLDivElement>(null);
   const [measured, setMeasured] = useState<Measured | null>(null);
   const [dragging, setDragging] = useState(false);
-  // The live drag: the pointer that started it, and that pointer's x offset from the handle.
-  const drag = useRef<{ pointerId: number; offset: number } | null>(null);
+  // The live drag: the pointer that started it, that pointer's x offset from the handle, and the
+  // value when it started (the drag logs one change, from that value, when it ends).
+  const drag = useRef<{ pointerId: number; offset: number; startYears: number } | null>(null);
   // Chrome shows the focus ring when a pointer press focuses the flag, but the ring is for keyboard
   // users. `noRing` hides it after a press; any other focus, a blur, or a key brings it back.
   // `pressFocus` marks the focus a press causes, which is the one focus that keeps it.
@@ -126,7 +127,8 @@ export const Timeline = observer(function Timeline() {
     drag.current !== null && e.pointerId !== drag.current.pointerId;
 
   const beginDrag = (e: PointerEvent<HTMLDivElement>, offset: number) => {
-    drag.current = { pointerId: e.pointerId, offset };
+    if (drag.current) logChange(drag.current.startYears, "slider");
+    drag.current = { pointerId: e.pointerId, offset, startYears: ui.sampleYears };
     setDragging(true);
     e.currentTarget.setPointerCapture?.(e.pointerId);
     e.preventDefault();
@@ -143,8 +145,8 @@ export const Timeline = observer(function Timeline() {
 
   const onBandPointerDown = (e: PointerEvent<HTMLDivElement>) => {
     if (!measured || !isPrimaryPress(e) || isOtherPointer(e)) return;
-    set(nearestValueIndexByPx(measured.layout.valuePx, pointerX(e)), "slider");
     beginDrag(e, 0);
+    setWithoutLog(nearestValueIndexByPx(measured.layout.valuePx, pointerX(e)));
     focusFlagFromPress();
   };
 
@@ -156,14 +158,14 @@ export const Timeline = observer(function Timeline() {
 
   const onPointerMove = (e: PointerEvent<HTMLDivElement>) => {
     if (!drag.current || isOtherPointer(e) || !measured) return;
-    set(
+    setWithoutLog(
       nearestValueIndexByPx(measured.layout.valuePx, pointerX(e) - drag.current.offset),
-      "slider",
     );
   };
 
   const onPointerEnd = (e: PointerEvent<HTMLDivElement>) => {
     if (!drag.current || isOtherPointer(e)) return;
+    logChange(drag.current.startYears, "slider");
     drag.current = null;
     setDragging(false);
     if (e.currentTarget.hasPointerCapture?.(e.pointerId)) {

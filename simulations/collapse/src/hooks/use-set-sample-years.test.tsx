@@ -70,6 +70,24 @@ describe("useSetSampleYears", () => {
     expect(logEvent).not.toHaveBeenCalled();
   });
 
+  it("setWithoutLog writes the store, and logChange logs once from the given value", () => {
+    const { store, result } = setup();
+    act(() => result.current.setWithoutLog(2));
+    act(() => result.current.setWithoutLog(4));
+    expect(store.ui.timelineIndex).toBe(4);
+    expect(logEvent).not.toHaveBeenCalled();
+    act(() => result.current.logChange(200000, "slider"));
+    expect(logEvent).toHaveBeenCalledTimes(1);
+    expect(logEvent).toHaveBeenCalledWith("sample_years_set", {
+      value: 20000,
+      previous: 200000,
+      trial: "A",
+      source: "slider",
+    });
+    act(() => result.current.logChange(20000, "slider"));
+    expect(logEvent).toHaveBeenCalledTimes(1);
+  });
+
   it("step at either end is a no-op", () => {
     const { store, result } = setup();
     act(() => result.current.step(-1, "stepper"));
