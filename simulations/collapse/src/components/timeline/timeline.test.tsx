@@ -83,6 +83,8 @@ describe("Timeline", () => {
   it("renders the landmarks as a readable list in order", () => {
     const { view } = setup();
     const list = view.getByRole("list", { name: "Timeline landmarks" });
+    // Explicit, because Safari drops list semantics from a list styled with `list-style: none`.
+    expect(list).toHaveAttribute("role", "list");
     const items = within(list).getAllByRole("listitem");
     expect(items).toHaveLength(7);
     expect(items[0]).toHaveTextContent("200,000 yr Modern humans appear in Africa");

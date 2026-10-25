@@ -222,7 +222,9 @@ export const Timeline = observer(function Timeline() {
       <div ref={tlRef} className={`collapse-tl${dragging ? " dragging" : ""}`}>
         <div className="collapse-tl-rail" style={rail} />
         <div className="collapse-tl-rail-tail" style={railTail} />
-        <ol ref={rowRef} className="collapse-tl-row" aria-label="Timeline landmarks">
+        {/* biome-ignore lint/a11y/noRedundantRoles: Safari drops list semantics from a list styled
+            with `list-style: none`; the explicit role keeps it a list for VoiceOver. */}
+        <ol ref={rowRef} className="collapse-tl-row" role="list" aria-label="Timeline landmarks">
           {TIMELINE_STOPS.map((stop, i) => {
             const Art = stop.art;
             const className = ["collapse-tl-stop", stop.end && "hollow", stop.years === 0 && "zero"]
