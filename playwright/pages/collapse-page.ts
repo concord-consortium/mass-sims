@@ -47,6 +47,21 @@ export class CollapsePage extends SimulationFramePage {
     return { x: box.x + box.width / 2, y: box.y + box.height / 2 };
   }
 
+  /** The page box of part of a landmark: its artwork (`"art"`) or its last label line (`"label"`). */
+  async stopPartBox(
+    index: number,
+    part: "art" | "label",
+  ): Promise<{ x: number; y: number; width: number; height: number }> {
+    const stop = this.page.locator(".collapse-tl-stop").nth(index);
+    const el =
+      part === "art"
+        ? stop.locator(".collapse-tl-ico svg")
+        : stop.locator(".collapse-tl-ev").last();
+    const box = await el.boundingBox();
+    if (!box) throw new Error(`stop ${index} has no ${part}`);
+    return box;
+  }
+
   /** The page x of the handle (the ring under the flag), which marks the chosen value. */
   async handleX(): Promise<number> {
     const box = await this.page.locator(".collapse-tl-handle").boundingBox();

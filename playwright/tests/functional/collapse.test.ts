@@ -29,6 +29,29 @@ test.describe("Timeline pointer input", () => {
     await expect(collapse.timelineTrack).not.toHaveClass(/\bdragging\b/);
   });
 
+  test("pressing a landmark's icon or label snaps to that value", async ({ page }) => {
+    const track = await collapse.timelineTrack.boundingBox();
+    if (!track) throw new Error("track not found");
+    // The museum (20) and collapse (0) icons are the tallest, so their tops are the highest press
+    // points on the timeline.
+    for (const [stop, value] of [
+      [4, "20"],
+      [5, "0"],
+    ] as const) {
+      // Back to 200,000 first, so the flag is at the far left and not over the icon.
+      await collapse.timelineSlider.focus();
+      await page.keyboard.press("Home");
+      const art = await collapse.stopPartBox(stop, "art");
+      const y = art.y + 2;
+      expect(y - track.y).toBeLessThan(11);
+      await page.mouse.click(art.x + art.width / 2, y);
+      await expect(collapse.timelineSlider).toHaveAttribute("aria-valuenow", value);
+    }
+    const label = await collapse.stopPartBox(1, "label");
+    await page.mouse.click(label.x + label.width / 2, label.y + label.height / 2);
+    await expect(collapse.timelineSlider).toHaveAttribute("aria-valuenow", "100000");
+  });
+
   test("pressing the flag off center keeps the value; dragging moves the handle, not the pointer", async ({
     page,
   }) => {
