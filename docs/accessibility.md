@@ -143,9 +143,16 @@ The Collapse timeline's flag is a hand-rolled **`role="slider"`**, not the share
 values sit at non-linear positions measured from the label widths, which react-aria's linear thumb
 can't express.
 
-- **Keys (APG slider):** ArrowRight / ArrowDown step one value later, ArrowLeft / ArrowUp one earlier,
-  Home / End jump to the ends. There are only sixteen values, so there is no PageUp / PageDown. The
-  name is the fixed `"Years before collapse"`; `aria-valuetext` reads `"<n> years before collapse"`.
+- **Keys (the APG slider keys):** ArrowRight / ArrowDown step one value later, ArrowLeft / ArrowUp one
+  earlier, Home jumps to 200,000 and End to 0. There are only sixteen values, so there is no PageUp /
+  PageDown. The name is the fixed `"Years before collapse"`; `aria-valuetext` reads
+  `"<n> years before collapse"`.
+- **Left / Right and Home / End run opposite to APG.** `aria-valuenow` is the number of years before
+  collapse, so ArrowRight and End make it smaller, and Home goes to `aria-valuemax`. APG expects
+  Right to increase the value and Home to go to the minimum. (Up / Down match APG: Up makes the
+  number larger.) This keeps Left / Right matching the screen, where Right moves the flag toward the
+  collapse, but anything that judges direction from `aria-valuenow` and its min and max reads Right as
+  a decrease.
 - **The landmarks are a readable list, separate from the value.** The dated stops are an `<ol>` named
   `"Timeline landmarks"`, one `<li>` per stop in order, with the icons and dots `aria-hidden`. Two
   items get visually-hidden context: the 0 stop adds "(the collapse)" and the end marker reads
