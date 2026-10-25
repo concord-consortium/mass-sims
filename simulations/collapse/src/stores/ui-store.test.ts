@@ -1,3 +1,4 @@
+import { applySnapshot, getSnapshot } from "mobx-state-tree";
 import { describe, expect, it } from "vitest";
 import { TIMELINE_VALUES } from "../model/timeline";
 import { UiStore } from "./ui-store";
@@ -20,6 +21,15 @@ describe("UiStore", () => {
     expect(ui.timelineIndex).toBe(0);
     ui.setTimelineIndex(LAST + 5);
     expect(ui.timelineIndex).toBe(LAST);
+  });
+
+  it("keeps the timeline index out of snapshots, so a restore does not reset it", () => {
+    const ui = UiStore.create();
+    ui.setTimelineIndex(5);
+    expect(getSnapshot(ui)).not.toHaveProperty("timelineIndex");
+    applySnapshot(ui, { selectedTrialLetter: "B" });
+    expect(ui.selectedTrialLetter).toBe("B");
+    expect(ui.timelineIndex).toBe(5);
   });
 
   it("tracks sampleYears, canStepEarlier, and canStepLater with the index", () => {
