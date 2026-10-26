@@ -12,6 +12,63 @@ export class CollapsePage extends SimulationFramePage {
     return this.page.getByRole("region", { name: "Cross Section" });
   }
 
+  // --- Timeline + year stepper --------------------------------------------
+
+  get timelineSlider(): Locator {
+    return this.page.getByRole("slider", { name: "Years before collapse" });
+  }
+
+  get earlierButton(): Locator {
+    return this.page.getByRole("button", { name: "Earlier, more years before collapse" });
+  }
+
+  get laterButton(): Locator {
+    return this.page.getByRole("button", { name: "Later, fewer years before collapse" });
+  }
+
+  /** The stepper's digital display. It is `aria-hidden`, so it has no role to find it by. */
+  get yearDisplay(): Locator {
+    return this.page.locator(".collapse-step-value");
+  }
+
+  /** The timeline track; it carries the `dragging` class while a drag is live. */
+  get timelineTrack(): Locator {
+    return this.page.locator(".collapse-tl");
+  }
+
+  /** The page position of a landmark's dot (`index` in list order, 0 = 200,000 yr). */
+  async stopDotCenter(index: number): Promise<{ x: number; y: number }> {
+    const box = await this.page
+      .locator(".collapse-tl-stop")
+      .nth(index)
+      .locator(".collapse-tl-dot")
+      .boundingBox();
+    if (!box) throw new Error(`stop ${index} has no dot`);
+    return { x: box.x + box.width / 2, y: box.y + box.height / 2 };
+  }
+
+  /** The page box of part of a landmark: its artwork (`"art"`) or its last label line (`"label"`). */
+  async stopPartBox(
+    index: number,
+    part: "art" | "label",
+  ): Promise<{ x: number; y: number; width: number; height: number }> {
+    const stop = this.page.locator(".collapse-tl-stop").nth(index);
+    const el =
+      part === "art"
+        ? stop.locator(".collapse-tl-ico svg")
+        : stop.locator(".collapse-tl-ev").last();
+    const box = await el.boundingBox();
+    if (!box) throw new Error(`stop ${index} has no ${part}`);
+    return box;
+  }
+
+  /** The page x of the handle (the ring under the flag), which marks the chosen value. */
+  async handleX(): Promise<number> {
+    const box = await this.page.locator(".collapse-tl-handle").boundingBox();
+    if (!box) throw new Error("handle not found");
+    return box.x;
+  }
+
   // --- Trials panel -------------------------------------------------------
 
   get trialsListbox(): Locator {

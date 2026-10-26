@@ -177,6 +177,39 @@ describe("Collapse App — AP saved state", () => {
     expect(first.trials.A.output).toEqual(trialA.output);
   });
 
+  it("keeps the timeline value when saved state arrives after the student has moved it", () => {
+    const { initMsg } = restoreTrialAWithOutput();
+    let deliver: (msg: unknown) => void = () => {};
+    useInitMessageMock.mockImplementation(() => {
+      const [msg, setMsg] = useState<unknown>(null);
+      deliver = setMsg;
+      return msg;
+    });
+    const view = render(<App />);
+    const slider = view.getByRole("slider", { name: "Years before collapse" });
+    fireEvent.keyDown(slider, { key: "ArrowRight" });
+    act(() => deliver(initMsg));
+    expect(selectedHasOutput(view, "A")).toBe(true);
+    // The restore remounts the Simulation view, so find the slider again.
+    expect(view.getByRole("slider", { name: "Years before collapse" })).toHaveAttribute(
+      "aria-valuenow",
+      "150000",
+    );
+  });
+
+  it("does NOT call setInteractiveState when the timeline value changes", () => {
+    // Embedded, because the app sends state to AP only after an init message.
+    restoreTrialAWithOutput();
+    const { getByRole } = render(<App />);
+    expect(setInteractiveStateMock).toHaveBeenCalled();
+    const slider = getByRole("slider", { name: "Years before collapse" });
+    setInteractiveStateMock.mockClear();
+    fireEvent.keyDown(slider, { key: "ArrowRight" });
+    fireEvent.click(getByRole("button", { name: "Later, fewer years before collapse" }));
+    expect(slider).toHaveAttribute("aria-valuenow", "100000");
+    expect(setInteractiveStateMock).not.toHaveBeenCalled();
+  });
+
   it("does NOT register a beforeunload listener when embedded (AP persists progress)", () => {
     // Embedded with progress: AP saves it, so there is no reload warning.
     restoreTrialAWithOutput();

@@ -63,3 +63,25 @@ test("Keyboard nav: ArrowDown moves focus AND selection to the next trial", asyn
   // Roving tabindex moves focus too, not just selection.
   expect(await collapse.focusedAriaLabel()).toMatch(/^Trial B\b/);
 });
+
+test("Timeline: starts at 200,000; the slider and stepper change one shared value", async ({
+  page,
+}) => {
+  await expect(collapse.timelineSlider).toHaveAttribute("aria-valuenow", "200000");
+  await expect(collapse.yearDisplay).toHaveText("200,000");
+  await expect(collapse.earlierButton).toHaveAttribute("aria-disabled", "true");
+
+  await collapse.timelineSlider.focus();
+  await page.keyboard.press("ArrowRight");
+  await expect(collapse.timelineSlider).toHaveAttribute("aria-valuenow", "150000");
+  await expect(collapse.yearDisplay).toHaveText("150,000");
+
+  await collapse.laterButton.click();
+  await expect(collapse.timelineSlider).toHaveAttribute("aria-valuenow", "100000");
+  await expect(collapse.yearDisplay).toHaveText("100,000");
+
+  await collapse.timelineSlider.focus();
+  await page.keyboard.press("End");
+  await expect(collapse.timelineSlider).toHaveAttribute("aria-valuenow", "0");
+  await expect(collapse.laterButton).toHaveAttribute("aria-disabled", "true");
+});

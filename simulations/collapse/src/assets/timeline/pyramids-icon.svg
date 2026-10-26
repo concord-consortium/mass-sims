@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="92px" height="36px" viewBox="0 0 92 36" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <defs>
+        <path d="M92,36 L0,36 L0,0 L92,0 Z" id="path-1"></path>
+    </defs>
+    <g id="Pyramids-ICON" stroke="none" fill="none" xlink:href="#path-1">
+        <polygon id="Path" points="0 36 92 36 92 0 0 0"></polygon>
+        <g id="Group" stroke-width="1" fill-rule="evenodd" transform="translate(0.08, 0.1138)">
+            <polygon id="outline" fill="#FFFFFF" points="36.078 10.22 30.078 3.968 0 35.886 91.827 35.886 68.702 12.169 63.219 17.882 45.729 0"></polygon>
+            <polygon id="Fill-3" fill="#754925" points="68.7139 15.0455 50.6319 33.8865 87.0829 33.8865"></polygon>
+            <polygon id="Fill-4" fill="#AD8864" points="68.7253 17.9221 82.3403 31.8861 55.3233 31.8861"></polygon>
+            <polygon id="Fill-5" fill="#F2C086" points="68.7253 17.9221 82.3403 31.8861 61.5643 31.8861"></polygon>
+            <polygon id="Fill-6" fill="#754925" points="45.754 2.8862 16.481 33.8862 76.077 33.8862"></polygon>
+            <polygon id="Fill-7" fill="#AD8864" points="45.7794 5.7724 71.3224 31.8864 21.1204 31.8864"></polygon>
+            <polygon id="Fill-8" fill="#F2C086" points="45.7794 5.7724 71.3224 31.8864 33.7674 31.8864"></polygon>
+            <polygon id="Fill-9" fill="#754925" points="30.0912 6.8699 4.6322 33.8859 56.0192 33.8859"></polygon>
+            <polygon id="Fill-10" fill="#AD8864" points="30.1045 9.7721 51.3275 31.8861 9.2655 31.8861"></polygon>
+            <polygon id="Fill-11" fill="#F2C086" points="30.1045 9.7721 51.3275 31.8861 20.0405 31.8861"></polygon>
+        </g>
+    </g>
+</svg>
