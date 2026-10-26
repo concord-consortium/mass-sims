@@ -50,6 +50,7 @@
   pointer-events: none;
   position: absolute;
   top: 23px;
+  // Only until the layout is measured; then the component places each stop by its left edge.
   transform: translateX(-50%);
 }
 

@@ -40,6 +40,7 @@ interface Measured {
   layout: TimelineLayout;
   trackWidth: number;
   flagWidth: number;
+  stopWidths: number[];
 }
 
 const pct = (fraction: number) => `${fraction * 100}%`;
@@ -85,6 +86,7 @@ export const Timeline = observer(function Timeline() {
       layout,
       trackWidth: tl.clientWidth,
       flagWidth: flagRef.current?.offsetWidth || FLAG_WIDTH,
+      stopWidths: stopEls.map((el) => el.getBoundingClientRect().width),
     });
   }, []);
 
@@ -230,11 +232,19 @@ export const Timeline = observer(function Timeline() {
             const className = ["collapse-tl-stop", stop.end && "hollow", stop.years === 0 && "zero"]
               .filter(Boolean)
               .join(" ");
-            const left = measured ? `${measured.layout.dotPx[i]}px` : pct(stop.at);
+            // Once measured, each stop is placed by its left edge rather than centered with the CSS
+            // `translateX(-50%)`. A transform adds a second rounding to whole screen pixels, which
+            // can draw the dot a pixel off the handle's ring.
+            const position = measured
+              ? {
+                  left: `${measured.layout.dotPx[i] - measured.stopWidths[i] / 2}px`,
+                  transform: "none",
+                }
+              : { left: pct(stop.at) };
             // The spaces between the spans are not drawn (the stop is a flex column) but keep the
             // lines apart when the item is read as text.
             return (
-              <li key={stop.years ?? "now"} className={className} style={{ left }}>
+              <li key={stop.years ?? "now"} className={className} style={position}>
                 <span className={`collapse-tl-ico${Art ? " art" : ""}`} aria-hidden="true">
                   {Art && <Art />}
                 </span>
