@@ -49,6 +49,7 @@ beforeEach(() => {
 afterEach(() => {
   clientWidth.mockRestore();
   vi.useRealTimers();
+  vi.unstubAllGlobals();
 });
 
 // jsdom has no `PointerEvent`, so `fireEvent.pointerDown` would drop `clientX`. A `MouseEvent` with
@@ -133,6 +134,47 @@ describe("Timeline", () => {
     act(() => store.ui.setTimelineIndex(LAST));
     expect(LAYOUT.valuePx[LAST] + FLAG_WIDTH / 2).toBeGreaterThan(ROW_WIDTH);
     expect(slider.style.left).toBe(`${ROW_WIDTH - FLAG_WIDTH}px`);
+  });
+
+  it("lays the stops out again when the track or an end stop resizes", () => {
+    // A stub that saves the callback and what it observes, so the test can trigger a resize.
+    let onResize = () => {};
+    const observed: Element[] = [];
+    vi.stubGlobal(
+      "ResizeObserver",
+      class {
+        constructor(callback: () => void) {
+          onResize = callback;
+        }
+        observe(el: Element) {
+          observed.push(el);
+        }
+        unobserve() {}
+        disconnect() {}
+      },
+    );
+    const { view } = setup();
+    const stops = Array.from(view.container.querySelectorAll<HTMLElement>(".collapse-tl-stop"));
+    expect(observed).toEqual([
+      view.container.querySelector(".collapse-tl"),
+      stops[0],
+      stops[stops.length - 1],
+    ]);
+    expect(stops[3].style.left).toBe(`${LAYOUT.dotPx[3]}px`);
+
+    const narrow = 600;
+    clientWidth.mockReturnValue(narrow);
+    act(() => onResize());
+    const relaid = layoutTimeline({
+      rowWidth: narrow,
+      stopLineWidths: TIMELINE_STOPS.map((s) => Array(s.eventLines.length + 1).fill(60)),
+      stops: TIMELINE_STOPS,
+      segments: TIMELINE_SEGMENTS,
+    });
+    stops.forEach((stop, i) => {
+      expect(stop.style.left).toBe(`${relaid.dotPx[i]}px`);
+    });
+    expect(relaid.dotPx[3]).not.toBeCloseTo(LAYOUT.dotPx[3]);
   });
 
   it("logs its changes with the slider as the source", () => {
