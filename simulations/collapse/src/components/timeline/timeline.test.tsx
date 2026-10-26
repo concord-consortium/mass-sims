@@ -48,6 +48,7 @@ beforeEach(() => {
 
 afterEach(() => {
   clientWidth.mockRestore();
+  vi.restoreAllMocks();
   vi.useRealTimers();
   vi.unstubAllGlobals();
 });
@@ -104,11 +105,18 @@ describe("Timeline", () => {
   });
 
   it("places the stops, rails, handle, and flag from the measured layout", () => {
+    // jsdom has no layout; give every element a 60px-wide box so each stop has a width.
+    const stopWidth = 60;
+    vi.spyOn(HTMLElement.prototype, "getBoundingClientRect").mockReturnValue(
+      new DOMRect(0, 0, stopWidth, 20),
+    );
     const { view, store, slider } = setup();
     const el = (selector: string) => view.container.querySelector(selector) as HTMLElement;
     const stops = Array.from(view.container.querySelectorAll<HTMLElement>(".collapse-tl-stop"));
+    // Each stop is placed by its left edge, so its center (and its dot's) is on the dot's x.
     stops.forEach((stop, i) => {
-      expect(stop.style.left).toBe(`${LAYOUT.dotPx[i]}px`);
+      expect(stop.style.left).toBe(`${LAYOUT.dotPx[i] - stopWidth / 2}px`);
+      expect(stop.style.transform).toBe("none");
     });
     // Solid from the first dot to the 0 dot, dashed from there to the end marker.
     expect(el(".collapse-tl-rail").style.left).toBe(`${LAYOUT.inset}px`);
