@@ -14,8 +14,8 @@ import { norDebugFlag } from "../utils/nor-debug";
  * own outcome is still null — deferred); otherwise it's the trial's committed outcome. `null` → no cloud.
  */
 export interface StormAnimation {
-  /** Draw one animated frame (runner-driven) at `cloudElapsedMs` into the cloud, stepping physics by `dtMs`. */
-  drawFrame(cloudElapsedMs: number, dtMs: number): void;
+  /** Draw one animated frame (runner-driven) at `cloudElapsedMs`, running the physics steps due by then. */
+  drawFrame(cloudElapsedMs: number): void;
   /** Paint the deterministic final frame + park the container at its end position. */
   drawFinal(): void;
   /** Clear the canvas, re-seed the particle system, and hide the container (run start, or no outcome). */
@@ -100,11 +100,11 @@ export function useStormAnimation(
   }, [containerRef]);
 
   const drawFrame = useCallback(
-    (cloudElapsedMs: number, dtMs: number) => {
+    (cloudElapsedMs: number) => {
       const ctx = ctxRef.current;
       const player = playerRef.current;
       if (!ctx || !player) return;
-      player.step(ctx, cloudElapsedMs, dtMs);
+      player.step(ctx, cloudElapsedMs);
       const es = cloudElapsedMs / 1000;
       const t = Math.min(es / player.duration, 1);
       // Container fades in over the first second.

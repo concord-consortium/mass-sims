@@ -43,8 +43,9 @@ function driftOffset(t: number): { x: number; y: number } {
 }
 
 /**
- * Seeded PRNG (mulberry32). The storm's determinism — the same seed reproduces the same particle field,
- * so `renderFinal` regenerates the animated end frame without a per-trial snapshot.
+ * Seeded PRNG (mulberry32). The storm's determinism — the same seed, stepped the same fixed number of
+ * times, reproduces the same particle field, so every run of an outcome ends on the same cloud and
+ * `renderFinal` regenerates that end frame without a per-trial snapshot.
  */
 export function mulberry32(seed: number): () => number {
   let s = seed;
@@ -142,10 +143,12 @@ export interface StormPlayer {
    * of growing from nothing.
    */
   reset(): void;
-  /** Advance physics by `dtMs` and draw the frame at progress derived from `elapsedMs` onto `ctx`. */
-  step(ctx: CanvasRenderingContext2D, elapsedMs: number, dtMs: number): void;
+  /** Run the fixed physics steps due by `elapsedMs`, then draw the frame at that progress onto `ctx`. */
+  step(ctx: CanvasRenderingContext2D, elapsedMs: number): void;
   /** Deterministically draw the finished frame at once (restore + reduced motion) — cached per outcome. */
   renderFinal(ctx: CanvasRenderingContext2D): void;
+  /** Test-only: a copy of the full physics state (particles, steps run), for exact comparisons. */
+  snapshot(): unknown;
   /** Container top-left offset (px, relative to the map center) at progress `t ∈ [0,1]`. */
   offsetAt(t: number): { x: number; y: number };
   /** Cloud duration (s) — the animated build time (NOT the 1.5 s pre-delay or the finalize timeout). */
@@ -154,17 +157,40 @@ export interface StormPlayer {
   readonly moves: boolean;
 }
 
-/** Per-frame delta in seconds, clamped so a stall can't fling particles (first frame seeds 0.016). */
-function toDt(dtMs: number): number {
-  return dtMs > 0 ? Math.min(dtMs / 1000, 0.05) : 0.016;
-}
+/**
+ * Fixed physics rate. The live animation and `renderFinal` both run exactly `duration × STEPS_PER_S`
+ * steps of `STEP_DT`, so the cloud never depends on the display's frame rate: particles spawn per step,
+ * and the steps (and the random numbers they draw) are the same on every device. 60/s matches the
+ * prototype's approved density.
+ */
+const STEPS_PER_S = 60;
+const STEP_DT = 1 / STEPS_PER_S;
 
-/** Deterministic step for `renderFinal`, a nominal 60fps frame time chosen to approximate a typical live
- *  run — the regenerated snapshot is the end frame of a full sim stepped at this fixed rate. Since
- *  particles spawn per step, the density tracks this rate rather than the live loop's actual frame rate.
- *  TODO(MAS-50): make the cloud density frame-rate-independent, and revisit the per-system seeds (the
- *  formations are deterministic). */
-const RENDER_FINAL_DT = 1 / 60;
+/**
+ * The fixed-step counter shared by a player's live `step` and its `renderFinal`. `stepFn(progress)` runs
+ * one physics step at `progress = (i + 1) / simSteps` for step `i`, so both paths run identical steps.
+ */
+function createStepper(duration: number, stepFn: (progress: number) => void) {
+  const simSteps = duration * STEPS_PER_S;
+  let done = 0;
+  return {
+    get done() {
+      return done;
+    },
+    reset(): void {
+      done = 0;
+    },
+    /** Run the steps due by `elapsedMs` (at most all of them). A slow frame runs several. */
+    advanceTo(elapsedMs: number): void {
+      const target = Math.min(Math.floor((elapsedMs * STEPS_PER_S) / 1000), simSteps);
+      for (; done < target; done++) stepFn((done + 1) / simSteps);
+    },
+    /** Run every remaining step. */
+    finish(): void {
+      for (; done < simSteps; done++) stepFn((done + 1) / simSteps);
+    },
+  };
+}
 
 // Spiral — `strong` / `moderate`.
 interface CloudParticle {
@@ -205,9 +231,12 @@ function createSpiralPlayer(cfg: SpiralConfig): StormPlayer {
   const { canvas: off, ctx: offCtx } = createOffscreen();
   let rand = mulberry32(cfg.seed);
   let cloud: CloudParticle[] = [];
+  const circleRAt = (progress: number) => 0.5 + (cfg.maxR - 0.5) * progress;
+  const stepper = createStepper(cfg.duration, (p) => stepPhysics(STEP_DT, circleRAt(p)));
 
   function seed(): void {
     rand = mulberry32(cfg.seed);
+    stepper.reset();
     cloud = [];
     const seedR = Math.min(50, cfg.maxR * 0.5);
     for (let i = 0; i < 800; i++) {
@@ -287,21 +316,18 @@ function createSpiralPlayer(cfg: SpiralConfig): StormPlayer {
     duration: cfg.duration,
     moves: true,
     reset: seed,
-    step(ctx, elapsedMs, dtMs) {
+    step(ctx, elapsedMs) {
       const t = Math.min(elapsedMs / 1000 / cfg.duration, 1);
-      stepPhysics(toDt(dtMs), 0.5 + (cfg.maxR - 0.5) * t);
-      draw(ctx, 0.5 + (cfg.maxR - 0.5) * t, t);
+      stepper.advanceTo(elapsedMs);
+      draw(ctx, circleRAt(t), t);
     },
     renderFinal(ctx) {
-      // Fresh deterministic sim to the end at a fixed step.
+      // Fresh deterministic sim to the end — the same steps the live animation runs.
       seed();
-      const simDt = RENDER_FINAL_DT;
-      const simSteps = Math.round(cfg.duration / simDt);
-      for (let si = 0; si < simSteps; si++) {
-        stepPhysics(simDt, 0.5 + (cfg.maxR - 0.5) * ((si + 1) / simSteps));
-      }
+      stepper.finish();
       draw(ctx, cfg.maxR, 1);
     },
+    snapshot: () => ({ steps: stepper.done, particles: cloud.map((c) => ({ ...c })) }),
     offsetAt: driftOffset,
   };
 }
@@ -336,6 +362,7 @@ function createBandPlayer(): StormPlayer {
   let band: BandParticle[] = [];
   let prevEased = 0;
   let spawners: Spawner[] = [];
+  const stepper = createStepper(BAND_DURATION, (p) => physics(p, STEP_DT));
 
   function initSpawners(): void {
     spawners = [];
@@ -367,6 +394,7 @@ function createBandPlayer(): StormPlayer {
 
   function seed(): void {
     rand = mulberry32(BAND_SEED);
+    stepper.reset();
     band = [];
     prevEased = 0;
     initSpawners();
@@ -496,20 +524,23 @@ function createBandPlayer(): StormPlayer {
     duration: BAND_DURATION,
     moves: true,
     reset: seed,
-    step(ctx, elapsedMs, dtMs) {
+    step(ctx, elapsedMs) {
       const t = Math.min(elapsedMs / 1000 / BAND_DURATION, 1);
-      physics(t, toDt(dtMs));
+      stepper.advanceTo(elapsedMs);
       draw(ctx, t);
     },
     renderFinal(ctx) {
-      // Reproduce the animation deterministically with the full physics (curl + drift-shift + bounds), so
-      // the restored / reduced-motion end matches what the animation actually drew.
+      // Reproduce the animation with the same steps and full physics (curl + drift-shift + bounds), so
+      // the restored / reduced-motion end is the frame the animation drew.
       seed();
-      const simDt = RENDER_FINAL_DT;
-      const simSteps = Math.round(BAND_DURATION / simDt);
-      for (let si = 0; si < simSteps; si++) physics((si + 1) / simSteps, simDt);
+      stepper.finish();
       draw(ctx, 1);
     },
+    snapshot: () => ({
+      steps: stepper.done,
+      prevEased,
+      particles: band.map((p) => ({ ...p })),
+    }),
     offsetAt: driftOffset,
   };
 }
@@ -551,9 +582,11 @@ function createHazePlayer(): StormPlayer {
   const { canvas: off, ctx: offCtx } = createOffscreen();
   let rand = mulberry32(HAZE_SEED);
   let particles: HazeParticle[] = [];
+  const stepper = createStepper(HAZE_DURATION, (p) => physics(p, STEP_DT));
 
   function seed(): void {
     rand = mulberry32(HAZE_SEED);
+    stepper.reset();
     particles = [];
   }
   seed();
@@ -627,20 +660,19 @@ function createHazePlayer(): StormPlayer {
     duration: HAZE_DURATION,
     moves: false,
     reset: seed,
-    step(ctx, elapsedMs, dtMs) {
+    step(ctx, elapsedMs) {
       const t = Math.min(elapsedMs / 1000 / HAZE_DURATION, 1);
-      physics(t, toDt(dtMs));
+      stepper.advanceTo(elapsedMs);
       draw(ctx, t);
     },
     renderFinal(ctx) {
-      // Full physics (spawn + move + the y-bounds compaction the animation uses) at a fixed step, so the
-      // restored / reduced-motion end matches the animation.
+      // The same steps the animation runs (spawn + move + y-bounds compaction), so the restored /
+      // reduced-motion end is the frame the animation drew.
       seed();
-      const simDt = RENDER_FINAL_DT;
-      const simSteps = Math.round(HAZE_DURATION / simDt);
-      for (let si = 0; si < simSteps; si++) physics((si + 1) / simSteps, simDt);
+      stepper.finish();
       draw(ctx, 1);
     },
+    snapshot: () => ({ steps: stepper.done, particles: particles.map((p) => ({ ...p })) }),
     offsetAt: driftOffset,
   };
 }

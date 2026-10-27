@@ -63,11 +63,45 @@ describe("createStormPlayer", () => {
       expect(p).not.toBeNull();
       if (!p) continue;
       expect(() => {
-        p.step(ctx, 0, 16);
-        p.step(ctx, (p.duration * 1000) / 2, 16);
-        p.step(ctx, p.duration * 1000, 16);
+        p.step(ctx, 0);
+        p.step(ctx, (p.duration * 1000) / 2);
+        p.step(ctx, p.duration * 1000);
         p.renderFinal(ctx);
       }).not.toThrow();
+    }
+  });
+
+  it("ends on exactly the renderFinal state at any frame rate, for every cloud system", () => {
+    // The physics runs fixed steps on the run clock, so the frame cadence must not change the result.
+    // Compare the full state (every particle field + steps run), not just a count.
+    const ctx = {
+      clearRect: vi.fn(),
+      save: vi.fn(),
+      restore: vi.fn(),
+      drawImage: vi.fn(),
+    } as unknown as CanvasRenderingContext2D;
+    const uneven = [3, 41, 16, 7, 100, 0.5, 33, 16.7, 62, 9];
+    const cadences: Record<string, (i: number) => number> = {
+      "8 ms (some frames run no step)": () => 8,
+      "100 ms (several steps per frame)": () => 100,
+      uneven: (i) => uneven[i % uneven.length],
+    };
+    for (const outcome of ["strong", "moderate", "weakCoastal", "humidNoStorm"] as const) {
+      const final = createStormPlayer(outcome);
+      if (!final) throw new Error(outcome);
+      final.renderFinal(ctx);
+      const expected = final.snapshot();
+      for (const [name, frameMs] of Object.entries(cadences)) {
+        const live = createStormPlayer(outcome);
+        if (!live) throw new Error(outcome);
+        const endMs = live.duration * 1000;
+        let elapsed = 0;
+        for (let i = 0; elapsed < endMs; i++) {
+          elapsed += frameMs(i);
+          live.step(ctx, elapsed);
+        }
+        expect(live.snapshot(), `${outcome} @ ${name}`).toEqual(expected);
+      }
     }
   });
 });

@@ -203,8 +203,8 @@ export function useStormRun(
     (deltaMs: number) => {
       lastFrameAtRef.current = performance.now(); // the loop is alive this frame (watchdog reads this)
       try {
-        // One clamped frame delta drives both the clock and the physics, so the cloud can't advance out of
-        // step with the run clock on a stall.
+        // One clamped frame delta drives the clock; the cloud runs the fixed physics steps due by that clock,
+        // so it can't advance out of step with the run clock on a stall.
         const dt = Math.min(deltaMs, MAX_FRAME_MS);
         elapsedRef.current += dt;
         const elapsed = elapsedRef.current;
@@ -245,7 +245,7 @@ export function useStormRun(
         // the diagnostic hold, pin the cloud at peak (t=1) so the probe samples sustained worst-case load.
         const cloudElapsed = perfHold ? 1e9 : elapsed - CLOUD_START_MS;
         if (cloudElapsed >= 0) {
-          anim?.drawFrame(cloudElapsed, dt);
+          anim?.drawFrame(cloudElapsed);
           if (perfTrace) {
             (window as FrameTraceWindow).__norFrameTrace?.push({
               cloudElapsedMs: cloudElapsed,

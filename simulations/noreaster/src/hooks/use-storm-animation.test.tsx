@@ -72,7 +72,7 @@ describe("useStormAnimation — canvas reconciliation", () => {
     );
     // A mid-animation frame (strong: 2 s of 10 s → t = 0.2) drifts the container to a partial position and
     // does NOT mark the frame complete.
-    act(() => result.current.drawFrame(2000, 16));
+    act(() => result.current.drawFrame(2000));
     expect(containerRef.current.style.transform).not.toContain("translate(53px, -61px)");
 
     // Cancel: the run ends (running → false) with the SAME committed outcome. Because the mid frame wasn't
