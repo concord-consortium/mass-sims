@@ -5,7 +5,7 @@ import { norDebugFlag } from "../utils/nor-debug";
 
 /**
  * The storm-canvas setup helper: it owns the fixed backing store (no DPR multiplier), builds the
- * per-outcome player, positions the container, and keeps a per-outcome `renderFinal` cache. It does not
+ * per-outcome player, positions the container, and keeps a per-outcome final-frame cache. It does not
  * own a clock — the runner drives the animated frames imperatively via `drawFrame`; the hook itself only
  * paints the static final frame (restore / hydration / reduced motion / post-finalize) via an effect.
  * Returns the imperative draw API the runner calls.
@@ -37,8 +37,8 @@ export function useStormAnimation(
   const playerRef = useRef<StormPlayer | null>(null);
   const cacheRef = useRef<Map<Outcome, HTMLCanvasElement>>(new Map());
   // What the canvas currently shows (by animation or by drawFinal). Lets the static-final effect skip a
-  // redraw the moment a run finalizes — the animation's actual last frame stays, so there's no jump to
-  // the approximate regenerated final frame. `drawFinal` is then only for a genuine restore.
+  // needless redraw the moment a run finalizes — the canvas already shows the final frame. `drawFinal` is
+  // then only for a genuine restore.
   const paintedRef = useRef<Outcome | null>(null);
   const outcomeRef = useRef(stormOutcome);
   outcomeRef.current = stormOutcome;
@@ -110,9 +110,9 @@ export function useStormAnimation(
       // Container fades in over the first second.
       positionContainer(es < 1 ? es : 1, player.offsetAt(player.moves ? t : 0));
       // Mark the canvas as showing this outcome's complete final frame only at the animation's end. The
-      // static-final effect then keeps that frame (no jump to the regenerated one) — but a run canceled
-      // mid-animation leaves paintedRef unset, so it snaps to the deterministic final frame instead of
-      // being left on a partial, mid-drift frame.
+      // static-final effect then keeps that frame — but a run canceled mid-animation leaves paintedRef
+      // unset, so it snaps to the deterministic final frame instead of being left on a partial, mid-drift
+      // frame.
       if (t >= 1) {
         const outcome = outcomeRef.current;
         paintedRef.current = outcome;
@@ -146,8 +146,9 @@ export function useStormAnimation(
       paintedRef.current = stormOutcome;
       return;
     }
-    // Generate the deterministic final frame once per outcome, then just copy that saved image — avoids
-    // re-running the full deterministic sim (several hundred physics steps) on every restore/hydration.
+    // Copy the outcome's cached final frame (saved by `drawFrame` at a run's end, or generated here once
+    // per outcome) — avoids re-running the full deterministic sim (several hundred physics steps) on
+    // every restore/hydration.
     let cache = cacheRef.current.get(stormOutcome);
     if (!cache) {
       const c = document.createElement("canvas");
@@ -167,9 +168,8 @@ export function useStormAnimation(
   }, [stormOutcome, positionContainer, containerRef]);
 
   // Static final display for a NON-running outcome (restore / hydration / reduced motion). NOT for the
-  // moment a run finalizes: the animation already painted this outcome's real last frame (paintedRef),
-  // so we leave it — a regenerated final frame is only ~equal to the animation's, and swapping to it
-  // reads as a jump. During a run the runner drives `drawFrame`. With no outcome, clear.
+  // moment a run finalizes: the animation already painted this outcome's final frame (paintedRef), so we
+  // leave it. During a run the runner drives `drawFrame`. With no outcome, clear.
   useEffect(() => {
     if (stormOutcome && !isRunning) {
       if (paintedRef.current !== stormOutcome) drawFinal();
