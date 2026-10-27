@@ -113,7 +113,22 @@ export function useStormAnimation(
       // static-final effect then keeps that frame (no jump to the regenerated one) — but a run canceled
       // mid-animation leaves paintedRef unset, so it snaps to the deterministic final frame instead of
       // being left on a partial, mid-drift frame.
-      if (t >= 1) paintedRef.current = outcomeRef.current;
+      if (t >= 1) {
+        const outcome = outcomeRef.current;
+        paintedRef.current = outcome;
+        // Save this end frame as the outcome's cached final frame. It is the frame `renderFinal` would
+        // draw (same fixed steps), so a later restore copies it instead of re-running the whole sim.
+        if (outcome && !cacheRef.current.has(outcome)) {
+          const c = document.createElement("canvas");
+          c.width = NOR_SIZE;
+          c.height = NOR_SIZE;
+          const cctx = c.getContext("2d");
+          if (cctx) {
+            cctx.drawImage(ctx.canvas, 0, 0);
+            cacheRef.current.set(outcome, c);
+          }
+        }
+      }
     },
     [positionContainer],
   );

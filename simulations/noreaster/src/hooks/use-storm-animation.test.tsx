@@ -3,6 +3,26 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { Outcome } from "../model/weather";
 import { useStormAnimation } from "./use-storm-animation";
 
+// Count `renderFinal` calls on the real players (the full re-sim the cache exists to avoid).
+const renderFinalCalls = vi.hoisted(() => ({ count: 0 }));
+vi.mock("../animation/storm-players", async (importOriginal) => {
+  const mod = await importOriginal<typeof import("../animation/storm-players")>();
+  return {
+    ...mod,
+    createStormPlayer: (outcome: Outcome) => {
+      const player = mod.createStormPlayer(outcome);
+      if (player) {
+        const renderFinal = player.renderFinal;
+        player.renderFinal = (c) => {
+          renderFinalCalls.count++;
+          renderFinal(c);
+        };
+      }
+      return player;
+    },
+  };
+});
+
 // jsdom has no 2D canvas context (test-setup stubs it to null). Install a recording mock so the hook's
 // canvas reconciliation actually runs — the container's inline `opacity`/`transform` are the observable
 // seam these tests assert against.
@@ -14,6 +34,7 @@ let ctx: {
 let realGetContext: unknown;
 
 beforeEach(() => {
+  renderFinalCalls.count = 0;
   ctx = {
     clearRect: vi.fn(),
     drawImage: vi.fn(),
@@ -80,5 +101,29 @@ describe("useStormAnimation — canvas reconciliation", () => {
     // rather than leaving the partial frame.
     rerender({ outcome: "strong", running: false });
     expect(containerRef.current.style.transform).toContain("translate(53px, -61px)");
+  });
+
+  it("caches the animation's last frame, so restoring that outcome skips renderFinal", () => {
+    const { canvasRef, containerRef } = refs();
+    const { result, rerender } = renderHook(
+      ({ outcome, running }: { outcome: Outcome; running: boolean }) =>
+        useStormAnimation(canvasRef, containerRef, outcome, running),
+      { initialProps: { outcome: "strong" as Outcome, running: true } },
+    );
+    // The run reaches its end (strong: 10 s → t = 1), then finalizes.
+    act(() => result.current.drawFrame(10000));
+    rerender({ outcome: "strong", running: false });
+
+    // Switch to another trial and back: the restore copies the cached end frame.
+    rerender({ outcome: "windy", running: false });
+    rerender({ outcome: "strong", running: false });
+    expect(containerRef.current.style.transform).toContain("translate(53px, -61px)");
+    expect(renderFinalCalls.count).toBe(0);
+  });
+
+  it("falls back to renderFinal when the outcome's end frame was never animated", () => {
+    const { canvasRef, containerRef } = refs();
+    renderHook(() => useStormAnimation(canvasRef, containerRef, "strong", false));
+    expect(renderFinalCalls.count).toBe(1);
   });
 });
