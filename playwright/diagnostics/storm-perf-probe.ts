@@ -2,19 +2,25 @@
  * Nor'easter map-area storm performance probe — a diagnostic, not a CI gate.
  *
  * Measures the heavy map-area storm (the fixed two-blur-pass cloud canvas). It samples three things:
- *   (a) the live rAF loop per cloud outcome with the storm HELD at peak, under CDP CPU throttle, at both
- *       target-width extremes;
+ *   (a) the live rAF loop per cloud outcome with the storm HELD at its end, under CDP CPU throttle, at both
+ *       target-width extremes. The physics runs fixed steps on the run clock, so a held storm runs every
+ *       step on its first frame and then only redraws the finished cloud: these rows measure DRAWING the
+ *       finished cloud, with no physics. They are not the worst case — (b) is;
  *   (b) REAL runs (no hold), repeated, reporting the late window (the last 2 s of the cloud, in the
  *       runner's clock) and the worst single frame — the climax, and any physics catch-up frames; and
  *   (c) `renderFinal` first-generation latency — the synchronous re-sim that stalls the main thread on
  *       restore / hydration / reduced motion.
  *
  * The `__norPerf` flag (set by this probe via addInitScript, so it's never reachable from a production
- * URL) holds the storm at peak radius and suppresses auto-finalize, so (a) samples sustained load at the
- * peak. The run must be live before sampling, or it fails loudly rather than measuring an idle page.
+ * URL) holds the storm at its end and suppresses auto-finalize, so (a) samples the sustained draw cost of
+ * the finished cloud. The run must be live before sampling, or it fails loudly rather than measuring an
+ * idle page.
  * The `__norPerfTrace` flag (set the same way) leaves the run alone but has the runner record each cloud
  * frame's `{ cloudElapsedMs, frameMs }`, so (b) can select frames by the runner's clock — which moves
  * slower than wall time on a throttled run, since the runner clamps each frame's clock advance.
+ *
+ * Measured results, and the options if the storm is too slow on real devices:
+ * simulations/noreaster/STORM-PERFORMANCE.md.
  *
  * Measure the production build, not the dev server (dev is unminified React and not representative):
  *   yarn workspace noreaster build && yarn workspace noreaster preview --port 8082 --strictPort
@@ -50,6 +56,11 @@ const CLOUD_START_S = 1.5;
 // Thresholds: sustained ~50 fps, no worse than ~30 fps tail.
 const MEDIAN_BUDGET_MS = 20;
 const P95_BUDGET_MS = 32;
+/**
+ * `renderFinal` max per outcome (unthrottled). Measured `strong` (the heaviest) at a 60.9 ms max for MAS-50,
+ * plus ~25% headroom — catches a real regression without failing on normal noise.
+ */
+const RENDER_FINAL_BUDGET_MS = 76;
 
 const FIELDS = [
   "Pathway for Land Air Mass",
@@ -270,7 +281,7 @@ async function main() {
     await context.close();
   }
 
-  // renderFinal first-gen latency — width-independent (fixed 1592²), so measure once per outcome at DPR 2,
+  // renderFinal first-gen latency — width-independent (fixed artboard size), so measure once per outcome at DPR 2,
   // unthrottled: the raw synchronous compute cost paid on a restore/hydration.
   const finalRows: { scene: string; median: number; max: number }[] = [];
   // A scene yielding zero finite renderFinal samples (e.g. it always threw) is a real failure, not an
@@ -319,7 +330,9 @@ async function main() {
   await browser.close();
 
   const f = (n: number) => n.toFixed(1).padStart(7);
-  console.log(`\nStorm perf — ${BASE_URL}  (sample ${SAMPLE_MS}ms/scene, DPR 2, held at peak)`);
+  console.log(
+    `\nStorm perf — ${BASE_URL}  (sample ${SAMPLE_MS}ms/scene, DPR 2, held at the end: draw cost only, no physics)`,
+  );
   console.log(`thresholds: median ≤ ${MEDIAN_BUDGET_MS}ms, p95 ≤ ${P95_BUDGET_MS}ms\n`);
   console.log("width  scene           throttle  frames  median     p95     max   >32ms   verdict");
   for (const r of rows) {
@@ -342,17 +355,22 @@ async function main() {
       `${String(r.width).padStart(4)}   ${r.scene.padEnd(15)} ${String(r.rate).padStart(2)}x   ${String(r.lateFrames).padStart(11)}  ${f(r.lateMedian).padStart(11)} ${f(r.lateP95).padStart(9)}   ${r.worst.map((w) => w.toFixed(0)).join(" ")}`,
     );
   }
-  console.log("\nrenderFinal first-gen latency (unthrottled, DPR 2):");
-  console.log("scene            median     max");
+  console.log(
+    `\nrenderFinal first-gen latency (unthrottled, DPR 2) — budget: max ≤ ${RENDER_FINAL_BUDGET_MS}ms:`,
+  );
+  console.log("scene            median     max   verdict");
   for (const r of finalRows) {
-    console.log(`${r.scene.padEnd(15)} ${f(r.median)} ${f(r.max)}`);
+    const ok = r.max <= RENDER_FINAL_BUDGET_MS;
+    console.log(`${r.scene.padEnd(15)} ${f(r.median)} ${f(r.max)}   ${ok ? "PASS" : "MISS"}`);
   }
   console.log("");
 
-  // Both a live-loop MISS and a renderFinal that produced no samples fail the run — without `finalFailed`
-  // here, this line would clobber the in-loop failure back to 0 whenever the rows all pass.
+  // A live-loop MISS, a renderFinal over budget, and a renderFinal that produced no samples all fail the
+  // run — without `finalFailed` here, this line would clobber the in-loop failure back to 0 whenever the
+  // rows all pass.
   const anyRowMiss = rows.some((r) => !(r.median <= MEDIAN_BUDGET_MS && r.p95 <= P95_BUDGET_MS));
-  process.exitCode = anyRowMiss || finalFailed ? 1 : 0;
+  const anyFinalMiss = finalRows.some((r) => !(r.max <= RENDER_FINAL_BUDGET_MS));
+  process.exitCode = anyRowMiss || anyFinalMiss || finalFailed ? 1 : 0;
 }
 
 main().catch((err) => {

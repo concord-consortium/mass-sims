@@ -161,7 +161,8 @@ export interface StormPlayer {
  * Fixed physics rate. The live animation and `renderFinal` both run exactly `duration × STEPS_PER_S`
  * steps of `STEP_DT`, so the cloud never depends on the display's frame rate: particles spawn per step,
  * and the steps (and the random numbers they draw) are the same on every device. 60/s matches the
- * prototype's approved density.
+ * prototype's approved density. A slow device runs several steps in one frame to keep up; the measured
+ * cost, and the options if it is too slow, are in STORM-PERFORMANCE.md.
  */
 const STEPS_PER_S = 60;
 const STEP_DT = 1 / STEPS_PER_S;
