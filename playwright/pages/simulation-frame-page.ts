@@ -81,8 +81,9 @@ export class SimulationFramePage {
   }
 
   /**
-   * Whether `locator`'s element overflows (`scrollHeight > clientHeight`) — the exact condition
-   * `useScrollFocusRing` uses to add/remove `tabindex="0"`. Lets a spec confirm the overflow
+   * Whether `locator`'s element overflows (`scrollHeight > clientHeight`) — the condition
+   * `useScrollFocusRing` uses to add/remove `tabindex="0"` on a region that can scroll (`overflow-y`
+   * of `auto` or `scroll`), which is every region passed here. Lets a spec confirm the overflow
    * precondition in-page before asserting the resulting tabindex, so an assertion never depends on
    * an assumed layout.
    */

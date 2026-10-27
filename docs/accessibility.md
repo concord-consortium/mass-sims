@@ -118,8 +118,8 @@ region); descendants call `useAnnounce()` and `announce(message)`.
 Scrollable regions (the Trials list, the About panel body, a sim's own scrollers like Bananas'
 offspring grid) become keyboard-operable **only while they actually overflow**:
 
-- `useScrollFocusRing` adds `tabindex="0"` when `scrollHeight > clientHeight` and removes it otherwise;
-  a sibling `.scroll-focus-ring` draws an inset ring on `:focus-visible`.
+- `useScrollFocusRing` adds `tabindex="0"` when `scrollHeight > clientHeight` and the element's
+  `overflow-y` is `auto` or `scroll`, and removes it otherwise; a sibling `.scroll-focus-ring` draws an inset ring on `:focus-visible`.
 - `<Section>` opts in via its `scrollFocusRing` prop (already set on the Trials column, so every sim
   inherits it).
 - To assert a `:focus-visible` ring in a real browser, establish keyboard modality with a

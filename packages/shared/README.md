@@ -197,7 +197,8 @@ Queue-backed with a single pending timer and clear-then-re-announce for repeats.
   and throws; in prod it silently drops a bad event.
 - **`useReloadWarning(enabled: boolean)`** — arms a `beforeunload` confirmation while `enabled`.
 - **`useScrollFocusRing<T>(externalRef?)`** → a **callback ref**. Adds `tabindex="0"` only while the
-  element overflows (`scrollHeight > clientHeight`); pair with a `.scroll-focus-ring` sibling for the
+  element overflows (`scrollHeight > clientHeight`) and can scroll (`overflow-y` is `auto` or
+  `scroll`); pair with a `.scroll-focus-ring` sibling for the
   inset `:focus-visible` ring. Pass an existing `RefObject` to share one element.
 - **`useScrollSelectedTrialIntoView<T>(selectedLetter: string)`** → a `RefObject` to put on the trials
   scroller; scrolls the `.trial-card-wrapper.selected` card into view when `selectedLetter` changes.

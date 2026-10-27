@@ -39,8 +39,8 @@ $stage-gap: 10px;
     justify-content: center;
     padding: 10px;
 
-    // The table is the stage row's width less `--data-w`, plus 2px (see the Cross Section box), so
-    // this margin on the last control centers the group over the table instead of the panel.
+    // The table is the stage row's width less `--data-w`, plus a border width (see the Cross
+    // Section box), so this margin on the last control centers the group over the table instead of the panel.
     > :last-child {
       margin-right: calc(var(--data-w) - #{tokens.$border-strong-width});
     }
@@ -81,8 +81,8 @@ $stage-gap: 10px;
     background: tokens.$color-surface;
     border-color: theme.$border;
     border-radius: tokens.$radius-md;
-    // `$stage-gap` plus a border width narrower than `--data-w`, so the table keeps the width it had
-    // when it overlapped this box by 2px.
+    // `$stage-gap` plus a border width narrower than `--data-w`, so the table is the stage row's
+    // width less `--data-w`, plus a border width. The controls row's margin relies on this.
     flex: 0 0 calc(var(--data-w) - #{$stage-gap} - #{tokens.$border-strong-width});
     margin-left: $stage-gap;
     // Down by the chip's overhang, so the chip's top is level with the table's top.

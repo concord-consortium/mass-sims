@@ -31,8 +31,7 @@ export function useScrollFocusRing<T extends HTMLElement = HTMLDivElement>(
     const el = element;
 
     const update = () => {
-      // A region that can't scroll gets no tab stop, even when it overflows. Fractional layout can
-      // also report a pixel or two of overflow on content that fits, e.g. Collapse's Trials column.
+      // Fractional layout can report a pixel or two of overflow on content that fits.
       const scrollable = /^(auto|scroll)$/.test(getComputedStyle(el).overflowY);
       if (scrollable && el.scrollHeight > el.clientHeight) el.setAttribute("tabindex", "0");
       else el.removeAttribute("tabindex");
