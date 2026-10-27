@@ -3,10 +3,11 @@ import { useState } from "react";
 import { afterEach, describe, expect, it } from "vitest";
 import { useScrollFocusRing } from "./use-scroll-focus-ring";
 
-function Region() {
+// The sims' stylesheets aren't loaded here, so each region sets the `overflow-y` they would give it.
+function Region({ overflowY = "auto" }: { overflowY?: "auto" | "visible" }) {
   const ref = useScrollFocusRing<HTMLDivElement>();
   return (
-    <div ref={ref} data-testid="region">
+    <div ref={ref} data-testid="region" style={{ overflowY }}>
       content
     </div>
   );
@@ -22,7 +23,7 @@ function DeferredRegion() {
         show
       </button>
       {shown ? (
-        <div ref={ref} data-testid="region">
+        <div ref={ref} data-testid="region" style={{ overflowY: "auto" }}>
           content
         </div>
       ) : null}
@@ -59,6 +60,12 @@ describe("useScrollFocusRing", () => {
   it("leaves the region unfocusable (no tabindex) when it does not overflow", () => {
     mockOverflow(100, 100);
     const { getByTestId } = render(<Region />);
+    expect(getByTestId("region")).not.toHaveAttribute("tabindex");
+  });
+
+  it("leaves a region that can't scroll unfocusable, even when it overflows", () => {
+    mockOverflow(500, 100);
+    const { getByTestId } = render(<Region overflowY="visible" />);
     expect(getByTestId("region")).not.toHaveAttribute("tabindex");
   });
 
