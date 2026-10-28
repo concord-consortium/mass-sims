@@ -316,3 +316,141 @@ describe("DataTable — trial switch", () => {
     expect(document.activeElement).not.toBe(rowB);
   });
 });
+
+describe("DataTable — keyboard", () => {
+  function threeRows() {
+    const ctx = setup();
+    for (const years of [200000, 100000, 0]) sample(ctx.store, years);
+    return { ...ctx, rows: bodyRows(ctx.view) };
+  }
+
+  it("ArrowDown and ArrowUp move focus row to row, with the keyboard ring", () => {
+    const { rows } = threeRows();
+    act(() => rows[0].focus());
+    fireEvent.keyDown(rows[0], { key: "ArrowDown" });
+    expect(document.activeElement).toBe(rows[1]);
+    expect(rows[1]).toHaveClass("kb-focus");
+    expect(rows[0]).not.toHaveClass("kb-focus");
+    fireEvent.keyDown(rows[1], { key: "ArrowUp" });
+    expect(document.activeElement).toBe(rows[0]);
+    expect(rows[0]).toHaveClass("kb-focus");
+  });
+
+  it("End and Home go to the last and first rows", () => {
+    const { rows } = threeRows();
+    act(() => rows[0].focus());
+    fireEvent.keyDown(rows[0], { key: "End" });
+    expect(document.activeElement).toBe(rows[2]);
+    fireEvent.keyDown(rows[2], { key: "Home" });
+    expect(document.activeElement).toBe(rows[0]);
+  });
+
+  it("a Tab arrival gets the ring; a click does not", () => {
+    const { rows } = threeRows();
+    fireEvent.keyDown(document.body, { key: "Tab" });
+    act(() => rows[1].focus());
+    expect(rows[1]).toHaveClass("kb-focus");
+    fireEvent.pointerDown(rows[2]);
+    act(() => rows[2].focus());
+    fireEvent.click(rows[2]);
+    expect(rows[2]).not.toHaveClass("kb-focus");
+    expect(rows[1]).not.toHaveClass("kb-focus");
+  });
+
+  it("ArrowRight goes to the row's delete button and ArrowLeft comes back", () => {
+    const { rows } = threeRows();
+    act(() => rows[1].focus());
+    fireEvent.keyDown(rows[1], { key: "ArrowRight" });
+    const del = within(rows[1]).getByRole("button");
+    expect(document.activeElement).toBe(del);
+    fireEvent.keyDown(del, { key: "ArrowDown" });
+    expect(document.activeElement).toBe(within(rows[2]).getByRole("button"));
+    fireEvent.keyDown(document.activeElement as Element, { key: "ArrowLeft" });
+    expect(document.activeElement).toBe(rows[2]);
+  });
+
+  it("ArrowUp from the first row goes to the heading the student came down through", () => {
+    const { rows, view } = threeRows();
+    const rate = view.getByRole("button", { name: "Erosion rate" });
+    act(() => rate.focus());
+    fireEvent.keyDown(rate, { key: "ArrowDown" });
+    expect(document.activeElement).toBe(rows[0]);
+    fireEvent.keyDown(rows[0], { key: "ArrowUp" });
+    expect(document.activeElement).toBe(rate);
+  });
+
+  it("ArrowUp from the first row, entered by Tab, goes to the first heading", () => {
+    const { rows, view } = threeRows();
+    act(() => rows[0].focus());
+    fireEvent.keyDown(rows[0], { key: "ArrowUp" });
+    expect(document.activeElement).toBe(
+      view.getByRole("button", { name: "Years before collapse" }),
+    );
+  });
+
+  it("ArrowLeft and ArrowRight move between the headings", () => {
+    const { view } = setup();
+    const years = view.getByRole("button", { name: "Years before collapse" });
+    const rate = view.getByRole("button", { name: "Erosion rate" });
+    const roof = view.getByRole("button", { name: "Rock above cave" });
+    act(() => years.focus());
+    fireEvent.keyDown(years, { key: "ArrowRight" });
+    expect(document.activeElement).toBe(rate);
+    fireEvent.keyDown(rate, { key: "ArrowRight" });
+    expect(document.activeElement).toBe(roof);
+    fireEvent.keyDown(roof, { key: "ArrowRight" });
+    expect(document.activeElement).toBe(roof);
+    fireEvent.keyDown(roof, { key: "ArrowLeft" });
+    expect(document.activeElement).toBe(rate);
+  });
+
+  it("ArrowDown on a heading enters the rows at the top, not at the selected row", () => {
+    const { rows, view } = threeRows();
+    expect(rows[2]).toHaveAttribute("aria-current", "true");
+    const roof = view.getByRole("button", { name: "Rock above cave" });
+    act(() => roof.focus());
+    fireEvent.keyDown(roof, { key: "ArrowDown" });
+    expect(document.activeElement).toBe(rows[0]);
+  });
+
+  it("focus survives a sort", () => {
+    const { rows, view } = threeRows();
+    act(() => rows[0].focus());
+    fireEvent.click(view.getByRole("button", { name: "Years before collapse" }));
+    expect(document.activeElement).toBe(rows[0]);
+  });
+});
+
+describe("DataTable — focus after a delete", () => {
+  it("returns to the same row position, clamped to the last row", () => {
+    const ctx = setup();
+    for (const years of [200000, 100000, 0]) sample(ctx.store, years);
+    const delOf = (i: number) => within(bodyRows(ctx.view)[i]).getByRole("button");
+
+    // From the middle row's delete button: focus lands on the next row's delete button.
+    act(() => delOf(1).focus());
+    fireEvent.click(delOf(1));
+    expect(displayedYears(ctx.view)).toEqual(["200,000", "0"]);
+    expect(document.activeElement).toBe(delOf(1));
+
+    // From the last row itself (deleted with the keyboard): back on the new last row.
+    const last = bodyRows(ctx.view)[1];
+    act(() => last.focus());
+    fireEvent.keyDown(last, { key: "Enter" });
+    fireEvent.click(delOf(1));
+    expect(document.activeElement).toBe(bodyRows(ctx.view)[0]);
+  });
+
+  it("goes to the first sort heading when the last row is deleted, never to the page", () => {
+    const { store, view } = setup();
+    sample(store, 0);
+    const del = view.getByRole("button", { name: "Delete the sample at 0 years before collapse" });
+    act(() => del.focus());
+    fireEvent.click(del);
+    expect(bodyRows(view)).toHaveLength(0);
+    expect(document.activeElement).toBe(
+      view.getByRole("button", { name: "Years before collapse" }),
+    );
+    expect(document.activeElement).not.toBe(document.body);
+  });
+});

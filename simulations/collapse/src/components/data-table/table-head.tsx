@@ -1,4 +1,4 @@
-import { useRef } from "react";
+import type { RefObject } from "react";
 import { SORT_NAMES } from "../../hooks/use-sample-actions";
 import type { SortKey, SortState } from "../../model/types";
 import { useHeadingSpacing } from "./use-heading-spacing";
@@ -42,6 +42,7 @@ interface TableHeadProps {
   sort: SortState;
   hasPrompt: boolean;
   onSort: (key: SortKey) => void;
+  headRowRef: RefObject<HTMLTableRowElement | null>;
 }
 
 /**
@@ -49,13 +50,12 @@ interface TableHeadProps {
  * the `th` (the APG sortable-table pattern). The button's name is the heading without its unit,
  * which is also what the sort announcement says.
  */
-export function TableHead({ sort, hasPrompt, onSort }: TableHeadProps) {
-  const rowRef = useRef<HTMLTableRowElement>(null);
-  useHeadingSpacing(rowRef);
+export function TableHead({ sort, hasPrompt, onSort, headRowRef }: TableHeadProps) {
+  useHeadingSpacing(headRowRef);
 
   return (
     <thead className={hasPrompt ? "collapse-thead has-prompt" : "collapse-thead"}>
-      <tr ref={rowRef}>
+      <tr ref={headRowRef}>
         {TABLE_COLS.map((col) => {
           if ("srOnly" in col) {
             return (

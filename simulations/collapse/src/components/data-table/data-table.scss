@@ -35,6 +35,9 @@ $sticky-z: 2;
   overflow-x: hidden;
   overflow-y: auto;
   scrollbar-gutter: stable;
+  // The sticky header (52px) and average row (32px) cover the scroller's ends, so a row scrolled
+  // "into view" has to clear them.
+  scroll-padding-block: 52px 32px;
 }
 
 .collapse-table {
@@ -305,8 +308,43 @@ th[data-sort-dir="descending"] .sort-up {
     border-bottom-color: transparent;
   }
 
-  tr:hover td {
+  // Keyboard focus takes the hover fill: the ring says where you are, the fill what you are on.
+  tr:hover td,
+  tr.kb-focus td {
     background: theme.$hover;
+  }
+
+  tr.kb-focus {
+    outline: none;
+  }
+
+  // Two rings, white outside blue: the ring runs beside the near-black thumbnail, and the white
+  // keeps it readable there. A pseudo-element on the first cell, because the cells' fill paints
+  // over a shadow on the row, and a pseudo-element on a `<tr>` becomes an extra table cell. The row
+  // is positioned, so the inset resolves against the whole row.
+  //
+  // 0.5px top and bottom: the 1px dividers are collapsed borders, half in each row, so this clears
+  // exactly this row's half. The ends have no shared divider, so they go flush.
+  tr.kb-focus td:first-child::after {
+    box-shadow:
+      inset 0 0 0 2px tokens.$color-surface,
+      inset 0 0 0 4px tokens.$color-focus-outline;
+    content: "";
+    inset: 0.5px 0;
+    pointer-events: none;
+    position: absolute;
+  }
+
+  tr:first-child.kb-focus td:first-child::after {
+    inset: 0 0 0.5px;
+  }
+
+  tr:last-child.kb-focus td:first-child::after {
+    inset: 0.5px 0 0;
+  }
+
+  tr:only-child.kb-focus td:first-child::after {
+    inset: 0;
   }
 
   tr.is-selected td {

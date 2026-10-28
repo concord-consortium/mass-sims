@@ -8,6 +8,8 @@ import { SampleRow } from "./sample-row";
 import { TableFoot } from "./table-foot";
 import { TableHead } from "./table-head";
 import { useFillerHeight } from "./use-filler-height";
+import { useRowFlip } from "./use-row-flip";
+import { useRowKeyboardNav } from "./use-row-keyboard-nav";
 import "./data-table.scss";
 
 /** A sorted copy, so the trial keeps the order the student sampled in. */
@@ -34,7 +36,14 @@ export const DataTable = observer(function DataTable() {
   const count = trial.sampleCount;
   const scrollerRef = useRef<HTMLDivElement>(null);
   const fillerRef = useRef<HTMLTableRowElement>(null);
+  const tbodyRef = useRef<HTMLTableSectionElement>(null);
+  const headRowRef = useRef<HTMLTableRowElement>(null);
+  // Ids are unique only within a trial, so rows are keyed by trial too: a trial switch remounts
+  // every row rather than reusing one trial's row for another's sample.
+  const rowKeys = rows.map((sample) => `${letter}:${sample.id}`);
   useFillerHeight(scrollerRef, fillerRef, count);
+  const { rememberFocus } = useRowKeyboardNav(tbodyRef, headRowRef, scrollerRef, count);
+  useRowFlip(tbodyRef, scrollerRef, letter, rowKeys);
 
   return (
     <div className="collapse-stage">
@@ -45,18 +54,25 @@ export const DataTable = observer(function DataTable() {
               ? `Samples for trial ${letter}: no rows yet.`
               : `Samples for trial ${letter}: ${count} ${count === 1 ? "row" : "rows"}.`}
           </caption>
-          <TableHead sort={ui.sort} hasPrompt={count === 0} onSort={cycleSort} />
-          <tbody className="collapse-rows">
-            {rows.map((sample) => (
+          <TableHead
+            sort={ui.sort}
+            hasPrompt={count === 0}
+            onSort={cycleSort}
+            headRowRef={headRowRef}
+          />
+          <tbody className="collapse-rows" ref={tbodyRef}>
+            {rows.map((sample, i) => (
               <SampleRow
-                // Ids are unique only within a trial, so a trial switch remounts every row.
-                key={`${letter}:${sample.id}`}
-                rowKey={`${letter}:${sample.id}`}
+                key={rowKeys[i]}
+                rowKey={rowKeys[i]}
                 sample={sample}
                 conditions={conditions}
                 selected={sample.id === selectedId}
                 onSelect={() => selectSample(sample.id)}
-                onDelete={() => deleteSample(sample.id)}
+                onDelete={() => {
+                  rememberFocus();
+                  deleteSample(sample.id);
+                }}
               />
             ))}
           </tbody>
