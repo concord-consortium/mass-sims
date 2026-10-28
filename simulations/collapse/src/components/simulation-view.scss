@@ -46,21 +46,6 @@ $stage-gap: 10px;
     }
   }
 
-  // Sized like the real Sample button will be: the padding and no-shrink of the sims' icon buttons
-  // (see Nor'easter's control bar), and the `<button>` element's normal letter-spacing, which a
-  // `<span>` would otherwise inherit from the body.
-  .collapse-sample-slot {
-    flex-shrink: 0;
-    letter-spacing: normal;
-    padding: 8px 12px 8px 8px;
-    visibility: hidden;
-  }
-
-  .collapse-sample-slot-icon {
-    height: 24px;
-    width: 24px;
-  }
-
   .collapse-stage-row {
     display: flex;
     flex: 1;

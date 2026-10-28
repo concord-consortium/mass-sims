@@ -93,6 +93,33 @@ describe("TrialsPanel — enriched aria-label and card body", () => {
     ]);
   });
 
+  it("counts the samples in the label, and enables the reset with the first sample", () => {
+    const store = createRootStore();
+    const { getByRole } = renderPanel(store);
+    const reset = getByRole("button", { name: "Reset trial A" });
+    expect(reset).toHaveAttribute("aria-disabled", "true");
+    act(() => {
+      store.takeSample();
+    });
+    expect(getByRole("option", { name: /^Trial A/ })).toHaveAttribute(
+      "aria-label",
+      "Trial A. Limestone, Dry, under 10 rainy days a year. Sampled 1 time",
+    );
+    expect(reset).not.toHaveAttribute("aria-disabled");
+    act(() => {
+      store.takeSample();
+      store.takeSample();
+    });
+    expect(getByRole("option", { name: /^Trial A/ })).toHaveAttribute(
+      "aria-label",
+      "Trial A. Limestone, Dry, under 10 rainy days a year. Sampled 3 times",
+    );
+    expect(getByRole("option", { name: /^Trial B/ })).toHaveAttribute(
+      "aria-label",
+      "Trial B. Limestone, Wet, more than 50 rainy days a year. Not yet sampled",
+    );
+  });
+
   it("shows the rock type, moisture, and moisture note on the card (hidden from screen readers)", () => {
     const { getAllByRole } = renderPanel(createRootStore());
     const body = getAllByRole("option")[3].querySelector(".trial-card-body");

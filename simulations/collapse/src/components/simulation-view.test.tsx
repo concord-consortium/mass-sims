@@ -30,9 +30,8 @@ describe("SimulationView", () => {
     expect(getByRole("button", { name: "Later, fewer years before collapse" })).toBeInTheDocument();
   });
 
-  it("holds Sample's place with a slot that is not a button and is hidden from assistive tech", () => {
-    const { container, queryByRole } = renderView();
-    expect(container.querySelector(".collapse-sample-slot")).toHaveAttribute("aria-hidden", "true");
-    expect(queryByRole("button", { name: /Sample/ })).toBeNull();
+  it("renders a Sample button", () => {
+    const { getByRole } = renderView();
+    expect(getByRole("button", { name: "Sample" })).toBeInTheDocument();
   });
 });
