@@ -137,39 +137,31 @@ testable without observing outlines: one keypress must flip the `role="switch"` 
 
 ---
 
-## Custom slider (Collapse timeline)
+## Data tables — a native table, not a grid
 
-The Collapse timeline's flag is a hand-rolled **`role="slider"`**, not the shared `<Slider>`: its
-values sit at non-linear positions measured from the label widths, which react-aria's linear thumb
-can't express.
+Use a native `<table>` for a table of results, even when its rows can be selected or deleted. The
+`role="grid"` pattern pays off only when cells are interactive or tabbing every row would be too
+slow; otherwise it adds keys a student has to discover. So:
 
-- **Keys (the APG slider keys):** ArrowRight / ArrowDown step one value later, ArrowLeft / ArrowUp one
-  earlier, Home jumps to 200,000 and End to 0. There are only sixteen values, so there is no PageUp /
-  PageDown. The name is the fixed `"Years before collapse"`; `aria-valuetext` reads
-  `"<n> years before collapse"`.
-- **Left / Right and Home / End run opposite to APG.** `aria-valuenow` is the number of years before
-  collapse, so ArrowRight and End make it smaller, and Home goes to `aria-valuemax`. APG expects
-  Right to increase the value and Home to go to the minimum. (Up / Down match APG: Up makes the
-  number larger.) This keeps Left / Right matching the screen, where Right moves the flag toward the
-  collapse, but anything that judges direction from `aria-valuenow` and its min and max reads Right as
-  a decrease.
-- **The landmarks are a readable list, separate from the value.** The dated stops are an `<ol>` named
-  `"Timeline landmarks"`, one `<li>` per stop in order, with the icons and dots `aria-hidden`. Two
-  items get visually-hidden context: the 0 stop adds "(the collapse)" and the end marker reads
-  "current year <year>". The list is not focusable; the slider is the one tab stop.
-- **Pressing the flag never changes the value.** A press on the flag keeps the pointer's offset from
-  the handle, so the value moves only once the handle is dragged to another value. A press anywhere
-  else on the timeline (a landmark's icon, dot, or label, or the rail between them) snaps to the
-  nearest value. Either press focuses the flag, so the arrow keys work at once.
-- **No focus ring after a pointer press.** Chrome shows `:focus-visible` when a press focuses the
-  flag, so a `no-ring` class hides the outline after a press. Any other focus, a blur, or a key
-  brings it back.
-- **Narration:** the slider does not announce; `aria-valuetext` is how a slider reports its value. The
-  stepper's Earlier / Later arrows do announce the new value through the shared `<Announcer>`, since
-  their names say what they do, not where they landed. The stepper's number is `aria-hidden`, so the
-  value is not read a third time.
-- The arrows are shared `<Button>`s, so at either end they are `aria-disabled` and stay focusable (see
-  the disabled-control split above).
+- Rows that can be selected are tab stops with an `aria-label` naming their values, and the
+  selected row carries **`aria-current="true"`**, not `aria-selected` (which only means something
+  in a grid, listbox, or tree). A per-row action (delete) is its own button and tab stop.
+- Sort controls are `<button>`s inside their `<th scope="col">`, with `aria-sort` on the `th` (the
+  APG sortable-table pattern). Keep the header in the same table as the rows; don't split it into
+  a separate table to pin it, which detaches the buttons from the headers they sort.
+- Arrow keys may be added as a fast path on top of Tab, never in place of it. When they move focus
+  with `.focus()`, draw the ring from a class set only on keyboard input: `:focus-visible` doesn't
+  match programmatic focus, and `:focus` also matches a click.
+
+---
+
+## Sim-specific controls
+
+A control that only one sim has is documented in that sim's own `ACCESSIBILITY.md`, next to its
+`LOGGED-EVENTS.md`:
+
+- **Collapse** — [simulations/collapse/ACCESSIBILITY.md](../simulations/collapse/ACCESSIBILITY.md):
+  the timeline's custom slider and the data table.
 
 ---
 

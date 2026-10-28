@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 import { CollapsePage } from "../../pages/collapse-page";
-import { TRIAL_LETTERS } from "../../testdata/collapse-testdata";
+import { roofAt, TRIAL_CONDITIONS, TRIAL_LETTERS } from "../../testdata/collapse-testdata";
 
 // Runs once per target width (1044 / 1024 / 989 / 767).
 
@@ -50,11 +50,11 @@ test("Trial selector: exactly A–D are seeded, A selected, in a vertical listbo
 });
 
 test("Trial reset: a click on the selected card's reset reaches the button", async () => {
-  // Checks that the reset is on top of the lifted selected card. The reset is aria-disabled until the
-  // trial has output, which nothing can produce yet, so `force` skips Playwright's enabled check.
-  // The mouse still lands at the button's position, so a card painted over it would take the focus.
+  // Checks that the reset is on top of the lifted selected card: a card painted over it would take
+  // the click and the focus.
   await expect(collapse.trialOption("A")).toHaveAttribute("aria-selected", "true");
-  await collapse.trialResetButton("A").click({ force: true });
+  await collapse.sampleButton.click();
+  await collapse.trialResetButton("A").click();
   await expect(collapse.trialResetButton("A")).toBeFocused();
 });
 
@@ -86,4 +86,60 @@ test("Timeline: starts at 200,000; the slider and stepper change one shared valu
   await page.keyboard.press("End");
   await expect(collapse.timelineSlider).toHaveAttribute("aria-valuenow", "0");
   await expect(collapse.laterButton).toHaveAttribute("aria-disabled", "true");
+});
+
+test("Data table: Sample adds a selected row with the model's numbers", async () => {
+  await expect(collapse.promptPill).toBeVisible();
+  await expect(collapse.averageRow).toHaveCount(0);
+
+  await collapse.sampleButton.click();
+  await expect(collapse.tableRows).toHaveCount(1);
+  const roof = roofAt(TRIAL_CONDITIONS.A, 200000).toLocaleString("en-US");
+  await expect(collapse.sampleRow(200000)).toHaveAttribute(
+    "aria-label",
+    new RegExp(`rock above cave ${roof} mm$`),
+  );
+  await expect(collapse.sampleRow(200000)).toHaveAttribute("aria-current", "true");
+  await expect(collapse.promptPill).toHaveCount(0);
+  await expect(collapse.averageRow).toBeVisible();
+  await expect(collapse.crossSectionCaption).toHaveText("200,000 yr before collapse");
+  await expect(collapse.trialOption("A")).toHaveAttribute("aria-label", /Sampled 1 time$/);
+  await collapse.assertReloadWarning(true);
+});
+
+test("Data table: sorts, deletes, and resets", async () => {
+  await collapse.sampleAt(200000);
+  await collapse.sampleAt(0);
+  await expect(collapse.tableRows).toHaveCount(2);
+
+  await collapse.sortButton("Erosion rate").click();
+  await expect(collapse.sortHeader("Erosion rate")).toHaveAttribute("aria-sort", "ascending");
+  await collapse.sortButton("Years before collapse").click();
+  await expect(collapse.sortHeader("Years before collapse")).toHaveAttribute(
+    "aria-sort",
+    "ascending",
+  );
+  await expect(collapse.tableRows.first()).toHaveAttribute("aria-label", /^Sample at 0 years/);
+
+  await collapse.deleteButton(0).click();
+  await expect(collapse.tableRows).toHaveCount(1);
+  await collapse.deleteButton(200000).click();
+  await expect(collapse.tableRows).toHaveCount(0);
+  await expect(collapse.promptPill).toBeVisible();
+  await expect(collapse.averageRow).toHaveCount(0);
+
+  await collapse.sampleButton.click();
+  await expect(collapse.trialResetButton("A")).not.toHaveAttribute("aria-disabled");
+  await collapse.trialResetButton("A").click();
+  await expect(collapse.tableRows).toHaveCount(0);
+  await expect(collapse.trialResetButton("A")).toHaveAttribute("aria-disabled", "true");
+});
+
+test("Data table: each trial has its own table", async () => {
+  await collapse.sampleButton.click();
+  await collapse.selectTrial("B");
+  await expect(collapse.tableRows).toHaveCount(0);
+  await expect(collapse.promptPill).toBeVisible();
+  await collapse.selectTrial("A");
+  await expect(collapse.tableRows).toHaveCount(1);
 });

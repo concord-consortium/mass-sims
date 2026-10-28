@@ -11,8 +11,8 @@ describe("fillerHeight", () => {
     expect(fillerHeight(254, 254, 122)).toBe(122);
   });
 
-  it("is 0 once the rows fill the scroller", () => {
-    expect(fillerHeight(254, 420, 0)).toBe(0);
-    expect(fillerHeight(254, 420 + 40, 40)).toBe(0);
+  it("is 1px, never less, once the rows fill the scroller", () => {
+    expect(fillerHeight(254, 420, 0)).toBe(1);
+    expect(fillerHeight(254, 420 + 40, 40)).toBe(1);
   });
 });
