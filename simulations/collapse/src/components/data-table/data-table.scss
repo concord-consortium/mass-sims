@@ -1,0 +1,439 @@
+@use "@concord-consortium/mass-sims-shared/styles/tokens" as tokens;
+@use "../../theme" as theme;
+
+// The header band: 8px padding + two 18px lines + 8px padding.
+$head-pad: 8px;
+// While the prompt pill is showing, the band grows 18px so its rule meets the pill's middle:
+// 8 + 36 + 25.5 on the button and 0.5 on the `th` = 70. The button stops half a pixel short of the
+// rule, so its hover fill does not run over it.
+$head-pad-prompt: 25.5px;
+$head-height-prompt: 70px;
+// The rows scroll under the sticky header and over the sticky average row.
+$sticky-z: 2;
+
+// The white box with the green border. Takes whatever the Cross Section box does not.
+.collapse-stage {
+  background: tokens.$color-surface;
+  border: tokens.$border-strong;
+  border-color: theme.$border;
+  border-radius: tokens.$radius-md;
+  display: flex;
+  flex: 1 1 0;
+  flex-direction: column;
+  min-height: 0;
+  min-width: 0;
+  overflow: hidden;
+  // For the prompt pill.
+  position: relative;
+}
+
+// The only scroller. The stable gutter keeps the header, rows, and average row the same width
+// whether or not a scrollbar is showing, and keeps the scrollbar off the delete buttons.
+.collapse-table-wrap {
+  flex: 1;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  scrollbar-gutter: stable;
+}
+
+.collapse-table {
+  border-collapse: collapse;
+  font-family: tokens.$font-family-condensed;
+  font-size: tokens.$font-size-base;
+  letter-spacing: 0.32px;
+  table-layout: fixed;
+  width: 100%;
+
+  th {
+    color: theme.$heading;
+    font-weight: 500;
+    line-height: 18px;
+    padding: $head-pad 10px;
+    text-align: center;
+    vertical-align: middle;
+  }
+
+  td {
+    border-bottom: 1px solid theme.$table-divider;
+    color: tokens.$color-text;
+    font-weight: 400;
+    line-height: 18px;
+    padding: 7px 10px;
+    text-align: center;
+  }
+
+  // Fixed ends; the three measurement columns share the rest equally.
+  // 51 = 5px left (clear of the selected row's marker) + the 44px thumbnail + 2px.
+  th:first-child,
+  td:first-child {
+    width: 51px;
+  }
+
+  th:last-child,
+  td:last-child {
+    width: 48px;
+  }
+}
+
+// ---- Header ----
+
+// Sticky on the cells, not on the `thead`: Safari is more reliable that way. Opaque, so the rows
+// do not show through. The rule is an inset shadow because under `border-collapse` a border does
+// not travel with a sticky cell.
+.collapse-thead th {
+  background: theme.$surface;
+  box-shadow: inset 0 -1.5px 0 theme.$border;
+  // Half the table's tracking: the headings are the widest text and run out of room first.
+  letter-spacing: 0.16px;
+  position: sticky;
+  top: 0;
+  z-index: $sticky-z;
+
+  // The button owns the padding, so the whole cell is the sort target.
+  &:has(.collapse-th-sort) {
+    padding: 0;
+  }
+
+  // Each sticky cell paints as its own layer, in this order. At narrow widths a heading reaches
+  // past its column (see `useHeadingSpacing`): the middle one both ways, the outer two outward
+  // only. So the middle cell goes on top and each outer one above the end cell beside it, or the
+  // neighbour's opaque fill would cover the heading and take its clicks.
+  &:nth-child(2),
+  &:nth-child(4) {
+    z-index: $sticky-z + 1;
+  }
+
+  &:nth-child(3) {
+    z-index: $sticky-z + 2;
+  }
+
+  // A lit band is drawn over its neighbours.
+  &:has(.collapse-th-sort:is(:hover, :focus-visible, :active)) {
+    z-index: $sticky-z + 3;
+  }
+}
+
+.collapse-thead.has-prompt th {
+  // 2px while the pill sits on it, to match the pill's own border.
+  box-shadow: inset 0 -2px 0 theme.$border;
+  padding-bottom: 0.5px;
+
+  .collapse-th-sort {
+    padding-bottom: $head-pad-prompt;
+  }
+}
+
+// Exactly the two lines the `<br>` defines, never rewrapped. Overflowing is fine: see
+// `useHeadingSpacing`.
+.collapse-th-lines,
+.collapse-th-unit {
+  white-space: nowrap;
+}
+
+.collapse-th-sort {
+  // Set by `useHeadingSpacing`. The shift moves the contents, never the button, which stays on its
+  // own column; the grows widen the button's band past its column.
+  --head-shift: 0px;
+  --grow-l: 0px;
+  --grow-r: 0px;
+
+  align-items: center;
+  background: none;
+  border: none;
+  box-sizing: border-box;
+  color: inherit;
+  cursor: pointer;
+  display: flex;
+  font: inherit;
+  gap: 5px;
+  height: 100%;
+  justify-content: center;
+  letter-spacing: inherit;
+  margin: 0 calc(-1 * var(--grow-r)) 0 calc(-1 * var(--grow-l));
+  padding: $head-pad 10px;
+  // So the lit band can be lifted above the next column.
+  position: relative;
+  text-align: center;
+  width: calc(100% + var(--grow-l) + var(--grow-r));
+
+  > * {
+    transform: translateX(var(--head-shift));
+  }
+
+  &:focus,
+  &:focus-visible {
+    outline: none;
+  }
+
+  // The band: 2px white edges down both sides, so it reads as a column. The green rule is listed
+  // first, so the white does not nick it at each side.
+  &:hover,
+  &:focus-visible,
+  &:active {
+    box-shadow:
+      inset 0 -1.5px 0 theme.$border,
+      inset 0 2px 0 tokens.$color-surface,
+      inset 2px 0 0 tokens.$color-surface,
+      inset -2px 0 0 tokens.$color-surface;
+    z-index: 1;
+  }
+
+  &:hover,
+  &:focus-visible {
+    background: theme.$hover;
+  }
+
+  &:active {
+    background: theme.$active;
+  }
+
+  // A ring that traces the band, 2px white outside 2px blue, as the rows have. A pseudo-element,
+  // because it is half a pixel shorter at the bottom (clear of the 1.5px rule) and an outline's
+  // offset is the same on all sides.
+  &:focus-visible::after {
+    border: 2px solid tokens.$color-focus-outline;
+    box-shadow: 0 0 0 2px tokens.$color-surface;
+    content: "";
+    inset: 2px 2px 3.5px;
+    pointer-events: none;
+    position: absolute;
+  }
+}
+
+// `overflow: visible`: the sorted triangle is scaled 1.3, which overhangs its 14px box.
+.collapse-sort-ico {
+  flex: 0 0 auto;
+  overflow: visible;
+
+  // 0.6, not lighter: with nothing sorted the chevrons are the only sign the headings sort, and
+  // 0.6 is the first step that clears 3:1 on the band (3.34) and on the row hover fill (3.23).
+  .sort-up,
+  .sort-down {
+    opacity: 0.6;
+  }
+}
+
+// The sorted direction goes solid and larger, growing away from the gap between the two (from its
+// flat base), so the pair keeps its spacing.
+th[data-sort-dir="ascending"] .sort-up,
+th[data-sort-dir="descending"] .sort-down {
+  opacity: 1;
+  transform: scale(1.3);
+  transform-box: fill-box;
+}
+
+th[data-sort-dir="ascending"] .sort-up {
+  transform-origin: bottom;
+}
+
+th[data-sort-dir="descending"] .sort-down {
+  transform-origin: top;
+}
+
+th[data-sort-dir="ascending"] .sort-down,
+th[data-sort-dir="descending"] .sort-up {
+  opacity: 0.35;
+}
+
+// The heading's hover / press reaches down its column: the cells it is about to reorder. These
+// outrank the selected row's fill, so the column reads as one band.
+@each $n in 2, 3, 4 {
+  .collapse-table:has(thead th:nth-child(#{$n}) .collapse-th-sort:is(:hover, :focus-visible))
+    .collapse-rows
+    td:nth-child(#{$n}) {
+    background: theme.$hover;
+    box-shadow:
+      inset 2px 0 0 tokens.$color-surface,
+      inset -2px 0 0 tokens.$color-surface;
+  }
+
+  .collapse-table:has(thead th:nth-child(#{$n}) .collapse-th-sort:active) .collapse-rows td:nth-child(#{$n}) {
+    background: theme.$active;
+    box-shadow:
+      inset 2px 0 0 tokens.$color-surface,
+      inset -2px 0 0 tokens.$color-surface;
+  }
+}
+
+// ---- Prompt ----
+
+// A zero-height rail on the header's rule, so the pill is centered on the line: 18px of its 36px
+// above, 18px below, as Nor'easter's "Click Run…" pill sits on its band.
+.collapse-head-prompt {
+  display: flex;
+  height: 0;
+  justify-content: center;
+  left: 0;
+  position: absolute;
+  right: 0;
+  top: $head-height-prompt;
+  // Above every header cell, a lit one included.
+  z-index: $sticky-z + 4;
+}
+
+.collapse-prompt-pill {
+  background: theme.$surface;
+  border: tokens.$border-strong;
+  border-color: theme.$border;
+  border-radius: tokens.$radius-pill;
+  color: tokens.$color-text;
+  font-family: tokens.$font-family-base;
+  font-size: tokens.$font-size-base;
+  line-height: tokens.$line-height-sm;
+  padding: 6px 12px;
+  position: absolute;
+  text-align: center;
+  top: -18px;
+  white-space: nowrap;
+}
+
+// ---- Rows ----
+
+// An explicit 48px, so the 1px divider leaves an even 47px band. Table rows treat height as a
+// minimum. `position: relative` anchors the keyboard focus ring.
+.collapse-rows {
+  tr {
+    cursor: pointer;
+    height: 48px;
+    position: relative;
+  }
+
+  // The last row keeps its border box and only loses the ink, so its content lines up with the
+  // other rows'.
+  tr:last-child td {
+    border-bottom-color: transparent;
+  }
+
+  tr:hover td {
+    background: theme.$hover;
+  }
+
+  tr.is-selected td {
+    background: theme.$trial-selected-bg;
+    font-weight: 500;
+  }
+
+  // The marker down the left edge. An inset shadow, not a border: under `table-layout: fixed` a
+  // border would take 3px from the picture cell and move the image on every selection.
+  tr.is-selected td:first-child {
+    box-shadow: inset 3px 0 0 theme.$border;
+  }
+}
+
+// Pinned 2px from the top rather than centered: 2 + 43 + 2 + 1px divider = the 48px row, with
+// equal air above and below. 5px left = the selected row's 3px marker plus 2px clear.
+.collapse-table .collapse-cell-pic {
+  padding: 2px 0 0 5px;
+  vertical-align: top;
+}
+
+// No side padding: the 44px button fills the 48px column. Vertical padding stays at 7px so the
+// row height is unchanged.
+.collapse-table .collapse-cell-del {
+  padding: 7px 0;
+}
+
+// The sample where the roof gave way: "collapsed" over "(2,800)". A 16px line height, not 18, so
+// the two lines fit the 32px content box and the row stays 48px. `nowrap` stops the narrowest
+// column breaking "(2,800)" onto a third line.
+.collapse-table .collapse-cell-failed {
+  line-height: 16px;
+  white-space: nowrap;
+}
+
+// The stand-in for the cave picture, until MAS-59. `block`, not `inline-block`, so it does not
+// sit on the text baseline and push the row to 49px.
+.collapse-pic-standin {
+  background: theme.$heading;
+  border-radius: 3px;
+  display: block;
+  height: 43px;
+  width: 44px;
+}
+
+// The real drawing, when there is one: the same 44 × 43 footprint (`border-box`), cropped left and
+// right to fill the cell.
+.collapse-pic-img {
+  border: 1px solid theme.$thumbnail-border;
+  border-radius: 3px;
+  box-sizing: border-box;
+  display: block;
+  height: 43px;
+  object-fit: cover;
+  width: 44px;
+}
+
+// A 44 × 44 target. The −6px margins let it exceed the cell's content box without making the row
+// taller.
+.collapse-row-del {
+  align-items: center;
+  background: none;
+  border: none;
+  border-radius: tokens.$radius-md;
+  color: theme.$heading;
+  cursor: pointer;
+  display: inline-flex;
+  height: tokens.$touch-target-min;
+  justify-content: center;
+  margin: -6px 0;
+  padding: 0;
+  width: tokens.$touch-target-min;
+
+  svg {
+    display: block;
+    height: 24px;
+    width: 24px;
+  }
+
+  &:hover,
+  &:focus-visible {
+    background: theme.$delete-hover;
+  }
+
+  &:active {
+    background: theme.$active;
+  }
+
+  &:focus {
+    outline: none;
+  }
+
+  &:focus-visible {
+    outline: tokens.$focus-outline;
+    outline-offset: -2px;
+  }
+}
+
+// ---- Average row ----
+
+// The spare height, set by `useFillerHeight`.
+.collapse-table .collapse-filler td {
+  border: none;
+  padding: 0;
+}
+
+// A second header: the headings' weight and color, with its rule above it. Sticky, so it stays
+// pinned under the rows.
+.collapse-table .collapse-foot {
+  th,
+  td {
+    background: tokens.$color-surface;
+    border-bottom: none;
+    bottom: 0;
+    box-shadow: inset 0 1.5px 0 theme.$border;
+    color: theme.$heading;
+    font-weight: 500;
+    line-height: 18px;
+    padding: 7px 10px;
+    position: sticky;
+    text-align: center;
+    vertical-align: middle;
+    z-index: $sticky-z;
+  }
+
+  // Against the first column it describes, not floating in the years column.
+  th {
+    text-align: right;
+  }
+}

@@ -53,15 +53,6 @@ $stage-gap: 10px;
     min-height: 0;
   }
 
-  .collapse-table-box {
-    background: tokens.$color-surface;
-    border: tokens.$border-strong;
-    border-color: theme.$border;
-    border-radius: tokens.$radius-md;
-    flex: 1 1 0;
-    min-width: 0;
-  }
-
   .section.collapse-cross-section {
     background: tokens.$color-surface;
     border-color: theme.$border;
@@ -94,6 +85,26 @@ $stage-gap: 10px;
     .collapse-placeholder {
       line-height: tokens.$line-height-sm;
     }
+
+    // Which moment the drawing shows. 8px below the chip, which overhangs the box by 17px: top 25.
+    // Set like the timeline's year labels, with half the tracking: it is the longest line in the
+    // narrowest box and may not wrap. The 6px gutters leave the widest caption room at 767px.
+    .collapse-pic-caption {
+      color: tokens.$color-text;
+      font-family: tokens.$font-family-condensed;
+      font-size: tokens.$font-size-base;
+      font-weight: 500;
+      left: 6px;
+      letter-spacing: 0.16px;
+      line-height: 18px;
+      margin: 0;
+      pointer-events: none;
+      position: absolute;
+      right: 6px;
+      text-align: center;
+      top: 25px;
+      white-space: nowrap;
+    }
   }
 
   .collapse-placeholder {
@@ -101,9 +112,5 @@ $stage-gap: 10px;
     font-size: tokens.$font-size-base;
     margin: 0;
     text-align: center;
-  }
-
-  .collapse-table-box .collapse-placeholder {
-    padding-top: tokens.$space-4;
   }
 }
