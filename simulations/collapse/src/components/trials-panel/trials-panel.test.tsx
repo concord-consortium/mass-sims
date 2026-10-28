@@ -11,20 +11,12 @@ vi.mock("@concord-consortium/mass-sims-shared", async (importOriginal) => ({
   useLogEvent: () => logEvent,
 }));
 
-import type { SimOutput, SimTransient } from "../../model/types";
 import {
   createRootStore,
   type RootStoreInstance,
   RootStoreProvider,
 } from "../../stores/root-store";
 import { TrialsPanel } from "./trials-panel";
-
-const OUTPUT: SimOutput = { avgDistance: 12.3, stdDevDistance: 2.1, avgDistanceSeries: [1, 2, 3] };
-const TRANSIENT: SimTransient = {
-  frame: 200,
-  walkers: [{ x: 1, y: 1 }],
-  avgDistanceSeries: [1, 2, 3],
-};
 
 function renderPanel(store: RootStoreInstance) {
   const wrapper = ({ children }: { children: ReactNode }) => (
@@ -66,7 +58,7 @@ describe("TrialsPanel — listbox structure", () => {
 
   it("applies roving tabindex: only the selected option is tabbable, then its reset", () => {
     const store = createRootStore();
-    store.activeTrial.setOutput(OUTPUT, TRANSIENT); // the reset is enabled once A has output
+    store.takeSample(); // the reset is enabled once A has a sample
     const { getAllByRole, getByRole } = renderPanel(store);
     const options = getAllByRole("option");
     expect(options[0]).toHaveAttribute("tabindex", "0");
@@ -81,7 +73,9 @@ describe("TrialsPanel — listbox structure", () => {
 describe("TrialsPanel — narration", () => {
   it("announces 'Trial A reset.' when the panel reset is pressed", () => {
     const store = createRootStore();
-    act(() => store.activeTrial.setOutput(OUTPUT, TRANSIENT));
+    act(() => {
+      store.takeSample();
+    });
     const { getByRole, region } = renderPanel(store);
     fireEvent.click(getByRole("button", { name: "Reset trial A" }));
     expect(region).toHaveTextContent("Trial A reset.");
@@ -126,7 +120,7 @@ describe("TrialsPanel — trial-list logging", () => {
 
   it("logs trial_reset for the selected trial via the panel reset button", () => {
     const store = createRootStore();
-    store.activeTrial.setOutput(OUTPUT, TRANSIENT); // give A progress so reset is enabled
+    store.takeSample(); // give A progress so reset is enabled
     const { getByRole } = renderPanel(store);
     logEvent.mockReset();
     fireEvent.click(getByRole("button", { name: "Reset trial A" }));

@@ -2,15 +2,10 @@ import { renderHook } from "@testing-library/react";
 import { getSnapshot } from "mobx-state-tree";
 import { createElement } from "react";
 import { describe, expect, it } from "vitest";
-import type { SimOutput, SimTransient } from "../model/types";
+import { roofAt } from "../model/erosion";
+import { TIMELINE_VALUES } from "../model/timeline";
+import { TRIAL_CONDITIONS } from "../trial-conditions";
 import { createRootStore, RootStoreProvider, useStores } from "./root-store";
-
-const OUTPUT: SimOutput = { avgDistance: 12.3, stdDevDistance: 2.1, avgDistanceSeries: [1, 2, 3] };
-const TRANSIENT: SimTransient = {
-  frame: 200,
-  walkers: [{ x: 1, y: 1 }],
-  avgDistanceSeries: [1, 2, 3],
-};
 
 /**
  * A deterministic RNG (LCG). Unlike the shared `seededRandom`, which caches one stateful PRNG per
@@ -29,22 +24,62 @@ describe("createRootStore", () => {
     const store = createRootStore({ rng: makeRng(1) });
     expect(store.trialLetters).toEqual(["A", "B", "C", "D"]);
     expect(store.ui.selectedTrialLetter).toBe("A");
-    for (const letter of store.trialLetters) expect(store.trials.get(letter)?.output).toBeNull();
+    for (const letter of store.trialLetters) {
+      expect(store.trials.get(letter)?.hasSamples).toBe(false);
+    }
   });
 
-  it("gives each seeded trial a distinct seed", () => {
-    const store = createRootStore({ rng: makeRng(2) });
-    const seeds = store.trialLetters.map((letter) => store.trials.get(letter)?.input.seed);
-    expect(new Set(seeds).size).toBe(4);
-  });
-
-  it("RNG injection is the determinism seam: same seeded PRNG → same trial seed", () => {
+  it("RNG injection is the determinism seam: same seeded PRNG → same sampled rates", () => {
     const a = createRootStore({ rng: makeRng(7) });
     const b = createRootStore({ rng: makeRng(7) });
-    expect(a.activeTrial.input.seed).toBe(b.activeTrial.input.seed);
+    expect(a.takeSample().rate).toBe(b.takeSample().rate);
+  });
+});
 
-    const c = createRootStore({ rng: makeRng(99) });
-    expect(c.activeTrial.input.seed).not.toBe(a.activeTrial.input.seed);
+describe("RootStore.takeSample", () => {
+  it("adds a sample to the selected trial only, at the timeline's year, and selects it", () => {
+    const store = createRootStore({ rng: makeRng(11) });
+    store.ui.selectTrial("B");
+    store.ui.setTimelineIndex(TIMELINE_VALUES.indexOf(0));
+    const sample = store.takeSample();
+    expect(sample.years).toBe(0);
+    expect(sample.roof).toBe(roofAt(TRIAL_CONDITIONS.B, 0));
+    expect(store.trials.get("B")?.samples).toEqual([sample]);
+    for (const letter of ["A", "C", "D"]) {
+      expect(store.trials.get(letter)?.hasSamples).toBe(false);
+    }
+    expect(store.ui.selectedSampleId("B")).toBe(sample.id);
+    expect(store.selectedSample).toEqual(sample);
+  });
+
+  it("gives two samples of the same year the same roof and different rates", () => {
+    const store = createRootStore({ rng: makeRng(12) });
+    const first = store.takeSample();
+    const second = store.takeSample();
+    expect(first.years).toBe(second.years);
+    expect(first.roof).toBe(second.roof);
+    expect(first.rate).not.toBe(second.rate);
+    expect(store.ui.selectedSampleId("A")).toBe(second.id);
+  });
+});
+
+describe("RootStore.deleteSample", () => {
+  it("deletes the row and clears the selection when it was the selected row", () => {
+    const store = createRootStore({ rng: makeRng(13) });
+    const first = store.takeSample();
+    const second = store.takeSample();
+    store.deleteSample("A", second.id);
+    expect(store.activeTrial.samples).toEqual([first]);
+    expect(store.ui.selectedSampleId("A")).toBeNull();
+    expect(store.selectedSample).toBeUndefined();
+  });
+
+  it("keeps the selection when another row is deleted", () => {
+    const store = createRootStore({ rng: makeRng(14) });
+    const first = store.takeSample();
+    const second = store.takeSample();
+    store.deleteSample("A", first.id);
+    expect(store.ui.selectedSampleId("A")).toBe(second.id);
   });
 });
 
@@ -55,23 +90,23 @@ describe("RootStore.canAddTrial", () => {
 });
 
 describe("RootStore.resetTrial (sim-local)", () => {
-  it("clears the active trial's output but keeps its input/seed", () => {
+  it("clears the active trial's rows and its selection", () => {
     const store = createRootStore({ rng: makeRng(4) });
-    const seedBefore = store.activeTrial.input.seed;
-    store.activeTrial.setOutput(OUTPUT, TRANSIENT);
+    store.takeSample();
     store.resetTrial();
-    expect(store.activeTrial.output).toBeNull();
-    expect(store.activeTrial.finalTransient).toBeNull();
-    expect(store.activeTrial.input.seed).toBe(seedBefore);
+    expect(store.activeTrial.hasSamples).toBe(false);
+    expect(store.ui.selectedSampleId("A")).toBeNull();
   });
 
   it("resets the named trial without touching others", () => {
     const store = createRootStore({ rng: makeRng(5) });
-    store.trials.get("A")?.setOutput(OUTPUT, TRANSIENT);
-    store.trials.get("B")?.setOutput(OUTPUT, TRANSIENT);
+    store.takeSample();
+    store.ui.selectTrial("B");
+    store.takeSample();
     store.resetTrial("B");
-    expect(store.trials.get("B")?.output).toBeNull();
-    expect(store.trials.get("A")?.output).toEqual(OUTPUT);
+    expect(store.trials.get("B")?.hasSamples).toBe(false);
+    expect(store.trials.get("A")?.sampleCount).toBe(1);
+    expect(store.ui.selectedSampleId("A")).toBe(1);
   });
 
   it("is a no-op for an unknown letter", () => {
@@ -88,10 +123,10 @@ describe("RootStore views consume the shared logic", () => {
     expect(store.activeTrial).toBe(store.trials.get("A"));
   });
 
-  it("hasAnyProgress reflects any trial having output, not just the active one", () => {
+  it("hasAnyProgress reflects any trial having samples, not just the active one", () => {
     const store = createRootStore({ rng: makeRng(8) });
     expect(store.hasAnyProgress).toBe(false);
-    store.trials.get("B")?.setOutput(OUTPUT, TRANSIENT);
+    store.trials.get("B")?.addSample({ years: 0, rate: 30, roof: 2800 });
     expect(store.ui.selectedTrialLetter).toBe("A");
     expect(store.hasAnyProgress).toBe(true);
   });
