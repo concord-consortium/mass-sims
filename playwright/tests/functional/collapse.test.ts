@@ -188,7 +188,7 @@ test.describe("Data table", () => {
     page,
   }) => {
     await collapse.sampleButton.click();
-    // The label's and icon's outer edges, where a neighbouring column would take the press. Polled:
+    // The label's and icon's outer edges, where a neighboring column would take the press. Polled:
     // until the webfonts load, the headings have the fallback font's widths, and the spacing is
     // measured again once they land.
     const misses = () =>

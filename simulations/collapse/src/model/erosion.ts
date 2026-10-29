@@ -31,7 +31,7 @@ export const CAVE_ROOF_START = 8800;
 /**
  * The roof fails at or below this, in mm. It is forced by the other two numbers, not chosen: wet
  * limestone removes 30 / 1,000 × 200,000 = 6,000 mm over the run, and 8,800 − 6,000 = 2,800, so
- * only limestone + wet fails, and only at year 0. Roofs fail with metres still standing, which is
+ * only limestone + wet fails, and only at year 0. Roofs fail with meters still standing, which is
  * why the threshold is not zero.
  */
 export const CAVE_ROOF_FAIL = 2800;

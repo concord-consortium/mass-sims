@@ -65,7 +65,7 @@ describe("spaceHeadings", () => {
         if (i === 0) expect(bands[0].l).toBeLessThanOrEqual(boxes[0].l + 1e-9);
         if (i === 2) expect(bands[2].r).toBeGreaterThanOrEqual(boxes[2].r - 1e-9);
       });
-      // Neighbours meet at one shared boundary.
+      // Neighbors meet at one shared boundary.
       expect(bands[0].r).toBeCloseTo(bands[1].l, 9);
       expect(bands[1].r).toBeCloseTo(bands[2].l, 9);
     }

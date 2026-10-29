@@ -101,7 +101,7 @@ $sticky-z: 2;
   // Each sticky cell paints as its own layer, in this order. At narrow widths a heading reaches
   // past its column (see `useHeadingSpacing`): the middle one both ways, the outer two outward
   // only. So the middle cell goes on top and each outer one above the end cell beside it, or the
-  // neighbour's opaque fill would cover the heading and take its clicks.
+  // neighbor's opaque fill would cover the heading and take its clicks.
   &:nth-child(2),
   &:nth-child(4) {
     z-index: $sticky-z + 1;
@@ -111,7 +111,7 @@ $sticky-z: 2;
     z-index: $sticky-z + 2;
   }
 
-  // A lit band is drawn over its neighbours.
+  // A lit band is drawn over its neighbors.
   &:has(.collapse-th-sort:is(:hover, :focus-visible, :active)) {
     z-index: $sticky-z + 3;
   }
