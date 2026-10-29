@@ -41,6 +41,9 @@ export const App = observer(function App() {
           trials: state.trials,
           ui: { selectedTrialLetter: state.selectedTrialLetter },
         });
+        // The selections are volatile, so `applySnapshot` keeps them, and a restored sample can
+        // share an id with one the student selected before the saved state arrived.
+        rootStore.ui.clearSampleSelections();
       }
     }
   }, [initMsg, rootStore]);

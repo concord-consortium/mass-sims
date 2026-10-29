@@ -86,10 +86,14 @@ describe("DataTable — empty", () => {
     expect(headers).toHaveLength(5);
     expect(headers[0]).toHaveTextContent("Cave");
     expect(headers[4]).toHaveTextContent("Delete row");
-    for (const name of ["Years before collapse", "Erosion rate", "Rock above cave"]) {
+    for (const name of [
+      "Years before collapse (yr)",
+      "Erosion rate (mm/1,000 yr)",
+      "Rock above cave (mm)",
+    ]) {
       expect(view.getByRole("button", { name })).toBeInTheDocument();
     }
-    expect(headers[2]).toHaveTextContent("Erosion rate(mm/1,000 yr)");
+    expect(headers[2]).toHaveTextContent("Erosion rate (mm/1,000 yr)");
   });
 });
 
@@ -156,7 +160,7 @@ describe("DataTable — sorting", () => {
     const { store, view } = setup();
     for (const years of [100000, 0, 200000]) sample(store, years);
     const header = () => view.getByRole("columnheader", { name: /Years before collapse/ });
-    const button = view.getByRole("button", { name: "Years before collapse" });
+    const button = view.getByRole("button", { name: "Years before collapse (yr)" });
     expect(header()).toHaveAttribute("aria-sort", "none");
 
     fireEvent.click(button);
@@ -178,7 +182,7 @@ describe("DataTable — sorting", () => {
   it("sorts by erosion rate", () => {
     const { store, view } = setup();
     const rates = [200000, 100000, 0].map((y) => sample(store, y).rate);
-    fireEvent.click(view.getByRole("button", { name: "Erosion rate" }));
+    fireEvent.click(view.getByRole("button", { name: "Erosion rate (mm/1,000 yr)" }));
     const shown = bodyRows(view).map((tr) => Number(tr.cells[2].textContent));
     expect(shown).toEqual([...rates].sort((x, y) => x - y).map(Math.round));
     expect(view.getByRole("columnheader", { name: /Erosion rate/ })).toHaveAttribute(
@@ -196,7 +200,7 @@ describe("DataTable — sorting", () => {
     for (const years of [100000, 0]) sample(store, years);
     const foot = () => view.container.querySelector("tfoot")?.textContent;
     const before = foot();
-    fireEvent.click(view.getByRole("button", { name: "Rock above cave" }));
+    fireEvent.click(view.getByRole("button", { name: "Rock above cave (mm)" }));
     expect(foot()).toBe(before);
   });
 });
@@ -236,7 +240,7 @@ describe("DataTable — deleting", () => {
     const a = sample(store, 100000);
     const b = sample(store, 0);
     const c = sample(store, 200000);
-    const years = view.getByRole("button", { name: "Years before collapse" });
+    const years = view.getByRole("button", { name: "Years before collapse (yr)" });
     fireEvent.click(years);
     fireEvent.click(years);
     expect(displayedYears(view)[0]).toBe("200,000");
@@ -280,7 +284,7 @@ describe("DataTable — trial switch", () => {
     expect(bodyRows(view)).toHaveLength(0);
     expect(view.container.querySelector(".collapse-prompt-pill")).toBeInTheDocument();
     const b1 = sample(store, 50000);
-    fireEvent.click(view.getByRole("button", { name: "Erosion rate" }));
+    fireEvent.click(view.getByRole("button", { name: "Erosion rate (mm/1,000 yr)" }));
     act(() => store.ui.selectTrial("A"));
     expect(displayedYears(view)).toHaveLength(2);
     expect(view.getByRole("columnheader", { name: /Erosion rate/ })).toHaveAttribute(
@@ -293,6 +297,15 @@ describe("DataTable — trial switch", () => {
     expect(view.container.querySelector("caption")).toHaveTextContent(
       "Samples for trial B: 1 row.",
     );
+  });
+
+  it("opens each trial's table at the top", () => {
+    const { store, view } = setup();
+    sample(store, 100000);
+    const scroller = view.container.querySelector(".collapse-table-wrap") as HTMLElement;
+    scroller.scrollTop = 120;
+    act(() => store.ui.selectTrial("B"));
+    expect(scroller.scrollTop).toBe(0);
   });
 
   it("never reuses a row element from the previous trial", () => {
@@ -404,7 +417,7 @@ describe("DataTable — keyboard", () => {
 
   it("ArrowUp from the first row goes to the heading the student came down through", () => {
     const { rows, view } = threeRows();
-    const rate = view.getByRole("button", { name: "Erosion rate" });
+    const rate = view.getByRole("button", { name: "Erosion rate (mm/1,000 yr)" });
     act(() => rate.focus());
     fireEvent.keyDown(rate, { key: "ArrowDown" });
     expect(document.activeElement).toBe(rows[0]);
@@ -417,15 +430,38 @@ describe("DataTable — keyboard", () => {
     act(() => rows[0].focus());
     fireEvent.keyDown(rows[0], { key: "ArrowUp" });
     expect(document.activeElement).toBe(
-      view.getByRole("button", { name: "Years before collapse" }),
+      view.getByRole("button", { name: "Years before collapse (yr)" }),
     );
+  });
+
+  it("a modified arrow key on a heading is left to the browser", () => {
+    const { rows, view } = threeRows();
+    const years = view.getByRole("button", { name: "Years before collapse (yr)" });
+    act(() => years.focus());
+    for (const key of ["ArrowRight", "ArrowDown"]) {
+      fireEvent.keyDown(years, { key, altKey: true });
+      expect(document.activeElement).toBe(years);
+    }
+    expect(fireEvent.keyDown(years, { key: "ArrowLeft", altKey: true })).toBe(true);
+    expect(rows[0]).not.toHaveClass("kb-focus");
+  });
+
+  it("a row reached from outside the rows keeps the scroll it has", () => {
+    const { rows, view } = threeRows();
+    const scroller = view.container.querySelector(".collapse-table-wrap") as HTMLElement;
+    act(() => rows[0].focus());
+    // Focus leaves for a heading, the student scrolls, then clicks a row.
+    act(() => view.getByRole("button", { name: "Years before collapse (yr)" }).focus());
+    scroller.scrollTop = 60;
+    act(() => rows[2].focus());
+    expect(scroller.scrollTop).toBe(60);
   });
 
   it("ArrowLeft and ArrowRight move between the headings", () => {
     const { view } = setup();
-    const years = view.getByRole("button", { name: "Years before collapse" });
-    const rate = view.getByRole("button", { name: "Erosion rate" });
-    const roof = view.getByRole("button", { name: "Rock above cave" });
+    const years = view.getByRole("button", { name: "Years before collapse (yr)" });
+    const rate = view.getByRole("button", { name: "Erosion rate (mm/1,000 yr)" });
+    const roof = view.getByRole("button", { name: "Rock above cave (mm)" });
     act(() => years.focus());
     fireEvent.keyDown(years, { key: "ArrowRight" });
     expect(document.activeElement).toBe(rate);
@@ -440,7 +476,7 @@ describe("DataTable — keyboard", () => {
   it("ArrowDown on a heading enters the rows at the top, not at the selected row", () => {
     const { rows, view } = threeRows();
     expect(rows[2]).toHaveAttribute("aria-current", "true");
-    const roof = view.getByRole("button", { name: "Rock above cave" });
+    const roof = view.getByRole("button", { name: "Rock above cave (mm)" });
     act(() => roof.focus());
     fireEvent.keyDown(roof, { key: "ArrowDown" });
     expect(document.activeElement).toBe(rows[0]);
@@ -449,7 +485,7 @@ describe("DataTable — keyboard", () => {
   it("focus survives a sort", () => {
     const { rows, view } = threeRows();
     act(() => rows[0].focus());
-    fireEvent.click(view.getByRole("button", { name: "Years before collapse" }));
+    fireEvent.click(view.getByRole("button", { name: "Years before collapse (yr)" }));
     expect(document.activeElement).toBe(rows[0]);
   });
 });
@@ -481,7 +517,7 @@ describe("DataTable — focus after a delete", () => {
     fireEvent.click(del);
     expect(bodyRows(view)).toHaveLength(0);
     expect(document.activeElement).toBe(
-      view.getByRole("button", { name: "Years before collapse" }),
+      view.getByRole("button", { name: "Years before collapse (yr)" }),
     );
     expect(document.activeElement).not.toBe(document.body);
   });

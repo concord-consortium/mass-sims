@@ -112,10 +112,13 @@ test("Data table: sorts, deletes, and resets", async () => {
   await collapse.sampleAt(0);
   await expect(collapse.tableRows).toHaveCount(2);
 
-  await collapse.sortButton("Erosion rate").click();
-  await expect(collapse.sortHeader("Erosion rate")).toHaveAttribute("aria-sort", "ascending");
-  await collapse.sortButton("Years before collapse").click();
-  await expect(collapse.sortHeader("Years before collapse")).toHaveAttribute(
+  await collapse.sortButton("Erosion rate (mm/1,000 yr)").click();
+  await expect(collapse.sortHeader("Erosion rate (mm/1,000 yr)")).toHaveAttribute(
+    "aria-sort",
+    "ascending",
+  );
+  await collapse.sortButton("Years before collapse (yr)").click();
+  await expect(collapse.sortHeader("Years before collapse (yr)")).toHaveAttribute(
     "aria-sort",
     "ascending",
   );

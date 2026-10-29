@@ -33,9 +33,9 @@ transports silently no-op when unavailable. Event names are snake_case; payloads
 
 | Event | Trigger | Parameters |
 | --- | --- | --- |
-| `sample_taken` | The **Sample** button is pressed | `{ trial, years, rate, roof, collapsed, sampleCount }` |
-| `sample_selected` | A table row is selected or deselected (click, Enter, or Space) | `{ trial, years, selected }` |
-| `sample_deleted` | A row's delete button is pressed | `{ trial, years, remaining }` |
+| `sample_taken` | The **Sample** button is pressed | `{ trial, id, years, rate, roof, collapsed, sampleCount }` |
+| `sample_selected` | A table row is selected or deselected (click, Enter, or Space) | `{ trial, id, years, selected }` |
+| `sample_deleted` | A row's delete button is pressed | `{ trial, id, years, remaining }` |
 | `table_sorted` | A column heading is pressed | `{ trial, key, direction }` |
 
 ## Notes
@@ -51,8 +51,10 @@ transports silently no-op when unavailable. Event names are snake_case; payloads
   `previous` the value before the press. It fires only when the value changes, so a press at
   either end, or a drag that ends on its starting value, logs nothing. The value is shared by all
   trials; `trial` is the one selected when it changed.
-- Samples have an internal id, but it is never logged. `years` (years before collapse) identifies
-  the row; the same year can be sampled more than once.
+- `id` identifies the sample within its trial: `trial` + `id` is unique, and the same pair appears
+  on the sample's `sample_taken`, `sample_selected`, and `sample_deleted` events. Ids count up from
+  1 in each trial and are never reused, even after a delete or a reset, so they can have gaps. The
+  same year can be sampled more than once; `id` tells those samples apart, `years` does not.
 - `sample_taken`: `rate` is the reported erosion rate in mm per 1,000 years, and `roof` is the rock
   left above the cave in mm. Both are logged unrounded; the table shows them rounded. `collapsed`
   is `true` when `roof` is at or below the 2,800 mm collapse level. `sampleCount` is the trial's

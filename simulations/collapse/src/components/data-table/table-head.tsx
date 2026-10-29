@@ -1,5 +1,4 @@
 import type { RefObject } from "react";
-import { SORT_NAMES } from "../../hooks/use-sample-actions";
 import type { SortKey, SortState } from "../../model/types";
 import { useHeadingSpacing } from "./use-heading-spacing";
 
@@ -47,8 +46,7 @@ interface TableHeadProps {
 
 /**
  * The header row. Each measurement heading is a sort button inside its `th`, with `aria-sort` on
- * the `th` (the APG sortable-table pattern). The button's name is the heading without its unit,
- * which is also what the sort announcement says.
+ * the `th` (the APG sortable-table pattern). The button's name is its visible text, unit included.
  */
 export function TableHead({ sort, hasPrompt, onSort, headRowRef }: TableHeadProps) {
   useHeadingSpacing(headRowRef);
@@ -67,15 +65,10 @@ export function TableHead({ sort, hasPrompt, onSort, headRowRef }: TableHeadProp
           const dir = sortDirOf(sort, col.key);
           return (
             <th key={col.key} scope="col" aria-sort={dir} data-sort-dir={dir}>
-              <button
-                type="button"
-                className="collapse-th-sort"
-                aria-label={SORT_NAMES[col.key]}
-                onClick={() => onSort(col.key)}
-              >
+              <button type="button" className="collapse-th-sort" onClick={() => onSort(col.key)}>
                 <span className="collapse-th-lines">
-                  {col.l1}
-                  <br />
+                  {/* The space keeps the two lines apart in the button's name. */}
+                  {col.l1} <br />
                   <span className="collapse-th-unit">{col.l2}</span>
                 </span>
                 <SortIcon />

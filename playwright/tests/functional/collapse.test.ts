@@ -108,7 +108,7 @@ test.describe("Data table", () => {
   }) => {
     for (const years of [200000, 100000, 0]) await collapse.sampleAt(years);
     // The last heading is the tab stop just before the first row.
-    await collapse.sortButton("Rock above cave").focus();
+    await collapse.sortButton("Rock above cave (mm)").focus();
     await page.keyboard.press("Tab");
     await expect(collapse.sampleRow(200000)).toBeFocused();
     await expect(collapse.sampleRow(200000)).toHaveClass(/\bkb-focus\b/);
@@ -197,11 +197,11 @@ test.describe("Data table", () => {
         for (const button of document.querySelectorAll<HTMLElement>(".collapse-th-sort")) {
           for (const part of [".collapse-th-lines", ".collapse-sort-ico"]) {
             const box = button.querySelector(part)?.getBoundingClientRect();
-            if (!box) throw new Error(`${button.ariaLabel} has no ${part}`);
+            if (!box) throw new Error(`${button.textContent} has no ${part}`);
             for (const x of [box.left + 1, box.right - 1]) {
               const hit = document.elementFromPoint(x, box.top + box.height / 2);
               if (hit?.closest(".collapse-th-sort") !== button)
-                out.push(`${button.ariaLabel} ${part}`);
+                out.push(`${button.textContent} ${part}`);
             }
           }
         }

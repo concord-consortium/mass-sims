@@ -1,5 +1,5 @@
 import { observer } from "mobx-react-lite";
-import { useRef } from "react";
+import { useLayoutEffect, useRef } from "react";
 import { useSampleActions } from "../../hooks/use-sample-actions";
 import type { Sample, SortState } from "../../model/types";
 import { useStores } from "../../stores/root-store";
@@ -42,6 +42,11 @@ export const DataTable = observer(function DataTable() {
   // every row rather than reusing one trial's row for another's sample.
   const rowKeys = rows.map((sample) => `${letter}:${sample.id}`);
   useFillerHeight(scrollerRef, fillerRef, count);
+  // One scroller serves every trial, so each trial's table opens at the top.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: `letter` is the intended trigger.
+  useLayoutEffect(() => {
+    if (scrollerRef.current) scrollerRef.current.scrollTop = 0;
+  }, [letter]);
   const { rememberFocus } = useRowKeyboardNav(tbodyRef, headRowRef, scrollerRef, count);
   useRowFlip(tbodyRef, scrollerRef, letter, rowKeys);
 

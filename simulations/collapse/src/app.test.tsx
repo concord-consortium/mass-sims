@@ -191,6 +191,25 @@ describe("Collapse App — AP saved state", () => {
     );
   });
 
+  it("clears the selected row when saved state arrives after the student has sampled", () => {
+    // The early sample is selected and has id 1, like the restored sample.
+    const { initMsg } = restoreTrialAWithSamples();
+    let deliver: (msg: unknown) => void = () => {};
+    useInitMessageMock.mockImplementation(() => {
+      const [msg, setMsg] = useState<unknown>(null);
+      deliver = setMsg;
+      return msg;
+    });
+    const view = render(<App />);
+    fireEvent.click(view.getByRole("button", { name: "Sample" }));
+    expect(view.getByRole("row", { name: /^Sample at/ })).toHaveAttribute("aria-current", "true");
+    act(() => deliver(initMsg));
+    expect(view.getByRole("row", { name: /^Sample at/ })).not.toHaveAttribute("aria-current");
+    expect(view.getByRole("region", { name: "Cross Section" })).toHaveTextContent(
+      "Select a row in the table to see its cross section.",
+    );
+  });
+
   it("does NOT call setInteractiveState when the timeline value changes", () => {
     // Embedded, because the app sends state to AP only after an init message.
     restoreTrialAWithSamples();

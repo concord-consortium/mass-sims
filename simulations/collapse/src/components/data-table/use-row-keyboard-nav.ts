@@ -76,12 +76,14 @@ export function useRowKeyboardNav(
     };
 
     // The browser scrolls by itself when Tab moves focus, and offers no `preventScroll`. So note
-    // where the scroller was as focus leaves a row, put it back as focus lands, and scroll the
-    // minimum instead.
+    // where the scroller was as focus moves between rows, put it back as focus lands, and scroll
+    // the minimum instead. Focus that leaves the rows notes nothing: the scroller may be scrolled
+    // by other means before focus comes back.
     let scrollBefore: number | null = null;
     const onFocusOut = (e: FocusEvent) => {
-      scrollBefore = scroller.scrollTop;
-      if (!tbody.contains(e.relatedTarget as Node | null)) clearRing();
+      const staysInRows = tbody.contains(e.relatedTarget as Node | null);
+      scrollBefore = staysInRows ? scroller.scrollTop : null;
+      if (!staysInRows) clearRing();
     };
     const onFocusIn = (e: FocusEvent) => {
       const target = e.target as HTMLElement;
@@ -129,6 +131,7 @@ export function useRowKeyboardNav(
     };
 
     const onHeadKey = (e: KeyboardEvent) => {
+      if (e.altKey || e.ctrlKey || e.metaKey || e.shiftKey) return;
       const target = e.target as HTMLElement;
       if (!target.matches(SORT)) return;
       if (e.key === "ArrowLeft" || e.key === "ArrowRight") {

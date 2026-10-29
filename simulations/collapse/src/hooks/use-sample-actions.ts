@@ -3,7 +3,7 @@ import { formatWhole, isCollapsed } from "../model/erosion";
 import type { SortKey } from "../model/types";
 import { useStores } from "../stores/root-store";
 
-/** Each sort column's spoken name: its heading without the unit. */
+/** Each column's name in the sort announcement: its heading without the unit. */
 export const SORT_NAMES: Record<SortKey, string> = {
   years: "Years before collapse",
   rate: "Erosion rate",
@@ -25,10 +25,11 @@ export function useSampleActions() {
 
   const takeSample = () => {
     const trial = ui.selectedTrialLetter;
-    const { years, rate, roof } = store.takeSample();
+    const { id, years, rate, roof } = store.takeSample();
     const sampleCount = store.activeTrial.sampleCount;
     logEvent("sample_taken", {
       trial,
+      id,
       years,
       rate,
       roof,
@@ -51,12 +52,17 @@ export function useSampleActions() {
     if (target === null) {
       if (!current) return;
       ui.selectSample(trial, null);
-      logEvent("sample_selected", { trial, years: current.years, selected: false });
+      logEvent("sample_selected", {
+        trial,
+        id: current.id,
+        years: current.years,
+        selected: false,
+      });
       announce("Deselected. Select a row to see its cross section.");
       return;
     }
     ui.selectSample(trial, target.id);
-    logEvent("sample_selected", { trial, years: target.years, selected: true });
+    logEvent("sample_selected", { trial, id: target.id, years: target.years, selected: true });
     announce(`Selected the sample at ${formatWhole(target.years)} years before collapse.`);
   };
 
@@ -66,7 +72,7 @@ export function useSampleActions() {
     if (!sample) return;
     store.deleteSample(trial, id);
     const remaining = store.activeTrial.sampleCount;
-    logEvent("sample_deleted", { trial, years: sample.years, remaining });
+    logEvent("sample_deleted", { trial, id, years: sample.years, remaining });
     announce(`Row deleted. ${remaining} ${samplesWord(remaining)} left.`);
   };
 

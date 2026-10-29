@@ -45,6 +45,7 @@ describe("useSampleActions.takeSample", () => {
     expect(logEvent).toHaveBeenCalledTimes(1);
     expect(logEvent).toHaveBeenCalledWith("sample_taken", {
       trial: "B",
+      id: 1,
       years: 200000,
       rate: 30,
       roof: 8800,
@@ -68,6 +69,9 @@ describe("useSampleActions.takeSample", () => {
     expect(payload.roof).toBe(2800);
     expect(payload.collapsed).toBe(true);
     expect(payload.sampleCount).toBe(2);
+    // The same year twice: the id tells the two samples apart.
+    expect(logEvent.mock.calls[0][1].id).toBe(1);
+    expect(payload.id).toBe(2);
     expect(announce).toHaveBeenLastCalledWith(
       "Sampled 0 years before collapse. Erosion rate 35 millimeters per 1,000 years, " +
         "rock above the cave 2,800 millimeters. Trial B now has 2 samples.",
@@ -85,6 +89,7 @@ describe("useSampleActions.selectSample", () => {
     expect(logEvent).toHaveBeenCalledTimes(1);
     expect(logEvent).toHaveBeenCalledWith("sample_selected", {
       trial: "A",
+      id: first.id,
       years: 150000,
       selected: true,
     });
@@ -99,6 +104,7 @@ describe("useSampleActions.selectSample", () => {
     expect(logEvent).toHaveBeenCalledTimes(1);
     expect(logEvent).toHaveBeenCalledWith("sample_selected", {
       trial: "A",
+      id: sample.id,
       years: 50000,
       selected: false,
     });
@@ -137,6 +143,7 @@ describe("useSampleActions.deleteSample", () => {
     expect(logEvent).toHaveBeenCalledTimes(1);
     expect(logEvent).toHaveBeenCalledWith("sample_deleted", {
       trial: "A",
+      id: second.id,
       years: 100000,
       remaining: 2,
     });

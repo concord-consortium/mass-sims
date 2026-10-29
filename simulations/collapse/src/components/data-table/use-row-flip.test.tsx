@@ -127,7 +127,7 @@ describe("useRowFlip in the table", () => {
     take(0);
     take(200000);
     settle();
-    fireEvent.click(view.getByRole("button", { name: "Years before collapse" }));
+    fireEvent.click(view.getByRole("button", { name: "Years before collapse (yr)" }));
     // Displayed 100,000 / 0 / 200,000 → 0 / 100,000 / 200,000: A:1 and A:2 swap seats.
     expect(slides).toEqual({ "A:2": 48, "A:1": -48 });
   });
@@ -138,7 +138,7 @@ describe("useRowFlip in the table", () => {
     take(0);
     take(200000);
     settle();
-    const years = view.getByRole("button", { name: "Years before collapse" });
+    const years = view.getByRole("button", { name: "Years before collapse (yr)" });
     // Ascending: A:2 / A:1 / A:3. Halfway through, A:2 is shown 24px below its seat and A:1 24px
     // above.
     fireEvent.click(years);
@@ -186,7 +186,7 @@ describe("useRowFlip in the table", () => {
     take(100000);
     take(0);
     settle();
-    fireEvent.click(view.getByRole("button", { name: "Years before collapse" }));
+    fireEvent.click(view.getByRole("button", { name: "Years before collapse (yr)" }));
     expect(slides).toEqual({});
   });
 
@@ -197,7 +197,7 @@ describe("useRowFlip in the table", () => {
     take(0);
     expect(scrolled).toEqual(["A:1", "A:2"]);
     // Sorting, selecting, and deleting never scroll.
-    fireEvent.click(view.getByRole("button", { name: "Years before collapse" }));
+    fireEvent.click(view.getByRole("button", { name: "Years before collapse (yr)" }));
     fireEvent.click(view.getAllByRole("row")[1]);
     fireEvent.click(
       view.getByRole("button", { name: "Delete the sample at 0 years before collapse" }),

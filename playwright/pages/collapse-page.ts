@@ -91,14 +91,14 @@ export class CollapsePage extends SimulationFramePage {
     });
   }
 
-  /** A sort heading's button: "Years before collapse", "Erosion rate", or "Rock above cave". */
+  /** A sort heading's button, by its full heading: e.g. "Erosion rate (mm/1,000 yr)". */
   sortButton(name: string): Locator {
     return this.page.getByRole("button", { name, exact: true });
   }
 
   /** The column header holding a sort button; it carries `aria-sort`. */
   sortHeader(name: string): Locator {
-    return this.page.getByRole("columnheader", { name: new RegExp(`^${name}`) });
+    return this.page.getByRole("columnheader", { name, exact: true });
   }
 
   deleteButton(years: number): Locator {

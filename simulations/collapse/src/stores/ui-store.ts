@@ -47,6 +47,10 @@ export const UiStore = BaseUiStore.volatile(() => ({
       const { [letter]: _previous, ...rest } = self.selectedSampleByTrial;
       self.selectedSampleByTrial = id === null ? rest : { ...rest, [letter]: id };
     },
+    /** Clears every trial's selection. */
+    clearSampleSelections() {
+      self.selectedSampleByTrial = {};
+    },
     /** Ascending → descending → not sorted. A different key starts at ascending. */
     cycleSort(key: SortKey) {
       const { key: current, direction } = self.sort;

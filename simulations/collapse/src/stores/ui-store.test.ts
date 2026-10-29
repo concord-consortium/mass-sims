@@ -58,6 +58,15 @@ describe("UiStore", () => {
     expect(ui.selectedSampleId("B")).toBe(5);
   });
 
+  it("clearSampleSelections clears every trial's selection", () => {
+    const ui = UiStore.create();
+    ui.selectSample("A", 1);
+    ui.selectSample("B", 2);
+    ui.clearSampleSelections();
+    expect(ui.selectedSampleId("A")).toBeNull();
+    expect(ui.selectedSampleId("B")).toBeNull();
+  });
+
   it("replaces the selection object on every write, so observers see the change", () => {
     const ui = UiStore.create();
     const before = ui.selectedSampleByTrial;

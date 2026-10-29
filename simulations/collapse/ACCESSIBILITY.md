@@ -57,8 +57,9 @@ actions.
   from the column headers they sort, and needed `aria-hidden` patches against double announcements.
 - **Sortable headings (the APG sortable-table pattern).** Each measurement heading is a `<button>`
   inside its `<th scope="col">`, and `aria-sort` (`ascending` / `descending` / `none`) is on that
-  `th`. The button's name is the heading without its unit ("Erosion rate"). A press cycles
-  ascending → descending → not sorted, and announces the new state. The picture and delete columns
+  `th`. The button's name is its visible text, unit included ("Erosion rate (mm/1,000 yr)"), so
+  voice control users can say what they see. A press cycles ascending → descending → not sorted,
+  and announces the new state ("Sorted by Erosion rate, lowest first."). The picture and delete columns
   have visually hidden headings ("Cave", "Delete row").
 - **Rows are tab stops.** Each row has `tabindex="0"` and an `aria-label` with its three values
   ("Sample at 150,000 years before collapse, erosion rate 26 mm per 1,000 years, rock above cave
