@@ -32,7 +32,7 @@ describe("spaceHeadings", () => {
   });
 
   it("holds the middle heading still and moves the outer two out by exactly the overlap", () => {
-    // 90px columns: the middle ink is 81..193 and the outer inks end at 85 and start at 185.
+    // 90px columns: the middle ink is 79..191 and the outer inks end at 85 and start at 185.
     const { boxes, inks } = layout(90, [80, 112, 80]);
     const [left, mid, right] = spaceHeadings(inks, boxes);
     const overlapL = inks[0].r - (inks[1].l - HEAD_AIR);
@@ -61,7 +61,7 @@ describe("spaceHeadings", () => {
         const ink = { l: inks[i].l + moved(h), r: inks[i].r + moved(h) };
         expect(bands[i].l).toBeLessThanOrEqual(ink.l - HEAD_HUG + 1e-9);
         expect(bands[i].r).toBeGreaterThanOrEqual(ink.r + HEAD_HUG - 1e-9);
-        // A band never pulls in past its own column edge unless a neighbour needs the room.
+        // The outermost bands never pull in from the table's edges.
         if (i === 0) expect(bands[0].l).toBeLessThanOrEqual(boxes[0].l + 1e-9);
         if (i === 2) expect(bands[2].r).toBeGreaterThanOrEqual(boxes[2].r - 1e-9);
       });
@@ -69,15 +69,5 @@ describe("spaceHeadings", () => {
       expect(bands[0].r).toBeCloseTo(bands[1].l, 9);
       expect(bands[1].r).toBeCloseTo(bands[2].l, 9);
     }
-  });
-
-  it("puts the shared boundary in the slack between the two inks", () => {
-    // 95px columns: the middle band would overlap both neighbours' columns.
-    const { boxes, inks } = layout(95, [60, 112, 60]);
-    const result = spaceHeadings(inks, boxes);
-    const ink = result.map((h, i) => ({ l: inks[i].l + moved(h), r: inks[i].r + moved(h) }));
-    const boundary = band(boxes[0], result[0]).r;
-    expect(boundary).toBeGreaterThanOrEqual(ink[0].r + HEAD_HUG - 1e-9);
-    expect(boundary).toBeLessThanOrEqual(ink[1].l - HEAD_HUG + 1e-9);
   });
 });

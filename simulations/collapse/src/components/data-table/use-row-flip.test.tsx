@@ -75,7 +75,18 @@ describe("useRowFlip in the table", () => {
   afterEach(() => {
     vi.restoreAllMocks();
     window.matchMedia = originalMatchMedia;
+    // @ts-expect-error jsdom has no scrollIntoView; remove any stub a test added.
+    delete HTMLElement.prototype.scrollIntoView;
   });
+
+  /** Records each row that is scrolled into view smoothly (the reveal), by its key. */
+  function stubScroll(): string[] {
+    const scrolled: string[] = [];
+    HTMLElement.prototype.scrollIntoView = vi.fn(function (this: HTMLElement, arg) {
+      if (typeof arg === "object" && arg?.behavior) scrolled.push(this.dataset.rowKey ?? "");
+    });
+    return scrolled;
+  }
 
   function setup() {
     const store = createRootStore({ rng: () => 0.5 });
@@ -123,20 +134,21 @@ describe("useRowFlip in the table", () => {
     expect(row("A:2").style.transform).toBe("");
   });
 
-  it("does not animate on a trial switch", () => {
+  it("neither animates nor scrolls on a switch to a trial with one row", () => {
+    // From an empty trial, A's one row would otherwise look like a just-taken sample.
+    const scrolled = stubScroll();
     const { store, take, row } = setup();
     take(200000);
     act(() => store.ui.selectTrial("B"));
-    take(200000);
-    act(() => store.ui.selectTrial("A"));
+    scrolled.length = 0;
     atFlush = [];
-    act(() => store.ui.selectTrial("B"));
+    act(() => store.ui.selectTrial("A"));
+    expect(scrolled).toEqual([]);
     expect(atFlush).toEqual([]);
-    expect(row("B:1").style.transform).toBe("");
-    expect(row("B:1").style.transition).toBe("");
+    expect(row("A:1").style.transition).toBe("");
   });
 
-  it("does nothing under reduced motion", () => {
+  it("does not slide rows under reduced motion", () => {
     window.matchMedia = vi.fn().mockReturnValue({ matches: true }) as unknown as typeof matchMedia;
     const { view, take, row } = setup();
     take(100000);
@@ -148,10 +160,7 @@ describe("useRowFlip in the table", () => {
   });
 
   it("scrolls a new sample into view, and only on a new sample", () => {
-    const scrolled: string[] = [];
-    HTMLElement.prototype.scrollIntoView = vi.fn(function (this: HTMLElement, arg) {
-      if (typeof arg === "object" && arg?.behavior) scrolled.push(this.dataset.rowKey ?? "");
-    });
+    const scrolled = stubScroll();
     const { view, take } = setup();
     take(200000);
     take(0);
@@ -163,7 +172,5 @@ describe("useRowFlip in the table", () => {
       view.getByRole("button", { name: "Delete the sample at 0 years before collapse" }),
     );
     expect(scrolled).toEqual(["A:1", "A:2"]);
-    // @ts-expect-error jsdom has no scrollIntoView; remove the stub again.
-    delete HTMLElement.prototype.scrollIntoView;
   });
 });

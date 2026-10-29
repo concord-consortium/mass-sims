@@ -443,12 +443,11 @@ describe("DataTable — focus after a delete", () => {
     expect(displayedYears(ctx.view)).toEqual(["200,000", "0"]);
     expect(document.activeElement).toBe(delOf(1));
 
-    // From the last row itself (deleted with the keyboard): back on the new last row.
-    const last = bodyRows(ctx.view)[1];
-    act(() => last.focus());
-    fireEvent.keyDown(last, { key: "Enter" });
+    // From the last row's delete button: clamped to the delete button of the new last row.
+    act(() => delOf(1).focus());
     fireEvent.click(delOf(1));
-    expect(document.activeElement).toBe(bodyRows(ctx.view)[0]);
+    expect(displayedYears(ctx.view)).toEqual(["200,000"]);
+    expect(document.activeElement).toBe(delOf(0));
   });
 
   it("goes to the first sort heading when the last row is deleted, never to the page", () => {
