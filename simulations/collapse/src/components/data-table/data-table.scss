@@ -347,14 +347,14 @@ th[data-sort-dir="descending"] .sort-up {
     inset: 0;
   }
 
-  tr.is-selected td {
+  tr[aria-current="true"] td {
     background: theme.$trial-selected-bg;
     font-weight: 500;
   }
 
   // The marker down the left edge. An inset shadow, not a border: under `table-layout: fixed` a
   // border would take 3px from the picture cell and move the image on every selection.
-  tr.is-selected td:first-child {
+  tr[aria-current="true"] td:first-child {
     box-shadow: inset 3px 0 0 theme.$border;
   }
 }

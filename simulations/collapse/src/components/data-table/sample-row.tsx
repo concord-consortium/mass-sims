@@ -52,9 +52,11 @@ export function SampleRow({
   };
 
   return (
+    // No `className`: the keyboard hook writes this row's classes (`kb-focus`), and a React-owned
+    // class would overwrite them when the selection changes. The selected style keys off
+    // `aria-current`.
     <tr
       tabIndex={0}
-      className={selected ? "is-selected" : undefined}
       aria-label={sampleRowLabel(sample)}
       aria-current={selected ? "true" : undefined}
       data-row-key={rowKey}

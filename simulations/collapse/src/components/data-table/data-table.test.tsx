@@ -110,7 +110,6 @@ describe("DataTable — rows", () => {
     );
     expect(rows[0]).not.toHaveAttribute("aria-current");
     expect(rows[1]).toHaveAttribute("aria-current", "true");
-    expect(rows[1]).toHaveClass("is-selected");
 
     // The spacer that holds the average row at the bottom: hidden, and between the rows and it.
     const filler = view.container.querySelector(".collapse-filler");
@@ -210,9 +209,7 @@ describe("DataTable — selecting", () => {
     const [first, second] = bodyRows(view);
     fireEvent.click(first);
     expect(first).toHaveAttribute("aria-current", "true");
-    expect(first).toHaveClass("is-selected");
     expect(second).not.toHaveAttribute("aria-current");
-    expect(second).not.toHaveClass("is-selected");
     fireEvent.click(first);
     expect(first).not.toHaveAttribute("aria-current");
     expect(store.selectedSample).toBeUndefined();
@@ -333,6 +330,19 @@ describe("DataTable — keyboard", () => {
     expect(rows[0]).not.toHaveClass("kb-focus");
     fireEvent.keyDown(rows[1], { key: "ArrowUp" });
     expect(document.activeElement).toBe(rows[0]);
+    expect(rows[0]).toHaveClass("kb-focus");
+  });
+
+  it("selecting and deselecting with Enter or Space keeps the keyboard ring", () => {
+    const { rows } = threeRows();
+    act(() => rows[1].focus());
+    fireEvent.keyDown(rows[1], { key: "ArrowUp" });
+    expect(rows[0]).toHaveClass("kb-focus");
+    fireEvent.keyDown(rows[0], { key: "Enter" });
+    expect(rows[0]).toHaveAttribute("aria-current", "true");
+    expect(rows[0]).toHaveClass("kb-focus");
+    fireEvent.keyDown(rows[0], { key: " " });
+    expect(rows[0]).not.toHaveAttribute("aria-current");
     expect(rows[0]).toHaveClass("kb-focus");
   });
 

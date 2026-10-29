@@ -117,6 +117,8 @@ test.describe("Data table", () => {
     await expect(collapse.sampleRow(100000)).toBeFocused();
     await page.keyboard.press("Enter");
     await expect(collapse.sampleRow(100000)).toHaveAttribute("aria-current", "true");
+    // Selecting must not drop the keyboard ring.
+    await expect(collapse.sampleRow(100000)).toHaveClass(/\bkb-focus\b/);
     await expect(collapse.crossSectionCaption).toHaveText("100,000 yr before collapse");
 
     await page.keyboard.press("ArrowRight");
