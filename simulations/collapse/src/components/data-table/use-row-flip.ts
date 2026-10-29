@@ -1,7 +1,7 @@
 import { prefersReducedMotion, smoothScrollIntoView } from "@concord-consortium/mass-sims-shared";
 import { type RefObject, useLayoutEffect, useRef } from "react";
 
-const MOVE = "transform 240ms ease";
+const SLIDE: KeyframeAnimationOptions = { duration: 240, easing: "ease" };
 
 /** How far each row moved: rows with no earlier position, or that did not move, are left out. */
 export function flipDeltas(
@@ -37,6 +37,10 @@ function rowTops(tbody: HTMLElement, scroller: HTMLElement): Map<string, number>
  * moved because the scroller scrolled does not count as moved. This runs before paint, so the rows
  * are never seen in their new seats un-animated. Nothing animates on a trial switch (every row is
  * new then), and nothing animates or scrolls smoothly under reduced motion.
+ *
+ * The slides use `element.animate()`, not CSS transitions: to reorder rows React takes some out of
+ * the table and puts them back, which cancels a running CSS transition but not a script animation.
+ * So a slide still running when the next change lands can be measured and carried on.
  */
 export function useRowFlip(
   tbodyRef: RefObject<HTMLTableSectionElement | null>,
@@ -63,24 +67,24 @@ export function useRowFlip(
       }
     }
 
+    // A slide still running from the last change is part of where a row is shown, but not of its
+    // seat. Measure the rows as shown, stop the running slides, then measure the seats, so the
+    // saved seats are clean and an interrupted row carries on from where it is shown.
+    const shown = rowTops(tbody, scroller);
+    for (const tr of tbody.querySelectorAll<HTMLElement>("tr[data-row-key]")) {
+      for (const animation of tr.getAnimations()) animation.cancel();
+    }
     const after = rowTops(tbody, scroller);
     last.current = { letter, tops: after };
     if (!before || prefersReducedMotion()) return;
 
-    const moves = flipDeltas(before, after);
-    const rows = moves.map(({ id, dy }) => {
+    const from = new Map<string, number>();
+    for (const [id, top] of before) {
+      from.set(id, top + (shown.get(id) ?? 0) - (after.get(id) ?? 0));
+    }
+    for (const { id, dy } of flipDeltas(from, after)) {
       const tr = tbody.querySelector<HTMLElement>(`tr[data-row-key="${id}"]`) as HTMLElement;
-      tr.style.transition = "none";
-      tr.style.transform = `translateY(${dy}px)`;
-      return tr;
-    });
-    if (rows.length === 0) return;
-    // Flush, so the old seats are applied before the transition starts. A frame alone can let both
-    // writes land in the same style pass.
-    void tbody.offsetHeight;
-    for (const tr of rows) {
-      tr.style.transition = MOVE;
-      tr.style.transform = "";
+      tr.animate([{ transform: `translateY(${dy}px)` }, { transform: "none" }], SLIDE);
     }
   }, [tbodyRef, scrollerRef, letter, order]);
 }
