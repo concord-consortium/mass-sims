@@ -14,7 +14,7 @@ export function sampleRowLabel({ years, rate, roof }: Sample): string {
 interface SampleRowProps {
   sample: Sample;
   conditions: Conditions;
-  /** `${letter}:${id}`: ids are unique only within a trial. */
+  /** `${letter}:${id}`; see `DataTable`. */
   rowKey: string;
   selected: boolean;
   onSelect: () => void;

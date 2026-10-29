@@ -8,7 +8,7 @@ $head-pad: 8px;
 // rule, so its hover fill does not run over it.
 $head-pad-prompt: 25.5px;
 $head-height-prompt: 70px;
-// The rows scroll under the sticky header and over the sticky average row.
+// The rows scroll under the sticky header and average row.
 $sticky-z: 2;
 
 // The white box with the green border. Takes whatever the Cross Section box does not.
@@ -155,7 +155,7 @@ $sticky-z: 2;
   letter-spacing: inherit;
   margin: 0 calc(-1 * var(--grow-r)) 0 calc(-1 * var(--grow-l));
   padding: $head-pad 10px;
-  // So the lit band can be lifted above the next column.
+  // For the focus ring's `::after`.
   position: relative;
   text-align: center;
   width: calc(100% + var(--grow-l) + var(--grow-r));

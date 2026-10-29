@@ -63,7 +63,6 @@ export function useRowFlip(
       }
     }
 
-    // Content coordinates, so the scroll just started does not count as a move.
     const after = rowTops(tbody, scroller);
     last.current = { letter, tops: after };
     if (!before || prefersReducedMotion()) return;

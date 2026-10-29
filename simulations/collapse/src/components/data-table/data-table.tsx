@@ -78,7 +78,7 @@ export const DataTable = observer(function DataTable() {
           </tbody>
           {trial.averageRate !== null && trial.averageRoof !== null && (
             <>
-              {/* Takes the scroller's spare height, so the average row is on the bottom edge. */}
+              {/* Sized by `useFillerHeight`. */}
               <tbody className="collapse-filler" aria-hidden="true">
                 <tr ref={fillerRef}>
                   <td colSpan={5} />

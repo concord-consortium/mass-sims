@@ -80,7 +80,6 @@ export class CollapsePage extends SimulationFramePage {
     return this.page.locator(".collapse-table-wrap .collapse-rows tr");
   }
 
-  /** The table's scroller. */
   get tableScroller(): Locator {
     return this.page.locator(".collapse-table-wrap");
   }
