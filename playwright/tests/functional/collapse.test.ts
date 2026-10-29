@@ -1,9 +1,9 @@
 import { expect, test } from "@playwright/test";
 import { CollapsePage } from "../../pages/collapse-page";
 
-// Collapse functional spec: runs once per target width. Covers the timeline's pointer behavior with
-// the real layout and real pointer input, which the jsdom tests can only approximate with fixed label
-// widths.
+// Collapse functional spec: runs once per target width. Covers the timeline's pointer behavior and
+// the data table's keyboard path and layout with the real layout and real input, which the jsdom
+// tests can only approximate.
 
 let collapse: CollapsePage;
 
@@ -99,5 +99,114 @@ test.describe("Timeline pointer input", () => {
     await page.mouse.click(dot.x, dot.y, { button: "right" });
     await expect(collapse.timelineSlider).toHaveAttribute("aria-valuenow", "200000");
     await expect(collapse.timelineTrack).not.toHaveClass(/\bdragging\b/);
+  });
+});
+
+test.describe("Data table", () => {
+  test("keyboard: Tab to a row, arrow down, select, delete; focus stays in place", async ({
+    page,
+  }) => {
+    for (const years of [200000, 100000, 0]) await collapse.sampleAt(years);
+    // The last heading is the tab stop just before the first row.
+    await collapse.sortButton("Rock above cave (mm)").focus();
+    await page.keyboard.press("Tab");
+    await expect(collapse.sampleRow(200000)).toBeFocused();
+    await expect(collapse.sampleRow(200000)).toHaveClass(/\bkb-focus\b/);
+
+    await page.keyboard.press("ArrowDown");
+    await expect(collapse.sampleRow(100000)).toBeFocused();
+    await page.keyboard.press("Enter");
+    await expect(collapse.sampleRow(100000)).toHaveAttribute("aria-current", "true");
+    // Selecting must not drop the keyboard ring.
+    await expect(collapse.sampleRow(100000)).toHaveClass(/\bkb-focus\b/);
+    await expect(collapse.crossSectionCaption).toHaveText("100,000 yr before collapse");
+
+    await page.keyboard.press("ArrowRight");
+    await expect(collapse.deleteButton(100000)).toBeFocused();
+    await page.keyboard.press("Enter");
+    await expect(collapse.tableRows).toHaveCount(2);
+    // Same position: the row that moved up into it, on its delete button.
+    await expect(collapse.deleteButton(0)).toBeFocused();
+    await expect(collapse.crossSectionCaption).toHaveCount(0);
+  });
+
+  test("a click focuses a row without the keyboard ring", async () => {
+    await collapse.sampleButton.click();
+    await collapse.sampleRow(200000).click();
+    await expect(collapse.sampleRow(200000)).toBeFocused();
+    await expect(collapse.sampleRow(200000)).not.toHaveClass(/\bkb-focus\b/);
+  });
+
+  test("limestone + wet collapses at year 0", async ({ page }) => {
+    await collapse.selectTrial("B");
+    await collapse.timelineSlider.focus();
+    await page.keyboard.press("End");
+    await collapse.sampleButton.click();
+    await expect(collapse.sampleRow(0)).toContainText("collapsed");
+    await expect(collapse.sampleRow(0)).toContainText("(2,800)");
+    await expect(collapse.sampleRow(0)).toHaveAttribute("aria-label", /, collapsed$/);
+  });
+
+  test("the average row sits on the table's bottom edge", async () => {
+    await collapse.sampleButton.click();
+    const scroller = await collapse.tableScroller.boundingBox();
+    const foot = await collapse.averageRow.boundingBox();
+    if (!scroller || !foot) throw new Error("table not found");
+    expect(Math.abs(scroller.y + scroller.height - (foot.y + foot.height))).toBeLessThanOrEqual(1);
+  });
+
+  test("with many rows, the rows scroll and the header and average row stay put", async ({
+    page,
+  }, testInfo) => {
+    test.skip(!testInfo.project.name.endsWith("-767"), "checked at the narrowest width");
+    for (const years of [200000, 150000, 100000, 50000, 20000, 10000]) {
+      await collapse.sampleAt(years);
+    }
+    const head = page.locator(".collapse-thead th").nth(1);
+    const box = async () => ({
+      head: await head.boundingBox(),
+      foot: await collapse.averageRow.locator("th").boundingBox(),
+      first: await collapse.tableRows.first().boundingBox(),
+    });
+    // The newest row was scrolled into view, so scroll back to the top first.
+    await collapse.tableScroller.evaluate((el) => {
+      el.scrollTop = 0;
+    });
+    const before = await box();
+    const scrolls = await collapse.tableScroller.evaluate((el) => {
+      el.scrollTop = el.scrollHeight;
+      return el.scrollTop > 0;
+    });
+    expect(scrolls).toBe(true);
+    const after = await box();
+    expect(after.head).toEqual(before.head);
+    expect(after.foot).toEqual(before.foot);
+    expect(after.first?.y).toBeLessThan(before.first?.y ?? 0);
+  });
+
+  test("pointing at any part of a heading's label hits that heading's sort button", async ({
+    page,
+  }) => {
+    await collapse.sampleButton.click();
+    // The label's and icon's outer edges, where a neighboring column would take the press. Polled:
+    // until the webfonts load, the headings have the fallback font's widths, and the spacing is
+    // measured again once they land.
+    const misses = () =>
+      page.evaluate(() => {
+        const out: string[] = [];
+        for (const button of document.querySelectorAll<HTMLElement>(".collapse-th-sort")) {
+          for (const part of [".collapse-th-lines", ".collapse-sort-ico"]) {
+            const box = button.querySelector(part)?.getBoundingClientRect();
+            if (!box) throw new Error(`${button.textContent} has no ${part}`);
+            for (const x of [box.left + 1, box.right - 1]) {
+              const hit = document.elementFromPoint(x, box.top + box.height / 2);
+              if (hit?.closest(".collapse-th-sort") !== button)
+                out.push(`${button.textContent} ${part}`);
+            }
+          }
+        }
+        return out;
+      });
+    await expect.poll(misses).toEqual([]);
   });
 });

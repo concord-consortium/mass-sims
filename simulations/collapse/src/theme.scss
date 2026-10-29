@@ -16,3 +16,12 @@ $timeline-flag-active: #9cc9f7;
 $timeline-flag-border: #4680b8; // also the handle's stem and ring
 $timeline-flag-border-active: #1e3f6e;
 $timeline-ring-fill: rgba(#f0f6fe, 0.5); // see-through, so the rail shows through the ring
+
+// The data table's row dividers.
+$table-divider: #949494;
+// The thumbnail's border. Non-text contrast (3:1) against every fill its cell can take: white 3.84,
+// row hover 3.33, selected row 3.20. `$table-divider` fails at 2.53.
+$thumbnail-border: #828282;
+// The delete button's hover. Darker than the row's own hover fill, which would make it invisible
+// exactly when the button is pointed at. The glyph reads at 7.30:1 on it.
+$delete-hover: #aee4c2;

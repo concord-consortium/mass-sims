@@ -18,12 +18,16 @@ const ROCK_ICONS: Record<RockType, typeof LimestoneIcon> = {
 const MOISTURE_ICONS: Record<Moisture, typeof WetIcon> = { Wet: WetIcon, Dry: DryIcon };
 
 /**
- * A trial card's screen-reader name, e.g. "Trial A. Limestone, Dry, under 10 rainy days a year. Not
- * yet sampled". Sample counts come with the data table story.
+ * A trial card's screen-reader name, e.g. "Trial A. Limestone, Dry, under 10 rainy days a year.
+ * Sampled 3 times", or "… Not yet sampled" when the trial has no samples.
  */
-export function trialAriaLabel(letter: CollapseTrialLetter): string {
+export function trialAriaLabel(letter: CollapseTrialLetter, sampleCount: number): string {
   const { rock, moisture } = TRIAL_CONDITIONS[letter];
-  return `Trial ${letter}. ${rock}, ${moisture}, ${MOISTURE_NOTES[moisture].spoken}. Not yet sampled`;
+  const sampled =
+    sampleCount === 0
+      ? "Not yet sampled"
+      : `Sampled ${sampleCount} ${sampleCount === 1 ? "time" : "times"}`;
+  return `Trial ${letter}. ${rock}, ${moisture}, ${MOISTURE_NOTES[moisture].spoken}. ${sampled}`;
 }
 
 /** The visible card body. `aria-hidden` because `trialAriaLabel` already names the card. */

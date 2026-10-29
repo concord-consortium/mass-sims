@@ -16,3 +16,8 @@ globalThis.ResizeObserver ??= class {
   unobserve() {}
   disconnect() {}
 };
+
+// jsdom has no Web Animations API; the data table's row slides use it. No-op stand-ins, which the
+// slide tests replace with spies.
+Element.prototype.getAnimations ??= () => [];
+Element.prototype.animate ??= () => ({ cancel() {} }) as Animation;

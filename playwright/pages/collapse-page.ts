@@ -1,4 +1,4 @@
-import type { Locator } from "@playwright/test";
+import { expect, type Locator } from "@playwright/test";
 import { getSimUrl } from "../sims";
 import { SimulationFramePage } from "./simulation-frame-page";
 
@@ -67,6 +67,68 @@ export class CollapsePage extends SimulationFramePage {
     const box = await this.page.locator(".collapse-tl-handle").boundingBox();
     if (!box) throw new Error("handle not found");
     return box.x;
+  }
+
+  // --- Sample button + data table ------------------------------------------
+
+  get sampleButton(): Locator {
+    return this.page.getByRole("button", { name: "Sample", exact: true });
+  }
+
+  /** The sample rows, in display order (not the spacer row under them). */
+  get tableRows(): Locator {
+    return this.page.locator(".collapse-table-wrap .collapse-rows tr");
+  }
+
+  get tableScroller(): Locator {
+    return this.page.locator(".collapse-table-wrap");
+  }
+
+  /** A sample row, by the start of its label ("Sample at 150,000 years …"). */
+  sampleRow(years: number): Locator {
+    return this.page.getByRole("row", {
+      name: new RegExp(`^Sample at ${years.toLocaleString("en-US")} years before collapse`),
+    });
+  }
+
+  /** A sort heading's button, by its full heading: e.g. "Erosion rate (mm/1,000 yr)". */
+  sortButton(name: string): Locator {
+    return this.page.getByRole("button", { name, exact: true });
+  }
+
+  /** The column header holding a sort button; it carries `aria-sort`. */
+  sortHeader(name: string): Locator {
+    return this.page.getByRole("columnheader", { name, exact: true });
+  }
+
+  deleteButton(years: number): Locator {
+    return this.page.getByRole("button", {
+      name: `Delete the sample at ${years.toLocaleString("en-US")} years before collapse`,
+    });
+  }
+
+  get averageRow(): Locator {
+    return this.page.locator(".collapse-foot");
+  }
+
+  get promptPill(): Locator {
+    return this.page.locator(".collapse-prompt-pill");
+  }
+
+  get crossSectionCaption(): Locator {
+    return this.crossSectionRegion.locator(".collapse-pic-caption");
+  }
+
+  /** Moves the timeline to `years` (one of the sixteen values) with the keyboard, then samples. */
+  async sampleAt(years: number): Promise<void> {
+    await this.timelineSlider.focus();
+    await this.page.keyboard.press("Home");
+    for (let i = 0; i < 16; i++) {
+      if ((await this.timelineSlider.getAttribute("aria-valuenow")) === String(years)) break;
+      await this.page.keyboard.press("ArrowRight");
+    }
+    await expect(this.timelineSlider).toHaveAttribute("aria-valuenow", String(years));
+    await this.sampleButton.click();
   }
 
   // --- Trials panel -------------------------------------------------------

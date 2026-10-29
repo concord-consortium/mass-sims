@@ -76,7 +76,10 @@ export const TrialsPanel = observer(function TrialsPanel() {
               index={TRIAL_LETTERS_DEFAULT.indexOf(letter as TrialLetter)}
               selected={selected}
               tabIndex={selected ? nav.selectedCardTabIndex : -1}
-              ariaLabel={trialAriaLabel(letter as CollapseTrialLetter)}
+              ariaLabel={trialAriaLabel(
+                letter as CollapseTrialLetter,
+                store.trials.get(letter)?.sampleCount ?? 0,
+              )}
               onSelect={() => navigateTo(letter)}
             >
               <TrialCardBody letter={letter as CollapseTrialLetter} />
@@ -87,7 +90,7 @@ export const TrialsPanel = observer(function TrialsPanel() {
       {/* Positioned over the selected card by `--selected-index` (see trials-panel.scss). */}
       <TrialResetButton
         letter={selectedOptionLetter}
-        disabled={activeTrial.output === null}
+        disabled={!activeTrial.hasSamples}
         onReset={handleReset}
         tabIndex={nav.resetTabIndex}
         style={{ "--selected-index": selectedIndex } as CSSProperties}

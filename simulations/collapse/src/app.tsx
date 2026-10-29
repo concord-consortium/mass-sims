@@ -17,12 +17,10 @@ import { migrateSavedState, type SavedState, toSavedState } from "./stores/saved
 import "./app.scss";
 
 /**
- * Collapse! simulation. Until the model story, the trial store keeps the placeholder random-walk
- * `input` / `output` shape and `<SimulationView>` is layout only.
+ * Collapse! simulation.
  *
- * MST owns the trial list: which trials exist, which is selected, and each one's recorded result.
- * Per-frame run state will live in `<SimulationView>` (`useModelState` / `useSimulationRunner`),
- * not in MST.
+ * MST owns the trial list: which trials exist, which is selected, and each trial's samples (the
+ * rows of its data table).
  */
 export const App = observer(function App() {
   const rootStore = useMemo(() => createRootStore({ rng: Math.random }), []);
@@ -37,12 +35,15 @@ export const App = observer(function App() {
   // snapshot `{ trials, ui }`, so map one onto the other.
   useEffect(() => {
     if (initMsg && "interactiveState" in initMsg && initMsg.interactiveState) {
-      const state = migrateSavedState(initMsg.interactiveState, Math.random);
+      const state = migrateSavedState(initMsg.interactiveState);
       if (state) {
         applySnapshot(rootStore, {
           trials: state.trials,
           ui: { selectedTrialLetter: state.selectedTrialLetter },
         });
+        // The selections are volatile, so `applySnapshot` keeps them, and a restored sample can
+        // share an id with one the student selected before the saved state arrived.
+        rootStore.ui.clearSampleSelections();
       }
     }
   }, [initMsg, rootStore]);
@@ -69,9 +70,6 @@ export const App = observer(function App() {
   // own navigation.
   useReloadWarning(!isEmbedded && rootStore.hasAnyProgress);
 
-  const activeTrial = rootStore.activeTrial;
-  const selectedLetter = rootStore.ui.selectedTrialLetter;
-
   return (
     <RootStoreProvider store={rootStore}>
       {/* The sim's single polite live region: route all narration through it. */}
@@ -92,9 +90,7 @@ export const App = observer(function App() {
           </SimulationFrame.Trials>
 
           <SimulationFrame.Simulation instruction="Select a trial, then sample through time">
-            {/* Remounts the view when the selection or the active trial's done state changes. The
-                layout-only view doesn't need this yet; the model story's per-trial state will. */}
-            <SimulationView key={`${selectedLetter}:${activeTrial.output ? "done" : "empty"}`} />
+            <SimulationView />
           </SimulationFrame.Simulation>
         </SimulationFrame>
       </Announcer>

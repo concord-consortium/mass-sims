@@ -1,63 +1,62 @@
 import { describe, expect, it } from "vitest";
-import type { SimOutput, SimTransient } from "../model/types";
-import { emptyTrialSnapshot, makeSeed, TrialModel } from "./trial-model";
+import { emptyTrialSnapshot, TrialModel } from "./trial-model";
 
-const OUTPUT: SimOutput = { avgDistance: 12.3, stdDevDistance: 2.1, avgDistanceSeries: [1, 2, 3] };
-const TRANSIENT: SimTransient = {
-  frame: 200,
-  walkers: [{ x: 3, y: 4 }],
-  avgDistanceSeries: [1, 2, 3],
-};
+const row = (years: number, rate: number, roof: number) => ({ years, rate, roof });
 
 describe("TrialModel", () => {
-  it("starts with no output (not yet run)", () => {
-    const trial = TrialModel.create(emptyTrialSnapshot("seed-1"));
-    expect(trial.output).toBeNull();
-    expect(trial.finalTransient).toBeNull();
-    expect(trial.hasOutput).toBe(false);
+  it("starts with no samples", () => {
+    const trial = TrialModel.create(emptyTrialSnapshot());
+    expect(trial.sampleCount).toBe(0);
+    expect(trial.hasSamples).toBe(false);
+    expect(trial.nextSampleId).toBe(1);
   });
 
-  it("records output + finalTransient via setOutput", () => {
-    const trial = TrialModel.create(emptyTrialSnapshot("seed-1"));
-    trial.setOutput(OUTPUT, TRANSIENT);
-    expect(trial.output).toEqual(OUTPUT);
-    expect(trial.finalTransient).toEqual(TRANSIENT);
-    expect(trial.hasOutput).toBe(true);
+  it("addSample assigns ids 1, 2, 3 and returns the stored row", () => {
+    const trial = TrialModel.create(emptyTrialSnapshot());
+    const a = trial.addSample(row(200000, 30, 8800));
+    const b = trial.addSample(row(200000, 31, 8800));
+    const c = trial.addSample(row(0, 29, 2800));
+    expect([a.id, b.id, c.id]).toEqual([1, 2, 3]);
+    expect(c).toEqual({ id: 3, years: 0, rate: 29, roof: 2800 });
+    expect(trial.samples[2]).toEqual(c);
+    expect(trial.sampleCount).toBe(3);
+    expect(trial.hasSamples).toBe(true);
+    expect(trial.sampleById(2)).toEqual(b);
   });
 
-  it("reset clears output + finalTransient but keeps input (and its seed)", () => {
-    const trial = TrialModel.create(emptyTrialSnapshot("seed-keep"));
-    trial.setOutput(OUTPUT, TRANSIENT);
+  it("deleteSample removes by id and returns false for an unknown id", () => {
+    const trial = TrialModel.create(emptyTrialSnapshot());
+    trial.addSample(row(200000, 30, 8800));
+    trial.addSample(row(100000, 30, 5800));
+    expect(trial.deleteSample(1)).toBe(true);
+    expect(trial.samples.map((s) => s.id)).toEqual([2]);
+    expect(trial.deleteSample(1)).toBe(false);
+    expect(trial.deleteSample(99)).toBe(false);
+    expect(trial.sampleById(1)).toBeUndefined();
+  });
+
+  it("reset empties the rows and does not reset the id counter", () => {
+    const trial = TrialModel.create(emptyTrialSnapshot());
+    trial.addSample(row(200000, 30, 8800));
+    trial.addSample(row(100000, 30, 5800));
     trial.reset();
-    expect(trial.output).toBeNull();
-    expect(trial.finalTransient).toBeNull();
-    expect(trial.input.seed).toBe(emptyTrialSnapshot("seed-keep").input.seed);
+    expect(trial.hasSamples).toBe(false);
+    expect(trial.addSample(row(0, 30, 2800)).id).toBe(3);
   });
 
-  it("setInput replaces the input wholesale", () => {
-    const trial = TrialModel.create(emptyTrialSnapshot("seed-1"));
-    trial.setInput({ walkerCount: 100, stepSize: 2, framesPerTrial: 300, seed: "seed-2" });
-    expect(trial.input.walkerCount).toBe(100);
-    expect(trial.input.seed).toBe("seed-2");
-  });
-});
-
-describe("makeSeed", () => {
-  it("is deterministic for a given RNG sequence", () => {
-    const seqA = [0.1, 0.2, 0.3];
-    const seqB = [0.1, 0.2, 0.3];
-    const rngA = () => seqA.shift() ?? 0;
-    const rngB = () => seqB.shift() ?? 0;
-    expect(makeSeed(rngA)).toBe(makeSeed(rngB));
+  it("averages are null when empty and the plain mean otherwise", () => {
+    const trial = TrialModel.create(emptyTrialSnapshot());
+    expect(trial.averageRate).toBeNull();
+    expect(trial.averageRoof).toBeNull();
+    trial.addSample(row(200000, 30, 8800));
+    trial.addSample(row(100000, 24, 5800));
+    trial.addSample(row(0, 33, 2800));
+    expect(trial.averageRate).toBe(29);
+    expect(trial.averageRoof).toBe(5800);
   });
 
-  it("varies as the RNG advances", () => {
-    const seq = [0.111111, 0.999999];
-    const rng = () => seq.shift() ?? 0;
-    expect(makeSeed(rng)).not.toBe(makeSeed(rng));
-  });
-
-  it("prefixes the seed with 'trial-'", () => {
-    expect(makeSeed(() => 0.5)).toMatch(/^trial-/);
+  it("emptyTrialSnapshot returns a new object each call", () => {
+    expect(emptyTrialSnapshot()).not.toBe(emptyTrialSnapshot());
+    expect(emptyTrialSnapshot()).toEqual({ samples: [], nextSampleId: 1 });
   });
 });
