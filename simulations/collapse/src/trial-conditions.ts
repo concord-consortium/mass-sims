@@ -11,7 +11,7 @@ export const MOISTURE_NOTES: Record<Moisture, { text: string; spoken: string }> 
   Wet: { text: ">50 rainy days/yr", spoken: "more than 50 rainy days a year" },
 };
 
-/** Each trial's fixed conditions. Display only until the model story moves them into `TrialModel`. */
+/** Each trial's fixed conditions. `takeSample` passes them to the erosion model; they are not stored per trial. */
 export const TRIAL_CONDITIONS: Record<CollapseTrialLetter, { rock: RockType; moisture: Moisture }> =
   {
     A: { rock: "Limestone", moisture: "Dry" },

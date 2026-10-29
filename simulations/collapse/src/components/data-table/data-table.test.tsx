@@ -10,6 +10,7 @@ vi.mock("@concord-consortium/mass-sims-shared", async (importOriginal) => ({
 }));
 
 import { Announcer } from "@concord-consortium/mass-sims-shared";
+import { SORT_NAMES } from "../../hooks/use-sample-actions";
 import { TIMELINE_VALUES } from "../../model/timeline";
 import {
   createRootStore,
@@ -94,6 +95,20 @@ describe("DataTable — empty", () => {
       expect(view.getByRole("button", { name })).toBeInTheDocument();
     }
     expect(headers[2]).toHaveTextContent("Erosion rate (mm/1,000 yr)");
+  });
+});
+
+describe("DataTable — sort names", () => {
+  it("announces each column by the start of its heading, so the two can't drift apart", () => {
+    const { view } = setup();
+    for (const [key, unit] of [
+      ["years", "(yr)"],
+      ["rate", "(mm/1,000 yr)"],
+      ["roof", "(mm)"],
+    ] as const) {
+      const name = `${SORT_NAMES[key]} ${unit}`;
+      expect(view.getByRole("button", { name })).toBeInTheDocument();
+    }
   });
 });
 

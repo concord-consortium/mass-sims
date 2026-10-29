@@ -8,7 +8,7 @@ behavior — against the same static artifacts users get.
 - **Config:** [`playwright.config.ts`](../playwright.config.ts) at the **repo root**.
 - **Suite:** [`playwright/`](../playwright/) — `sims.ts` (registry), `pages/` (page objects),
   `testdata/`, `tests/smoke/`, `tests/functional/`.
-- **Browser:** Chromium only.
+- **Browser:** Chromium only (see "Firefox and Safari: checked by hand").
 
 ## Running locally
 
@@ -125,6 +125,20 @@ passes at 1044 but fails at 767 is usually a **real product bug**, not a test-sc
 sim content area is a few pixels narrower than the raw viewport. This is fine for behavioral
 coverage (a few pixels doesn't change which controls fit), but these tests are **not** AP-pixel-
 perfect — visual/pixel-precise coverage is deferred (see below).
+
+## Firefox and Safari: checked by hand
+
+The suite and CI run Chromium only. Some layout code works around ways Firefox and Safari differ,
+which Chromium tests can't catch. In Collapse's data table, a spacer row is sized in JavaScript,
+because browsers place a table's extra height differently. The sticky header cells are also
+stacked so that sort headings reaching past their columns stay clickable.
+
+When you change that kind of code (table CSS, fonts, or the target widths), check it by hand in
+Firefox and Safari: start the sim's dev server and open `/__preview` in each. For Collapse:
+
+- With one sample, the average row sits on the table's bottom edge.
+- With enough samples to scroll, the rows scroll while the header and the average row stay put.
+- At 767, every part of each sort heading's label and icon is clickable and sorts that column.
 
 ## The reload-warning pattern
 

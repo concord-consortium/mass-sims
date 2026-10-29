@@ -51,8 +51,9 @@ template `yarn new-sim` copies), and `simulations/*` (the sims; **bananas** is t
   an unwrapped primitive is the signal to add a wrapper. Controls auto-emit a log event when given an
   `action` (snake_case) prop.
 - **Styling is plain (global) SCSS scoped under a single root class** (e.g. `.button { … }`) — no CSS
-  Modules, no `styles.x` mapping. Tokens come from `@use "…/styles/tokens"`; nothing outside
-  `tokens.scss` hard-codes color/size/spacing.
+  Modules, no `styles.x` mapping. Shared color, spacing, type and radii come from
+  `@use "…/styles/tokens"`, and a sim's own palette from its `theme.scss`. A component's measured
+  geometry (row heights, column widths, offsets) may stay in its stylesheet as named variables.
 - **Tests import from `"vitest"` explicitly** (`globals: false`). No injected globals.
 - **State split:** MST owns the trial **list** (what trials exist, which is selected, each trial's
   recorded result); `useModelState` owns the **per-frame transient state** of the running trial. Don't
