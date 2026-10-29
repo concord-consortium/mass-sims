@@ -3,6 +3,7 @@ import { type RefObject, useEffect, useLayoutEffect, useRef } from "react";
 const SORT = ".collapse-th-sort";
 const DEL = ".collapse-row-del";
 const NAV_KEYS = new Set(["ArrowUp", "ArrowDown", "Home", "End", "ArrowLeft", "ArrowRight"]);
+const MODIFIERS = new Set(["Shift", "Control", "Alt", "Meta"]);
 
 /**
  * The table's keyboard fast path and its focus ring. Every row and delete button stays in the
@@ -57,11 +58,21 @@ export function useRowKeyboardNav(
 
     // Capture phase on the document, so the flag is set before any handler below runs, including
     // for a Tab that arrives from outside the table.
-    const onPointerDown = () => {
+    // A change of input without a change of focus updates the focused row's ring too, as the
+    // browser's own `:focus-visible` does: a press on the row hides it, and a key brings it back.
+    // A press outside the rows (the scrollbar) and a modifier key alone leave it as it is.
+    const onPointerDown = (e: PointerEvent) => {
       kbNav.current = false;
+      if (tbody.contains(e.target as Node)) clearRing();
     };
-    const onAnyKey = () => {
+    const onAnyKey = (e: KeyboardEvent) => {
       kbNav.current = true;
+      if (MODIFIERS.has(e.key) || e.ctrlKey || e.metaKey || e.altKey) return;
+      const active = document.activeElement;
+      if (active?.tagName === "TR" && tbody.contains(active)) {
+        clearRing(active);
+        active.classList.add("kb-focus");
+      }
     };
 
     // The browser scrolls by itself when Tab moves focus, and offers no `preventScroll`. So note

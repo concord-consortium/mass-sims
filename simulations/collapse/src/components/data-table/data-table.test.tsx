@@ -367,6 +367,29 @@ describe("DataTable — keyboard", () => {
     expect(rows[1]).not.toHaveClass("kb-focus");
   });
 
+  it("a key on a clicked row brings the ring; a modifier key alone does not", () => {
+    const { rows } = threeRows();
+    fireEvent.pointerDown(rows[1]);
+    act(() => rows[1].focus());
+    expect(rows[1]).not.toHaveClass("kb-focus");
+    fireEvent.keyDown(rows[1], { key: "Shift" });
+    expect(rows[1]).not.toHaveClass("kb-focus");
+    fireEvent.keyDown(rows[1], { key: "Enter" });
+    expect(rows[1]).toHaveClass("kb-focus");
+  });
+
+  it("a press on the keyboard-focused row hides its ring; a press outside the rows does not", () => {
+    const { rows, view } = threeRows();
+    act(() => rows[0].focus());
+    fireEvent.keyDown(rows[0], { key: "ArrowDown" });
+    expect(rows[1]).toHaveClass("kb-focus");
+    fireEvent.pointerDown(view.container.querySelector(".collapse-table-wrap") as Element);
+    expect(rows[1]).toHaveClass("kb-focus");
+    fireEvent.pointerDown(rows[1]);
+    expect(document.activeElement).toBe(rows[1]);
+    expect(rows[1]).not.toHaveClass("kb-focus");
+  });
+
   it("ArrowRight goes to the row's delete button and ArrowLeft comes back", () => {
     const { rows } = threeRows();
     act(() => rows[1].focus());
