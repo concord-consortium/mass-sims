@@ -1,7 +1,11 @@
-import { useRef } from "react";
+import { observer } from "mobx-react-lite";
+import { useRef, useState } from "react";
 import CloseIcon from "../../assets/close-icon.svg?react";
 import CompareIcon from "../../assets/compare-icon.svg?react";
 import { useCompareActions } from "../../hooks/use-compare-actions";
+import { useStores } from "../../stores/root-store";
+import { COLLAPSE_TRIAL_LETTERS } from "../../trial-conditions";
+import { CompareColumn } from "./compare-column";
 import { useDialogLifecycle } from "./use-dialog-lifecycle";
 import { useFocusTrap } from "./use-focus-trap";
 import "./compare-trials.scss";
@@ -19,10 +23,14 @@ const LEGEND = [
  * A dialog, but not `aria-modal`: that would hide the live region, which is outside the dialog, and
  * silence every announcement. Making the rest of the frame inert does the isolating instead.
  */
-export function CompareTrials() {
+export const CompareTrials = observer(function CompareTrials() {
   const rootRef = useRef<HTMLDivElement>(null);
   const closeRef = useRef<HTMLButtonElement>(null);
+  const store = useStores();
   const { closeCompare } = useCompareActions();
+  // The year under the pointer, lit in every column.
+  const [linkedYear, setLinkedYear] = useState<number | null>(null);
+  const allEmpty = !store.hasAnyProgress;
   useDialogLifecycle(rootRef, { initialFocus: closeRef, opener: ".collapse-compare-button" });
   useFocusTrap(rootRef);
 
@@ -61,7 +69,24 @@ export function CompareTrials() {
           <CloseIcon className="collapse-compare-close-icon" aria-hidden="true" />
         </button>
       </div>
-      <div className="collapse-compare-grid" />
+      <div className={allEmpty ? "collapse-compare-grid all-empty" : "collapse-compare-grid"}>
+        {COLLAPSE_TRIAL_LETTERS.map((letter) => (
+          <CompareColumn
+            key={letter}
+            letter={letter}
+            linkedYear={linkedYear}
+            onHover={setLinkedYear}
+          />
+        ))}
+      </div>
+      {allEmpty && (
+        // One prompt across the four columns, on the heading rule, instead of four notices.
+        <div className="collapse-compare-prompt">
+          <div className="collapse-prompt-pill">
+            Take samples in <b>each trial</b>, then compare them here
+          </div>
+        </div>
+      )}
     </div>
   );
-}
+});

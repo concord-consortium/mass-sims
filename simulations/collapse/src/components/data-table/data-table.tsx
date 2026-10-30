@@ -1,7 +1,7 @@
 import { observer } from "mobx-react-lite";
 import { useLayoutEffect, useRef } from "react";
 import { useSampleActions } from "../../hooks/use-sample-actions";
-import type { Sample, SortState } from "../../model/types";
+import { sortedSamples } from "../../model/sort-samples";
 import { useStores } from "../../stores/root-store";
 import { type CollapseTrialLetter, TRIAL_CONDITIONS } from "../../trial-conditions";
 import { SampleRow } from "./sample-row";
@@ -10,14 +10,8 @@ import { TableHead } from "./table-head";
 import { useFillerHeight } from "./use-filler-height";
 import { useRowFlip } from "./use-row-flip";
 import { useRowKeyboardNav } from "./use-row-keyboard-nav";
+import "./table-shared.scss";
 import "./data-table.scss";
-
-/** A sorted copy, so the trial keeps the order the student sampled in. */
-function sortedSamples(samples: readonly Sample[], { key, direction }: SortState): Sample[] {
-  const view = samples.slice();
-  if (key) view.sort((a, b) => (a[key] - b[key]) * direction);
-  return view;
-}
 
 /**
  * The selected trial's samples, as one native table in one scroller. The header and the average

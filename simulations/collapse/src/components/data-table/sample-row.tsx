@@ -2,11 +2,13 @@ import type { KeyboardEvent, MouseEvent } from "react";
 import CloseIcon from "../../assets/close-icon.svg?react";
 import { type Conditions, formatWhole, isCollapsed } from "../../model/erosion";
 import type { Sample } from "../../model/types";
+import { RoofCell } from "./roof-cell";
 import { Thumbnail } from "./thumbnail";
 
-export function sampleRowLabel({ years, rate, roof }: Sample): string {
+/** `lead` comes before the years: "Sample at" here, the trial in the Compare Trials view. */
+export function sampleRowLabel({ years, rate, roof }: Sample, lead = "Sample at"): string {
   return (
-    `Sample at ${formatWhole(years)} years before collapse, erosion rate ${formatWhole(rate)} mm ` +
+    `${lead} ${formatWhole(years)} years before collapse, erosion rate ${formatWhole(rate)} mm ` +
     `per 1,000 years, rock above cave ${formatWhole(roof)} mm${isCollapsed(roof) ? ", collapsed" : ""}`
   );
 }
@@ -34,8 +36,6 @@ export function SampleRow({
   onSelect,
   onDelete,
 }: SampleRowProps) {
-  const collapsed = isCollapsed(sample.roof);
-
   const onKeyDown = (e: KeyboardEvent<HTMLTableRowElement>) => {
     // Only on the row itself: on the delete button, Space and Enter are the button's own.
     if (e.target !== e.currentTarget) return;
@@ -68,14 +68,7 @@ export function SampleRow({
       </td>
       <td>{formatWhole(sample.years)}</td>
       <td>{formatWhole(sample.rate)}</td>
-      {collapsed ? (
-        <td className="collapse-cell-failed">
-          collapsed
-          <br />({formatWhole(sample.roof)})
-        </td>
-      ) : (
-        <td>{formatWhole(sample.roof)}</td>
-      )}
+      <RoofCell roof={sample.roof} />
       <td className="collapse-cell-del">
         <button
           type="button"

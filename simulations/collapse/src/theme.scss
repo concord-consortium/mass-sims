@@ -19,6 +19,9 @@ $timeline-ring-fill: rgba(#f0f6fe, 0.5); // see-through, so the rail shows throu
 
 // The data table's row dividers.
 $table-divider: #949494;
+// The Compare Trials view's row dividers. Lighter than `$table-divider` on purpose, not by drift: its
+// rows are 36px, four columns across, so a lighter rule suits the denser view.
+$compare-divider: #c9c9c9;
 // The thumbnail's border. Non-text contrast (3:1) against every fill its cell can take: white 3.84,
 // row hover 3.33, selected row 3.20. `$table-divider` fails at 2.53.
 $thumbnail-border: #828282;

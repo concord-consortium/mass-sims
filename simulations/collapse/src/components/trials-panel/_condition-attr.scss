@@ -1,0 +1,38 @@
+@use "@concord-consortium/mass-sims-shared/styles/tokens" as tokens;
+
+// One condition's icon and label (`<ConditionAttr>`), for the trial cards and the Compare Trials
+// view's column heads. Emits no CSS until included.
+@mixin styles {
+  .collapse-attr-row {
+    // Top-aligned so the note line can't pull the icon down.
+    align-items: flex-start;
+    display: flex;
+    gap: 5px;
+    // Keeps a one-line row's height despite the icon's negative margin.
+    min-height: 22px;
+  }
+
+  // The SVG files set their own width and height, so size the svg itself.
+  .collapse-attr-icon {
+    display: block;
+    flex-shrink: 0;
+    height: 22px;
+    // (22 − 18) / 2: centers the icon on the label's first line.
+    margin-top: -2px;
+    width: 22px;
+
+    svg {
+      display: block;
+      height: 22px;
+      width: 22px;
+    }
+  }
+
+  .collapse-attr-label {
+    color: tokens.$color-text;
+    font-family: tokens.$font-family-condensed;
+    font-size: tokens.$font-size-base;
+    font-weight: 500;
+    line-height: 18px;
+  }
+}
