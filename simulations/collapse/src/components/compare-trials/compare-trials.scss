@@ -23,7 +23,35 @@ $row-height: 36px;
 $pic-w: 31.72px;
 $pic-h: 31px;
 $pic-col: 36px;
+// The widest value each column can hold, measured in Roboto Condensed 16px at the rows' tracking:
+// "200,000", "35", and "collapsed" (the widest line in the Rock column).
+$val-years: 52.78px;
+$val-rate: 16.44px;
+$val-rock: 63.94px;
+// A column's table width at the narrowest (767) and widest (1044) target widths.
+$table-narrow: 184.25px;
+$table-wide: 253.5px;
+// The narrowest table at which every value still fits its cell. The headings need less (167px).
+// Below it the grid scrolls sideways: four trials side by side is the point of the view.
+$table-min: 183px;
 $sticky-z: 2;
+
+// A length that is `$narrow` at the narrowest table and `$wide` at the widest, on a straight line
+// between. `cqi` is the table's width (see `.collapse-compare-rows`).
+@function by-width($narrow, $wide) {
+  $slope: ($wide - $narrow) / ($table-wide - $table-narrow);
+  @return calc(#{$slope * 100}cqi + #{$narrow - $slope * $table-narrow});
+}
+
+// A measurement column's width. At the widest, the three share the space equally, so the three
+// headings' bands are even. At the narrowest, each takes its widest value plus the same margin, so
+// every value fits. Both layouts fill the table, so every width between them does too.
+@function col-width($val) {
+  @return by-width(
+    $val + ($table-narrow - $pic-col - $val-years - $val-rate - $val-rock) / 3,
+    ($table-wide - $pic-col) / 3
+  );
+}
 
 // Covers both panels: `.sim-main` is the containing block (see app.scss), and its edges are the
 // panels' outer edges. Over the section chips (z-index: 11), under the About panel (z-index: 101).
@@ -152,10 +180,11 @@ $sticky-z: 2;
   flex: 1 1 0;
   flex-direction: column;
   min-height: 0;
-  min-width: 0;
+  min-width: $table-min + tokens.$border-strong-width;
 
   &:first-child {
     border-left: 0;
+    min-width: $table-min;
   }
 }
 
@@ -223,6 +252,8 @@ $sticky-z: 2;
   min-height: 0;
   overflow-x: hidden;
   overflow-y: auto;
+  // For the column widths, which follow the table's width.
+  container-type: inline-size;
   // The sticky heading and average row cover the scroller's ends.
   scroll-padding-block: $th-height $row-height;
 }
@@ -240,12 +271,14 @@ $sticky-z: 2;
     width: $pic-col;
   }
 
+  // Years takes the rest. The headings can be wider than their columns; `useHeadingSpacing` spaces
+  // them.
   col.cmp-rate {
-    width: 40px;
+    width: col-width($val-rate);
   }
 
   col.cmp-rock {
-    width: 64px;
+    width: col-width($val-rock);
   }
 
   th {
@@ -259,14 +292,34 @@ $sticky-z: 2;
     position: sticky;
     top: 0;
     z-index: $sticky-z;
+
+    // Each sticky cell paints as its own layer, so a heading that reaches past its column must be
+    // above the neighbor it reaches into, or that neighbor's opaque fill covers it. Rate reaches
+    // both ways at narrow widths, so it goes on top; Years reaches over the thumbnail column.
+    &:nth-child(2),
+    &:nth-child(4) {
+      z-index: $sticky-z + 1;
+    }
+
+    &:nth-child(3) {
+      z-index: $sticky-z + 2;
+    }
   }
 
   .collapse-th-sort {
     // Top-anchored, so the label stays put when the band grows for the pill.
     align-items: flex-start;
-    gap: 3px;
+    // The label-to-chevron gap and the chevron narrow with the table, so the space between two
+    // headings stays wider than the space inside one.
+    gap: clamp(3px, by-width(3px, 5px), 5px);
     min-height: $th-height;
     padding: $th-pad 4px;
+  }
+
+  // The glyph scales to the width and stays centered in its 22px box, so the row height holds.
+  .collapse-sort-ico {
+    height: 22px;
+    width: clamp(12px, by-width(12px, 14px), 14px);
   }
 
   .collapse-rows td {

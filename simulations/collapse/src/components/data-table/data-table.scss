@@ -191,7 +191,7 @@ $sticky-z: 2;
 }
 
 // Pinned 2px from the top rather than centered: 2 + 43 + 2 + 1px divider = the 48px row, with
-// equal air above and below. 5px left = the selected row's 3px marker plus 2px clear.
+// equal space above and below. 5px left = the selected row's 3px marker plus 2px clear.
 .collapse-table .collapse-cell-pic {
   padding: 2px 0 0 5px;
   vertical-align: top;

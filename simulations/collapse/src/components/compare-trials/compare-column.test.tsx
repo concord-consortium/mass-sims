@@ -102,7 +102,8 @@ describe("CompareTrials columns — with samples", () => {
         "rock above cave 8,800 mm",
     ]);
     const averages = table(view, "A").querySelector("tfoot tr") as HTMLTableRowElement;
-    expect(averages.cells).toHaveLength(4);
+    expect(averages.cells).toHaveLength(3);
+    expect(averages.cells[0]).toHaveAttribute("colspan", "2");
     expect(averages).toHaveTextContent("Average:207,300");
     expect(table(view, "A").querySelector("caption")).toHaveTextContent(/: 2 samples$/);
     expect(within(table(view, "C").parentElement as HTMLElement).getByText("No samples taken yet"));

@@ -10,6 +10,7 @@ import { SortHeader, sortDirOf } from "../data-table/sort-header";
 import { TableFoot } from "../data-table/table-foot";
 import { COLUMN_NAMES } from "../data-table/table-head";
 import { useFillerHeight } from "../data-table/use-filler-height";
+import { useHeadingSpacing } from "../data-table/use-heading-spacing";
 import { ConditionAttr, MOISTURE_ICONS, ROCK_ICONS } from "../trials-panel/trial-card-body";
 import { CompareRow } from "./compare-row";
 import "../data-table/table-shared.scss";
@@ -42,10 +43,16 @@ export const CompareColumn = observer(function CompareColumn({
   const { togglePin } = useCompareActions();
   const scrollerRef = useRef<HTMLDivElement>(null);
   const fillerRef = useRef<HTMLTableRowElement>(null);
+  const headRowRef = useRef<HTMLTableRowElement>(null);
   const conditions = TRIAL_CONDITIONS[letter];
   const { rock, moisture } = conditions;
   const count = trial?.sampleCount ?? 0;
   useFillerHeight(scrollerRef, fillerRef, count);
+  // The headings sit closer than the data table's: 8px between two headings instead of 12, and each
+  // hover band reaches 4px past its label and chevron instead of 8. There are three headings in a
+  // quarter of the width. The right band stays inside the column; the Years heading may reach over
+  // the thumbnail column.
+  useHeadingSpacing(headRowRef, { gap: 8, minBandPadding: 4, clampRight: true });
   if (!trial) return null;
   const rows = sortedSamples(trial.samples, ui.sort);
 
@@ -75,7 +82,7 @@ export const CompareColumn = observer(function CompareColumn({
             <col className="cmp-rock" />
           </colgroup>
           <thead>
-            <tr>
+            <tr ref={headRowRef}>
               <th scope="col">
                 <span className="sr-only">Cave</span>
               </th>
@@ -115,6 +122,7 @@ export const CompareColumn = observer(function CompareColumn({
               <TableFoot
                 averageRate={trial.averageRate}
                 averageRoof={trial.averageRoof}
+                headingOverPicture
                 trailingCell={false}
               />
             </>
