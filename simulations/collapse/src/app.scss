@@ -30,6 +30,11 @@
     border-color: theme.$border;
   }
 
+  // The Compare Trials overlay is positioned against this.
+  .sim-main {
+    position: relative;
+  }
+
   .title-bar {
     background: theme.$title-bar;
   }

@@ -1,0 +1,122 @@
+@use "@concord-consortium/mass-sims-shared/styles/tokens" as tokens;
+@use "../../theme" as theme;
+
+// Covers both panels: `.sim-main` is the containing block (see app.scss), and its edges are the
+// panels' outer edges. Over the section chips (z-index: 11), under the About panel (z-index: 101).
+.collapse-compare {
+  background: theme.$surface;
+  border: tokens.$border-strong-width solid theme.$border;
+  border-radius: tokens.$radius-lg;
+  display: flex;
+  flex-direction: column;
+  inset: 0;
+  overflow: hidden;
+  position: absolute;
+  z-index: 12;
+}
+
+// An About panel that was open when the comparison opened is hidden until it closes, so focus has
+// one home. Its open state and drag offset are kept, so it comes back where it was.
+.simulation-frame:has(.collapse-compare) .simulation-frame-info-modal {
+  display: none;
+}
+
+// Laid out like the About panel's header: the icon at the left, 10px to the title.
+.collapse-compare-head {
+  align-items: center;
+  // 2px, heavier than the About header's 1px: it separates the title band from four columns of
+  // tables, and must outweigh the lighter rule inside each column head.
+  border-bottom: tokens.$border-strong-width solid theme.$border;
+  display: flex;
+  flex: 0 0 auto;
+  gap: 10px;
+  padding: 3px 3px 3px 12px;
+}
+
+.collapse-compare-head-icon {
+  color: theme.$heading;
+  flex-shrink: 0;
+  height: 24px;
+  width: 24px;
+}
+
+.collapse-compare-titles {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.collapse-compare-title {
+  color: tokens.$color-text;
+  font-family: tokens.$font-family-base;
+  font-size: tokens.$font-size-base;
+  font-weight: 700;
+  line-height: tokens.$line-height-sm;
+  margin: 0;
+}
+
+// The units live here once, instead of in every column heading.
+.collapse-compare-legend {
+  color: tokens.$color-text;
+  font-family: tokens.$font-family-condensed;
+  font-size: tokens.$font-size-base;
+  font-weight: 400;
+  // No tracking: the line is wider than the table headings and does not fit at their 0.01em.
+  letter-spacing: 0;
+  line-height: tokens.$line-height-sm;
+  // Allowed to wrap (WCAG 1.4.12): it fits on one line at every target width, but a user
+  // stylesheet that forces letter-spacing would otherwise cut it off.
+  white-space: normal;
+}
+
+// Set as the column headings they name.
+.collapse-compare-key {
+  color: theme.$heading;
+  font-weight: 500;
+}
+
+// The About panel's close button, state for state.
+.collapse-compare-close {
+  align-items: center;
+  background: transparent;
+  border: none;
+  border-radius: tokens.$radius-sm;
+  cursor: pointer;
+  display: flex;
+  flex: 0 0 auto;
+  height: tokens.$touch-target-min;
+  justify-content: center;
+  padding: 0;
+  transition: tokens.$transition-interactive;
+  width: tokens.$touch-target-min;
+
+  &:hover,
+  &:focus-visible {
+    background: theme.$hover;
+  }
+
+  &:active {
+    background: theme.$active;
+  }
+
+  &:focus-visible {
+    outline: tokens.$focus-outline;
+    outline-offset: -2px;
+  }
+}
+
+.collapse-compare-close-icon {
+  color: theme.$heading;
+  display: block;
+  height: 24px;
+  pointer-events: none;
+  width: 24px;
+}
+
+// Scrolls sideways only; each column's rows scroll on their own.
+.collapse-compare-grid {
+  display: flex;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+}

@@ -9,6 +9,7 @@ import {
 import { observer } from "mobx-react-lite";
 import { applySnapshot, getSnapshot, onSnapshot } from "mobx-state-tree";
 import { useEffect, useMemo } from "react";
+import { CompareTrials } from "./components/compare-trials/compare-trials";
 import { SimulationView } from "./components/simulation-view";
 import { TrialsPanel } from "./components/trials-panel/trials-panel";
 import { createRootStore, RootStoreProvider, type RootStoreSnapshotOut } from "./stores/root-store";
@@ -92,6 +93,8 @@ export const App = observer(function App() {
           <SimulationFrame.Simulation instruction="Select a trial, then sample through time">
             <SimulationView />
           </SimulationFrame.Simulation>
+
+          {rootStore.ui.compareOpen && <CompareTrials />}
         </SimulationFrame>
       </Announcer>
     </RootStoreProvider>
