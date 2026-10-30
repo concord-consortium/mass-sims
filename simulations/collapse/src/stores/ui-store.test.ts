@@ -98,4 +98,40 @@ describe("UiStore", () => {
     expect(ui.selectedSampleId("A")).toBe(1);
     expect(ui.sort.key).toBe("years");
   });
+
+  it("starts closed with no pin", () => {
+    const ui = UiStore.create();
+    expect(ui.compareOpen).toBe(false);
+    expect(ui.pinnedYear).toBeNull();
+  });
+
+  it("setCompareOpen sets the view and the pin; closeCompare leaves the pin", () => {
+    const ui = UiStore.create();
+    ui.setCompareOpen(true, 50000);
+    expect(ui.compareOpen).toBe(true);
+    expect(ui.isPinned(50000)).toBe(true);
+    ui.closeCompare();
+    expect(ui.compareOpen).toBe(false);
+    expect(ui.pinnedYear).toBe(50000);
+  });
+
+  it("togglePin pins a year, moves to another, and clears on the pinned year", () => {
+    const ui = UiStore.create();
+    ui.togglePin(50000);
+    expect(ui.isPinned(50000)).toBe(true);
+    ui.togglePin(0);
+    expect(ui.isPinned(50000)).toBe(false);
+    expect(ui.isPinned(0)).toBe(true);
+    ui.togglePin(0);
+    expect(ui.pinnedYear).toBeNull();
+  });
+
+  it("keeps the compare state out of snapshots", () => {
+    const ui = UiStore.create();
+    ui.setCompareOpen(true, 0);
+    expect(getSnapshot(ui)).toEqual({ selectedTrialLetter: "A" });
+    applySnapshot(ui, { selectedTrialLetter: "B" });
+    expect(ui.compareOpen).toBe(true);
+    expect(ui.pinnedYear).toBe(0);
+  });
 });

@@ -5,7 +5,7 @@ import type { SortKey, SortState } from "../model/types";
 
 /**
  * Per-session UI state: the shared `UiStore` base plus the timeline's chosen value, each trial's
- * selected row, and the table's sort.
+ * selected row, the table's sort, and the Compare Trials view.
  *
  * `timelineIndex` is an index into `TIMELINE_VALUES`, shared by all trials. Change it through
  * `useSetSampleYears`, which also logs the change.
@@ -13,7 +13,11 @@ import type { SortKey, SortState } from "../model/types";
  * `selectedSampleByTrial` maps a trial letter to the id of its selected sample. `sort` is one state
  * for all four trials, so switching trials keeps the columns comparable.
  *
- * All three are `.volatile`, so they are not in snapshots: they are not saved, and restoring saved
+ * `compareOpen` says whether the Compare Trials view is showing. `pinnedYear` is the year that view
+ * highlights in every trial. Open the view through the root store's `openCompare`, which seeds the
+ * pin from the selected row.
+ *
+ * All of these are `.volatile`, so they are not in snapshots: they are not saved, and restoring saved
  * state with `applySnapshot` does not reset them. A volatile value is observed by reference, so
  * every write replaces the object.
  */
@@ -21,6 +25,8 @@ export const UiStore = BaseUiStore.volatile(() => ({
   timelineIndex: 0,
   selectedSampleByTrial: {} as Readonly<Record<string, number>>,
   sort: { key: null, direction: 1 } as SortState,
+  compareOpen: false,
+  pinnedYear: null as number | null,
 }))
   .views((self) => ({
     /** The chosen sample time, in years before collapse. */
@@ -36,6 +42,9 @@ export const UiStore = BaseUiStore.volatile(() => ({
     /** The id of the trial's selected sample, or `null`. The id may name a deleted sample. */
     selectedSampleId(letter: string): number | null {
       return self.selectedSampleByTrial[letter] ?? null;
+    },
+    isPinned(years: number): boolean {
+      return self.pinnedYear === years;
     },
   }))
   .actions((self) => ({
@@ -57,6 +66,18 @@ export const UiStore = BaseUiStore.volatile(() => ({
       if (current !== key) self.sort = { key, direction: 1 };
       else if (direction === 1) self.sort = { key, direction: -1 };
       else self.sort = { key: null, direction: 1 };
+    },
+    setCompareOpen(open: boolean, pinnedYear: number | null) {
+      self.compareOpen = open;
+      self.pinnedYear = pinnedYear;
+    },
+    /** Closes the view. The pin stays until the next open replaces it. */
+    closeCompare() {
+      self.compareOpen = false;
+    },
+    /** Pins `years`. Pinning the pinned year clears the pin. */
+    togglePin(years: number) {
+      self.pinnedYear = self.pinnedYear === years ? null : years;
     },
   }));
 

@@ -46,6 +46,12 @@ export const RootStore = types
     get hasAnyProgress(): boolean {
       return anyTrialHasProgress(self.trials, (trial) => trial.hasSamples);
     },
+    /** The letters, in A–D order, of the trials with a sample at `years`. */
+    trialsSampledAt(years: number): CollapseTrialLetter[] {
+      return COLLAPSE_TRIAL_LETTERS.filter((letter) =>
+        self.trials.get(letter)?.samples.some((s) => s.years === years),
+      );
+    },
   }))
   .actions((self) => ({
     /**
@@ -71,6 +77,14 @@ export const RootStore = types
       if (!trial) return;
       trial.reset();
       self.ui.selectSample(target, null);
+    },
+    /**
+     * Opens the Compare Trials view with the selected row's year pinned, or no pin without a
+     * selection. Does nothing when the view is already open.
+     */
+    openCompare() {
+      if (self.ui.compareOpen) return;
+      self.ui.setCompareOpen(true, self.selectedSample?.years ?? null);
     },
   }));
 
