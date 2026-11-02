@@ -110,8 +110,11 @@ export function useCompareKeyboardNav(
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.altKey || e.ctrlKey || e.metaKey || e.shiftKey) return;
       const target = e.target as HTMLElement;
-      if (isRow(target)) onRowKey(e, target);
-      else if (target.matches(SORT)) onHeadKey(e, target);
+      if (isRow(target)) {
+        // Also for a key that does not move focus, after a click focused the row.
+        onLinkYearRef.current(Number(target.dataset.year));
+        onRowKey(e, target);
+      } else if (target.matches(SORT)) onHeadKey(e, target);
     };
 
     // A row reached any way but a sideways move (Tab, a click) becomes the goal for sideways moves.
@@ -126,14 +129,18 @@ export function useCompareKeyboardNav(
     const onFocusOut = (e: FocusEvent) => {
       if (!isRow(e.relatedTarget as Element | null)) onLinkYearRef.current(null);
     };
+    // As for the keyboard ring: a press hides it, also on a row that keeps its focus.
+    const onPointerDown = () => onLinkYearRef.current(null);
 
     grid.addEventListener("keydown", onKeyDown);
     grid.addEventListener("focusin", onFocusIn);
     grid.addEventListener("focusout", onFocusOut);
+    grid.addEventListener("pointerdown", onPointerDown);
     return () => {
       grid.removeEventListener("keydown", onKeyDown);
       grid.removeEventListener("focusin", onFocusIn);
       grid.removeEventListener("focusout", onFocusOut);
+      grid.removeEventListener("pointerdown", onPointerDown);
     };
   }, [gridRef, kbNav]);
 }

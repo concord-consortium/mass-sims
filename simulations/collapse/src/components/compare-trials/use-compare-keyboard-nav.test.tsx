@@ -164,6 +164,20 @@ describe("useCompareKeyboardNav", () => {
     fireEvent.mouseLeave(a1);
     expect(linked(view)).toEqual([]);
   });
+
+  it("on a row that keeps its focus, a press unlinks its year and a key links it again", () => {
+    const { view } = setup();
+    const a2 = rows(view, 0)[2];
+    fireEvent.keyDown(document, { key: "Tab" });
+    act(() => a2.focus());
+    expect(linked(view)).toEqual(["A:3", "D:3"]);
+    fireEvent.pointerDown(a2);
+    expect(linked(view)).toEqual([]);
+    // The last row, so ArrowDown does not move focus.
+    press(a2, "ArrowDown");
+    expect(document.activeElement).toBe(a2);
+    expect(linked(view)).toEqual(["A:3", "D:3"]);
+  });
 });
 
 describe("CompareColumn pin reveal", () => {
