@@ -18,6 +18,8 @@
  * The `__norPerfTrace` flag (set the same way) leaves the run alone but has the runner record each cloud
  * frame's `{ cloudElapsedMs, frameMs }`, so (b) can select frames by the runner's clock — which moves
  * slower than wall time on a throttled run, since the runner clamps each frame's clock advance.
+ * Each entry's `frameMs` is the gap since the previous frame, so it measures the previous tick's work. The
+ * last tick's own work (the last steps, the cache copy, finalize) is not measured: no later frame records it.
  *
  * Measured results, and the options if the storm is too slow on real devices:
  * simulations/noreaster/STORM-PERFORMANCE.md.
@@ -253,11 +255,9 @@ async function main() {
         for (let run = 0; run < REAL_RUNS; run++) {
           await page.goto(BASE_URL, { waitUntil: "domcontentloaded" });
           const trace = await tracedRun(page, cdp, picks, rate);
+          // No upper bound: the last tick's clock can overshoot durationMs, and the trace stops at finalize.
           const late = trace
-            .filter(
-              (e) =>
-                e.cloudElapsedMs >= durationMs - LATE_WINDOW_MS && e.cloudElapsedMs <= durationMs,
-            )
+            .filter((e) => e.cloudElapsedMs >= durationMs - LATE_WINDOW_MS)
             .map((e) => e.frameMs)
             .sort((a, b) => a - b);
           if (late.length === 0) throw new Error(`no late-window frames for "${scene}"`);
