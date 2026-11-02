@@ -128,7 +128,8 @@ react-aria `Modal`.
   one tab stop, the first row, so coming back to a column starts at the top. The thumbnail is
   `aria-hidden`.
 - **Linked and pinned years.** A year is what the four trials share. Hovering a row, or focusing
-  it, gives every row with that year the hover background in every column. Click, Enter, or Space
+  it with the keyboard, gives every row with that year the hover background in every column. While
+  the pointer is on a row, its year is shown; when it leaves, the focused row's year comes back. Click, Enter, or Space
   pins the year: the pinned rows have **`aria-current="true"`**, the selected-row fill, and the
   left marker, and the announcement names where the year was sampled: "50,000 years before collapse
   pinned. Sampled in trials A, C; not in B, D." ("Sampled in all four trials." when every trial has

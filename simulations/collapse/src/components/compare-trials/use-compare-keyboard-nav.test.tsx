@@ -53,6 +53,12 @@ function rows(view: ReturnType<typeof render>, i: number) {
 function headings(view: ReturnType<typeof render>, i: number) {
   return Array.from(column(view, i).querySelectorAll<HTMLElement>(".collapse-th-sort"));
 }
+/** The rows highlighted as the linked year, by row key. */
+function linked(view: ReturnType<typeof render>) {
+  return Array.from(view.container.querySelectorAll<HTMLElement>("tr[data-linked]")).map(
+    (r) => r.dataset.rowKey,
+  );
+}
 /** Focuses `el` and presses `key` on it, as the keyboard would. */
 function press(el: HTMLElement, key: string) {
   fireEvent.keyDown(el, { key });
@@ -127,25 +133,37 @@ describe("useCompareKeyboardNav", () => {
     expect(document.activeElement).toBe(rows(view, 1)[0]);
   });
 
-  it("a focused row links its year in every column, and leaving the rows unlinks it", () => {
+  it("a row focused with the keyboard links its year in every column, and leaving the rows unlinks it", () => {
     const { view } = setup();
     const a1 = rows(view, 0)[1];
+    fireEvent.keyDown(document, { key: "Tab" });
     act(() => a1.focus());
-    const linked = () =>
-      Array.from(view.container.querySelectorAll<HTMLElement>("tr[data-linked]")).map(
-        (r) => r.dataset.rowKey,
-      );
-    expect(linked()).toEqual(["A:2", "B:1"]);
+    expect(linked(view)).toEqual(["A:2", "B:1"]);
     act(() => headings(view, 0)[0].focus());
-    expect(linked()).toEqual([]);
+    expect(linked(view)).toEqual([]);
   });
 
-  it("a click does not draw the keyboard ring", () => {
+  it("the focused row's year is linked again after the pointer passes over another row", () => {
     const { view } = setup();
     const a1 = rows(view, 0)[1];
+    fireEvent.keyDown(document, { key: "Tab" });
+    act(() => a1.focus());
+    const d0 = rows(view, 3)[0];
+    fireEvent.mouseEnter(d0);
+    expect(linked(view)).toEqual(["A:1", "D:1"]);
+    fireEvent.mouseLeave(d0);
+    expect(linked(view)).toEqual(["A:2", "B:1"]);
+  });
+
+  it("a click draws no keyboard ring, and leaves no link once the pointer leaves the row", () => {
+    const { view } = setup();
+    const a1 = rows(view, 0)[1];
+    fireEvent.mouseEnter(a1);
     fireEvent.pointerDown(a1);
     act(() => a1.focus());
     expect(a1).not.toHaveClass("kb-focus");
+    fireEvent.mouseLeave(a1);
+    expect(linked(view)).toEqual([]);
   });
 });
 

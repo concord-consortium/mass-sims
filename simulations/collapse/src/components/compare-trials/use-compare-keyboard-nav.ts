@@ -19,7 +19,8 @@ const ROWS = "tbody.collapse-rows > tr";
  * - On a heading, ArrowLeft / ArrowRight move through all twelve headings in order, and ArrowDown
  *   enters the column's first row.
  *
- * A focused row links its year in every column (`onLinkYear`), as hovering it does.
+ * A row focused with the keyboard links its year in every column (`onLinkYear`), as hovering it
+ * does.
  */
 export function useCompareKeyboardNav(
   gridRef: RefObject<HTMLElement | null>,
@@ -119,7 +120,8 @@ export function useCompareKeyboardNav(
       if (!isRow(target)) return;
       const column = target.closest(COLUMN);
       if (column && !crossing.current) goal.current = rowsOf(column).indexOf(target);
-      onLinkYearRef.current(Number(target.dataset.year));
+      // Not after a click: the highlight would stay on that year after the pointer left the row.
+      onLinkYearRef.current(kbNav.current ? Number(target.dataset.year) : null);
     };
     const onFocusOut = (e: FocusEvent) => {
       if (!isRow(e.relatedTarget as Element | null)) onLinkYearRef.current(null);

@@ -30,13 +30,16 @@ export const CompareTrials = observer(function CompareTrials() {
   const gridRef = useRef<HTMLDivElement>(null);
   const store = useStores();
   const { closeCompare } = useCompareActions();
-  // The year under the pointer or the keyboard focus. Rows with that year get the hover background
-  // in every column.
-  const [linkedYear, setLinkedYear] = useState<number | null>(null);
+  // The year under the pointer, and the year of the row with keyboard focus. Rows with the linked
+  // year get the hover background in every column. Two values, so that a pointer leaving a row
+  // gives the highlight back to the focused row instead of clearing it.
+  const [hoveredYear, setHoveredYear] = useState<number | null>(null);
+  const [focusedYear, setFocusedYear] = useState<number | null>(null);
+  const linkedYear = hoveredYear ?? focusedYear;
   const allEmpty = !store.hasAnyProgress;
   useDialogLifecycle(rootRef, { initialFocus: closeRef, opener: ".collapse-compare-button" });
   useFocusTrap(rootRef);
-  useCompareKeyboardNav(gridRef, setLinkedYear);
+  useCompareKeyboardNav(gridRef, setFocusedYear);
 
   return (
     <div
@@ -84,7 +87,7 @@ export const CompareTrials = observer(function CompareTrials() {
             key={letter}
             letter={letter}
             linkedYear={linkedYear}
-            onHover={setLinkedYear}
+            onHover={setHoveredYear}
           />
         ))}
       </div>
