@@ -41,11 +41,12 @@ export interface SpacingOptions {
  * both measured unshifted and ungrown.
  *
  * At narrow widths the middle heading, "Erosion rate (mm/1,000 yr)", is wider than its column. It
- * stays centered; the outer two slide outward only as far as needed to keep `HEAD_GAP` from it.
- * Then each band grows to contain its own ink plus `HEAD_MIN_BAND_PADDING` on each side, and may
- * spread to its column edges. Where two bands would overlap, they meet at one boundary in the space
- * between their smallest extents, so pointing at a label always hits that label's button. At a wide
- * layout everything is 0.
+ * stays centered; the outer two slide outward only as far as needed to keep `gap` from it. With a
+ * `rightBound`, a heading that would pass it is moved left instead (see `SpacingOptions`). Then
+ * each band grows to contain its own ink plus `minBandPadding` on each side, and may spread to its
+ * column edges. Where two bands would overlap, they meet at one boundary in the space between their
+ * smallest extents, so pointing at a label always hits that label's button. At a wide layout
+ * everything is 0.
  */
 export function spaceHeadings(
   inks: readonly Span[],

@@ -51,7 +51,7 @@ export const CompareColumn = observer(function CompareColumn({
   const { rock, moisture } = conditions;
   const count = trial?.sampleCount ?? 0;
   useFillerHeight(scrollerRef, fillerRef, count);
-  // The headings sit closer than the data table's: 8px between two headings instead of 12, and each
+  // The headings sit closer than the data table's: 8px between two headings instead of 16, and each
   // hover band reaches 4px past its label and chevron instead of 8. There are three headings in a
   // quarter of the width. The right band stays inside the column; the Years heading may reach over
   // the thumbnail column.

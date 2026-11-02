@@ -135,8 +135,8 @@ react-aria `Modal`.
   pinned. Sampled in trials A, C; not in B, D." ("Sampled in all four trials." when every trial has
   it). Pressing a pinned row again clears the pin ("Pin cleared."). The view opens with the selected
   row's year pinned.
-- **Keys, on top of Tab.** Tab reaches the close button, all twelve headings, and one row per
-  column.
+- **Keys, on top of Tab.** Tab reaches the close button, all twelve headings, and one row in
+  each column that has rows.
   - ArrowUp / ArrowDown / Home / End move within a column. ArrowUp from the first row goes to the
     heading the student came down through, if it is in that column, else the column's first heading.
   - ArrowLeft / ArrowRight on a row move straight across to the same row position in the next column

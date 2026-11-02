@@ -373,8 +373,8 @@ $sticky-z: 2;
   }
 }
 
-// Rows with the hovered year get the hover background in every column. A pinned row keeps its own
-// fill.
+// Rows with the linked year (hovered, or focused with the keyboard) get the hover background in
+// every column. A pinned row keeps its own fill.
 .collapse-compare-tbl .collapse-rows tr[data-linked]:not([aria-current="true"]) td {
   background: theme.$hover;
 }
