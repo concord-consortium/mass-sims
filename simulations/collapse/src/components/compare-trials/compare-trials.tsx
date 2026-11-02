@@ -101,15 +101,15 @@ export const CompareTrials = observer(function CompareTrials() {
             onHover={setHoveredYear}
           />
         ))}
-      </div>
-      {allEmpty && (
-        // One prompt across the four columns, on the heading rule, instead of four notices.
-        <div className="collapse-compare-prompt">
-          <div className="collapse-prompt-pill">
-            Take samples in <b>each trial</b>, then compare them here
+        {allEmpty && (
+          // One prompt across the four columns, on the heading rule, instead of four notices.
+          <div className="collapse-compare-prompt">
+            <div className="collapse-prompt-pill">
+              Take samples in <b>each trial</b>, then compare them here
+            </div>
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 });

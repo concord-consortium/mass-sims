@@ -2,8 +2,6 @@
 @use "../../theme" as theme;
 @use "../trials-panel/condition-attr";
 
-// The title band: 3px padding around the 44px close button, then its 2px rule.
-$title-band: 3px + tokens.$touch-target-min + 3px + tokens.$border-strong-width;
 // A column head: the badge row (6 + 28 + 4), the conditions row (2 + 22), the note (−2 + 18 + 10),
 // then its 1px rule.
 $col-head: (6px + 28px + 4px) + (2px + 22px) + (-2px + 18px + 10px) + 1px;
@@ -167,12 +165,15 @@ $sticky-z: 2;
   width: 24px;
 }
 
+// The containing block of the prompt, so the prompt moves down with the grid if the title band
+// grows (a user stylesheet can make the legend wrap).
 .collapse-compare-grid {
   display: flex;
   flex: 1 1 auto;
   min-height: 0;
   overflow-x: auto;
   overflow-y: hidden;
+  position: relative;
 }
 
 .collapse-compare-col {
@@ -480,7 +481,7 @@ $sticky-z: 2;
   pointer-events: none;
   position: absolute;
   right: 0;
-  top: $title-band + $col-head + $th-height + $prompt-growth;
+  top: $col-head + $th-height + $prompt-growth;
   z-index: $sticky-z + 4;
 
   .collapse-prompt-pill {
