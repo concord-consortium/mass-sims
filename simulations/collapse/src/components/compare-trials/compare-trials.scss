@@ -164,7 +164,6 @@ $sticky-z: 2;
   width: 24px;
 }
 
-// Scrolls sideways only; each column's rows scroll on their own.
 .collapse-compare-grid {
   display: flex;
   flex: 1 1 auto;
@@ -173,7 +172,6 @@ $sticky-z: 2;
   overflow-y: hidden;
 }
 
-// Four equal columns between 2px green rules.
 .collapse-compare-col {
   border-left: tokens.$border-strong-width solid theme.$border;
   display: flex;
@@ -427,7 +425,6 @@ $sticky-z: 2;
   }
 }
 
-// The house empty-state voice.
 .collapse-compare-empty {
   align-items: center;
   color: tokens.$color-text;

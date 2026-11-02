@@ -25,9 +25,9 @@ export const HEAD_MIN_BAND_PADDING = 6 + HEAD_EDGE;
 export const HEAD_GAP = 2 * HEAD_MIN_BAND_PADDING;
 
 export interface SpacingOptions {
-  /** The smallest space kept between two headings' ink. */
+  /** Default `HEAD_GAP`. */
   gap?: number;
-  /** The smallest space inside a band on each side of its ink. */
+  /** Default `HEAD_MIN_BAND_PADDING`. */
   minBandPadding?: number;
   /**
    * A right edge no band or ink may pass. A heading that would is moved left, and the overlap is

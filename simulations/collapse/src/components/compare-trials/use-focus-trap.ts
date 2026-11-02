@@ -7,10 +7,8 @@ function isAfter(node: Node, reference: Node) {
 }
 
 /**
- * Keeps Tab and Shift+Tab inside `rootRef`: from the last focusable element, or anything after it,
- * Tab wraps to the first, and from the first, or anything before it, Shift+Tab wraps to the last.
- * From the root itself, Tab goes to the first and Shift+Tab to the last. Needed even with the rest
- * of the frame inert, because when the sim is embedded the page around the frame is not.
+ * Keeps Tab and Shift+Tab inside `rootRef` by wrapping at the ends. Needed even with the rest of
+ * the frame inert, because when the sim is embedded the page around the frame is not.
  */
 export function useFocusTrap(rootRef: RefObject<HTMLElement | null>) {
   useEffect(() => {

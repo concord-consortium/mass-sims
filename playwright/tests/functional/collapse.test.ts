@@ -284,7 +284,6 @@ test.describe("Compare Trials", () => {
     await expect(collapse.aboutPanel).toBeHidden();
     await expect(collapse.compareCloseButton).toBeFocused();
 
-    // A press on About does nothing while the view is open.
     const about = await collapse.aboutButton.boundingBox();
     if (!about) throw new Error("About button not found");
     await page.mouse.click(about.x + about.width / 2, about.y + about.height / 2);

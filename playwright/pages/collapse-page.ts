@@ -145,7 +145,6 @@ export class CollapsePage extends SimulationFramePage {
     return this.compareDialog.getByRole("button", { name: "Close the trial comparison" });
   }
 
-  /** The scrolling grid of four columns. */
   get compareGrid(): Locator {
     return this.page.locator(".collapse-compare-grid");
   }
@@ -191,7 +190,6 @@ export class CollapsePage extends SimulationFramePage {
     return this.compareColumn(letter).locator(".collapse-compare-empty");
   }
 
-  /** Whether `locator`'s element is inside an `inert` subtree. */
   async isInert(locator: Locator): Promise<boolean> {
     return locator.evaluate((el) => el.closest("[inert]") !== null);
   }

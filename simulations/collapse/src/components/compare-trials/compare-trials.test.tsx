@@ -13,7 +13,6 @@ function openCompare(view: ReturnType<typeof render>) {
   return view.getByRole("dialog", { name: "Compare trials" });
 }
 
-/** The live region, the title bar, the two panels, and the frame's `main`. */
 function parts(view: ReturnType<typeof render>) {
   const { container } = view;
   return {

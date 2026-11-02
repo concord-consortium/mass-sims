@@ -59,7 +59,6 @@ function linked(view: ReturnType<typeof render>) {
     (r) => r.dataset.rowKey,
   );
 }
-/** Focuses `el` and presses `key` on it, as the keyboard would. */
 function press(el: HTMLElement, key: string) {
   fireEvent.keyDown(el, { key });
 }
