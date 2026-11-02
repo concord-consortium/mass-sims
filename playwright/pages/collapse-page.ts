@@ -190,6 +190,28 @@ export class CollapsePage extends SimulationFramePage {
     return this.compareColumn(letter).locator(".collapse-compare-empty");
   }
 
+  /**
+   * The compare headings whose label or chevron does not hit their own sort button, tested at the
+   * left edge, the center and the right edge of each. Empty when every heading is hit.
+   */
+  compareHeadingMisses(): Promise<string[]> {
+    return this.page.evaluate(() => {
+      const out: string[] = [];
+      for (const button of document.querySelectorAll<HTMLElement>(
+        ".collapse-compare .collapse-th-sort",
+      )) {
+        for (const part of Array.from(button.children)) {
+          const box = part.getBoundingClientRect();
+          for (const x of [box.left + 1, (box.left + box.right) / 2, box.right - 1]) {
+            const hit = document.elementFromPoint(x, box.top + box.height / 2);
+            if (hit?.closest(".collapse-th-sort") !== button) out.push(button.textContent ?? "");
+          }
+        }
+      }
+      return out;
+    });
+  }
+
   async isInert(locator: Locator): Promise<boolean> {
     return locator.evaluate((el) => el.closest("[inert]") !== null);
   }

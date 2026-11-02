@@ -354,26 +354,8 @@ test.describe("Compare Trials", () => {
     expect(after.first?.y).toBeLessThan(before.first?.y ?? 0);
   });
 
-  test("pointing at any part of a heading's label hits that heading's sort button", async ({
-    page,
-  }) => {
+  test("pointing at any part of a heading's label hits that heading's sort button", async () => {
     await collapse.compareButton.click();
-    const misses = () =>
-      page.evaluate(() => {
-        const out: string[] = [];
-        for (const button of document.querySelectorAll<HTMLElement>(
-          ".collapse-compare .collapse-th-sort",
-        )) {
-          for (const part of Array.from(button.children)) {
-            const box = part.getBoundingClientRect();
-            for (const x of [box.left + 1, (box.left + box.right) / 2, box.right - 1]) {
-              const hit = document.elementFromPoint(x, box.top + box.height / 2);
-              if (hit?.closest(".collapse-th-sort") !== button) out.push(button.textContent ?? "");
-            }
-          }
-        }
-        return out;
-      });
-    await expect.poll(misses).toEqual([]);
+    await expect.poll(() => collapse.compareHeadingMisses()).toEqual([]);
   });
 });

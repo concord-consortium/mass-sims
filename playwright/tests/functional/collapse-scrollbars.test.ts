@@ -11,8 +11,12 @@ let collapse: CollapsePage;
 test.beforeEach(async ({ page }) => {
   collapse = new CollapsePage(page);
   await collapse.goto();
-  // The same width on any OS: 17px, the widest in common use (Firefox on Windows).
-  await page.addStyleTag({ content: "::-webkit-scrollbar { width: 17px; }" });
+  // The same width on any OS: 17px, the widest in common use (Firefox on Windows). The page itself
+  // does not scroll: the standalone frame's border makes it a few pixels larger than the window,
+  // and the page's scrollbar would cover the frame's right edge.
+  await page.addStyleTag({
+    content: "::-webkit-scrollbar { width: 17px; } html { overflow: hidden; }",
+  });
 });
 
 test("Compare Trials: a column with a scrollbar fits its values without a sideways scroll", async ({
@@ -40,4 +44,6 @@ test("Compare Trials: a column with a scrollbar fits its values without a sidewa
   expect(clipped).toEqual([]);
   const overflow = await collapse.compareGrid.evaluate((el) => el.scrollWidth - el.clientWidth);
   expect(overflow).toBe(0);
+  // Column B's table is the narrowest the view allows, which the hidden-scrollbar tests never reach.
+  await expect.poll(() => collapse.compareHeadingMisses()).toEqual([]);
 });
