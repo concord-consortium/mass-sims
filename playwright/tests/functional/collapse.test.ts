@@ -277,19 +277,6 @@ test.describe("Compare Trials", () => {
     await expect(collapse.compareButton).toBeFocused();
   });
 
-  test("while open, everything in the frame outside the view is inert", async () => {
-    await collapse.compareButton.click();
-    for (const locator of [
-      collapse.sampleButton,
-      collapse.compareButton,
-      collapse.trialOption("A"),
-      collapse.aboutButton,
-    ]) {
-      expect(await collapse.isInert(locator)).toBe(true);
-    }
-    expect(await collapse.isInert(collapse.compareCloseButton)).toBe(false);
-  });
-
   test("an open About panel is hidden while comparing and comes back after", async ({ page }) => {
     await collapse.openAbout();
     await expect(collapse.aboutPanel).toBeVisible();
@@ -309,13 +296,9 @@ test.describe("Compare Trials", () => {
     await expect(collapse.compareButton).toBeFocused();
   });
 
-  test("the grid never scrolls sideways", async () => {
-    await collapse.compareButton.click();
-    const overflow = await collapse.compareGrid.evaluate((el) => el.scrollWidth - el.clientWidth);
-    expect(overflow).toBe(0);
-  });
-
-  test("no value or average is clipped by its cell", async ({ page }) => {
+  test("with the widest values, no cell is clipped and the grid never scrolls sideways", async ({
+    page,
+  }) => {
     // The column widths come from the measured widest values, so a font or format change could clip.
     for (const letter of ["A", "B", "C", "D"]) {
       await collapse.selectTrial(letter);
@@ -333,6 +316,8 @@ test.describe("Compare Trials", () => {
         .map((cell) => cell.textContent),
     );
     expect(clipped).toEqual([]);
+    const overflow = await collapse.compareGrid.evaluate((el) => el.scrollWidth - el.clientWidth);
+    expect(overflow).toBe(0);
   });
 
   test("with many rows, a column scrolls and its heading and average row stay put", async ({

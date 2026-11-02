@@ -150,14 +150,26 @@ describe("useCompareKeyboardNav", () => {
 });
 
 describe("CompareColumn pin reveal", () => {
-  it("scrolls each column's topmost row with the pinned year into view, on opening and on a pin", () => {
-    const { store } = setup();
+  it("scrolls each column's topmost row with the pinned year into view, on a pin", () => {
+    const store = createRootStore({ rng: () => 0.5 });
+    // A has two rows at 0. Sorted by rate, the later one (A:2) is on top.
+    store.trials.get("A")?.addSample({ years: 0, rate: 30, roof: 2800 });
+    store.trials.get("A")?.addSample({ years: 0, rate: 10, roof: 3000 });
+    sample(store, "D", 0);
+    store.ui.selectTrial("C");
+    store.ui.cycleSort("rate");
+    store.openCompare();
+    render(
+      <RootStoreProvider store={store}>
+        <CompareTrials />
+      </RootStoreProvider>,
+    );
     // C was selected with no row, so nothing is pinned on opening.
     expect(smoothScrollIntoView).not.toHaveBeenCalled();
     act(() => store.ui.togglePin(0));
     expect(smoothScrollIntoView.mock.calls.map(([row]) => row.dataset.rowKey)).toEqual([
-      "A:3",
-      "D:3",
+      "A:2",
+      "D:1",
     ]);
   });
 

@@ -72,14 +72,14 @@ describe("CompareTrials columns — empty", () => {
 
   it("names each sort heading by its full column name", () => {
     const { view } = setup();
-    for (const name of [
-      "Years before collapse (yr)",
-      "Erosion rate (mm/1,000 yr)",
-      "Rock above cave (mm)",
+    for (const [name, word] of [
+      ["Years before collapse (yr)", "Years"],
+      ["Erosion rate (mm/1,000 yr)", "Rate"],
+      ["Rock above cave (mm)", "Rock"],
     ]) {
       const buttons = view.getAllByRole("button", { name });
       expect(buttons).toHaveLength(4);
-      expect(buttons[0]).toHaveTextContent(/^(Years|Rate|Rock)$/);
+      for (const button of buttons) expect(button).toHaveTextContent(new RegExp(`^${word}$`));
     }
   });
 });
@@ -106,7 +106,9 @@ describe("CompareTrials columns — with samples", () => {
     expect(averages.cells[0]).toHaveAttribute("colspan", "2");
     expect(averages).toHaveTextContent("Average:207,300");
     expect(table(view, "A").querySelector("caption")).toHaveTextContent(/: 2 samples$/);
-    expect(within(table(view, "C").parentElement as HTMLElement).getByText("No samples taken yet"));
+    expect(
+      within(table(view, "C").parentElement as HTMLElement).getByText("No samples taken yet"),
+    ).toBeInTheDocument();
     expect(rows(view, "C")).toHaveLength(0);
   });
 
@@ -120,10 +122,14 @@ describe("CompareTrials columns — with samples", () => {
 
   it("draws the hidden thumbnail stand-in in each row", () => {
     const { view } = setup(seed);
-    expect(rows(view, "A")[0].querySelector(".cmp-pic .collapse-pic-standin")).toHaveAttribute(
-      "aria-hidden",
-      "true",
-    );
+    const all = ["A", "B"].flatMap((letter) => rows(view, letter));
+    expect(all).toHaveLength(3);
+    for (const row of all) {
+      expect(row.querySelector(".cmp-pic .collapse-pic-standin")).toHaveAttribute(
+        "aria-hidden",
+        "true",
+      );
+    }
   });
 
   it("sorts every column, and the data table's sort, from any heading", () => {
@@ -173,7 +179,7 @@ describe("CompareTrials columns — linking and pinning", () => {
 
   it("pressing a row pins its year everywhere and announces; pressing again clears it", () => {
     const { store, view } = setup(seed);
-    // The carried-in pin is C's selected row, 100,000; press A's 0 row instead.
+    // Opening pins the selected row's year: C's last sample, at 100,000.
     expect(pinned(view)).toEqual(["C:1"]);
     fireEvent.click(rows(view, "A")[0]);
     expect(store.ui.pinnedYear).toBe(0);
@@ -192,14 +198,5 @@ describe("CompareTrials columns — linking and pinning", () => {
     expect(store.ui.pinnedYear).toBe(50000);
     fireEvent.keyDown(rows(view, "A")[1], { key: " " });
     expect(store.ui.pinnedYear).toBeNull();
-  });
-
-  it("opens with the selected row's year pinned", () => {
-    const { view } = setup((store) => {
-      seed(store);
-      store.ui.selectTrial("A");
-      store.ui.selectSample("A", 1);
-    });
-    expect(pinned(view)).toEqual(["A:1", "B:1"]);
   });
 });
