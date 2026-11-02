@@ -56,4 +56,18 @@ describe("useDialogLifecycle", () => {
     expect(view.container.querySelector("header")).not.toHaveAttribute("inert");
     expect(view.container.querySelector("aside")).toHaveAttribute("inert");
   });
+
+  it("makes nothing inert when the dialog is not directly in `main`", () => {
+    const view = render(
+      <div className="frame">
+        <header>title</header>
+        <main>
+          <section>
+            <Dialog />
+          </section>
+        </main>
+      </div>,
+    );
+    expect(view.container.querySelectorAll("[inert]")).toHaveLength(0);
+  });
 });

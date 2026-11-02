@@ -18,7 +18,8 @@ export function useDialogLifecycle(
     const root = rootRef.current;
     const main = root?.parentElement;
     const frame = main?.parentElement;
-    if (!root || !main || !frame) return;
+    // Anywhere but directly in `main`, the wrong elements would go inert, so do nothing instead.
+    if (!root || main?.tagName !== "MAIN" || !frame) return;
     // Skips anything already inert, so closing does not un-inert what something else made inert.
     const behind = [...main.children, ...frame.children].filter(
       (el) => el !== root && el !== main && !el.hasAttribute("inert"),

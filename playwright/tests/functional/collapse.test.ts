@@ -291,6 +291,26 @@ test.describe("Compare Trials", () => {
     expect(overflow).toBe(0);
   });
 
+  test("no value or average is clipped by its cell", async ({ page }) => {
+    // The column widths come from the measured widest values, so a font or format change could clip.
+    for (const letter of ["A", "B", "C", "D"]) {
+      await collapse.selectTrial(letter);
+      await collapse.sampleAt(200000);
+      await collapse.sampleAt(0);
+    }
+    await collapse.compareButton.click();
+    const clipped = await page.evaluate(() =>
+      Array.from(
+        document.querySelectorAll<HTMLElement>(
+          ".collapse-compare .collapse-rows td, .collapse-compare tfoot th, .collapse-compare tfoot td",
+        ),
+      )
+        .filter((cell) => cell.scrollWidth > cell.clientWidth + 0.5)
+        .map((cell) => cell.textContent),
+    );
+    expect(clipped).toEqual([]);
+  });
+
   test("with many rows, a column scrolls and its heading and average row stay put", async ({
     page,
   }, testInfo) => {
