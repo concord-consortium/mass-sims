@@ -81,65 +81,67 @@ export const CompareColumn = observer(function CompareColumn({
         <div className="collapse-compare-note">{MOISTURE_NOTES[moisture].text}</div>
       </div>
       <div className="collapse-compare-rows" ref={scrollerRef}>
-        <table className="collapse-compare-tbl">
-          <caption className="sr-only">
-            {`Trial ${letter}, ${rock}, ${moisture}, ${MOISTURE_NOTES[moisture].spoken}: `}
-            {count === 0 ? "no samples yet" : `${count} ${count === 1 ? "sample" : "samples"}`}
-          </caption>
-          <colgroup>
-            <col className="cmp-pic" />
-            <col className="cmp-years" />
-            <col className="cmp-rate" />
-            <col className="cmp-rock" />
-          </colgroup>
-          <thead>
-            <tr ref={headRowRef}>
-              <th scope="col">
-                <span className="sr-only">Cave</span>
-              </th>
-              {COLUMNS.map(({ key, label }) => (
-                <SortHeader
-                  key={key}
-                  dir={sortDirOf(ui.sort, key)}
-                  label={<span className="collapse-compare-th-label">{label}</span>}
-                  name={COLUMN_NAMES[key]}
-                  onSort={() => cycleSort(key, "compare")}
+        <div className="collapse-compare-sizer">
+          <table className="collapse-compare-tbl">
+            <caption className="sr-only">
+              {`Trial ${letter}, ${rock}, ${moisture}, ${MOISTURE_NOTES[moisture].spoken}: `}
+              {count === 0 ? "no samples yet" : `${count} ${count === 1 ? "sample" : "samples"}`}
+            </caption>
+            <colgroup>
+              <col className="cmp-pic" />
+              <col className="cmp-years" />
+              <col className="cmp-rate" />
+              <col className="cmp-rock" />
+            </colgroup>
+            <thead>
+              <tr ref={headRowRef}>
+                <th scope="col">
+                  <span className="sr-only">Cave</span>
+                </th>
+                {COLUMNS.map(({ key, label }) => (
+                  <SortHeader
+                    key={key}
+                    dir={sortDirOf(ui.sort, key)}
+                    label={<span className="collapse-compare-th-label">{label}</span>}
+                    name={COLUMN_NAMES[key]}
+                    onSort={() => cycleSort(key, "compare")}
+                  />
+                ))}
+              </tr>
+            </thead>
+            <tbody className="collapse-rows" ref={tbodyRef}>
+              {rows.map((sample, i) => (
+                <CompareRow
+                  key={rowKeys[i]}
+                  sample={sample}
+                  letter={letter}
+                  conditions={conditions}
+                  tabStop={i === 0}
+                  linked={sample.years === linkedYear}
+                  pinned={ui.isPinned(sample.years)}
+                  onHover={onHover}
+                  onPin={() => togglePin(sample.years)}
                 />
               ))}
-            </tr>
-          </thead>
-          <tbody className="collapse-rows" ref={tbodyRef}>
-            {rows.map((sample, i) => (
-              <CompareRow
-                key={rowKeys[i]}
-                sample={sample}
-                letter={letter}
-                conditions={conditions}
-                tabStop={i === 0}
-                linked={sample.years === linkedYear}
-                pinned={ui.isPinned(sample.years)}
-                onHover={onHover}
-                onPin={() => togglePin(sample.years)}
-              />
-            ))}
-          </tbody>
-          {trial.averageRate !== null && trial.averageRoof !== null && (
-            <>
-              {/* Sized by `useFillerHeight`. */}
-              <tbody className="collapse-filler" aria-hidden="true">
-                <tr ref={fillerRef}>
-                  <td colSpan={4} />
-                </tr>
-              </tbody>
-              <TableFoot
-                averageRate={trial.averageRate}
-                averageRoof={trial.averageRoof}
-                headingOverPicture
-                trailingCell={false}
-              />
-            </>
-          )}
-        </table>
+            </tbody>
+            {trial.averageRate !== null && trial.averageRoof !== null && (
+              <>
+                {/* Sized by `useFillerHeight`. */}
+                <tbody className="collapse-filler" aria-hidden="true">
+                  <tr ref={fillerRef}>
+                    <td colSpan={4} />
+                  </tr>
+                </tbody>
+                <TableFoot
+                  averageRate={trial.averageRate}
+                  averageRoof={trial.averageRoof}
+                  headingOverPicture
+                  trailingCell={false}
+                />
+              </>
+            )}
+          </table>
+        </div>
         {count === 0 && <div className="collapse-compare-empty">No samples taken yet</div>}
       </div>
     </div>

@@ -5,7 +5,7 @@ export function RoofCell({ roof }: { roof: number }) {
   if (!isCollapsed(roof)) return <td>{formatWhole(roof)}</td>;
   return (
     <td className="collapse-cell-failed">
-      collapsed
+      <span className="collapse-failed-word">collapsed</span>
       <br />({formatWhole(roof)})
     </td>
   );

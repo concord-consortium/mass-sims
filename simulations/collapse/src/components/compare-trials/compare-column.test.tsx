@@ -107,7 +107,9 @@ describe("CompareTrials columns — with samples", () => {
     expect(averages).toHaveTextContent("Average:207,300");
     expect(table(view, "A").querySelector("caption")).toHaveTextContent(/: 2 samples$/);
     expect(
-      within(table(view, "C").parentElement as HTMLElement).getByText("No samples taken yet"),
+      within(table(view, "C").closest(".collapse-compare-rows") as HTMLElement).getByText(
+        "No samples taken yet",
+      ),
     ).toBeInTheDocument();
     expect(rows(view, "C")).toHaveLength(0);
   });
@@ -117,7 +119,7 @@ describe("CompareTrials columns — with samples", () => {
     const [row] = rows(view, "B");
     expect(row.getAttribute("aria-label")).toMatch(/^Trial B, 0 years .*, collapsed$/);
     const cell = row.querySelector(".collapse-cell-failed");
-    expect(cell?.innerHTML).toBe("collapsed<br>(2,800)");
+    expect(cell?.innerHTML).toBe('<span class="collapse-failed-word">collapsed</span><br>(2,800)');
   });
 
   it("draws the hidden thumbnail stand-in in each row", () => {

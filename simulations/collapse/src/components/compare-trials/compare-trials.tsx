@@ -1,5 +1,5 @@
 import { observer } from "mobx-react-lite";
-import { useRef, useState } from "react";
+import { useLayoutEffect, useRef, useState } from "react";
 import CloseIcon from "../../assets/close-icon.svg?react";
 import CompareIcon from "../../assets/compare-icon.svg?react";
 import { useCompareActions } from "../../hooks/use-compare-actions";
@@ -40,6 +40,17 @@ export const CompareTrials = observer(function CompareTrials() {
   useDialogLifecycle(rootRef, { initialFocus: closeRef, opener: ".collapse-compare-button" });
   useFocusTrap(rootRef);
   useCompareKeyboardNav(gridRef, setFocusedYear);
+  // CSS cannot read the scrollbar's width, which is 0 for overlay scrollbars, so measure it on an
+  // element that always scrolls.
+  useLayoutEffect(() => {
+    const grid = gridRef.current;
+    if (!grid) return;
+    const probe = document.createElement("div");
+    probe.style.cssText = "overflow-y: scroll; width: 100px; flex: none";
+    grid.append(probe);
+    grid.style.setProperty("--scrollbar", `${probe.offsetWidth - probe.clientWidth}px`);
+    probe.remove();
+  }, []);
 
   return (
     <div

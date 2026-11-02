@@ -24,23 +24,25 @@ $pic-w: 31.72px;
 $pic-h: 31px;
 $pic-col: 36px;
 // The widest value each column can hold, measured in Roboto Condensed 16px at the rows' tracking:
-// "200,000", "35", and "collapsed" (the widest line in the Rock column).
+// "200,000", "35", and "(2,800)". "collapsed" is wider at 16px, but it shrinks with the table and
+// is narrower than "(2,800)" where the table is narrowest.
 $val-years: 52.78px;
 $val-rate: 16.44px;
-$val-rock: 63.94px;
+$val-rock: 47.11px;
 // A column's table width at the narrowest (767) and widest (1044) target widths.
 $table-narrow: 184.25px;
 $table-wide: 253.5px;
-// The narrowest table at which every value still fits its cell. The headings need less (167px).
-// Below it the grid scrolls sideways: four trials side by side is the point of the view.
-$table-min: 183px;
+// The narrowest table: the one at 767 with a 17px scrollbar. Every value and heading fits it.
+// Below it the grid scrolls sideways: four trials side by side is the point of the view. A column
+// also keeps room for a scrollbar, `--scrollbar` wide (see `CompareTrials`), in case it scrolls.
+$table-min: 167px;
 $sticky-z: 2;
 
-// A length that is `$narrow` at the narrowest table and `$wide` at the widest, on a straight line
-// between. `cqi` is the table's width (see `.collapse-compare-rows`).
-@function by-width($narrow, $wide) {
-  $slope: ($wide - $narrow) / ($table-wide - $table-narrow);
-  @return calc(#{$slope * 100}cqi + #{$narrow - $slope * $table-narrow});
+// A length that is `$narrow` at a table `$from` wide and `$wide` at the widest, on a straight line
+// between. `cqi` is the table's width (see `.collapse-compare-sizer`).
+@function by-width($narrow, $wide, $from: $table-narrow) {
+  $slope: ($wide - $narrow) / ($table-wide - $from);
+  @return calc(#{$slope * 100}cqi + #{$narrow - $slope * $from});
 }
 
 // A measurement column's width. At the widest, the three share the space equally, so the three
@@ -48,8 +50,9 @@ $sticky-z: 2;
 // every value fits. Both layouts fill the table, so every width between them does too.
 @function col-width($val) {
   @return by-width(
-    $val + ($table-narrow - $pic-col - $val-years - $val-rate - $val-rock) / 3,
-    ($table-wide - $pic-col) / 3
+    $val + ($table-min - $pic-col - $val-years - $val-rate - $val-rock) / 3,
+    ($table-wide - $pic-col) / 3,
+    $table-min
   );
 }
 
@@ -178,11 +181,11 @@ $sticky-z: 2;
   flex: 1 1 0;
   flex-direction: column;
   min-height: 0;
-  min-width: $table-min + tokens.$border-strong-width;
+  min-width: calc(#{$table-min + tokens.$border-strong-width} + var(--scrollbar, 0px));
 
   &:first-child {
     border-left: 0;
-    min-width: $table-min;
+    min-width: calc(#{$table-min} + var(--scrollbar, 0px));
   }
 }
 
@@ -250,15 +253,19 @@ $sticky-z: 2;
   min-height: 0;
   overflow-x: hidden;
   overflow-y: auto;
-  // For the column widths, which follow the table's width.
-  container-type: inline-size;
   // The sticky heading and average row cover the scroller's ends.
   scroll-padding-block: $th-height $row-height;
 }
 
+// For the column widths, which follow the table's width. Not on the scroller: Chrome gives a
+// scroller's container width with its scrollbar included.
+.collapse-compare-sizer {
+  container-type: inline-size;
+  flex: 0 0 auto;
+}
+
 .collapse-compare-tbl {
   border-collapse: collapse;
-  flex: 0 0 auto;
   font-family: tokens.$font-family-condensed;
   font-size: tokens.$font-size-base;
   letter-spacing: 0.32px;
@@ -344,6 +351,14 @@ $sticky-z: 2;
   // "collapsed" over "(2,800)": two 15px lines fit the 36px row.
   .collapse-rows td.collapse-cell-failed {
     line-height: 15px;
+  }
+
+  // 12px at 767 up to 16px at the widest, so that "collapsed" fits the Rock column. Top-aligned,
+  // so the smaller text does not make its line taller than 15px.
+  .collapse-failed-word {
+    font-size: clamp(12px, by-width(12px, 16px), 16px);
+    letter-spacing: 0;
+    vertical-align: top;
   }
 
   .collapse-filler td {
