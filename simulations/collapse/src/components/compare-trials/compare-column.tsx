@@ -1,5 +1,6 @@
+import { smoothScrollIntoView } from "@concord-consortium/mass-sims-shared";
 import { observer } from "mobx-react-lite";
-import { useRef } from "react";
+import { useLayoutEffect, useRef } from "react";
 import { useCompareActions } from "../../hooks/use-compare-actions";
 import { useSampleActions } from "../../hooks/use-sample-actions";
 import { sortedSamples } from "../../model/sort-samples";
@@ -11,6 +12,7 @@ import { TableFoot } from "../data-table/table-foot";
 import { COLUMN_NAMES } from "../data-table/table-head";
 import { useFillerHeight } from "../data-table/use-filler-height";
 import { useHeadingSpacing } from "../data-table/use-heading-spacing";
+import { useRowFlip } from "../data-table/use-row-flip";
 import { ConditionAttr, MOISTURE_ICONS, ROCK_ICONS } from "../trials-panel/trial-card-body";
 import { CompareRow } from "./compare-row";
 import "../data-table/table-shared.scss";
@@ -44,6 +46,7 @@ export const CompareColumn = observer(function CompareColumn({
   const scrollerRef = useRef<HTMLDivElement>(null);
   const fillerRef = useRef<HTMLTableRowElement>(null);
   const headRowRef = useRef<HTMLTableRowElement>(null);
+  const tbodyRef = useRef<HTMLTableSectionElement>(null);
   const conditions = TRIAL_CONDITIONS[letter];
   const { rock, moisture } = conditions;
   const count = trial?.sampleCount ?? 0;
@@ -53,8 +56,16 @@ export const CompareColumn = observer(function CompareColumn({
   // quarter of the width. The right band stays inside the column; the Years heading may reach over
   // the thumbnail column.
   useHeadingSpacing(headRowRef, { gap: 8, minBandPadding: 4, clampRight: true });
+  const rows = trial ? sortedSamples(trial.samples, ui.sort) : [];
+  const rowKeys = rows.map((sample) => `${letter}:${sample.id}`);
+  useRowFlip(tbodyRef, scrollerRef, letter, rowKeys);
+  // Bring the pinned year's topmost row into view, including the year carried in on opening.
+  useLayoutEffect(() => {
+    if (ui.pinnedYear === null) return;
+    const row = tbodyRef.current?.querySelector(`tr[data-year="${ui.pinnedYear}"]`);
+    if (row) smoothScrollIntoView(row);
+  }, [ui.pinnedYear]);
   if (!trial) return null;
-  const rows = sortedSamples(trial.samples, ui.sort);
 
   return (
     <div className="collapse-compare-col">
@@ -97,13 +108,14 @@ export const CompareColumn = observer(function CompareColumn({
               ))}
             </tr>
           </thead>
-          <tbody className="collapse-rows">
-            {rows.map((sample) => (
+          <tbody className="collapse-rows" ref={tbodyRef}>
+            {rows.map((sample, i) => (
               <CompareRow
-                key={`${letter}:${sample.id}`}
+                key={rowKeys[i]}
                 sample={sample}
                 letter={letter}
                 conditions={conditions}
+                tabStop={i === 0}
                 linked={sample.years === linkedYear}
                 pinned={ui.isPinned(sample.years)}
                 onHover={onHover}

@@ -14,7 +14,7 @@ export interface HeadingSpacing {
   growR: number;
 }
 
-// The lit band has a 2px white edge on each side, so a 6px gap that can be seen needs 8px of band.
+// The hover band has a 2px white edge on each side, so a 6px gap that can be seen needs 8px of band.
 const HEAD_EDGE = 2;
 /** The smallest space inside a band on each side of its label and icon. */
 export const HEAD_MIN_BAND_PADDING = 6 + HEAD_EDGE;

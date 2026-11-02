@@ -373,14 +373,15 @@ $sticky-z: 2;
   }
 }
 
-// A hovered row's year, lit in every column. A pinned row keeps its own fill.
+// Rows with the hovered year get the hover background in every column. A pinned row keeps its own
+// fill.
 .collapse-compare-tbl .collapse-rows tr[data-linked]:not([aria-current="true"]) td {
   background: theme.$hover;
 }
 
-// A heading's hover / press lights its column in all four tables, the same heading in the other
-// three included: the sort is about all of them. These outrank the pinned rows' fill, so the column
-// reads as one band.
+// A heading's hover / press gives its column the hover / pressed background in all four tables, the
+// same heading in the other three included: the sort is about all of them. These outrank the pinned
+// rows' fill, so the column reads as one band.
 @each $n in 2, 3, 4 {
   .collapse-compare-grid:has(th:nth-child(#{$n}) .collapse-th-sort:is(:hover, :focus-visible))
     th:nth-child(#{$n})

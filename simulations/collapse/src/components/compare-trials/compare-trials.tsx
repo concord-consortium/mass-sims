@@ -6,6 +6,7 @@ import { useCompareActions } from "../../hooks/use-compare-actions";
 import { useStores } from "../../stores/root-store";
 import { COLLAPSE_TRIAL_LETTERS } from "../../trial-conditions";
 import { CompareColumn } from "./compare-column";
+import { useCompareKeyboardNav } from "./use-compare-keyboard-nav";
 import { useDialogLifecycle } from "./use-dialog-lifecycle";
 import { useFocusTrap } from "./use-focus-trap";
 import "./compare-trials.scss";
@@ -26,13 +27,16 @@ const LEGEND = [
 export const CompareTrials = observer(function CompareTrials() {
   const rootRef = useRef<HTMLDivElement>(null);
   const closeRef = useRef<HTMLButtonElement>(null);
+  const gridRef = useRef<HTMLDivElement>(null);
   const store = useStores();
   const { closeCompare } = useCompareActions();
-  // The year under the pointer, lit in every column.
+  // The year under the pointer or the keyboard focus. Rows with that year get the hover background
+  // in every column.
   const [linkedYear, setLinkedYear] = useState<number | null>(null);
   const allEmpty = !store.hasAnyProgress;
   useDialogLifecycle(rootRef, { initialFocus: closeRef, opener: ".collapse-compare-button" });
   useFocusTrap(rootRef);
+  useCompareKeyboardNav(gridRef, setLinkedYear);
 
   return (
     <div
@@ -69,7 +73,10 @@ export const CompareTrials = observer(function CompareTrials() {
           <CloseIcon className="collapse-compare-close-icon" aria-hidden="true" />
         </button>
       </div>
-      <div className={allEmpty ? "collapse-compare-grid all-empty" : "collapse-compare-grid"}>
+      <div
+        className={allEmpty ? "collapse-compare-grid all-empty" : "collapse-compare-grid"}
+        ref={gridRef}
+      >
         {COLLAPSE_TRIAL_LETTERS.map((letter) => (
           <CompareColumn
             key={letter}

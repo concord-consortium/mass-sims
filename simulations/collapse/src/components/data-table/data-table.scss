@@ -118,7 +118,7 @@ $sticky-z: 2;
     z-index: $sticky-z + 2;
   }
 
-  // A lit band is drawn over its neighbors.
+  // A hovered, focused or pressed band is drawn over its neighbors.
   &:has(.collapse-th-sort:is(:hover, :focus-visible, :active)) {
     z-index: $sticky-z + 3;
   }
@@ -178,7 +178,7 @@ $sticky-z: 2;
   position: absolute;
   right: 0;
   top: $head-height-prompt;
-  // Above every header cell, a lit one included.
+  // Above every header cell, a hovered or pressed one included.
   z-index: $sticky-z + 4;
 }
 

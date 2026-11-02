@@ -9,6 +9,8 @@ interface CompareRowProps {
   sample: Sample;
   letter: string;
   conditions: Conditions;
+  /** The column's one tab stop: its first row. */
+  tabStop: boolean;
   linked: boolean;
   pinned: boolean;
   onHover: (years: number | null) => void;
@@ -24,6 +26,7 @@ export function CompareRow({
   sample,
   letter,
   conditions,
+  tabStop,
   linked,
   pinned,
   onHover,
@@ -39,7 +42,7 @@ export function CompareRow({
   return (
     // No `className`, as in `SampleRow`: the keyboard hook will write `kb-focus` on the row.
     <tr
-      tabIndex={0}
+      tabIndex={tabStop ? 0 : -1}
       aria-label={sampleRowLabel(sample, `Trial ${letter},`)}
       aria-current={pinned ? "true" : undefined}
       data-row-key={`${letter}:${sample.id}`}
