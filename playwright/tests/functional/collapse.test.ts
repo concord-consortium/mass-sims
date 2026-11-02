@@ -253,6 +253,15 @@ test.describe("Compare Trials", () => {
     await expect(collapse.compareButton).toBeFocused();
   });
 
+  test("after a click on the view's text, Escape still closes it", async ({ page }) => {
+    await collapse.compareButton.click();
+    await page.locator(".collapse-compare-legend").click();
+    await expect(collapse.compareDialog).toBeFocused();
+    await page.keyboard.press("Escape");
+    await expect(collapse.compareDialog).toHaveCount(0);
+    await expect(collapse.compareButton).toBeFocused();
+  });
+
   test("while open, everything in the frame outside the view is inert", async () => {
     await collapse.compareButton.click();
     for (const locator of [

@@ -109,7 +109,8 @@ react-aria `Modal`.
   close button ("Close the trial comparison") or Escape.
 - **Focus.** Opening moves focus to the close button. Closing returns it to the Compare Trials
   button. The order matters: `focus()` on an element inside an inert subtree does nothing, so
-  `inert` is removed first and focus moves after. Tab and Shift+Tab are trapped inside the view; the
+  `inert` is removed first and focus moves after. The view itself has `tabindex="-1"`, so a click on
+  its text focuses the view, not the page, and Escape still closes it. Tab and Shift+Tab are trapped inside the view; the
   trap is needed even with the frame inert, because when the sim is embedded the page around the
   frame is not.
 - **Four tables, one per trial.** Each column is a native table, as the data table is, with a

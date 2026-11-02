@@ -7,7 +7,7 @@ function Trap() {
   const rootRef = useRef<HTMLDivElement>(null);
   useFocusTrap(rootRef);
   return (
-    <div ref={rootRef}>
+    <div data-testid="root" ref={rootRef} tabIndex={-1}>
       <button type="button">First</button>
       <button tabIndex={-1} type="button">
         Skipped
@@ -35,6 +35,17 @@ describe("useFocusTrap", () => {
     expect(document.activeElement).toBe(first);
     fireEvent.keyDown(first, { key: "Tab", shiftKey: true });
     expect(document.activeElement).toBe(last);
+  });
+
+  it("from the root itself, Tab goes to the first and Shift+Tab to the last", () => {
+    const view = render(<Trap />);
+    const root = view.getByTestId("root");
+    root.focus();
+    fireEvent.keyDown(root, { key: "Tab" });
+    expect(document.activeElement).toBe(view.getByRole("button", { name: "First" }));
+    root.focus();
+    fireEvent.keyDown(root, { key: "Tab", shiftKey: true });
+    expect(document.activeElement).toBe(view.getByRole("button", { name: "Last" }));
   });
 
   it("leaves Tab alone between the ends", () => {

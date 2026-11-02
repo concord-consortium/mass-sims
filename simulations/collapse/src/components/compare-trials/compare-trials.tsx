@@ -44,6 +44,8 @@ export const CompareTrials = observer(function CompareTrials() {
       className="collapse-compare"
       ref={rootRef}
       role="dialog"
+      // A click on text in the view focuses the root, not `body`, so Escape still reaches it.
+      tabIndex={-1}
       onKeyDown={(e) => {
         if (e.key !== "Escape") return;
         e.preventDefault();
