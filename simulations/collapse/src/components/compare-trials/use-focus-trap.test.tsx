@@ -8,11 +8,17 @@ function Trap() {
   useFocusTrap(rootRef);
   return (
     <div data-testid="root" ref={rootRef} tabIndex={-1}>
+      <button tabIndex={-1} type="button">
+        Before
+      </button>
       <button type="button">First</button>
       <button tabIndex={-1} type="button">
         Skipped
       </button>
       <button type="button">Last</button>
+      <button tabIndex={-1} type="button">
+        After
+      </button>
     </div>
   );
 }
@@ -45,6 +51,18 @@ describe("useFocusTrap", () => {
     expect(document.activeElement).toBe(view.getByRole("button", { name: "First" }));
     root.focus();
     fireEvent.keyDown(root, { key: "Tab", shiftKey: true });
+    expect(document.activeElement).toBe(view.getByRole("button", { name: "Last" }));
+  });
+
+  it("wraps from an element past the ends that only the arrow keys reach", () => {
+    const view = render(<Trap />);
+    const after = view.getByRole("button", { name: "After" });
+    after.focus();
+    fireEvent.keyDown(after, { key: "Tab" });
+    expect(document.activeElement).toBe(view.getByRole("button", { name: "First" }));
+    const before = view.getByRole("button", { name: "Before" });
+    before.focus();
+    fireEvent.keyDown(before, { key: "Tab", shiftKey: true });
     expect(document.activeElement).toBe(view.getByRole("button", { name: "Last" }));
   });
 

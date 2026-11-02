@@ -218,6 +218,7 @@ test.describe("Compare Trials", () => {
     await collapse.sampleAt(0);
     await collapse.selectTrial("B");
     await collapse.sampleAt(0);
+    await collapse.addOutsideButton();
     await collapse.compareButton.focus();
     await page.keyboard.press("Enter");
     await expect(collapse.compareCloseButton).toBeFocused();
@@ -251,6 +252,20 @@ test.describe("Compare Trials", () => {
     await page.keyboard.press("Escape");
     await expect(collapse.compareDialog).toHaveCount(0);
     await expect(collapse.compareButton).toBeFocused();
+  });
+
+  test("Tab from a lower row in the last column wraps to the close button", async ({ page }) => {
+    await collapse.selectTrial("D");
+    await collapse.sampleAt(200000);
+    await collapse.sampleAt(0);
+    await collapse.addOutsideButton();
+    await collapse.compareButton.click();
+    // D's first row is the view's last tab stop; the second is reached only with the arrow keys.
+    await collapse.compareRows("D").first().focus();
+    await page.keyboard.press("ArrowDown");
+    await expect(collapse.compareRows("D").nth(1)).toBeFocused();
+    await page.keyboard.press("Tab");
+    await expect(collapse.compareCloseButton).toBeFocused();
   });
 
   test("after a click on the view's text, Escape still closes it", async ({ page }) => {

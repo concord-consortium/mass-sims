@@ -196,6 +196,19 @@ export class CollapsePage extends SimulationFramePage {
     return locator.evaluate((el) => el.closest("[inert]") !== null);
   }
 
+  /**
+   * Adds a button after the sim, as the page around an embedded sim would have. Without one, Tab
+   * runs off the end of the page and the browser starts again inside the sim, so a test of the
+   * focus trap would pass without the trap.
+   */
+  async addOutsideButton(): Promise<void> {
+    await this.page.evaluate(() => {
+      const outside = document.createElement("button");
+      outside.textContent = "Outside";
+      document.body.append(outside);
+    });
+  }
+
   // --- Trials panel -------------------------------------------------------
 
   get trialsListbox(): Locator {
