@@ -146,3 +146,56 @@ test("Data table: each trial has its own table", async () => {
   await collapse.selectTrial("A");
   await expect(collapse.tableRows).toHaveCount(1);
 });
+
+test("Compare Trials: opens over the panels and closes by its button and by Escape", async ({
+  page,
+}) => {
+  await collapse.compareButton.click();
+  await expect(collapse.compareDialog).toBeVisible();
+  await expect(collapse.comparePromptPill).toBeVisible();
+  await expect(page.locator(".collapse-compare-col")).toHaveCount(4);
+  await expect(collapse.compareCloseButton).toBeFocused();
+  await expect(collapse.compareButton).toHaveAttribute("aria-expanded", "true");
+  expect(await collapse.isInert(collapse.compareButton)).toBe(true);
+
+  await collapse.compareCloseButton.click();
+  await expect(collapse.compareDialog).toHaveCount(0);
+  // Focus returns to the opener, which proves `inert` came off before focus moved.
+  await expect(collapse.compareButton).toBeFocused();
+  await expect(collapse.compareButton).toHaveAttribute("aria-expanded", "false");
+
+  await collapse.compareButton.click();
+  await expect(collapse.compareCloseButton).toBeFocused();
+  await page.keyboard.press("Escape");
+  await expect(collapse.compareDialog).toHaveCount(0);
+  await expect(collapse.compareButton).toBeFocused();
+  await expect(collapse.compareButton).toHaveAttribute("aria-expanded", "false");
+});
+
+test("Compare Trials: shows each trial's rows, carries the selection in, and shares the sort", async () => {
+  await collapse.sampleAt(50000);
+  await collapse.selectTrial("B");
+  await collapse.sampleAt(0);
+  await collapse.selectTrial("A");
+
+  await collapse.compareButton.click();
+  await expect(collapse.compareRows("A")).toHaveCount(1);
+  await expect(collapse.compareRow("B", 0)).toContainText("collapsed");
+  await expect(collapse.compareEmptyNotice("C")).toBeVisible();
+  await expect(collapse.compareEmptyNotice("D")).toBeVisible();
+  // A's selected row is at 50,000, so that year opens pinned; B has no sample then.
+  await expect(collapse.compareRow("A", 50000)).toHaveAttribute("aria-current", "true");
+  await expect(collapse.compareRow("B", 0)).not.toHaveAttribute("aria-current");
+  await expect(collapse.comparePromptPill).toHaveCount(0);
+
+  const rate = "Erosion rate (mm/1,000 yr)";
+  await collapse.compareSortButton("B", rate).click();
+  for (const letter of ["A", "B", "C", "D"]) {
+    await expect(collapse.compareSortHeader(letter, rate)).toHaveAttribute(
+      "aria-sort",
+      "ascending",
+    );
+  }
+  await collapse.press("Escape");
+  await expect(collapse.sortHeader(rate)).toHaveAttribute("aria-sort", "ascending");
+});

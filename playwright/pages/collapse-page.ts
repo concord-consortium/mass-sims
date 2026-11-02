@@ -131,6 +131,71 @@ export class CollapsePage extends SimulationFramePage {
     await this.sampleButton.click();
   }
 
+  // --- Compare Trials -----------------------------------------------------
+
+  get compareButton(): Locator {
+    return this.page.getByRole("button", { name: "Compare Trials", exact: true });
+  }
+
+  get compareDialog(): Locator {
+    return this.page.getByRole("dialog", { name: "Compare trials" });
+  }
+
+  get compareCloseButton(): Locator {
+    return this.compareDialog.getByRole("button", { name: "Close the trial comparison" });
+  }
+
+  /** The scrolling grid of four columns. */
+  get compareGrid(): Locator {
+    return this.page.locator(".collapse-compare-grid");
+  }
+
+  /** Trial `letter`'s column (A–D, in order). */
+  compareColumn(letter: string): Locator {
+    return this.page.locator(".collapse-compare-col").nth("ABCD".indexOf(letter));
+  }
+
+  /** Trial `letter`'s sample rows, in display order. */
+  compareRows(letter: string): Locator {
+    return this.compareColumn(letter).locator("tbody.collapse-rows > tr");
+  }
+
+  /** A row in trial `letter`'s column, by the start of its label ("Trial B, 0 years …"). */
+  compareRow(letter: string, years: number): Locator {
+    return this.compareColumn(letter).getByRole("row", {
+      name: new RegExp(`^Trial ${letter}, ${years.toLocaleString("en-US")} years before collapse`),
+    });
+  }
+
+  /** A sort button in trial `letter`'s column, by its full name: e.g. "Erosion rate (mm/1,000 yr)". */
+  compareSortButton(letter: string, name: string): Locator {
+    return this.compareColumn(letter).getByRole("button", { name, exact: true });
+  }
+
+  /** The `th` holding a compare sort button; it carries `aria-sort`. */
+  compareSortHeader(letter: string, name: string): Locator {
+    return this.compareColumn(letter).locator("th", {
+      has: this.page.getByRole("button", { name, exact: true }),
+    });
+  }
+
+  compareAverageRow(letter: string): Locator {
+    return this.compareColumn(letter).locator(".collapse-foot");
+  }
+
+  get comparePromptPill(): Locator {
+    return this.compareDialog.locator(".collapse-prompt-pill");
+  }
+
+  compareEmptyNotice(letter: string): Locator {
+    return this.compareColumn(letter).locator(".collapse-compare-empty");
+  }
+
+  /** Whether `locator`'s element is inside an `inert` subtree. */
+  async isInert(locator: Locator): Promise<boolean> {
+    return locator.evaluate((el) => el.closest("[inert]") !== null);
+  }
+
   // --- Trials panel -------------------------------------------------------
 
   get trialsListbox(): Locator {
