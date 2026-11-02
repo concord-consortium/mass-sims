@@ -12,7 +12,9 @@ test.beforeEach(async ({ page }) => {
   await sim.goto();
 });
 
-test("the storm cloud is identical after switching trials and across runs of the same outcome", async () => {
+test("the storm cloud is identical after switching trials and across runs of the same outcome", async ({
+  page,
+}) => {
   test.slow();
 
   // Run trial A to its end and capture the frame the animation ended on.
@@ -33,5 +35,13 @@ test("the storm cloud is identical after switching trials and across runs of the
   await sim.completeSetup("strong");
   await sim.runButton.click();
   await expect(sim.mapStage).toHaveAttribute("data-run-phase", "done", { timeout: 30_000 });
+  expect(await sim.stormPixelsHash()).toBe(ended);
+
+  // A reduced-motion run on a fresh page (empty cache) draws its cloud with renderFinal: same frame.
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await sim.goto();
+  await sim.completeSetup("strong");
+  await sim.runButton.click();
+  await expect(sim.mapStage).toHaveAttribute("data-run-phase", "done");
   expect(await sim.stormPixelsHash()).toBe(ended);
 });
