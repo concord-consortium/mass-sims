@@ -91,6 +91,8 @@ describe("createStormPlayer", () => {
       if (!final) throw new Error(outcome);
       final.renderFinal(ctx);
       const expected = final.snapshot();
+      // Both paths share the stepper, so also pin the step count to the approved rate (60 per second).
+      expect((expected as { steps: number }).steps, outcome).toBe(final.duration * 60);
       for (const [name, frameMs] of Object.entries(cadences)) {
         const live = createStormPlayer(outcome);
         if (!live) throw new Error(outcome);

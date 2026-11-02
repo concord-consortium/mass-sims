@@ -22,6 +22,8 @@ test("the storm cloud is identical after switching trials and across runs of the
   await sim.runButton.click();
   await expect(sim.mapStage).toHaveAttribute("data-run-phase", "done", { timeout: 30_000 });
   const ended = await sim.stormPixelsHash();
+  // Every check below compares against `ended`, so make sure it isn't an empty canvas.
+  expect(await sim.stormHasPaint()).toBe(true);
 
   // Add trial B (selects it, no cloud), then select A again: the restored cloud is the ended frame.
   await sim.addTrial();
