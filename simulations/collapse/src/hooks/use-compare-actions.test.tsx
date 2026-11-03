@@ -61,6 +61,16 @@ describe("useCompareActions.openCompare", () => {
     expect(logEvent).toHaveBeenCalledTimes(1);
     expect(announce).toHaveBeenCalledTimes(1);
   });
+
+  it("pins again from the selection on the next open, after a close", () => {
+    const { store, result } = setup();
+    act(() => result.current.openCompare());
+    act(() => store.ui.togglePin(0));
+    act(() => result.current.closeCompare("close"));
+    expect(store.ui.pinnedYear).toBe(0);
+    act(() => result.current.openCompare());
+    expect(store.ui.pinnedYear).toBeNull();
+  });
 });
 
 describe("useCompareActions.closeCompare", () => {

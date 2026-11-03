@@ -14,9 +14,10 @@ export function useCompareActions() {
   const logEvent = useLogEvent();
   const announce = useAnnounce();
 
+  /** Opens with the selected row's year pinned, or no pin without a selection. */
   const openCompare = () => {
     if (ui.compareOpen) return;
-    store.openCompare();
+    ui.openCompare(store.selectedSample?.years ?? null);
     logEvent("compare_opened", { trial: ui.selectedTrialLetter, pinnedYears: ui.pinnedYear });
     announce("Comparing all four trials.");
   };

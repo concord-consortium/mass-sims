@@ -78,14 +78,6 @@ export const RootStore = types
       trial.reset();
       self.ui.selectSample(target, null);
     },
-    /**
-     * Opens the Compare Trials view with the selected row's year pinned, or no pin without a
-     * selection. Does nothing when the view is already open.
-     */
-    openCompare() {
-      if (self.ui.compareOpen) return;
-      self.ui.showCompare(self.selectedSample?.years ?? null);
-    },
   }));
 
 export type RootStoreInstance = Instance<typeof RootStore>;

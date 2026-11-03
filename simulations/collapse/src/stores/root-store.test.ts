@@ -83,44 +83,6 @@ describe("RootStore.deleteSample", () => {
   });
 });
 
-describe("RootStore.openCompare", () => {
-  it("opens with the selected row's year pinned", () => {
-    const store = createRootStore({ rng: makeRng(15) });
-    store.ui.setTimelineIndex(TIMELINE_VALUES.indexOf(50000));
-    store.takeSample();
-    store.openCompare();
-    expect(store.ui.compareOpen).toBe(true);
-    expect(store.ui.pinnedYear).toBe(50000);
-  });
-
-  it("opens with no pin when the active trial has no selection", () => {
-    const store = createRootStore({ rng: makeRng(16) });
-    store.takeSample();
-    store.ui.selectTrial("B");
-    store.openCompare();
-    expect(store.ui.compareOpen).toBe(true);
-    expect(store.ui.pinnedYear).toBeNull();
-  });
-
-  it("does nothing when already open", () => {
-    const store = createRootStore({ rng: makeRng(17) });
-    store.openCompare();
-    store.ui.togglePin(0);
-    store.openCompare();
-    expect(store.ui.pinnedYear).toBe(0);
-  });
-
-  it("reseeds the pin on the next open, after a close", () => {
-    const store = createRootStore({ rng: makeRng(18) });
-    store.openCompare();
-    store.ui.togglePin(0);
-    store.ui.closeCompare();
-    expect(store.ui.pinnedYear).toBe(0);
-    store.openCompare();
-    expect(store.ui.pinnedYear).toBeNull();
-  });
-});
-
 describe("RootStore.trialsSampledAt", () => {
   it("lists the trials with a sample at that year, in A–D order", () => {
     const store = createRootStore({ rng: makeRng(19) });

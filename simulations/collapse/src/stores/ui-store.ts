@@ -14,8 +14,7 @@ import type { SortKey, SortState } from "../model/types";
  * for all four trials, so switching trials keeps the columns comparable.
  *
  * `compareOpen` says whether the Compare Trials view is showing. `pinnedYear` is the year that view
- * highlights in every trial. Open the view through the root store's `openCompare`, which seeds the
- * pin from the selected row.
+ * highlights in every trial.
  *
  * All of these are `.volatile`, so they are not in snapshots: they are not saved, and restoring saved
  * state with `applySnapshot` does not reset them. A volatile value is observed by reference, so
@@ -68,7 +67,7 @@ export const UiStore = BaseUiStore.volatile(() => ({
       else self.sort = { key: null, direction: 1 };
     },
     /** Opens the view with `pinnedYear` pinned, or no pin for `null`. */
-    showCompare(pinnedYear: number | null) {
+    openCompare(pinnedYear: number | null) {
       self.compareOpen = true;
       self.pinnedYear = pinnedYear;
     },

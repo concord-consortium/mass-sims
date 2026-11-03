@@ -35,7 +35,7 @@ function setup() {
   sample(store, "B", 100000);
   sample(store, "D", 200000, 50000, 0);
   store.ui.selectTrial("C");
-  store.openCompare();
+  store.ui.openCompare(store.selectedSample?.years ?? null);
   const view = render(
     <RootStoreProvider store={store}>
       <CompareTrials />
@@ -189,7 +189,7 @@ describe("CompareColumn pin reveal", () => {
     sample(store, "D", 0);
     store.ui.selectTrial("C");
     store.ui.cycleSort("rate");
-    store.openCompare();
+    store.ui.openCompare(store.selectedSample?.years ?? null);
     render(
       <RootStoreProvider store={store}>
         <CompareTrials />
@@ -207,7 +207,7 @@ describe("CompareColumn pin reveal", () => {
   it("reveals the year carried in on opening", () => {
     const store = createRootStore({ rng: () => 0.5 });
     sample(store, "A", 200000, 100000);
-    store.openCompare();
+    store.ui.openCompare(store.selectedSample?.years ?? null);
     render(
       <RootStoreProvider store={store}>
         <CompareTrials />

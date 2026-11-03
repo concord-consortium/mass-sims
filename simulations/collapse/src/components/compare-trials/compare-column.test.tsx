@@ -30,7 +30,7 @@ function sample(store: RootStoreInstance, letter: string, years: number) {
 function setup(seed: (store: RootStoreInstance) => void = () => {}) {
   const store = createRootStore({ rng: () => 0.5 });
   seed(store);
-  act(() => store.openCompare());
+  act(() => store.ui.openCompare(store.selectedSample?.years ?? null));
   const view = render(
     <RootStoreProvider store={store}>
       <CompareTrials />
