@@ -13,7 +13,7 @@ import {
   convergenceTarget,
 } from "../animation/converge";
 import { finalNarration, STAGED_NARRATION, startNarration } from "../animation/run-narration";
-import { MAX_FRAME_MS, TOTAL_DUR_S } from "../animation/run-timing";
+import { CLOUD_START_MS, MAX_FRAME_MS, TOTAL_DUR_S } from "../animation/run-timing";
 import { useStores } from "../stores/root-store";
 import { norDebugFlag } from "../utils/nor-debug";
 import type { StormAnimation } from "./use-storm-animation";
@@ -36,9 +36,6 @@ import type { StormAnimation } from "./use-storm-animation";
 /** Arrow convergence duration (ms). */
 const CONVERGE_MS = 2000;
 
-/** The cloud starts 1.5 s into the run (arrows converge first, then the storm spins up). */
-const CLOUD_START_MS = 1500;
-
 /** Refs the map stage hands the runner so it can drive the overlays imperatively. */
 export interface StormRunRefs {
   /** The `.nor-map` overlay frame — the coordinate basis for convergence. */
@@ -54,6 +51,17 @@ interface Converge {
 }
 
 const NO_CONVERGE: Converge = { nums: [], deltas: {} };
+
+/** One cloud frame of a `__norPerfTrace` run: the runner's cloud clock and the raw (unclamped) frame gap. */
+interface FrameTraceEntry {
+  cloudElapsedMs: number;
+  frameMs: number;
+}
+
+/** Diagnostic-only window surface (`__norPerfTrace`): the perf probe reads the run's frame trace here. */
+interface FrameTraceWindow extends Window {
+  __norFrameTrace?: FrameTraceEntry[];
+}
 
 export function useStormRun(
   frameRef?: StormRunRefs["frame"],
@@ -72,8 +80,11 @@ export function useStormRun(
   const reducedMotion = useReducedMotion();
   const hidden = useDocumentHidden();
   // Diagnostic-only (`__norPerf`, set by the perf probe via addInitScript — not URL-reachable): hold the
-  // cloud at peak and suppress auto-finalize so the probe samples worst-case sustained frame cost.
+  // cloud at its end and suppress auto-finalize so the probe samples the finished cloud's draw cost.
   const [perfHold] = useState(() => norDebugFlag("__norPerf"));
+  // Diagnostic-only (`__norPerfTrace`, set the same way): record each cloud frame of a NORMAL run (no hold)
+  // against the runner's own clock, so the probe can pick out the run's late window in clock time.
+  const [perfTrace] = useState(() => norDebugFlag("__norPerfTrace"));
 
   const elapsedRef = useRef(0);
   const convergeRef = useRef<Converge>(NO_CONVERGE);
@@ -108,6 +119,7 @@ export function useStormRun(
     narratedRef.current = 0;
     frameErrorLoggedRef.current = false;
     if (runId == null) return;
+    if (perfTrace) (window as FrameTraceWindow).__norFrameTrace = [];
     anim?.clear();
     const active = store.ui.run;
     const setup = active?.setup ?? null;
@@ -188,8 +200,8 @@ export function useStormRun(
     (deltaMs: number) => {
       lastFrameAtRef.current = performance.now(); // the loop is alive this frame (watchdog reads this)
       try {
-        // One clamped frame delta drives both the clock and the physics, so the cloud can't advance out of
-        // step with the run clock on a stall.
+        // One clamped frame delta drives the clock; the cloud runs the fixed physics steps due by that clock,
+        // so it can't advance out of step with the run clock on a stall.
         const dt = Math.min(deltaMs, MAX_FRAME_MS);
         elapsedRef.current += dt;
         const elapsed = elapsedRef.current;
@@ -227,9 +239,17 @@ export function useStormRun(
         }
 
         // Storm cloud (from 1.5 s): the runner steps the player and positions/opacity the container. Under
-        // the diagnostic hold, pin the cloud at peak (t=1) so the probe samples sustained worst-case load.
+        // the diagnostic hold, pin the cloud at its end (t=1) so the probe samples the finished cloud's draw cost.
         const cloudElapsed = perfHold ? 1e9 : elapsed - CLOUD_START_MS;
-        if (cloudElapsed >= 0) anim?.drawFrame(cloudElapsed, dt);
+        if (cloudElapsed >= 0) {
+          anim?.drawFrame(cloudElapsed);
+          if (perfTrace) {
+            (window as FrameTraceWindow).__norFrameTrace?.push({
+              cloudElapsedMs: cloudElapsed,
+              frameMs: deltaMs,
+            });
+          }
+        }
       } catch (err) {
         // A bad frame (e.g. a canvas allocation failure on a memory-starved device) must not kill the rAF
         // loop — swallow it so the loop keeps running, degrading to no cloud. Log once.
@@ -243,7 +263,7 @@ export function useStormRun(
       // normal timing) instead of never reaching this and limping to the watchdog.
       if (!perfHold && elapsedRef.current >= totalMs) finalize();
     },
-    [totalMs, finalize, arrowsRef, anim, perfHold, outcome, announce],
+    [totalMs, finalize, arrowsRef, anim, perfHold, perfTrace, outcome, announce],
   );
 
   useFrameLoop(tick, enabled);

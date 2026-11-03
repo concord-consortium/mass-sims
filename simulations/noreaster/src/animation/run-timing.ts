@@ -18,5 +18,8 @@ export const TOTAL_DUR_S: Record<Outcome, number> = {
   fair: 3,
 };
 
+/** The cloud starts 1.5 s into the run (arrows converge first, then the storm spins up). */
+export const CLOUD_START_MS = 1500;
+
 /** Clamp per-frame dt so a long stall can't overshoot the finalize deadline (or a resume jump it). */
 export const MAX_FRAME_MS = 100;

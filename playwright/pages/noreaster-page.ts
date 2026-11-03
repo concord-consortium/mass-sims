@@ -73,6 +73,35 @@ export class NoreasterPage extends SimulationFramePage {
     return this.page.locator(".nor-stage");
   }
 
+  /** The storm cloud canvas on the map — decorative (its container is aria-hidden). */
+  get stormCanvas(): Locator {
+    return this.page.locator(".nor-storm-canvas");
+  }
+
+  /**
+   * A SHA-256 hash of the storm canvas's current pixels (its PNG data URL), for exact frame comparisons
+   * that stay readable when they fail.
+   */
+  async stormPixelsHash(): Promise<string> {
+    return this.stormCanvas.evaluate(async (c) => {
+      const bytes = new TextEncoder().encode((c as HTMLCanvasElement).toDataURL());
+      const digest = await crypto.subtle.digest("SHA-256", bytes);
+      return Array.from(new Uint8Array(digest), (x) => x.toString(16).padStart(2, "0")).join("");
+    });
+  }
+
+  /** Whether the storm canvas has any painted (non-transparent) pixel — an empty canvas hashes the same every time. */
+  async stormHasPaint(): Promise<boolean> {
+    return this.stormCanvas.evaluate((c) => {
+      const canvas = c as HTMLCanvasElement;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) return false;
+      const { data } = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      for (let i = 3; i < data.length; i += 4) if (data[i] !== 0) return true;
+      return false;
+    });
+  }
+
   /** A pathway arrow overlay by its number (1 = N/NW, 4 = W, 2 = S/SE, 3 = NE) — decorative. */
   arrow(num: number): Locator {
     return this.page.locator(`.nor-arrow[data-arrow="${num}"]`);
