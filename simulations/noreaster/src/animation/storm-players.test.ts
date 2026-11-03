@@ -105,5 +105,6 @@ describe("createStormPlayer", () => {
         expect(live.snapshot(), `${outcome} @ ${name}`).toEqual(expected);
       }
     }
-  });
+    // Sixteen full runs: well under a second locally, but close to the 5 s default on a busy CI runner.
+  }, 30_000);
 });
