@@ -1,14 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { TRIAL_CONDITIONS } from "../trial-conditions";
-import {
-  CAVE_ROOF_FAIL,
-  formatWhole,
-  isCollapsed,
-  RATE_JITTER,
-  ROCK_MODEL,
-  roofAt,
-  sampleAt,
-} from "./erosion";
+import { formatWhole, isCollapsed, RATE_JITTER, ROCK_MODEL, roofAt, sampleAt } from "./erosion";
 
 const limestoneWet = { rock: "Limestone", moisture: "Wet" } as const;
 const limestoneDry = { rock: "Limestone", moisture: "Dry" } as const;
@@ -29,8 +21,8 @@ describe("erosion model", () => {
     }
   });
 
-  it("collapses limestone-wet at year 0 and not at year 10", () => {
-    expect(roofAt(limestoneWet, 0)).toBe(CAVE_ROOF_FAIL);
+  it("collapses limestone-wet at year 0, reporting 0 rock, and not at year 10", () => {
+    expect(roofAt(limestoneWet, 0)).toBe(0);
     expect(isCollapsed(roofAt(limestoneWet, 0))).toBe(true);
     expect(roofAt(limestoneWet, 10)).toBeCloseTo(2800.3, 6);
     expect(isCollapsed(roofAt(limestoneWet, 10))).toBe(false);

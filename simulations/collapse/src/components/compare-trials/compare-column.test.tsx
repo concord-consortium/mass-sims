@@ -114,12 +114,13 @@ describe("CompareTrials columns — with samples", () => {
     expect(rows(view, "C")).toHaveLength(0);
   });
 
-  it("marks a collapsed sample on two lines and in its label", () => {
+  it("shows 0 rock for a collapsed sample and marks it in its label", () => {
     const { view } = setup(seed);
     const [row] = rows(view, "B");
-    expect(row.getAttribute("aria-label")).toMatch(/^Trial B, 0 years .*, collapsed$/);
-    const cell = row.querySelector(".collapse-cell-failed");
-    expect(cell?.innerHTML).toBe('<span class="collapse-failed-word">collapsed</span><br>(2,800)');
+    expect(row.getAttribute("aria-label")).toMatch(
+      /^Trial B, 0 years .*, rock above cave 0 mm, collapsed$/,
+    );
+    expect(row.querySelectorAll("td")[3].innerHTML).toBe("0");
   });
 
   it("draws the hidden thumbnail stand-in in each row", () => {

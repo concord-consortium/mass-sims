@@ -177,7 +177,7 @@ test("Compare Trials: shows each trial's rows, carries the selection in, and sha
 
   await collapse.compareButton.click();
   await expect(collapse.compareRows("A")).toHaveCount(1);
-  await expect(collapse.compareRow("B", 0)).toContainText("collapsed");
+  await expect(collapse.compareRow("B", 0).getByRole("cell").nth(3)).toHaveText("0");
   await expect(collapse.compareEmptyNotice("C")).toBeVisible();
   await expect(collapse.compareEmptyNotice("D")).toBeVisible();
   // A's selected row is at 50,000, so that year opens pinned; B has no sample then.

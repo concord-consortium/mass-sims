@@ -149,15 +149,13 @@ describe("DataTable — rows", () => {
     );
   });
 
-  it("marks the collapsed sample on two lines and in its label", () => {
+  it("shows 0 rock for the collapsed sample and marks it in its label", () => {
     const { store, view } = setup();
     act(() => store.ui.selectTrial("B"));
     sample(store, 0);
     const [row] = bodyRows(view);
-    const cell = row.cells[3];
-    expect(cell).toHaveClass("collapse-cell-failed");
-    expect(cell.innerHTML).toBe('<span class="collapse-failed-word">collapsed</span><br>(2,800)');
-    expect(row.getAttribute("aria-label")).toMatch(/, collapsed$/);
+    expect(row.cells[3].innerHTML).toBe("0");
+    expect(row.getAttribute("aria-label")).toMatch(/rock above cave 0 mm, collapsed$/);
   });
 
   it("draws the hidden stand-in in the picture cell", () => {

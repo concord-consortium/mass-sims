@@ -89,8 +89,8 @@ describe("Timeline", () => {
     expect(list).toHaveAttribute("role", "list");
     const items = within(list).getAllByRole("listitem");
     expect(items).toHaveLength(7);
-    expect(items[0]).toHaveTextContent("200,000 yr Modern humans appear in Africa");
-    expect(items[3]).toHaveTextContent("4,600 yr Pyramids are built");
+    expect(items[0]).toHaveTextContent("~200,000 yr Modern humans appear in Africa");
+    expect(items[3]).toHaveTextContent("~5,000 yr Pyramids are built");
     expect(items[5]).toHaveTextContent("0 yr (the collapse) Cave roof collapses");
   });
 

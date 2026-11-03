@@ -32,7 +32,8 @@ export const CAVE_ROOF_START = 8800;
  * The roof fails at or below this, in mm. It is forced by the other two numbers, not chosen: wet
  * limestone removes 30 / 1,000 × 200,000 = 6,000 mm over the run, and 8,800 − 6,000 = 2,800, so
  * only limestone + wet fails, and only at year 0. Roofs fail with meters still standing, which is
- * why the threshold is not zero.
+ * why the threshold is not zero. Once it fails, `roofAt` reports 0: there is no cave left to have
+ * rock above it.
  */
 export const CAVE_ROOF_FAIL = 2800;
 
@@ -47,12 +48,13 @@ export const CAVE_ROOF_FAIL = 2800;
  */
 export const RATE_JITTER = 0.15;
 
-/** The rock above the cave at `years` before collapse, in mm. Deterministic. */
+/** The rock above the cave at `years` before collapse, in mm, or 0 once the roof has failed. Deterministic. */
 export function roofAt(conditions: Conditions, years: number): number {
   const { baseRate } = ROCK_MODEL[conditions.rock][conditions.moisture];
   const elapsed = Math.max(0, EROSION_START_YEARS - years);
   const depth = (baseRate / 1000) * elapsed;
-  return Math.max(0, CAVE_ROOF_START - depth);
+  const standing = Math.max(0, CAVE_ROOF_START - depth);
+  return isCollapsed(standing) ? 0 : standing;
 }
 
 /** One sample: a jittered rate and the deterministic roof. `rng` returns values in [0, 1). */

@@ -183,7 +183,7 @@ th[data-sort-dir="descending"] .sort-up {
   }
 
   tr[aria-current="true"] td {
-    background: theme.$trial-selected-bg;
+    background: theme.$selected-row-bg;
     font-weight: 500;
   }
 

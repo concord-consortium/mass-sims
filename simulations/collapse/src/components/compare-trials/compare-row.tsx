@@ -1,7 +1,6 @@
 import type { KeyboardEvent } from "react";
 import { type Conditions, formatWhole } from "../../model/erosion";
 import type { Sample } from "../../model/types";
-import { RoofCell } from "../data-table/roof-cell";
 import { sampleRowLabel } from "../data-table/sample-row";
 import { Thumbnail } from "../data-table/thumbnail";
 
@@ -58,7 +57,7 @@ export function CompareRow({
       </td>
       <td>{formatWhole(sample.years)}</td>
       <td>{formatWhole(sample.rate)}</td>
-      <RoofCell roof={sample.roof} />
+      <td>{formatWhole(sample.roof)}</td>
     </tr>
   );
 }
