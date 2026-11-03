@@ -138,7 +138,7 @@ export class CollapsePage extends SimulationFramePage {
   }
 
   get compareDialog(): Locator {
-    return this.page.getByRole("dialog", { name: "Compare trials" });
+    return this.page.getByRole("dialog", { name: "Compare Trials" });
   }
 
   get compareCloseButton(): Locator {
@@ -192,14 +192,18 @@ export class CollapsePage extends SimulationFramePage {
 
   /**
    * The compare headings whose label or chevron does not hit their own sort button, tested at the
-   * left edge, the center and the right edge of each. Empty when every heading is hit.
+   * left edge, the center and the right edge of each. Empty when every heading is hit. Throws if
+   * the headings are not all there, so a changed selector cannot pass with nothing checked.
    */
   compareHeadingMisses(): Promise<string[]> {
     return this.page.evaluate(() => {
       const out: string[] = [];
-      for (const button of document.querySelectorAll<HTMLElement>(
-        ".collapse-compare .collapse-th-sort",
-      )) {
+      const buttons = document.querySelectorAll<HTMLElement>(".collapse-compare .collapse-th-sort");
+      // Three per trial, each with its label and its chevron.
+      if (buttons.length !== 12 || [...buttons].some((b) => b.children.length !== 2)) {
+        throw new Error("expected 12 compare headings, each with a label and a chevron");
+      }
+      for (const button of buttons) {
         for (const part of Array.from(button.children)) {
           const box = part.getBoundingClientRect();
           for (const x of [box.left + 1, (box.left + box.right) / 2, box.right - 1]) {
@@ -209,6 +213,23 @@ export class CollapsePage extends SimulationFramePage {
         }
       }
       return out;
+    });
+  }
+
+  /** The compare view's body and footer cells, and the text of those whose content is clipped. */
+  compareClippedCells(): Promise<{ checked: number; clipped: (string | null)[] }> {
+    return this.page.evaluate(() => {
+      const cells = Array.from(
+        document.querySelectorAll<HTMLElement>(
+          ".collapse-compare .collapse-rows td, .collapse-compare tfoot th, .collapse-compare tfoot td",
+        ),
+      );
+      return {
+        checked: cells.length,
+        clipped: cells
+          .filter((cell) => cell.scrollWidth > cell.clientWidth + 0.5)
+          .map((cell) => cell.textContent),
+      };
     });
   }
 

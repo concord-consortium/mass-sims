@@ -11,13 +11,17 @@ import { SortHeader, sortDirOf } from "../data-table/sort-header";
 import { TableFoot } from "../data-table/table-foot";
 import { COLUMN_NAMES } from "../data-table/table-head";
 import { useFillerHeight } from "../data-table/use-filler-height";
-import { useHeadingSpacing } from "../data-table/use-heading-spacing";
+import {
+  HEAD_GAP,
+  HEAD_MIN_BAND_PADDING,
+  useHeadingSpacing,
+} from "../data-table/use-heading-spacing";
 import { useRowFlip } from "../data-table/use-row-flip";
 import { ConditionAttr, MOISTURE_ICONS, ROCK_ICONS } from "../trials-panel/trial-card-body";
 import { CompareRow } from "./compare-row";
 import "../data-table/table-shared.scss";
 
-const COLUMNS: readonly { key: SortKey; label: string }[] = [
+export const COLUMNS: readonly { key: SortKey; label: string }[] = [
   { key: "years", label: "Years" },
   { key: "rate", label: "Rate" },
   { key: "roof", label: "Rock" },
@@ -51,11 +55,13 @@ export const CompareColumn = observer(function CompareColumn({
   const { rock, moisture } = conditions;
   const count = trial?.sampleCount ?? 0;
   useFillerHeight(scrollerRef, fillerRef, count);
-  // The headings sit closer than the data table's: 8px between two headings instead of 16, and each
-  // hover band reaches 4px past its label and chevron instead of 8. There are three headings in a
-  // quarter of the width. The right band stays inside the column; the Years heading may reach over
-  // the thumbnail column.
-  useHeadingSpacing(headRowRef, { gap: 8, minBandPadding: 4, clampRight: true });
+  // Half the data table's spacing: three headings share a quarter of the width. Only the right band
+  // is kept inside the column, because the Years heading may reach over the thumbnail column.
+  useHeadingSpacing(headRowRef, {
+    gap: HEAD_GAP / 2,
+    minBandPadding: HEAD_MIN_BAND_PADDING / 2,
+    clampRight: true,
+  });
   const rows = trial ? sortedSamples(trial.samples, ui.sort) : [];
   const rowKeys = rows.map((sample) => `${letter}:${sample.id}`);
   useRowFlip(tbodyRef, scrollerRef, letter, rowKeys);

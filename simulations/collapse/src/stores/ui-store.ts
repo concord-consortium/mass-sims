@@ -67,8 +67,9 @@ export const UiStore = BaseUiStore.volatile(() => ({
       else if (direction === 1) self.sort = { key, direction: -1 };
       else self.sort = { key: null, direction: 1 };
     },
-    setCompareOpen(open: boolean, pinnedYear: number | null) {
-      self.compareOpen = open;
+    /** Opens the view with `pinnedYear` pinned, or no pin for `null`. */
+    showCompare(pinnedYear: number | null) {
+      self.compareOpen = true;
       self.pinnedYear = pinnedYear;
     },
     /** Closes the view. The pin stays until the next open replaces it. */

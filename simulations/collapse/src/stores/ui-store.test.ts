@@ -105,9 +105,9 @@ describe("UiStore", () => {
     expect(ui.pinnedYear).toBeNull();
   });
 
-  it("setCompareOpen sets the view and the pin; closeCompare leaves the pin", () => {
+  it("showCompare opens the view and sets the pin; closeCompare leaves the pin", () => {
     const ui = UiStore.create();
-    ui.setCompareOpen(true, 50000);
+    ui.showCompare(50000);
     expect(ui.compareOpen).toBe(true);
     expect(ui.isPinned(50000)).toBe(true);
     ui.closeCompare();
@@ -128,7 +128,7 @@ describe("UiStore", () => {
 
   it("keeps the compare state out of snapshots", () => {
     const ui = UiStore.create();
-    ui.setCompareOpen(true, 0);
+    ui.showCompare(0);
     expect(getSnapshot(ui)).toEqual({ selectedTrialLetter: "A" });
     applySnapshot(ui, { selectedTrialLetter: "B" });
     expect(ui.compareOpen).toBe(true);

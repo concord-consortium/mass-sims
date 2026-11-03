@@ -92,7 +92,7 @@ actions.
 ## Compare Trials
 
 The Compare Trials view shows all four trials' samples side by side, over the Trials and Simulation
-panels. It is a hand-built **`role="dialog"`** named "Compare trials", like the About panel, not a
+panels. It is a hand-built **`role="dialog"`** named by its "Compare Trials" heading, like the About panel, not a
 react-aria `Modal`.
 
 - **Not `aria-modal`.** `aria-modal` tells assistive tech to ignore everything outside the dialog,
@@ -105,8 +105,8 @@ react-aria `Modal`.
   (so "Comparing all four trials." would be lost), and `aria-modal` does not stop the mouse from
   reaching the title bar, so part of the `inert` work would stay.
 - **The opener only opens.** The Compare Trials button is in the Simulation panel, which is inert
-  while the view is open, so it cannot close it. It has `aria-expanded`. The view closes with its
-  close button ("Close the trial comparison") or Escape.
+  while the view is open, so it cannot close it, and it has no `aria-expanded`: while the view is
+  open, no one can reach the button to hear it. The view closes with its close button ("Close the trial comparison") or Escape.
 - **Focus.** Opening moves focus to the close button. Closing returns it to the Compare Trials
   button. The order matters: `focus()` on an element inside an inert subtree does nothing, so
   `inert` is removed first and focus moves after. The view itself has `tabindex="-1"`, so a click on

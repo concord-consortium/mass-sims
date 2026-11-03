@@ -295,9 +295,7 @@ test.describe("Compare Trials", () => {
     await expect(collapse.compareButton).toBeFocused();
   });
 
-  test("with the widest values, no cell is clipped and the grid never scrolls sideways", async ({
-    page,
-  }) => {
+  test("with the widest values, no cell is clipped and the grid never scrolls sideways", async () => {
     // The column widths come from the measured widest values, so a font or format change could clip.
     for (const letter of ["A", "B", "C", "D"]) {
       await collapse.selectTrial(letter);
@@ -305,15 +303,8 @@ test.describe("Compare Trials", () => {
       await collapse.sampleAt(0);
     }
     await collapse.compareButton.click();
-    const clipped = await page.evaluate(() =>
-      Array.from(
-        document.querySelectorAll<HTMLElement>(
-          ".collapse-compare .collapse-rows td, .collapse-compare tfoot th, .collapse-compare tfoot td",
-        ),
-      )
-        .filter((cell) => cell.scrollWidth > cell.clientWidth + 0.5)
-        .map((cell) => cell.textContent),
-    );
+    const { checked, clipped } = await collapse.compareClippedCells();
+    expect(checked).toBeGreaterThan(0);
     expect(clipped).toEqual([]);
     const overflow = await collapse.compareGrid.evaluate((el) => el.scrollWidth - el.clientWidth);
     expect(overflow).toBe(0);

@@ -1,21 +1,18 @@
 import { observer } from "mobx-react-lite";
-import { useLayoutEffect, useRef, useState } from "react";
+import { useId, useLayoutEffect, useRef, useState } from "react";
 import CloseIcon from "../../assets/close-icon.svg?react";
 import CompareIcon from "../../assets/compare-icon.svg?react";
 import { useCompareActions } from "../../hooks/use-compare-actions";
 import { useStores } from "../../stores/root-store";
 import { COLLAPSE_TRIAL_LETTERS } from "../../trial-conditions";
-import { CompareColumn } from "./compare-column";
+import { COLUMN_NAMES } from "../data-table/table-head";
+import { COLUMNS, CompareColumn } from "./compare-column";
 import { useCompareKeyboardNav } from "./use-compare-keyboard-nav";
 import { useDialogLifecycle } from "./use-dialog-lifecycle";
 import { useFocusTrap } from "./use-focus-trap";
 import "./compare-trials.scss";
 
-const LEGEND = [
-  ["Years", "Years before collapse (yr)"],
-  ["Rate", "Erosion rate (mm/1,000 yr)"],
-  ["Rock", "Rock above cave (mm)"],
-] as const;
+const LEGEND = COLUMNS.map(({ key, label }) => [label, COLUMN_NAMES[key]] as const);
 
 /**
  * All four trials' samples side by side, over the Trials and Simulation panels. Mounted only while
@@ -28,6 +25,7 @@ export const CompareTrials = observer(function CompareTrials() {
   const rootRef = useRef<HTMLDivElement>(null);
   const closeRef = useRef<HTMLButtonElement>(null);
   const gridRef = useRef<HTMLDivElement>(null);
+  const titleId = useId();
   const store = useStores();
   const { closeCompare } = useCompareActions();
   // The year under the pointer, and the year of the row with keyboard focus. Rows with the linked
@@ -54,7 +52,7 @@ export const CompareTrials = observer(function CompareTrials() {
 
   return (
     <div
-      aria-label="Compare trials"
+      aria-labelledby={titleId}
       className="collapse-compare"
       ref={rootRef}
       role="dialog"
@@ -69,7 +67,9 @@ export const CompareTrials = observer(function CompareTrials() {
       <div className="collapse-compare-head">
         <CompareIcon className="collapse-compare-head-icon" aria-hidden="true" />
         <div className="collapse-compare-titles">
-          <h2 className="collapse-compare-title">Compare Trials</h2>
+          <h2 className="collapse-compare-title" id={titleId}>
+            Compare Trials
+          </h2>
           <div className="collapse-compare-legend">
             {LEGEND.map(([key, meaning], i) => (
               <span key={key}>

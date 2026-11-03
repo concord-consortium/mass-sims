@@ -84,7 +84,7 @@ export const RootStore = types
      */
     openCompare() {
       if (self.ui.compareOpen) return;
-      self.ui.setCompareOpen(true, self.selectedSample?.years ?? null);
+      self.ui.showCompare(self.selectedSample?.years ?? null);
     },
   }));
 

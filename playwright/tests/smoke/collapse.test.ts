@@ -155,21 +155,18 @@ test("Compare Trials: opens over the panels and closes by its button and by Esca
   await expect(collapse.comparePromptPill).toBeVisible();
   await expect(page.locator(".collapse-compare-col")).toHaveCount(4);
   await expect(collapse.compareCloseButton).toBeFocused();
-  await expect(collapse.compareButton).toHaveAttribute("aria-expanded", "true");
   expect(await collapse.isInert(collapse.compareButton)).toBe(true);
 
   await collapse.compareCloseButton.click();
   await expect(collapse.compareDialog).toHaveCount(0);
   // Focus returns to the opener, which proves `inert` came off before focus moved.
   await expect(collapse.compareButton).toBeFocused();
-  await expect(collapse.compareButton).toHaveAttribute("aria-expanded", "false");
 
   await collapse.compareButton.click();
   await expect(collapse.compareCloseButton).toBeFocused();
   await page.keyboard.press("Escape");
   await expect(collapse.compareDialog).toHaveCount(0);
   await expect(collapse.compareButton).toBeFocused();
-  await expect(collapse.compareButton).toHaveAttribute("aria-expanded", "false");
 });
 
 test("Compare Trials: shows each trial's rows, carries the selection in, and shares the sort", async () => {

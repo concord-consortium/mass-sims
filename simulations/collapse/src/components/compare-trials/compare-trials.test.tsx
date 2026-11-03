@@ -10,7 +10,7 @@ import { App } from "../../app";
 
 function openCompare(view: ReturnType<typeof render>) {
   fireEvent.click(view.getByRole("button", { name: "Compare Trials" }));
-  return view.getByRole("dialog", { name: "Compare trials" });
+  return view.getByRole("dialog", { name: "Compare Trials" });
 }
 
 function parts(view: ReturnType<typeof render>) {
@@ -75,7 +75,6 @@ describe("CompareTrials", () => {
     const { titleBar, trials, simulation } = parts(view);
     for (const el of [titleBar, trials, simulation]) expect(el).not.toHaveAttribute("inert");
     const opener = view.getByRole("button", { name: "Compare Trials" });
-    expect(opener).toHaveAttribute("aria-expanded", "false");
     expect(document.activeElement).toBe(opener);
   });
 
