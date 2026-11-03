@@ -179,6 +179,7 @@ describe("useSampleActions.cycleSort", () => {
       trial: "C",
       key: "rate",
       direction: "ascending",
+      view: "table",
     });
     expect(announce).toHaveBeenLastCalledWith("Sorted by Erosion rate, lowest first.");
 
@@ -187,6 +188,7 @@ describe("useSampleActions.cycleSort", () => {
       trial: "C",
       key: "rate",
       direction: "descending",
+      view: "table",
     });
     expect(announce).toHaveBeenLastCalledWith("Sorted by Erosion rate, highest first.");
 
@@ -196,11 +198,23 @@ describe("useSampleActions.cycleSort", () => {
       trial: "C",
       key: "rate",
       direction: "none",
+      view: "table",
     });
     expect(announce).toHaveBeenLastCalledWith(
       "Not sorted. Back to the order you took the samples in.",
     );
     expect(logEvent).toHaveBeenCalledTimes(3);
+  });
+
+  it("logs the compare view as the source when told to", () => {
+    const { result } = setup();
+    act(() => result.current.cycleSort("roof", "compare"));
+    expect(logEvent).toHaveBeenCalledWith("table_sorted", {
+      trial: "A",
+      key: "roof",
+      direction: "ascending",
+      view: "compare",
+    });
   });
 
   it("names each column without its unit", () => {

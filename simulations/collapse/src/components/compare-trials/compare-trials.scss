@@ -1,0 +1,490 @@
+@use "@concord-consortium/mass-sims-shared/styles/tokens" as tokens;
+@use "../../theme" as theme;
+@use "../trials-panel/condition-attr";
+
+// A column head: the badge row (6 + 28 + 4), the conditions row (2 + 22), the note (−2 + 18 + 10),
+// then its 1px rule.
+$col-head: (6px + 28px + 4px) + (2px + 22px) + (-2px + 18px + 10px) + 1px;
+// The heading row: 11px above and below the 22px chevron box, so a full 44px target.
+$th-pad: 11px;
+$th-height: 2 * $th-pad + 22px;
+// While the prompt pill shows, the heading band grows 18px so its rule meets the pill's middle, as
+// in the data table. The button stops half a pixel short of the rule; the `th` makes up that half.
+$prompt-growth: 18px;
+$rule-gap: 0.5px;
+// Rows: 36px, not 44. A row is a click target, but it cannot borrow space from its neighbors,
+// which are targets too, so the row height is the target height. 36 clears WCAG 2.5.8 (24px) with
+// room; 44 would cost 8px a row where the columns are shortest of vertical space.
+$row-height: 36px;
+// The thumbnail: the data table's 44 × 43 ratio at the size a 36px row holds (36 − 2 − 2 − 1 = 31
+// high, 31 × 44 / 43 wide), plus 4px of left padding.
+$pic-w: 31.72px;
+$pic-h: 31px;
+$pic-col: 36px;
+// The widest value each column can hold, measured in Roboto Condensed 16px at the rows' tracking:
+// "200,000", "35", and "(2,800)". "collapsed" is wider at 16px, but it shrinks with the table and
+// is narrower than "(2,800)" where the table is narrowest.
+$val-years: 52.78px;
+$val-rate: 16.44px;
+$val-rock: 47.11px;
+// A column's table width at the narrowest (767) and widest (1044) target widths.
+$table-narrow: 184.25px;
+$table-wide: 253.5px;
+// The narrowest table: the one at 767 with a 17px scrollbar. Every value and heading fits it.
+// Below it the grid scrolls sideways: four trials side by side is the point of the view. A column
+// also keeps room for a scrollbar, `--scrollbar` wide (see `CompareTrials`), in case it scrolls.
+$table-min: 167px;
+$sticky-z: 2;
+
+// A length that is `$narrow` at a table `$from` wide and `$wide` at the widest, on a straight line
+// between. `cqi` is the table's width (see `.collapse-compare-sizer`).
+@function by-width($narrow, $wide, $from: $table-narrow) {
+  $slope: ($wide - $narrow) / ($table-wide - $from);
+  @return calc(#{$slope * 100}cqi + #{$narrow - $slope * $from});
+}
+
+// A measurement column's width. At the widest, the three share the space equally, so the three
+// headings' bands are even. At the narrowest, each takes its widest value plus the same margin, so
+// every value fits. Both layouts fill the table, so every width between them does too.
+@function col-width($val) {
+  @return by-width(
+    $val + ($table-min - $pic-col - $val-years - $val-rate - $val-rock) / 3,
+    ($table-wide - $pic-col) / 3,
+    $table-min
+  );
+}
+
+// Covers both panels: `.sim-main` is the containing block (see app.scss), and its edges are the
+// panels' outer edges. Over the section chips (z-index: 11), under the About panel (z-index: 101).
+.collapse-compare {
+  background: theme.$surface;
+  border: tokens.$border-strong-width solid theme.$border;
+  border-radius: tokens.$radius-lg;
+  display: flex;
+  flex-direction: column;
+  inset: 0;
+  overflow: hidden;
+  position: absolute;
+  z-index: 12;
+}
+
+// An About panel that was open when the comparison opened is hidden until it closes, so focus has
+// one home. Its open state and drag offset are kept, so it comes back where it was.
+.simulation-frame:has(.collapse-compare) .simulation-frame-info-modal {
+  display: none;
+}
+
+// Laid out like the About panel's header: the icon at the left, 10px to the title.
+.collapse-compare-head {
+  align-items: center;
+  // 2px, heavier than the About header's 1px: it separates the title band from four columns of
+  // tables, and must outweigh the lighter rule inside each column head.
+  border-bottom: tokens.$border-strong-width solid theme.$border;
+  display: flex;
+  flex: 0 0 auto;
+  gap: 10px;
+  padding: 3px 3px 3px 12px;
+}
+
+.collapse-compare-head-icon {
+  color: theme.$heading;
+  flex-shrink: 0;
+  height: 24px;
+  width: 24px;
+}
+
+.collapse-compare-titles {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.collapse-compare-title {
+  color: tokens.$color-text;
+  font-family: tokens.$font-family-base;
+  font-size: tokens.$font-size-base;
+  font-weight: 700;
+  line-height: tokens.$line-height-sm;
+  margin: 0;
+}
+
+// The units live here once, instead of in every column heading.
+.collapse-compare-legend {
+  color: tokens.$color-text;
+  font-family: tokens.$font-family-condensed;
+  font-size: tokens.$font-size-base;
+  font-weight: 400;
+  // No tracking: the line is wider than the table headings and does not fit at their 0.01em.
+  letter-spacing: 0;
+  line-height: tokens.$line-height-sm;
+  // Allowed to wrap (WCAG 1.4.12): it fits on one line at every target width, but a user
+  // stylesheet that forces letter-spacing would otherwise cut it off.
+  white-space: normal;
+}
+
+// Set as the column headings they name.
+.collapse-compare-key {
+  color: theme.$heading;
+  font-weight: 500;
+}
+
+// The About panel's close button, state for state.
+.collapse-compare-close {
+  align-items: center;
+  background: transparent;
+  border: none;
+  border-radius: tokens.$radius-sm;
+  cursor: pointer;
+  display: flex;
+  flex: 0 0 auto;
+  height: tokens.$touch-target-min;
+  justify-content: center;
+  padding: 0;
+  transition: tokens.$transition-interactive;
+  width: tokens.$touch-target-min;
+
+  &:hover,
+  &:focus-visible {
+    background: theme.$hover;
+  }
+
+  &:active {
+    background: theme.$active;
+  }
+
+  &:focus-visible {
+    outline: tokens.$focus-outline;
+    outline-offset: -2px;
+  }
+}
+
+.collapse-compare-close-icon {
+  color: theme.$heading;
+  display: block;
+  height: 24px;
+  pointer-events: none;
+  width: 24px;
+}
+
+// The containing block of the prompt, so the prompt moves down with the grid if the title band
+// grows (a user stylesheet can make the legend wrap).
+.collapse-compare-grid {
+  display: flex;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  position: relative;
+}
+
+.collapse-compare-col {
+  border-left: tokens.$border-strong-width solid theme.$border;
+  display: flex;
+  flex: 1 1 0;
+  flex-direction: column;
+  min-height: 0;
+  min-width: calc(#{$table-min + tokens.$border-strong-width} + var(--scrollbar, 0px));
+
+  &:first-child {
+    border-left: 0;
+    min-width: calc(#{$table-min} + var(--scrollbar, 0px));
+  }
+}
+
+// The trial's letter, conditions, and note. Outside the scroller, so they never move. The 1px rule
+// under it is the lightest of the three: it divides the least.
+.collapse-compare-colhead {
+  border-bottom: 1px solid theme.$border;
+  flex: 0 0 auto;
+}
+
+.collapse-compare-trial {
+  display: flex;
+  justify-content: center;
+  padding: 6px 2px 4px;
+}
+
+// The trial card's selected badge for all four: marking one as current would say "you are here",
+// which is the one thing this view is not about.
+.collapse-compare-letter {
+  align-items: center;
+  background: theme.$heading;
+  border-radius: tokens.$radius-sm;
+  color: theme.$trial-label-bg;
+  display: flex;
+  font-family: tokens.$font-family-base;
+  font-size: 18px;
+  font-weight: 700;
+  height: 28px;
+  justify-content: center;
+  line-height: 1;
+  width: 28px;
+}
+
+.collapse-compare-cond {
+  align-items: center;
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  padding: 2px 6px 0;
+
+  @include condition-attr.styles;
+}
+
+// −2px top, so the note sits as close under the labels as it does on a trial card.
+.collapse-compare-note {
+  color: tokens.$color-text;
+  font-family: tokens.$font-family-condensed;
+  font-size: tokens.$font-size-base;
+  font-weight: 400;
+  letter-spacing: 0.16px;
+  line-height: 18px;
+  margin-top: -2px;
+  padding: 0 6px 10px;
+  text-align: center;
+  white-space: nowrap;
+}
+
+// The column's only scroller, white like the data table's rows. A flex column, so the empty
+// notice can fill the space under the heading.
+.collapse-compare-rows {
+  background: tokens.$color-surface;
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  // The sticky heading and average row cover the scroller's ends.
+  scroll-padding-block: $th-height $row-height;
+}
+
+// For the column widths, which follow the table's width. Not on the scroller: Chrome gives a
+// scroller's container width with its scrollbar included.
+.collapse-compare-sizer {
+  container-type: inline-size;
+  flex: 0 0 auto;
+}
+
+.collapse-compare-tbl {
+  border-collapse: collapse;
+  font-family: tokens.$font-family-condensed;
+  font-size: tokens.$font-size-base;
+  letter-spacing: 0.32px;
+  table-layout: fixed;
+  width: 100%;
+
+  col.cmp-pic {
+    width: $pic-col;
+  }
+
+  // Years takes the rest. The headings can be wider than their columns; `useHeadingSpacing` spaces
+  // them.
+  col.cmp-rate {
+    width: col-width($val-rate);
+  }
+
+  col.cmp-rock {
+    width: col-width($val-rock);
+  }
+
+  th {
+    background: theme.$surface;
+    box-shadow: inset 0 -1.5px 0 theme.$border;
+    color: theme.$heading;
+    font-weight: 500;
+    letter-spacing: 0.16px;
+    line-height: 18px;
+    padding: 0;
+    position: sticky;
+    top: 0;
+    z-index: $sticky-z;
+
+    // Each sticky cell paints as its own layer, so a heading that reaches past its column must be
+    // above the neighbor it reaches into, or that neighbor's opaque fill covers it. Rate reaches
+    // both ways at narrow widths, so it goes on top; Years reaches over the thumbnail column.
+    &:nth-child(2),
+    &:nth-child(4) {
+      z-index: $sticky-z + 1;
+    }
+
+    &:nth-child(3) {
+      z-index: $sticky-z + 2;
+    }
+  }
+
+  .collapse-th-sort {
+    // Top-anchored, so the label stays put when the band grows for the pill.
+    align-items: flex-start;
+    // The label-to-chevron gap and the chevron narrow with the table, so the space between two
+    // headings stays wider than the space inside one.
+    gap: clamp(3px, by-width(3px, 5px), 5px);
+    min-height: $th-height;
+    padding: $th-pad 4px;
+  }
+
+  // The glyph scales to the width and stays centered in its 22px box, so the row height holds.
+  .collapse-sort-ico {
+    height: 22px;
+    width: clamp(12px, by-width(12px, 14px), 14px);
+  }
+
+  .collapse-rows td {
+    border-bottom: 1px solid theme.$compare-divider;
+    color: tokens.$color-text;
+    font-weight: 400;
+    height: $row-height;
+    line-height: 18px;
+    padding: 2px;
+    text-align: center;
+    white-space: nowrap;
+  }
+
+  // Pinned 2px from the top, as in the data table, with 4px left: the pinned row's 3px marker
+  // plus 1px clear.
+  .collapse-rows td.cmp-pic {
+    --pic-h: #{$pic-h};
+    --pic-w: #{$pic-w};
+
+    padding: 2px 0 0 4px;
+    vertical-align: top;
+  }
+
+  // "collapsed" over "(2,800)": two 15px lines fit the 36px row.
+  .collapse-rows td.collapse-cell-failed {
+    line-height: 15px;
+  }
+
+  // 12px at 767 up to 16px at the widest, so that "collapsed" fits the Rock column. Top-aligned,
+  // so the smaller text does not make its line taller than 15px.
+  .collapse-failed-word {
+    font-size: clamp(12px, by-width(12px, 16px), 16px);
+    letter-spacing: 0;
+    vertical-align: top;
+  }
+
+  .collapse-filler td {
+    border: none;
+    padding: 0;
+  }
+
+  .collapse-foot {
+    th,
+    td {
+      background: tokens.$color-surface;
+      bottom: 0;
+      box-shadow: inset 0 1.5px 0 theme.$border;
+      color: theme.$heading;
+      font-weight: 500;
+      line-height: 18px;
+      padding: 5px 2px;
+      position: sticky;
+      text-align: center;
+      top: auto;
+      vertical-align: middle;
+      white-space: nowrap;
+      z-index: $sticky-z;
+    }
+  }
+}
+
+// Rows with the linked year (hovered, or focused with the keyboard) get the hover background in
+// every column. A pinned row keeps its own fill.
+.collapse-compare-tbl .collapse-rows tr[data-linked]:not([aria-current="true"]) td {
+  background: theme.$hover;
+}
+
+// A heading's hover / press gives its column the hover / pressed background in all four tables, the
+// same heading in the other three included: the sort is about all of them. These outrank the pinned
+// rows' fill, so the column reads as one band.
+@each $n in 2, 3, 4 {
+  .collapse-compare-grid:has(th:nth-child(#{$n}) .collapse-th-sort:is(:hover, :focus-visible))
+    th:nth-child(#{$n})
+    .collapse-th-sort,
+  .collapse-compare-grid:has(th:nth-child(#{$n}) .collapse-th-sort:active)
+    th:nth-child(#{$n})
+    .collapse-th-sort {
+    box-shadow:
+      inset 0 -1.5px 0 theme.$border,
+      inset 0 2px 0 tokens.$color-surface,
+      inset 2px 0 0 tokens.$color-surface,
+      inset -2px 0 0 tokens.$color-surface;
+  }
+
+  .collapse-compare-grid:has(th:nth-child(#{$n}) .collapse-th-sort:is(:hover, :focus-visible))
+    th:nth-child(#{$n})
+    .collapse-th-sort {
+    background: theme.$hover;
+  }
+
+  .collapse-compare-grid:has(th:nth-child(#{$n}) .collapse-th-sort:active)
+    th:nth-child(#{$n})
+    .collapse-th-sort {
+    background: theme.$active;
+  }
+
+  .collapse-compare-grid:has(th:nth-child(#{$n}) .collapse-th-sort:is(:hover, :focus-visible))
+    .collapse-rows
+    td:nth-child(#{$n}) {
+    background: theme.$hover;
+    box-shadow:
+      inset 2px 0 0 tokens.$color-surface,
+      inset -2px 0 0 tokens.$color-surface;
+  }
+
+  .collapse-compare-grid:has(th:nth-child(#{$n}) .collapse-th-sort:active)
+    .collapse-rows
+    td:nth-child(#{$n}) {
+    background: theme.$active;
+    box-shadow:
+      inset 2px 0 0 tokens.$color-surface,
+      inset -2px 0 0 tokens.$color-surface;
+  }
+}
+
+.collapse-compare-empty {
+  align-items: center;
+  color: tokens.$color-text;
+  display: flex;
+  flex: 1 1 auto;
+  font-family: tokens.$font-family-base;
+  font-size: tokens.$font-size-base;
+  font-style: italic;
+  justify-content: center;
+  letter-spacing: 0.32px;
+  line-height: tokens.$line-height-sm;
+  padding: 10px;
+  text-align: center;
+}
+
+// With no samples anywhere, the one pill says it for all four columns.
+.collapse-compare-grid.all-empty {
+  .collapse-compare-empty {
+    visibility: hidden;
+  }
+
+  th {
+    box-shadow: inset 0 -2px 0 theme.$border;
+    padding-bottom: $rule-gap;
+  }
+
+  .collapse-th-sort {
+    padding-bottom: $th-pad + $prompt-growth - $rule-gap;
+  }
+}
+
+// A zero-height rail on the heading rule, so the pill is centered on the line.
+.collapse-compare-prompt {
+  display: flex;
+  height: 0;
+  justify-content: center;
+  left: 0;
+  pointer-events: none;
+  position: absolute;
+  right: 0;
+  top: $col-head + $th-height + $prompt-growth;
+  z-index: $sticky-z + 4;
+
+  .collapse-prompt-pill {
+    pointer-events: auto;
+  }
+}

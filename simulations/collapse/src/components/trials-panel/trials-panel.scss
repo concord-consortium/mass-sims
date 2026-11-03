@@ -1,5 +1,6 @@
 @use "@concord-consortium/mass-sims-shared/styles/tokens" as tokens;
 @use "@concord-consortium/mass-sims-shared/styles/mixins" as mixins;
+@use "./condition-attr";
 @use "../../theme" as theme;
 
 // How far an unselected card sits in from the column's left edge. Column 127 + gap 10 puts the
@@ -259,38 +260,7 @@ $content-row-height: tokens.$frame-height - tokens.$frame-titlebar-height -
   gap: 4px;
   width: 100%;
 
-  .collapse-attr-row {
-    // Top-aligned so the note line can't pull the icon down.
-    align-items: flex-start;
-    display: flex;
-    gap: 5px;
-    // Keeps a one-line row's height despite the icon's negative margin.
-    min-height: 22px;
-  }
-
-  // The SVG files set their own width and height, so size the svg itself.
-  .collapse-attr-icon {
-    display: block;
-    flex-shrink: 0;
-    height: 22px;
-    // (22 − 18) / 2: centers the icon on the label's first line.
-    margin-top: -2px;
-    width: 22px;
-
-    svg {
-      display: block;
-      height: 22px;
-      width: 22px;
-    }
-  }
-
-  .collapse-attr-label {
-    color: tokens.$color-text;
-    font-family: tokens.$font-family-condensed;
-    font-size: tokens.$font-size-base;
-    font-weight: 500;
-    line-height: 18px;
-  }
+  @include condition-attr.styles;
 
   // -3px, paired with the icon's -5px below, centers the label's line box on the icon.
   .collapse-attr-label.has-note {

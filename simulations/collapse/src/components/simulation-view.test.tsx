@@ -38,6 +38,12 @@ describe("SimulationView", () => {
     expect(getByRole("button", { name: "Sample" })).toBeInTheDocument();
   });
 
+  it("renders a Compare Trials button after the Sample button", () => {
+    const { container } = renderView();
+    const controls = container.querySelectorAll(".collapse-controls > button");
+    expect([...controls].map((b) => b.textContent)).toEqual(["Sample", "Compare Trials"]);
+  });
+
   it("captions the Cross Section box with the selected sample's year", () => {
     const store = createRootStore();
     const { getByRole } = renderView(store);

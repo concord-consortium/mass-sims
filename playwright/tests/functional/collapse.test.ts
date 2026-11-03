@@ -210,3 +210,143 @@ test.describe("Data table", () => {
     await expect.poll(misses).toEqual([]);
   });
 });
+
+test.describe("Compare Trials", () => {
+  test("keyboard: headings, rows, pinning, crossing columns, the Tab trap, and Escape", async ({
+    page,
+  }) => {
+    await collapse.sampleAt(0);
+    await collapse.selectTrial("B");
+    await collapse.sampleAt(0);
+    await collapse.addOutsideButton();
+    await collapse.compareButton.focus();
+    await page.keyboard.press("Enter");
+    await expect(collapse.compareCloseButton).toBeFocused();
+
+    await page.keyboard.press("Tab");
+    await expect(collapse.compareSortButton("A", "Years before collapse (yr)")).toBeFocused();
+    for (let i = 0; i < 3; i++) await page.keyboard.press("ArrowRight");
+    await expect(collapse.compareSortButton("B", "Years before collapse (yr)")).toBeFocused();
+    await page.keyboard.press("ArrowDown");
+    await expect(collapse.compareRow("B", 0)).toBeFocused();
+    await expect(collapse.compareRow("B", 0)).toHaveClass(/\bkb-focus\b/);
+
+    // B's row was selected on opening, so year 0 is already pinned: Enter clears, Enter pins again.
+    await page.keyboard.press("Enter");
+    await expect(collapse.compareRow("A", 0)).not.toHaveAttribute("aria-current");
+    await page.keyboard.press("Enter");
+    await expect(collapse.compareRow("A", 0)).toHaveAttribute("aria-current", "true");
+    await expect(collapse.compareRow("B", 0)).toHaveAttribute("aria-current", "true");
+
+    await page.keyboard.press("ArrowLeft");
+    await expect(collapse.compareRow("A", 0)).toBeFocused();
+
+    // D has no rows, so its last heading is the last tab stop; Tab wraps to the close button and
+    // never reaches About.
+    await collapse.compareSortButton("D", "Rock above cave (mm)").focus();
+    await page.keyboard.press("Tab");
+    await expect(collapse.compareCloseButton).toBeFocused();
+    await page.keyboard.press("Shift+Tab");
+    await expect(collapse.compareSortButton("D", "Rock above cave (mm)")).toBeFocused();
+
+    await page.keyboard.press("Escape");
+    await expect(collapse.compareDialog).toHaveCount(0);
+    await expect(collapse.compareButton).toBeFocused();
+  });
+
+  test("Tab from a lower row in the last column wraps to the close button", async ({ page }) => {
+    await collapse.selectTrial("D");
+    await collapse.sampleAt(200000);
+    await collapse.sampleAt(0);
+    await collapse.addOutsideButton();
+    await collapse.compareButton.click();
+    // D's first row is the view's last tab stop; the second is reached only with the arrow keys.
+    await collapse.compareRows("D").first().focus();
+    await page.keyboard.press("ArrowDown");
+    await expect(collapse.compareRows("D").nth(1)).toBeFocused();
+    await page.keyboard.press("Tab");
+    await expect(collapse.compareCloseButton).toBeFocused();
+  });
+
+  test("after a click on the view's text, Escape still closes it", async ({ page }) => {
+    await collapse.compareButton.click();
+    await page.locator(".collapse-compare-legend").click();
+    await expect(collapse.compareDialog).toBeFocused();
+    await page.keyboard.press("Escape");
+    await expect(collapse.compareDialog).toHaveCount(0);
+    await expect(collapse.compareButton).toBeFocused();
+  });
+
+  test("an open About panel is hidden while comparing and comes back after", async ({ page }) => {
+    await collapse.openAbout();
+    await expect(collapse.aboutPanel).toBeVisible();
+    await collapse.compareButton.click();
+    await expect(collapse.aboutPanel).toBeHidden();
+    await expect(collapse.compareCloseButton).toBeFocused();
+
+    const about = await collapse.aboutButton.boundingBox();
+    if (!about) throw new Error("About button not found");
+    await page.mouse.click(about.x + about.width / 2, about.y + about.height / 2);
+    await expect(collapse.aboutPanel).toBeHidden();
+    await expect(collapse.compareDialog).toBeVisible();
+
+    await collapse.compareCloseButton.click();
+    await expect(collapse.aboutPanel).toBeVisible();
+    await expect(collapse.compareButton).toBeFocused();
+  });
+
+  test("with the widest values, no cell is clipped and the grid never scrolls sideways", async () => {
+    // The column widths come from the measured widest values, so a font or format change could clip.
+    for (const letter of ["A", "B", "C", "D"]) {
+      await collapse.selectTrial(letter);
+      await collapse.sampleAt(200000);
+      await collapse.sampleAt(0);
+    }
+    await collapse.compareButton.click();
+    const { checked, clipped } = await collapse.compareClippedCells();
+    expect(checked).toBeGreaterThan(0);
+    expect(clipped).toEqual([]);
+    const overflow = await collapse.compareGrid.evaluate((el) => el.scrollWidth - el.clientWidth);
+    expect(overflow).toBe(0);
+  });
+
+  test("with many rows, a column scrolls and its heading and average row stay put", async ({
+    page,
+  }, testInfo) => {
+    test.skip(!testInfo.project.name.endsWith("-767"), "checked at the narrowest width");
+    // Ten: a column's rows are shorter than the data table's, so six still fit without scrolling.
+    for (const years of [200000, 150000, 100000, 50000, 20000, 10000, 5000, 2000, 1000, 500]) {
+      await collapse.sampleAt(years);
+    }
+    await collapse.compareButton.click();
+    const scroller = page
+      .locator(".collapse-compare-col")
+      .first()
+      .locator(".collapse-compare-rows");
+    const head = collapse.compareColumn("A").locator("thead th").nth(1);
+    const box = async () => ({
+      head: await head.boundingBox(),
+      foot: await collapse.compareAverageRow("A").locator("th").boundingBox(),
+      first: await collapse.compareRows("A").first().boundingBox(),
+    });
+    // The pinned year's row was scrolled into view on opening, so scroll back to the top first.
+    await scroller.evaluate((el) => {
+      el.scrollTop = 0;
+    });
+    const before = await box();
+    const scrolls = await scroller.evaluate((el) => {
+      el.scrollTop = el.scrollHeight;
+      return el.scrollTop > 0;
+    });
+    expect(scrolls).toBe(true);
+    const after = await box();
+    expect(after.head).toEqual(before.head);
+    expect(after.foot).toEqual(before.foot);
+    expect(after.first?.y).toBeLessThan(before.first?.y ?? 0);
+  });
+
+  test("pointing at any part of a heading's label hits that heading's sort button", async () => {
+    await collapse.compareButton.click();
+    await expect.poll(() => collapse.compareHeadingMisses()).toEqual([]);
+  });
+});

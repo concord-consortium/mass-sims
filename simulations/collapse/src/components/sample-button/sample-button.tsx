@@ -1,7 +1,6 @@
 import { Button } from "@concord-consortium/mass-sims-shared";
 import SampleIcon from "../../assets/sample-icon.svg?react";
 import { useSampleActions } from "../../hooks/use-sample-actions";
-import "./sample-button.scss";
 
 /**
  * Takes a sample of the selected trial at the timeline's year. Never disabled: there is always a
@@ -10,8 +9,8 @@ import "./sample-button.scss";
 export function SampleButton() {
   const { takeSample } = useSampleActions();
   return (
-    <Button className="collapse-sample-button" onPress={takeSample}>
-      <SampleIcon className="collapse-sample-icon" aria-hidden="true" />
+    <Button className="collapse-control-button" onPress={takeSample}>
+      <SampleIcon className="collapse-control-icon" aria-hidden="true" />
       Sample
     </Button>
   );

@@ -86,3 +86,72 @@ actions.
 - **Motion.** Rows slide to their new seats after a sort, a delete, or a new sample, and a new
   sample scrolls into view smoothly. Under `prefers-reduced-motion` the rows jump and the scroll is
   instant.
+
+---
+
+## Compare Trials
+
+The Compare Trials view shows all four trials' samples side by side, over the Trials and Simulation
+panels. It is a hand-built **`role="dialog"`** named by its "Compare Trials" heading, like the About panel, not a
+react-aria `Modal`.
+
+- **Not `aria-modal`.** `aria-modal` tells assistive tech to ignore everything outside the dialog,
+  and the one live region is outside it, so every announcement would go silent. The view makes the
+  rest of the frame **`inert`** instead: both panels, the title bar (so About cannot open over the
+  view), and an About panel that was already open, which is also hidden until the view closes and
+  then comes back where it was. The live region is outside the frame, so it is never inert. A second
+  live region inside the view, so that `aria-modal` could be used, was considered and not used: it
+  breaks the one-`<Announcer>` rule, a region added with its text already in it is often not read
+  (so "Comparing all four trials." would be lost), and `aria-modal` does not stop the mouse from
+  reaching the title bar, so part of the `inert` work would stay.
+- **The opener only opens.** The Compare Trials button is in the Simulation panel, which is inert
+  while the view is open, so it cannot close it, and it has no `aria-expanded`: while the view is
+  open, no one can reach the button to hear it. The view closes with its close button ("Close the trial comparison") or Escape.
+- **Focus.** Opening moves focus to the close button. Closing returns it to the Compare Trials
+  button. The order matters: `focus()` on an element inside an inert subtree does nothing, so
+  `inert` is removed first and focus moves after. The view itself has `tabindex="-1"`, so a click on
+  its text focuses the view, not the page, and Escape still closes it. Tab and Shift+Tab are trapped inside the view; the
+  trap is needed even with the frame inert, because when the sim is embedded the page around the
+  frame is not.
+- **Four tables, one per trial.** Each column is a native table, as the data table is, with a
+  visually hidden caption naming the trial and its conditions: "Trial A, Limestone, Dry, under 10
+  rainy days a year: 3 samples" (or "no samples yet"). The badge, conditions, and note above each
+  table are `aria-hidden`, since the caption says the same.
+- **Sortable headings.** The visible headings are short ("Years", "Rate", "Rock"); the legend under
+  the title says what each stands for. Each button's name is the full column name, the same as the
+  data table's ("Erosion rate (mm/1,000 yr)"), so the visible word is in the name and a voice
+  control user says the same thing in both places. The sort is shared with the data table: a press
+  in any column reorders all four tables and the data table, sets `aria-sort` on that column's `th`
+  in every table, and announces as the data table does.
+- **Rows.** Each row's `aria-label` starts with its trial: "Trial B, 0 years before collapse,
+  erosion rate 26 mm per 1,000 years, rock above cave 2,800 mm, collapsed". Each column's rows have
+  one tab stop, the first row, so coming back to a column starts at the top. The thumbnail is
+  `aria-hidden`.
+- **Linked and pinned years.** A year is what the four trials share. Hovering a row, or focusing
+  it with the keyboard, gives every row with that year the hover background in every column. While
+  the pointer is on a row, its year is shown; when it leaves, the focused row's year comes back. Click, Enter, or Space
+  pins the year: the pinned rows have **`aria-current="true"`**, the selected-row fill, and the
+  left marker, and the announcement names where the year was sampled: "50,000 years before collapse
+  pinned. Sampled in trials A, C; not in B, D." ("Sampled in all four trials." when every trial has
+  it). Pressing a pinned row again clears the pin ("Pin cleared."). The view opens with the selected
+  row's year pinned.
+- **Keys, on top of Tab.** Tab reaches the close button, all twelve headings, and one row in
+  each column that has rows.
+  - ArrowUp / ArrowDown / Home / End move within a column. ArrowUp from the first row goes to the
+    heading the student came down through, if it is in that column, else the column's first heading.
+  - ArrowLeft / ArrowRight on a row move straight across to the same row position in the next column
+    that has rows, never by year: the linked year already shows where that year is. The position is
+    kept across a shorter column, so crossing it does not lose the place.
+  - On a heading, ArrowLeft / ArrowRight move through all twelve headings in order, and ArrowDown
+    enters that column's first row.
+- **The focus ring** is the data table's: the `.kb-focus` class, set only when the last input was
+  the keyboard, drawn as two rings, white outside blue.
+- **The scrollers take no `tabindex`.** Every row is focusable, so the keyboard can already reach
+  everything in them.
+- **Motion.** Pinning a year scrolls each column's topmost row with that year into view smoothly,
+  and a sort slides each column's rows to their new seats. Under `prefers-reduced-motion` the rows
+  jump and the scroll is instant.
+- **Possible shared code.** The focus trap (`useFocusTrap`) and the inert / focus lifecycle
+  (`useDialogLifecycle`) are in `src/components/compare-trials/`. No other sim needs them yet. If a
+  second sim needs a dialog like this one, move them to the shared package then, or wrap react-aria's
+  `FocusScope`, rather than writing them again.

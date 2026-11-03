@@ -10,12 +10,40 @@ $stage-gap: 10px;
   padding-bottom: 0;
 }
 
+// The Sample and Compare Trials buttons. `flex-shrink: 0` so the label never clips.
+.button.collapse-control-button {
+  align-items: center;
+  background: theme.$surface;
+  border-color: theme.$border;
+  display: flex;
+  flex-shrink: 0;
+  gap: 4px;
+  padding: 8px 12px 8px 8px;
+  white-space: nowrap;
+
+  &[data-hovered],
+  &:focus-visible {
+    background: theme.$hover;
+  }
+
+  &[data-pressed] {
+    background: theme.$active;
+  }
+}
+
+.collapse-control-icon {
+  color: theme.$heading;
+  display: block;
+  flex-shrink: 0;
+  height: 24px;
+  width: 24px;
+}
+
 .collapse-simulation {
   // The Cross Section box's width: a straight line through two design values, 280.91px at a row
   // width of 842.5 and 206.9px at 586.5, so the table gains the most where space is tightest. The
-  // 150px floor only guards rows narrower than any target width. Set here so the controls row can
-  // use it too. The percentage resolves against the box that uses it; the stage row and the
-  // controls row's content area are both the panel width less 20px, so both get the same value.
+  // 150px floor only guards rows narrower than any target width. The percentage resolves against
+  // the stage row, the panel width less 20px.
   --data-w: clamp(150px, calc(28.9102% + 37.34px), 280.91px);
 
   display: flex;
@@ -29,8 +57,8 @@ $stage-gap: 10px;
     margin-top: -4px;
   }
 
-  // Content-sized, with its controls centered as a group. The top padding is the whole gap to the
-  // timeline above.
+  // Content-sized, with its controls centered as a group on the panel. The top padding is the whole
+  // gap to the timeline above.
   .collapse-controls {
     align-items: flex-start;
     display: flex;
@@ -38,12 +66,6 @@ $stage-gap: 10px;
     gap: 10px;
     justify-content: center;
     padding: 10px;
-
-    // The table is the stage row's width less `--data-w`, plus a border width (see the Cross
-    // Section box), so this margin on the last control centers the group over the table instead of the panel.
-    > :last-child {
-      margin-right: calc(var(--data-w) - #{tokens.$border-strong-width});
-    }
   }
 
   .collapse-stage-row {
@@ -58,7 +80,7 @@ $stage-gap: 10px;
     border-color: theme.$border;
     border-radius: tokens.$radius-md;
     // `$stage-gap` plus a border width narrower than `--data-w`, so the table is the stage row's
-    // width less `--data-w`, plus a border width. The controls row's margin relies on this.
+    // width less `--data-w`, plus a border width.
     flex: 0 0 calc(var(--data-w) - #{$stage-gap} - #{tokens.$border-strong-width});
     margin-left: $stage-gap;
     // Down by the chip's overhang, so the chip's top is level with the table's top.

@@ -2,6 +2,7 @@ import { Section } from "@concord-consortium/mass-sims-shared";
 import { observer } from "mobx-react-lite";
 import { formatYears } from "../model/timeline";
 import { useStores } from "../stores/root-store";
+import { CompareButton } from "./compare-button/compare-button";
 import { DataTable } from "./data-table/data-table";
 import { SampleButton } from "./sample-button/sample-button";
 import { Timeline } from "./timeline/timeline";
@@ -17,6 +18,7 @@ export const SimulationView = observer(function SimulationView() {
       <div className="collapse-controls">
         <YearStepper />
         <SampleButton />
+        <CompareButton />
       </div>
       <div className="collapse-stage-row">
         <DataTable />

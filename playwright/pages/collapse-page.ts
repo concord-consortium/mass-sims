@@ -131,6 +131,125 @@ export class CollapsePage extends SimulationFramePage {
     await this.sampleButton.click();
   }
 
+  // --- Compare Trials -----------------------------------------------------
+
+  get compareButton(): Locator {
+    return this.page.getByRole("button", { name: "Compare Trials", exact: true });
+  }
+
+  get compareDialog(): Locator {
+    return this.page.getByRole("dialog", { name: "Compare Trials" });
+  }
+
+  get compareCloseButton(): Locator {
+    return this.compareDialog.getByRole("button", { name: "Close the trial comparison" });
+  }
+
+  get compareGrid(): Locator {
+    return this.page.locator(".collapse-compare-grid");
+  }
+
+  /** Trial `letter`'s column (A–D, in order). */
+  compareColumn(letter: string): Locator {
+    return this.page.locator(".collapse-compare-col").nth("ABCD".indexOf(letter));
+  }
+
+  /** Trial `letter`'s sample rows, in display order. */
+  compareRows(letter: string): Locator {
+    return this.compareColumn(letter).locator("tbody.collapse-rows > tr");
+  }
+
+  /** A row in trial `letter`'s column, by the start of its label ("Trial B, 0 years …"). */
+  compareRow(letter: string, years: number): Locator {
+    return this.compareColumn(letter).getByRole("row", {
+      name: new RegExp(`^Trial ${letter}, ${years.toLocaleString("en-US")} years before collapse`),
+    });
+  }
+
+  /** A sort button in trial `letter`'s column, by its full name: e.g. "Erosion rate (mm/1,000 yr)". */
+  compareSortButton(letter: string, name: string): Locator {
+    return this.compareColumn(letter).getByRole("button", { name, exact: true });
+  }
+
+  /** The `th` holding a compare sort button; it carries `aria-sort`. */
+  compareSortHeader(letter: string, name: string): Locator {
+    return this.compareColumn(letter).locator("th", {
+      has: this.page.getByRole("button", { name, exact: true }),
+    });
+  }
+
+  compareAverageRow(letter: string): Locator {
+    return this.compareColumn(letter).locator(".collapse-foot");
+  }
+
+  get comparePromptPill(): Locator {
+    return this.compareDialog.locator(".collapse-prompt-pill");
+  }
+
+  compareEmptyNotice(letter: string): Locator {
+    return this.compareColumn(letter).locator(".collapse-compare-empty");
+  }
+
+  /**
+   * The compare headings whose label or chevron does not hit their own sort button, tested at the
+   * left edge, the center and the right edge of each. Empty when every heading is hit. Throws if
+   * the headings are not all there, so a changed selector cannot pass with nothing checked.
+   */
+  compareHeadingMisses(): Promise<string[]> {
+    return this.page.evaluate(() => {
+      const out: string[] = [];
+      const buttons = document.querySelectorAll<HTMLElement>(".collapse-compare .collapse-th-sort");
+      // Three per trial, each with its label and its chevron.
+      if (buttons.length !== 12 || [...buttons].some((b) => b.children.length !== 2)) {
+        throw new Error("expected 12 compare headings, each with a label and a chevron");
+      }
+      for (const button of buttons) {
+        for (const part of Array.from(button.children)) {
+          const box = part.getBoundingClientRect();
+          for (const x of [box.left + 1, (box.left + box.right) / 2, box.right - 1]) {
+            const hit = document.elementFromPoint(x, box.top + box.height / 2);
+            if (hit?.closest(".collapse-th-sort") !== button) out.push(button.textContent ?? "");
+          }
+        }
+      }
+      return out;
+    });
+  }
+
+  /** The compare view's body and footer cells, and the text of those whose content is clipped. */
+  compareClippedCells(): Promise<{ checked: number; clipped: (string | null)[] }> {
+    return this.page.evaluate(() => {
+      const cells = Array.from(
+        document.querySelectorAll<HTMLElement>(
+          ".collapse-compare .collapse-rows td, .collapse-compare tfoot th, .collapse-compare tfoot td",
+        ),
+      );
+      return {
+        checked: cells.length,
+        clipped: cells
+          .filter((cell) => cell.scrollWidth > cell.clientWidth + 0.5)
+          .map((cell) => cell.textContent),
+      };
+    });
+  }
+
+  async isInert(locator: Locator): Promise<boolean> {
+    return locator.evaluate((el) => el.closest("[inert]") !== null);
+  }
+
+  /**
+   * Adds a button after the sim, as the page around an embedded sim would have. Without one, Tab
+   * runs off the end of the page and the browser starts again inside the sim, so a test of the
+   * focus trap would pass without the trap.
+   */
+  async addOutsideButton(): Promise<void> {
+    await this.page.evaluate(() => {
+      const outside = document.createElement("button");
+      outside.textContent = "Outside";
+      document.body.append(outside);
+    });
+  }
+
   // --- Trials panel -------------------------------------------------------
 
   get trialsListbox(): Locator {

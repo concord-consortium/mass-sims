@@ -83,6 +83,18 @@ describe("RootStore.deleteSample", () => {
   });
 });
 
+describe("RootStore.trialsSampledAt", () => {
+  it("lists the trials with a sample at that year, in A–D order", () => {
+    const store = createRootStore({ rng: makeRng(19) });
+    store.trials.get("C")?.addSample({ years: 50000, rate: 2, roof: 8500 });
+    store.trials.get("A")?.addSample({ years: 50000, rate: 20, roof: 5800 });
+    store.trials.get("B")?.addSample({ years: 0, rate: 30, roof: 2800 });
+    expect(store.trialsSampledAt(50000)).toEqual(["A", "C"]);
+    expect(store.trialsSampledAt(0)).toEqual(["B"]);
+    expect(store.trialsSampledAt(100000)).toEqual([]);
+  });
+});
+
 describe("RootStore.canAddTrial", () => {
   it("is always false (the four trials are fixed)", () => {
     expect(createRootStore({ rng: makeRng(3) }).canAddTrial).toBe(false);

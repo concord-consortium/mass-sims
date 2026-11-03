@@ -11,11 +11,32 @@ import {
 } from "../../trial-conditions";
 
 // Multi-color icons: they keep their own colors instead of taking `currentColor`.
-const ROCK_ICONS: Record<RockType, typeof LimestoneIcon> = {
+export const ROCK_ICONS: Record<RockType, typeof LimestoneIcon> = {
   Limestone: LimestoneIcon,
   Granite: GraniteIcon,
 };
-const MOISTURE_ICONS: Record<Moisture, typeof WetIcon> = { Wet: WetIcon, Dry: DryIcon };
+export const MOISTURE_ICONS: Record<Moisture, typeof WetIcon> = { Wet: WetIcon, Dry: DryIcon };
+
+/** One condition: its icon and label, and on the card the note under the label. */
+export function ConditionAttr({
+  icon: Icon,
+  label,
+  note,
+}: {
+  icon: typeof LimestoneIcon;
+  label: string;
+  note?: string;
+}) {
+  return (
+    <div className="collapse-attr-row">
+      <span className="collapse-attr-icon">
+        <Icon />
+      </span>
+      <span className={note ? "collapse-attr-label has-note" : "collapse-attr-label"}>{label}</span>
+      {note && <span className="collapse-attr-noteline">{note}</span>}
+    </div>
+  );
+}
 
 /**
  * A trial card's screen-reader name, e.g. "Trial A. Limestone, Dry, under 10 rainy days a year.
@@ -33,23 +54,14 @@ export function trialAriaLabel(letter: CollapseTrialLetter, sampleCount: number)
 /** The visible card body. `aria-hidden` because `trialAriaLabel` already names the card. */
 export function TrialCardBody({ letter }: { letter: CollapseTrialLetter }) {
   const { rock, moisture } = TRIAL_CONDITIONS[letter];
-  const RockIcon = ROCK_ICONS[rock];
-  const MoistureIcon = MOISTURE_ICONS[moisture];
   return (
     <div className="trial-card-body" aria-hidden="true">
-      <div className="collapse-attr-row">
-        <span className="collapse-attr-icon">
-          <RockIcon />
-        </span>
-        <span className="collapse-attr-label">{rock}</span>
-      </div>
-      <div className="collapse-attr-row">
-        <span className="collapse-attr-icon">
-          <MoistureIcon />
-        </span>
-        <span className="collapse-attr-label has-note">{moisture}</span>
-        <span className="collapse-attr-noteline">{MOISTURE_NOTES[moisture].text}</span>
-      </div>
+      <ConditionAttr icon={ROCK_ICONS[rock]} label={rock} />
+      <ConditionAttr
+        icon={MOISTURE_ICONS[moisture]}
+        label={moisture}
+        note={MOISTURE_NOTES[moisture].text}
+      />
     </div>
   );
 }

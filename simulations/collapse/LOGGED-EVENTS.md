@@ -36,7 +36,15 @@ transports silently no-op when unavailable. Event names are snake_case; payloads
 | `sample_taken` | The **Sample** button is pressed | `{ trial, id, years, rate, roof, collapsed, sampleCount }` |
 | `sample_selected` | A table row is selected or deselected (click, Enter, or Space) | `{ trial, id, years, selected }` |
 | `sample_deleted` | A row's delete button is pressed | `{ trial, id, years, remaining }` |
-| `table_sorted` | A column heading is pressed | `{ trial, key, direction }` |
+| `table_sorted` | A column heading is pressed, in the data table or the Compare Trials view | `{ trial, key, direction, view }` |
+
+### Compare Trials
+
+| Event | Trigger | Parameters |
+| --- | --- | --- |
+| `compare_opened` | The **Compare Trials** button is pressed | `{ trial, pinnedYears }` |
+| `compare_closed` | The view's close button or Escape closes it | `{ trial, source }` |
+| `compare_year_pinned` | A row in the view is pressed (click, Enter, or Space) | `{ trial, years, pinned, trials }` |
 
 ## Notes
 
@@ -65,6 +73,19 @@ transports silently no-op when unavailable. Event names are snake_case; payloads
 - `sample_deleted`: `remaining` is the trial's number of samples after the delete.
 - `table_sorted`: `key` is the pressed column: `"years"`, `"rate"`, or `"roof"`. `direction` is the
   state after the press: `"ascending"`, `"descending"`, or `"none"` (back to the order the samples
-  were taken in). Each heading cycles through the three. The sort is shared by all trials; `trial`
-  is the one selected when it was pressed.
+  were taken in). Each heading cycles through the three. The sort is shared by all trials and by
+  both views; `trial` is the one selected when it was pressed. `view` is `"table"` for the data
+  table's headings and `"compare"` for the Compare Trials view's.
+- The Compare Trials view's events carry `trial`, the trial selected in the Trials column while the
+  view is open; the view shows all four. Opening and closing it, and pinning, do not change the
+  saved state.
+- `compare_opened`: `pinnedYears` is the year the view opens with pinned, the year of the selected
+  row in the selected trial, or `null` when that trial has no selected row. It is one of the
+  sixteen timeline values.
+- `compare_closed`: `source` is `"close"` (the close button) or `"escape"`.
+- `compare_year_pinned`: `years` is the pressed row's year, one of the sixteen timeline values.
+  `pinned` is `true` when that year became the pinned year and `false` when it was already pinned
+  and the press cleared it. `trials` lists the letters of the trials with a sample at that year, in
+  A–D order. A pin is a year, not a sample, so it names no `id`: every row with that year, in every
+  trial, is pinned together.
 - These are the only events Collapse logs; new interactions add their events to this file.

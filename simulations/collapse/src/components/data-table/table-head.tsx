@@ -1,5 +1,6 @@
 import type { RefObject } from "react";
 import type { SortKey, SortState } from "../../model/types";
+import { SortHeader, sortDirOf } from "./sort-header";
 import { useHeadingSpacing } from "./use-heading-spacing";
 
 type Column = { srOnly: string } | { l1: string; l2: string; key: SortKey };
@@ -13,29 +14,10 @@ export const TABLE_COLS: readonly Column[] = [
   { srOnly: "Delete row" },
 ];
 
-type SortDir = "ascending" | "descending" | "none";
-
-function sortDirOf(sort: SortState, key: SortKey): SortDir {
-  if (sort.key !== key) return "none";
-  return sort.direction === 1 ? "ascending" : "descending";
-}
-
-// A placeholder: two triangles, the sorted direction solid. Swap the paths when the real artwork
-// lands. 2px pad, 7.5 triangle, 3px gap, 7.5 triangle, 2px pad = the 22px box.
-function SortIcon() {
-  return (
-    <svg
-      className="collapse-sort-ico"
-      width="14"
-      height="22"
-      viewBox="0 0 14 22"
-      aria-hidden="true"
-    >
-      <path className="sort-up" fill="currentColor" d="M7 2 L13 9.5 L1 9.5 Z" />
-      <path className="sort-down" fill="currentColor" d="M7 20 L1 12.5 L13 12.5 Z" />
-    </svg>
-  );
-}
+/** Each measurement column's full name: its two heading lines, joined. */
+export const COLUMN_NAMES = Object.fromEntries(
+  TABLE_COLS.flatMap((col) => ("key" in col ? [[col.key, `${col.l1} ${col.l2}`]] : [])),
+) as Record<SortKey, string>;
 
 interface TableHeadProps {
   sort: SortState;
@@ -62,18 +44,19 @@ export function TableHead({ sort, hasPrompt, onSort, headRowRef }: TableHeadProp
               </th>
             );
           }
-          const dir = sortDirOf(sort, col.key);
           return (
-            <th key={col.key} scope="col" aria-sort={dir} data-sort-dir={dir}>
-              <button type="button" className="collapse-th-sort" onClick={() => onSort(col.key)}>
+            <SortHeader
+              key={col.key}
+              dir={sortDirOf(sort, col.key)}
+              label={
                 <span className="collapse-th-lines">
                   {/* The space keeps the two lines apart in the button's name. */}
                   {col.l1} <br />
                   <span className="collapse-th-unit">{col.l2}</span>
                 </span>
-                <SortIcon />
-              </button>
-            </th>
+              }
+              onSort={() => onSort(col.key)}
+            />
           );
         })}
       </tr>

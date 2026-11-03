@@ -156,7 +156,7 @@ describe("DataTable — rows", () => {
     const [row] = bodyRows(view);
     const cell = row.cells[3];
     expect(cell).toHaveClass("collapse-cell-failed");
-    expect(cell.innerHTML).toBe("collapsed<br>(2,800)");
+    expect(cell.innerHTML).toBe('<span class="collapse-failed-word">collapsed</span><br>(2,800)');
     expect(row.getAttribute("aria-label")).toMatch(/, collapsed$/);
   });
 

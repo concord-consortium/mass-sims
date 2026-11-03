@@ -46,6 +46,12 @@ export const RootStore = types
     get hasAnyProgress(): boolean {
       return anyTrialHasProgress(self.trials, (trial) => trial.hasSamples);
     },
+    /** The letters, in A–D order, of the trials with a sample at `years`. */
+    trialsSampledAt(years: number): CollapseTrialLetter[] {
+      return COLLAPSE_TRIAL_LETTERS.filter((letter) =>
+        self.trials.get(letter)?.samples.some((s) => s.years === years),
+      );
+    },
   }))
   .actions((self) => ({
     /**

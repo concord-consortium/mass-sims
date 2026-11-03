@@ -76,13 +76,15 @@ export function useSampleActions() {
     announce(`Row deleted. ${remaining} ${samplesWord(remaining)} left.`);
   };
 
-  const cycleSort = (key: SortKey) => {
+  /** `view` says which heading was pressed: the data table's or the Compare Trials view's. */
+  const cycleSort = (key: SortKey, view: "table" | "compare" = "table") => {
     ui.cycleSort(key);
     const { key: sorted, direction } = ui.sort;
     logEvent("table_sorted", {
       trial: ui.selectedTrialLetter,
       key,
       direction: sorted === null ? "none" : direction === 1 ? "ascending" : "descending",
+      view,
     });
     announce(
       sorted === null
