@@ -2,7 +2,7 @@
  * Diagnostic flags read off `window`. They ship in production (nothing is stripped from a prod build) but
  * are unreachable without an explicit `window.__nor*` assignment — never from the URL, so a host that
  * composes query strings can't reach them. Don't gate anything sensitive on them. The Playwright perf probe
- * sets `__norPerf` (hold the storm at peak) or `__norPerfTrace` (record a per-frame trace of a normal run) via
+ * sets `__norPerf` (hold the storm at its end) or `__norPerfTrace` (record a per-frame trace of a normal run) via
  * `addInitScript` before the page loads; a developer can set `window.__norNoFilter = true` in the console
  * to preview the Safari blur fallback on a filter-capable device.
  */

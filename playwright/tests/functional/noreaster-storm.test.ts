@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 import { NoreasterPage } from "../../pages/noreaster-page";
 
-// Nor'easter storm-cloud consistency (MAS-50): every rendering of an outcome must show the same cloud.
+// Nor'easter storm-cloud consistency: every rendering of an outcome must show the same cloud.
 // These tests need the real animation (not reduced motion, which skips it), so they live apart from
 // noreaster.test.ts. A strong run animates for ~11.5 s.
 

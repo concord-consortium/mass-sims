@@ -34,7 +34,10 @@ import { type CDPSession, chromium, type Page } from "@playwright/test";
 // explicit extension — the tested dimensions stay tied to the single source of truth.
 import { FRAME_HEIGHT, TARGET_WIDTH_PX } from "../../packages/shared/src/layout/target-widths.ts";
 // Same for run-timing.ts (its only import is type-only, which type-stripping erases).
-import { TOTAL_DUR_S } from "../../simulations/noreaster/src/animation/run-timing.ts";
+import {
+  CLOUD_START_MS,
+  TOTAL_DUR_S,
+} from "../../simulations/noreaster/src/animation/run-timing.ts";
 
 const BASE_URL = process.argv[2] ?? "http://localhost:8082/";
 const SAMPLE_MS = Number(process.argv[3] ?? 4000);
@@ -52,15 +55,13 @@ const WIDTHS = [Math.max(...TARGET_WIDTH_PX), Math.min(...TARGET_WIDTH_PX)];
 // Real-run repeats per (width, scene, throttle), and the late window measured at the end of the cloud.
 const REAL_RUNS = 5;
 const LATE_WINDOW_MS = 2000;
-/** The cloud starts this far into the run (mirrors `CLOUD_START_MS` in use-storm-run.ts). */
-const CLOUD_START_S = 1.5;
 
 // Thresholds: sustained ~50 fps, no worse than ~30 fps tail.
 const MEDIAN_BUDGET_MS = 20;
 const P95_BUDGET_MS = 32;
 /**
- * `renderFinal` max per outcome (unthrottled). Measured `strong` (the heaviest) at a 60.9 ms max for MAS-50,
- * plus ~25% headroom — catches a real regression without failing on normal noise.
+ * `renderFinal` max per outcome (unthrottled). Measured `strong` (the heaviest) at a 60.9 ms max for MAS-50
+ * (production build, DPR 2, no CPU throttle), plus ~25% headroom — catches a real regression without failing on normal noise.
  */
 const RENDER_FINAL_BUDGET_MS = 76;
 
@@ -247,7 +248,7 @@ async function main() {
 
     for (const rate of THROTTLE_RATES) {
       for (const [scene, picks] of Object.entries(SETUPS)) {
-        const durationMs = (TOTAL_DUR_S[scene as keyof typeof TOTAL_DUR_S] - CLOUD_START_S) * 1000;
+        const durationMs = TOTAL_DUR_S[scene as keyof typeof TOTAL_DUR_S] * 1000 - CLOUD_START_MS;
         const lateCounts: number[] = [];
         const lateMedians: number[] = [];
         const lateP95s: number[] = [];

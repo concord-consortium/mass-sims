@@ -13,7 +13,7 @@ import {
   convergenceTarget,
 } from "../animation/converge";
 import { finalNarration, STAGED_NARRATION, startNarration } from "../animation/run-narration";
-import { MAX_FRAME_MS, TOTAL_DUR_S } from "../animation/run-timing";
+import { CLOUD_START_MS, MAX_FRAME_MS, TOTAL_DUR_S } from "../animation/run-timing";
 import { useStores } from "../stores/root-store";
 import { norDebugFlag } from "../utils/nor-debug";
 import type { StormAnimation } from "./use-storm-animation";
@@ -35,9 +35,6 @@ import type { StormAnimation } from "./use-storm-animation";
 
 /** Arrow convergence duration (ms). */
 const CONVERGE_MS = 2000;
-
-/** The cloud starts 1.5 s into the run (arrows converge first, then the storm spins up). */
-const CLOUD_START_MS = 1500;
 
 /** Refs the map stage hands the runner so it can drive the overlays imperatively. */
 export interface StormRunRefs {
@@ -83,7 +80,7 @@ export function useStormRun(
   const reducedMotion = useReducedMotion();
   const hidden = useDocumentHidden();
   // Diagnostic-only (`__norPerf`, set by the perf probe via addInitScript — not URL-reachable): hold the
-  // cloud at peak and suppress auto-finalize so the probe samples worst-case sustained frame cost.
+  // cloud at its end and suppress auto-finalize so the probe samples the finished cloud's draw cost.
   const [perfHold] = useState(() => norDebugFlag("__norPerf"));
   // Diagnostic-only (`__norPerfTrace`, set the same way): record each cloud frame of a NORMAL run (no hold)
   // against the runner's own clock, so the probe can pick out the run's late window in clock time.
@@ -242,7 +239,7 @@ export function useStormRun(
         }
 
         // Storm cloud (from 1.5 s): the runner steps the player and positions/opacity the container. Under
-        // the diagnostic hold, pin the cloud at peak (t=1) so the probe samples sustained worst-case load.
+        // the diagnostic hold, pin the cloud at its end (t=1) so the probe samples the finished cloud's draw cost.
         const cloudElapsed = perfHold ? 1e9 : elapsed - CLOUD_START_MS;
         if (cloudElapsed >= 0) {
           anim?.drawFrame(cloudElapsed);

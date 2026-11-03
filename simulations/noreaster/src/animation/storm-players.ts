@@ -59,7 +59,10 @@ export function mulberry32(seed: number): () => number {
 }
 
 /** A detached artboard-sized canvas + its 2D context (null in jsdom, where drawing is a guarded no-op). */
-function createOffscreen(): { canvas: HTMLCanvasElement; ctx: CanvasRenderingContext2D | null } {
+export function createOffscreen(): {
+  canvas: HTMLCanvasElement;
+  ctx: CanvasRenderingContext2D | null;
+} {
   const canvas = document.createElement("canvas");
   canvas.width = NOR_SIZE;
   canvas.height = NOR_SIZE;

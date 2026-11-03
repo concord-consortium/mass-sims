@@ -116,8 +116,9 @@ describe("useStormAnimation — canvas reconciliation", () => {
 
     // Switch to another trial and back: the restore copies the cached end frame.
     rerender({ outcome: "windy", running: false });
+    // windy hid the container but left its transform; clear it so the check below proves the restore set it.
+    containerRef.current.style.transform = "";
     rerender({ outcome: "strong", running: false });
-    // windy hid the container (opacity 0) but left its transform, so opacity 1 proves the restore drew.
     expect(containerRef.current.style.opacity).toBe("1");
     expect(containerRef.current.style.transform).toContain("translate(53px, -61px)");
     expect(renderFinalCalls.count).toBe(0);

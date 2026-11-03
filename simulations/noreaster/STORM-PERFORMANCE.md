@@ -31,6 +31,7 @@ If the cloud is too slow there, use the options below.
 
 Production build, DPR 2, Chrome CPU throttle. "Late p95" is the p95 frame time over the last 2 s of
 the cloud by the run clock, as a median of 5 runs. The numbers are the time between frames, in ms.
+Both columns were measured before the probe added each run's last frame to the late window.
 
 | Width | Outcome | Throttle | Late p95 before | Late p95 after |
 |---|---|---|---|---|
@@ -56,9 +57,9 @@ design. For example, a `strong` run at 4× got about 36 frames (36 steps) in its
 change, it runs all 120 steps. So "before" is not a fair target: part of its speed came from drawing
 the wrong cloud.
 
-`renderFinal` (the full re-run used for a cold load of a saved run and for reduced motion) did not
-change: `strong` has a max of about 61 ms unthrottled. The probe fails if it goes over 76 ms. After a
-live run, switching back to a trial no longer calls `renderFinal`; it copies the cached last frame.
+`renderFinal` (the full re-run of the storm) runs only for a cold load of a saved run and under
+reduced motion. `strong` has a max of about 61 ms unthrottled, and the probe fails if it goes over
+76 ms. Switching back to a trial after a live run copies the cached last frame instead.
 
 ## If the cloud is too slow: options
 

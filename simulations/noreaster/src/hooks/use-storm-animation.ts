@@ -1,5 +1,10 @@
 import { type RefObject, useCallback, useEffect, useRef } from "react";
-import { createStormPlayer, NOR_SIZE, type StormPlayer } from "../animation/storm-players";
+import {
+  createOffscreen,
+  createStormPlayer,
+  NOR_SIZE,
+  type StormPlayer,
+} from "../animation/storm-players";
 import type { Outcome } from "../model/weather";
 import { norDebugFlag } from "../utils/nor-debug";
 
@@ -64,10 +69,7 @@ export function useStormAnimation(
     if (!norDebugFlag("__norPerf")) return;
     (window as StormPerfWindow).__norStormRenderFinalMs = (outcome: Outcome) => {
       const player = createStormPlayer(outcome);
-      const c = document.createElement("canvas");
-      c.width = NOR_SIZE;
-      c.height = NOR_SIZE;
-      const cctx = c.getContext("2d");
+      const { ctx: cctx } = createOffscreen();
       if (!player || !cctx) return null;
       const t0 = performance.now();
       player.renderFinal(cctx);
@@ -119,10 +121,7 @@ export function useStormAnimation(
         // Save this end frame as the outcome's cached final frame. It is the frame `renderFinal` would
         // draw (same fixed steps), so a later restore copies it instead of re-running the whole sim.
         if (outcome && !cacheRef.current.has(outcome)) {
-          const c = document.createElement("canvas");
-          c.width = NOR_SIZE;
-          c.height = NOR_SIZE;
-          const cctx = c.getContext("2d");
+          const { canvas: c, ctx: cctx } = createOffscreen();
           if (cctx) {
             cctx.drawImage(ctx.canvas, 0, 0);
             cacheRef.current.set(outcome, c);
@@ -151,10 +150,7 @@ export function useStormAnimation(
     // every restore/hydration.
     let cache = cacheRef.current.get(stormOutcome);
     if (!cache) {
-      const c = document.createElement("canvas");
-      c.width = NOR_SIZE;
-      c.height = NOR_SIZE;
-      const cctx = c.getContext("2d");
+      const { canvas: c, ctx: cctx } = createOffscreen();
       if (cctx) {
         player.renderFinal(cctx);
         cacheRef.current.set(stormOutcome, c);
