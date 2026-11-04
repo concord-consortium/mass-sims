@@ -55,7 +55,7 @@ test.describe("Timeline pointer input", () => {
   test("pressing the flag off center keeps the value; dragging moves the handle, not the pointer", async ({
     page,
   }) => {
-    // 500, in the dense 4,600 → 20 stretch, where neighboring values are closest together.
+    // 500, in the dense 5,000 → 20 stretch, where neighboring values are closest together.
     await collapse.timelineSlider.focus();
     await page.keyboard.press("End");
     for (let i = 0; i < 6; i++) await page.keyboard.press("ArrowLeft");
@@ -142,8 +142,7 @@ test.describe("Data table", () => {
     await collapse.timelineSlider.focus();
     await page.keyboard.press("End");
     await collapse.sampleButton.click();
-    await expect(collapse.sampleRow(0)).toContainText("collapsed");
-    await expect(collapse.sampleRow(0)).toContainText("(2,800)");
+    await expect(collapse.sampleRow(0).getByRole("cell").nth(3)).toHaveText("0");
     await expect(collapse.sampleRow(0)).toHaveAttribute("aria-label", /, collapsed$/);
   });
 

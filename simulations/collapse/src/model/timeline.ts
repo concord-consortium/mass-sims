@@ -25,17 +25,19 @@ export interface TimelineStop {
 
 /**
  * The dots are spaced so each gap fits the labels on either side, not by log scale: a log scale
- * leaves a wide empty stretch between 4,600 and 20 and crowds the left pair. Where the values fall
- * between the dots is what carries meaning; see `segmentsFor`.
+ * leaves a wide empty stretch between 5,000 and 20 and crowds the left pair. Where the values fall
+ * between the dots is what carries meaning; see `segmentsFor`. Every stop's year is also a
+ * landable value, so the handle can stop on each dot.
  *
- * 11,700 and 4,600 are reference marks, not landable values: the handle never stops on them.
+ * The "~" marks the four dates that are estimates (from fossils, ice cores, and archaeology). The
+ * other three are recorded dates.
  */
 export const TIMELINE_STOPS: readonly TimelineStop[] = [
   // Homo sapiens appear in the African fossil record ~200,000–300,000 years ago.
   {
     years: 200000,
     at: 0,
-    yearLabel: "200,000 yr",
+    yearLabel: "~200,000 yr",
     eventLines: ["Modern humans", "appear in Africa"],
     art: HumansAfricaArt,
     end: false,
@@ -44,25 +46,25 @@ export const TIMELINE_STOPS: readonly TimelineStop[] = [
   {
     years: 100000,
     at: 0.2195,
-    yearLabel: "100,000 yr",
+    yearLabel: "~100,000 yr",
     eventLines: ["Woolly mammoths", "reach N. America"],
     art: MammothArt,
     end: false,
   },
-  // The ratified base of the Holocene (NGRIP ice core). Reference mark only.
+  // The peak of the last glaciation. The Last Glacial Maximum ran about 26,500 to 19,000 years ago.
   {
-    years: 11700,
+    years: 20000,
     at: 0.4208,
-    yearLabel: "11,700 yr",
-    eventLines: ["Last Ice", "Age ends"],
+    yearLabel: "~20,000 yr",
+    eventLines: ["Last Ice", "Age peaks"],
     art: IceAgeArt,
     end: false,
   },
-  // The middle of the Old Kingdom pyramid age. Reference mark only.
+  // The Old Kingdom pyramid age, about 4,700 to 4,500 years ago, rounded to a number for students.
   {
-    years: 4600,
+    years: 5000,
     at: 0.6222,
-    yearLabel: "4,600 yr",
+    yearLabel: "~5,000 yr",
     eventLines: ["Pyramids", "are built"],
     art: PyramidsArt,
     end: false,
@@ -101,8 +103,8 @@ export interface TimelineSegment {
 
 /**
  * Pins each value between the two stops that bracket it, by elapsed time, so distance on the rail
- * means time (5,000 sits almost on the 4,600 dot; 150,000 halfway between 200,000 and 100,000).
- * Where a stretch spans more than 20× (4,600 → 20) or ends at 0, equal time stops being readable,
+ * means time (150,000 sits halfway between 200,000 and 100,000).
+ * Where a stretch spans more than 20× (5,000 → 20) or ends at 0, equal time stops being readable,
  * so the values inside it share the gap evenly instead. The result is a `t`, not a track fraction,
  * because the layout moves the dots when the window is narrow and the values have to follow them.
  */

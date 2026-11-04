@@ -7,6 +7,7 @@ $hover: #dbf5e6; // interactive hover fill
 $active: #70eba3; // interactive active fill
 $trial-label-bg: #dbf5e6; // trial letter-badge background (unselected) + active-trial badge letter
 $trial-selected-bg: $title-bar; // selected trial card fill; must match the Simulation panel's fill
+$selected-row-bg: $tab; // selected sample row
 
 // The timeline flag uses blues instead of greens, so it stands out from the green panel as a
 // separate control. Default → hover → dragging.
@@ -23,8 +24,8 @@ $table-divider: #949494;
 // four columns across.
 $compare-divider: #c9c9c9;
 // The thumbnail's border. Non-text contrast (3:1) against every fill its cell can take: white 3.84,
-// row hover 3.33, selected row 3.20. `$table-divider` fails at 2.53.
+// row hover 3.33, selected row 3.15. `$table-divider` fails at 2.53.
 $thumbnail-border: #828282;
-// The delete button's hover. Darker than the row's own hover fill, which would make it invisible
-// exactly when the button is pointed at. The glyph reads at 7.30:1 on it.
-$delete-hover: #aee4c2;
+// The delete button's hover. Darker than the row's hover fill and the selected row's fill, either of
+// which would hide it exactly when the button is pointed at.
+$delete-hover: #8debb4;

@@ -41,8 +41,8 @@ describe("timeline data", () => {
     expect(TIMELINE_SEGMENTS[TIMELINE_VALUES.indexOf(150000)]).toEqual({ hi: 0, t: 0.5 });
   });
 
-  it("spaces the six values between 4,600 and 20 evenly (the >20× rule)", () => {
-    const hi = anchors.findIndex((s) => s.years === 4600);
+  it("spaces the six values between 5,000 and 20 evenly (the >20× rule)", () => {
+    const hi = anchors.findIndex((s) => s.years === 5000);
     const inner = [2000, 1000, 500, 200, 100, 50];
     inner.forEach((v, k) => {
       const seg = TIMELINE_SEGMENTS[TIMELINE_VALUES.indexOf(v)];

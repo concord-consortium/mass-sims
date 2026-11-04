@@ -124,7 +124,7 @@ react-aria `Modal`.
   in any column reorders all four tables and the data table, sets `aria-sort` on that column's `th`
   in every table, and announces as the data table does.
 - **Rows.** Each row's `aria-label` starts with its trial: "Trial B, 0 years before collapse,
-  erosion rate 26 mm per 1,000 years, rock above cave 2,800 mm, collapsed". Each column's rows have
+  erosion rate 26 mm per 1,000 years, rock above cave 0 mm, collapsed". Each column's rows have
   one tab stop, the first row, so coming back to a column starts at the top. The thumbnail is
   `aria-hidden`.
 - **Linked and pinned years.** A year is what the four trials share. Hovering a row, or focusing

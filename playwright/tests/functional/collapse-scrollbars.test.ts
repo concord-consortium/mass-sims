@@ -21,13 +21,11 @@ test.beforeEach(async ({ page }) => {
 
 test("Compare Trials: a column with a scrollbar fits its values without a sideways scroll", async () => {
   test.skip(!test.info().project.name.endsWith("-767"), "checked at the narrowest width");
-  // Trial B, limestone and wet, collapses by year 0, so its Rock column shows "collapsed".
   await collapse.selectTrial("B");
   for (const years of [200000, 150000, 100000, 50000, 20000, 10000, 5000, 2000, 1000, 500, 0]) {
     await collapse.sampleAt(years);
   }
   await collapse.compareButton.click();
-  await expect(collapse.compareRow("B", 0)).toContainText("collapsed");
   const scroller = collapse.compareColumn("B").locator(".collapse-compare-rows");
   expect(await scroller.evaluate((el: HTMLElement) => el.offsetWidth - el.clientWidth)).toBe(17);
   const { checked, clipped } = await collapse.compareClippedCells();

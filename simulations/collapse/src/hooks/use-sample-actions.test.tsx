@@ -66,7 +66,7 @@ describe("useSampleActions.takeSample", () => {
     act(() => result.current.takeSample());
     const payload = logEvent.mock.calls[1][1];
     expect(payload.rate).toBeCloseTo(34.5, 10);
-    expect(payload.roof).toBe(2800);
+    expect(payload.roof).toBe(0);
     expect(payload.collapsed).toBe(true);
     expect(payload.sampleCount).toBe(2);
     // The same year twice: the id tells the two samples apart.
@@ -74,7 +74,7 @@ describe("useSampleActions.takeSample", () => {
     expect(payload.id).toBe(2);
     expect(announce).toHaveBeenLastCalledWith(
       "Sampled 0 years before collapse. Erosion rate 35 millimeters per 1,000 years, " +
-        "rock above the cave 2,800 millimeters. Trial B now has 2 samples.",
+        "rock above the cave 0 millimeters. Trial B now has 2 samples.",
     );
   });
 });

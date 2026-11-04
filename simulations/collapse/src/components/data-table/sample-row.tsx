@@ -2,7 +2,6 @@ import type { KeyboardEvent, MouseEvent } from "react";
 import CloseIcon from "../../assets/close-icon.svg?react";
 import { type Conditions, formatWhole, isCollapsed } from "../../model/erosion";
 import type { Sample } from "../../model/types";
-import { RoofCell } from "./roof-cell";
 import { Thumbnail } from "./thumbnail";
 
 /** `lead` comes before the years: "Sample at" here, the trial in the Compare Trials view. */
@@ -68,7 +67,7 @@ export function SampleRow({
       </td>
       <td>{formatWhole(sample.years)}</td>
       <td>{formatWhole(sample.rate)}</td>
-      <RoofCell roof={sample.roof} />
+      <td>{formatWhole(sample.roof)}</td>
       <td className="collapse-cell-del">
         <button
           type="button"

@@ -203,14 +203,6 @@ $sticky-z: 2;
   padding: $cell-pad 0;
 }
 
-// The sample where the roof gave way: "collapsed" over "(2,800)". A 16px line height, not 18, so
-// the two lines fit the 32px content box and the row stays 48px. `nowrap` stops the narrowest
-// column breaking "(2,800)" onto a third line.
-.collapse-table .collapse-cell-failed {
-  line-height: 16px;
-  white-space: nowrap;
-}
-
 // A 44 × 44 target. The −6px margins let it exceed the cell's content box without making the row
 // taller.
 .collapse-row-del {
