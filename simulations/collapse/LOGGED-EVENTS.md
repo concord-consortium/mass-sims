@@ -64,9 +64,9 @@ transports silently no-op when unavailable. Event names are snake_case; payloads
   1 in each trial and are never reused, even after a delete or a reset, so they can have gaps. The
   same year can be sampled more than once; `id` tells those samples apart, `years` does not.
 - `sample_taken`: `rate` is the reported erosion rate in mm per 1,000 years, and `roof` is the rock
-  left above the cave in mm. Both are logged unrounded; the table shows them rounded. `collapsed`
-  is `true` when `roof` is at or below the 2,800 mm collapse level. `sampleCount` is the trial's
-  number of samples after this one.
+  left above the cave in mm, or 0 once the roof has collapsed. Both are logged unrounded; the table
+  shows them rounded. `collapsed` is `true` once the roof has collapsed. `sampleCount` is the
+  trial's number of samples after this one.
 - `sample_selected`: `selected` is `true` when the row became selected and `false` when the
   selected row was pressed again to deselect it. `years` is that row's year either way. Taking a
   sample also selects the new row, but logs only `sample_taken`.
