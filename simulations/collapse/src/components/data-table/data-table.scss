@@ -117,11 +117,6 @@ $sticky-z: 2;
   &:nth-child(3) {
     z-index: $sticky-z + 2;
   }
-
-  // A hovered, focused or pressed band is drawn over its neighbors.
-  &:has(.collapse-th-sort:is(:hover, :focus-visible, :active)) {
-    z-index: $sticky-z + 3;
-  }
 }
 
 .collapse-thead.has-prompt th {
