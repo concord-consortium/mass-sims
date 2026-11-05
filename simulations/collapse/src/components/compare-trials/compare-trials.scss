@@ -69,12 +69,6 @@ $sticky-z: 2;
   z-index: 12;
 }
 
-// An About panel that was open when the comparison opened is hidden until it closes, so focus has
-// one home. Its open state and drag offset are kept, so it comes back where it was.
-.simulation-frame:has(.collapse-compare) .simulation-frame-info-modal {
-  display: none;
-}
-
 // Laid out like the About panel's header: the icon at the left, 10px to the title.
 .collapse-compare-head {
   align-items: center;

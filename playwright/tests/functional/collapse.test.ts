@@ -240,11 +240,11 @@ test.describe("Compare Trials", () => {
     await page.keyboard.press("ArrowLeft");
     await expect(collapse.compareRow("A", 0)).toBeFocused();
 
-    // D has no rows, so its last heading is the last tab stop; Tab wraps to the close button and
-    // never reaches About.
+    // D has no rows, so its last heading is the frame's last tab stop; Tab wraps to the About button,
+    // the first.
     await collapse.compareSortButton("D", "Rock above cave (mm)").focus();
     await page.keyboard.press("Tab");
-    await expect(collapse.compareCloseButton).toBeFocused();
+    await expect(collapse.aboutButton).toBeFocused();
     await page.keyboard.press("Shift+Tab");
     await expect(collapse.compareSortButton("D", "Rock above cave (mm)")).toBeFocused();
 
@@ -253,18 +253,18 @@ test.describe("Compare Trials", () => {
     await expect(collapse.compareButton).toBeFocused();
   });
 
-  test("Tab from a lower row in the last column wraps to the close button", async ({ page }) => {
+  test("Tab from a lower row in the last column wraps to the About button", async ({ page }) => {
     await collapse.selectTrial("D");
     await collapse.sampleAt(200000);
     await collapse.sampleAt(0);
     await collapse.addOutsideButton();
     await collapse.compareButton.click();
-    // D's first row is the view's last tab stop; the second is reached only with the arrow keys.
+    // D's first row is the frame's last tab stop; the second is reached only with the arrow keys.
     await collapse.compareRows("D").first().focus();
     await page.keyboard.press("ArrowDown");
     await expect(collapse.compareRows("D").nth(1)).toBeFocused();
     await page.keyboard.press("Tab");
-    await expect(collapse.compareCloseButton).toBeFocused();
+    await expect(collapse.aboutButton).toBeFocused();
   });
 
   test("after a click on the view's text, Escape still closes it", async ({ page }) => {
@@ -276,13 +276,15 @@ test.describe("Compare Trials", () => {
     await expect(collapse.compareButton).toBeFocused();
   });
 
-  test("an open About panel is hidden while comparing and comes back after", async ({ page }) => {
+  test("an open About panel stays open over the view, and the About button still toggles it", async ({
+    page,
+  }) => {
     await collapse.openAbout();
-    await expect(collapse.aboutPanel).toBeVisible();
     await collapse.compareButton.click();
-    await expect(collapse.aboutPanel).toBeHidden();
+    await expect(collapse.aboutPanel).toBeVisible();
     await expect(collapse.compareCloseButton).toBeFocused();
 
+    // A real click at the button's center, so it fails if anything covers the button.
     const about = await collapse.aboutButton.boundingBox();
     if (!about) throw new Error("About button not found");
     await page.mouse.click(about.x + about.width / 2, about.y + about.height / 2);
@@ -290,7 +292,6 @@ test.describe("Compare Trials", () => {
     await expect(collapse.compareDialog).toBeVisible();
 
     await collapse.compareCloseButton.click();
-    await expect(collapse.aboutPanel).toBeVisible();
     await expect(collapse.compareButton).toBeFocused();
   });
 

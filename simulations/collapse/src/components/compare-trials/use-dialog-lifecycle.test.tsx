@@ -16,18 +16,18 @@ function Dialog() {
   );
 }
 
-/** A frame with a title bar, a pre-inert aside, and a `main` holding a panel and the dialog. */
+/** A frame with a title bar and a `main` holding a panel, a pre-inert panel, and the dialog. */
 function Frame({ open }: { open: boolean }) {
   return (
     <div className="frame">
       <header>title</header>
-      <aside inert>already inert</aside>
       <main>
         <section>
           <button className="opener" type="button">
             Open
           </button>
         </section>
+        <aside inert>already inert</aside>
         {open && <Dialog />}
       </main>
     </div>
@@ -49,11 +49,16 @@ describe("useDialogLifecycle", () => {
     expect(inertWhenFocused).toBe(false);
   });
 
+  it("makes only the rest of `main` inert, not the title bar", () => {
+    const view = render(<Frame open />);
+    expect(view.container.querySelector("section")).toHaveAttribute("inert");
+    expect(view.container.querySelector("header")).not.toHaveAttribute("inert");
+  });
+
   it("leaves an element that was already inert inert on close", () => {
     const view = render(<Frame open />);
-    expect(view.container.querySelector("header")).toHaveAttribute("inert");
     view.rerender(<Frame open={false} />);
-    expect(view.container.querySelector("header")).not.toHaveAttribute("inert");
+    expect(view.container.querySelector("section")).not.toHaveAttribute("inert");
     expect(view.container.querySelector("aside")).toHaveAttribute("inert");
   });
 

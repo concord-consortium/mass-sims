@@ -156,6 +156,7 @@ test("Compare Trials: opens over the panels and closes by its button and by Esca
   await expect(page.locator(".collapse-compare-col")).toHaveCount(4);
   await expect(collapse.compareCloseButton).toBeFocused();
   expect(await collapse.isInert(collapse.compareButton)).toBe(true);
+  expect(await collapse.isInert(collapse.aboutButton)).toBe(false);
 
   await collapse.compareCloseButton.click();
   await expect(collapse.compareDialog).toHaveCount(0);
@@ -167,6 +168,36 @@ test("Compare Trials: opens over the panels and closes by its button and by Esca
   await page.keyboard.press("Escape");
   await expect(collapse.compareDialog).toHaveCount(0);
   await expect(collapse.compareButton).toBeFocused();
+});
+
+test("Compare Trials: About opens and closes over the view, by pointer and by keyboard", async ({
+  page,
+}) => {
+  await collapse.compareButton.click();
+  await collapse.openAbout();
+  await expect(collapse.closeAboutButton).toBeFocused();
+  await collapse.closeAboutViaButton();
+  await expect(collapse.aboutButton).toBeFocused();
+  await expect(collapse.compareDialog).toBeVisible();
+
+  await collapse.compareCloseButton.focus();
+  await page.keyboard.press("Shift+Tab");
+  await expect(collapse.aboutButton).toBeFocused();
+  await page.keyboard.press("Enter");
+  await expect(collapse.closeAboutButton).toBeFocused();
+  // The panel is in the Tab cycle: its last stop wraps to the About button.
+  await page.keyboard.press("Tab");
+  await expect(collapse.aboutButton).toBeFocused();
+  await page.keyboard.press("Shift+Tab");
+  await expect(collapse.closeAboutButton).toBeFocused();
+  await collapse.closeAboutViaEscape();
+  await expect(collapse.aboutButton).toBeFocused();
+  await expect(collapse.compareDialog).toBeVisible();
+
+  await page.keyboard.press("Tab");
+  await expect(collapse.compareCloseButton).toBeFocused();
+  await page.keyboard.press("Escape");
+  await expect(collapse.compareDialog).toHaveCount(0);
 });
 
 test("Compare Trials: shows each trial's rows, carries the selection in, and shares the sort", async () => {
