@@ -82,6 +82,9 @@
   // For browsers without the async clipboard, or where it is refused (e.g. no permission). Throws
   // when this copy fails too, so the caller does not report a copy that did not happen.
   function copyWithTextarea(text) {
+    // Selecting the textarea moves focus to it, and removing it leaves focus on <body>, so put
+    // focus back where it was (the share button) afterwards.
+    const activeElement = document.activeElement;
     const textarea = document.createElement("textarea");
     textarea.value = text;
     textarea.setAttribute("readonly", "");
@@ -95,6 +98,9 @@
       // Treated as a failure below.
     }
     textarea.remove();
+    if (activeElement instanceof HTMLElement && activeElement.isConnected) {
+      activeElement.focus({ preventScroll: true });
+    }
     if (!ok) throw new Error("copy failed");
   }
 

@@ -67,6 +67,7 @@ beforeEach(() => {
 
 afterEach(() => {
   vi.useRealTimers();
+  vi.restoreAllMocks();
 });
 
 describe("selecting a sim", () => {
@@ -207,6 +208,29 @@ describe("the share row", () => {
     await nextFrame();
     expect(label("share-copy-url")).toBe("Copy URL");
     expect($("[aria-live]").textContent).toBe("");
+  });
+
+  it.each([
+    ["works", true],
+    ["fails", false],
+  ])("gives focus back to the share button when the textarea copy %s", async (_, copied) => {
+    writeText.mockRejectedValue(new Error("denied"));
+    document.execCommand = vi.fn(() => copied);
+    // Chrome moves focus to a textarea when it is selected; jsdom does not, so do it here.
+    const select = vi.spyOn(HTMLTextAreaElement.prototype, "select").mockImplementation(function (
+      this: HTMLTextAreaElement,
+    ) {
+      this.focus();
+    });
+    load("/index.html");
+    const button = $<HTMLButtonElement>("#share-copy-url");
+    button.focus();
+
+    button.click();
+
+    await vi.waitFor(() => expect(document.execCommand).toHaveBeenCalledWith("copy"));
+    expect(select).toHaveBeenCalled();
+    expect(document.activeElement).toBe(button);
   });
 
   it("puts the label back after 1.4 seconds", async () => {
