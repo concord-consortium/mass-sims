@@ -559,15 +559,18 @@ yarn serve:top-test
 
 ```
 top-test/
+├── serve.json                ← stops `serve` redirecting …/index.html?query (drops the query)
 ├── index.html                ← root landing page (copied from repo's index.html)
 ├── sim-one/index.html        ← promoted (the index-top.html for sim-one)
 ├── sim-two/index.html        ← promoted
-└── version/release/
-    ├── sim-one/...            ← the actual bundle
-    └── sim-two/...
+├── version/release/
+│   ├── sim-one/...            ← the actual bundle
+│   └── sim-two/...
+├── version/v0.0.0-test/      ← a release-tag deploy: index.html + every sim's dist/
+└── branch/test-branch/       ← a branch deploy: index.html + every sim's dist/
 ```
 
-`serve:top-test` runs `serve` against that directory on port 8000. Clicking through the sim links exercises the same dynamic-publicPath path the production S3 promotion uses. If asset references break, they'll break here too — visibly, locally, before a deploy.
+`serve:top-test` runs `serve` against that directory on port 8000. Clicking through the sim links exercises the same dynamic-publicPath path the production S3 promotion uses. If asset references break, they'll break here too — visibly, locally, before a deploy. The two nested deploys put the landing page at the other two paths it is served from, so its relative iframe and share URLs are checked at all three; the Playwright `landing` projects run against this directory (see `docs/playwright.md`).
 
 ### S3 bucket prefix and OIDC setup (one-time, Phase 0)
 

@@ -29,7 +29,7 @@
     "typecheck:playwright": "tsc --noEmit -p playwright/tsconfig.json",
     "new-sim": "tsx scripts/new-sim.ts",
     "test:playwright": "playwright test",
-    "test:playwright:build": "yarn lerna run build && playwright test",
+    "test:playwright:build": "yarn build:top-test && playwright test",
     "test:playwright:open": "playwright test --ui",
     "playwright:install": "playwright install --with-deps chromium",
     "gen-index": "tsx scripts/gen-index.ts",

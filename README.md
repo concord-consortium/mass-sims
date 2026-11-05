@@ -52,7 +52,7 @@ yarn typecheck
 # Run unit tests (per-workspace Vitest)
 yarn test
 
-# Run the Playwright end-to-end suite (builds the sims first)
+# Run the Playwright end-to-end suite (builds the sims and the top-test/ fixture first)
 yarn test:playwright:build
 ```
 

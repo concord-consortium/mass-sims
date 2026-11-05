@@ -36,3 +36,13 @@ export function getSim(name: string): SimEntry {
 export function getSimUrl(name: string): string {
   return `http://localhost:${getSim(name).port}/`;
 }
+
+// The landing page is not a sim: it is served from the `top-test/` fixture (`yarn build:top-test`)
+// by `yarn serve:top-test`, whose script also says port 8000. The fixture holds the page at three
+// deploy paths: "/", "/version/v0.0.0-test/" and "/branch/test-branch/".
+export const TOP_TEST_PORT = 8000;
+
+/** The URL of a path on the top-test server, e.g. getTopTestUrl("/branch/test-branch/"). */
+export function getTopTestUrl(path: string): string {
+  return `http://localhost:${TOP_TEST_PORT}${path}`;
+}
