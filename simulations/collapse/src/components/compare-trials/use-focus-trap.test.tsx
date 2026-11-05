@@ -23,7 +23,7 @@ function Trap() {
   );
 }
 
-/** The trap in a frame: a title-bar button, an inert panel, and the dialog, all around a `main`. */
+/** The trap in a frame: a title-bar button, and the dialog between two inert panels in `main`. */
 function FramedTrap() {
   const rootRef = useRef<HTMLDivElement>(null);
   useFocusTrap(rootRef);
@@ -37,6 +37,9 @@ function FramedTrap() {
         <div ref={rootRef}>
           <button type="button">Close</button>
         </div>
+        <section inert>
+          <button type="button">Inert after</button>
+        </section>
       </main>
     </div>
   );
