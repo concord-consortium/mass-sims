@@ -8,18 +8,24 @@ export type SampleYearsSource = "slider" | "stepper";
  * write and its log event can't drift apart. Logs `sample_years_set` only when the value changes.
  *
  * A drag is one change, as for the shared `Slider`: it moves the value with `setWithoutLog`, then
- * calls `logChange` once when it ends.
+ * calls `logChange` once when it ends. `logChange` takes the trial the drag started on, because the
+ * active trial can change during a drag.
  */
 export function useSetSampleYears() {
   const store = useStores();
   const logEvent = useLogEvent();
 
-  const logChange = (previous: number, source: SampleYearsSource) => {
-    if (store.activeTrial.sampleYears === previous) return;
+  const logChange = (
+    previous: number,
+    source: SampleYearsSource,
+    letter = store.ui.selectedTrialLetter,
+  ) => {
+    const trial = store.trials.get(letter);
+    if (!trial || trial.sampleYears === previous) return;
     logEvent("sample_years_set", {
-      value: store.activeTrial.sampleYears,
+      value: trial.sampleYears,
       previous,
-      trial: store.ui.selectedTrialLetter,
+      trial: letter,
       source,
     });
   };

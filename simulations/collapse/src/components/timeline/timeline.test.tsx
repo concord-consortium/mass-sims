@@ -360,6 +360,25 @@ describe("Timeline", () => {
     expect(store.activeTrial.timelineIndex).toBe(3);
   });
 
+  it("ends the drag, and logs its trial's change, when another trial is selected", () => {
+    const { view, store, band } = setup();
+    const track = view.container.querySelector(".collapse-tl") as HTMLElement;
+    pointer(band, "pointerdown", LAYOUT.valuePx[3]);
+    pointer(band, "pointermove", LAYOUT.valuePx[6]);
+    act(() => store.ui.selectTrial("B"));
+    pointer(band, "pointermove", LAYOUT.valuePx[9]);
+    expect(track).not.toHaveClass("dragging");
+    expect(store.trials.get("A")?.timelineIndex).toBe(6);
+    expect(store.trials.get("B")?.timelineIndex).toBe(0);
+    expect(logEvent).toHaveBeenCalledTimes(1);
+    expect(logEvent).toHaveBeenCalledWith("sample_years_set", {
+      value: TIMELINE_VALUES[6],
+      previous: 200000,
+      trial: "A",
+      source: "slider",
+    });
+  });
+
   it("marks the track as dragging only while a drag is live", () => {
     const { view, slider } = setup();
     const track = view.container.querySelector(".collapse-tl") as HTMLElement;
