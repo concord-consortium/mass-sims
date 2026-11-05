@@ -10,8 +10,8 @@
 // and the script prints a warning.
 //
 // The page is built from scripts/landing/: the markup template, the SCSS (compiled
-// here), and the share icons. The stylesheet and every SVG are inlined, so the deploy
-// still copies a single file.
+// here), the page script, and the share icons. The stylesheet, the script and every
+// SVG are inlined, so the deploy still copies a single file.
 //
 // Modes:
 //   yarn gen-index            → regenerate index.html (overwrites)
@@ -275,6 +275,13 @@ export function renderHtml(sims: SimInfo[]): string {
   const first = sims[0];
   const css = sass.compile(join(LANDING_DIR, "landing.scss"), { style: "expanded" }).css;
   const simsData = sims.map((s) => ({ name: s.name, title: s.meta.title, colors: s.meta.colors }));
+  // The file's header comment is for its readers, not the page's, so it is left out.
+  const landingJs = readFileSync(join(LANDING_DIR, "landing.js"), "utf8")
+    .replace(/^(\/\/.*\n)+\s*/, "")
+    .trimEnd();
+  if (/<\/script/i.test(landingJs)) {
+    throw new Error("gen-index: landing.js must not contain </script, which would end the element");
+  }
 
   return fillTemplate(readFileSync(join(LANDING_DIR, "index.template.html"), "utf8"), {
     googleFontsUrl: escapeHtml(googleFontsUrl(sims)),
@@ -290,6 +297,7 @@ export function renderHtml(sims: SimInfo[]): string {
     copyUrlIcon: readIcon("copy-url"),
     copyEmbedIcon: readIcon("copy-embed-code"),
     simsJson: escapeJsonForScript(simsData),
+    landingJs,
   });
 }
 

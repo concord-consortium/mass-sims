@@ -175,8 +175,8 @@ describe("renderHtml", () => {
     it("never closes a script element early", () => {
       // No raw <, > or & inside the JSON block, so no value can end it or open a comment.
       expect(simsJsonText(tricky)).not.toMatch(/[<>&]/);
-      // The only </script> on the page is the JSON block's own closing tag.
-      expect(tricky.split("</script>")).toHaveLength(2);
+      // The only </script> tags on the page close the JSON block and the page script.
+      expect(tricky.split("</script>")).toHaveLength(3);
     });
 
     it("survives JSON.parse unchanged", () => {
