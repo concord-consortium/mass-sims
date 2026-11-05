@@ -49,7 +49,7 @@ describe("SimulationView", () => {
     const { getByRole } = renderView(store);
     const crossSection = getByRole("region", { name: "Cross Section" });
     act(() => {
-      store.ui.setTimelineIndex(1);
+      store.activeTrial.setTimelineIndex(1);
       store.takeSample();
     });
     expect(crossSection.querySelector(".collapse-pic-caption")).toHaveTextContent(

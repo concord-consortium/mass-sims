@@ -132,14 +132,14 @@ describe("Timeline", () => {
     expect(LAYOUT.valuePx[0] - FLAG_WIDTH / 2).toBeLessThan(0);
     expect(slider.style.left).toBe("0px");
 
-    act(() => store.ui.setTimelineIndex(8));
+    act(() => store.activeTrial.setTimelineIndex(8));
     const center = LAYOUT.valuePx[8];
     expect(center - FLAG_WIDTH / 2).toBeGreaterThan(0);
     expect(center + FLAG_WIDTH / 2).toBeLessThan(ROW_WIDTH);
     expect(handle.style.left).toBe(`${center}px`);
     expect(slider.style.left).toBe(`${center - FLAG_WIDTH / 2}px`);
 
-    act(() => store.ui.setTimelineIndex(LAST));
+    act(() => store.activeTrial.setTimelineIndex(LAST));
     expect(LAYOUT.valuePx[LAST] + FLAG_WIDTH / 2).toBeGreaterThan(ROW_WIDTH);
     expect(slider.style.left).toBe(`${ROW_WIDTH - FLAG_WIDTH}px`);
   });
@@ -206,7 +206,7 @@ describe("Timeline", () => {
     pointer(band, "pointerdown", LAYOUT.valuePx[3]);
     pointer(band, "pointermove", LAYOUT.valuePx[6]);
     pointer(band, "pointermove", LAYOUT.valuePx[9]);
-    expect(store.ui.timelineIndex).toBe(9);
+    expect(store.activeTrial.timelineIndex).toBe(9);
     expect(logEvent).not.toHaveBeenCalled();
     pointer(band, "pointerup", 0);
     expect(logEvent).toHaveBeenCalledTimes(1);
@@ -251,21 +251,21 @@ describe("Timeline", () => {
   it("steps one value per arrow key", () => {
     const { store, slider } = setup();
     fireEvent.keyDown(slider, { key: "ArrowRight" });
-    expect(store.ui.timelineIndex).toBe(1);
+    expect(store.activeTrial.timelineIndex).toBe(1);
     expect(slider).toHaveAttribute("aria-valuenow", "150000");
     expect(slider).toHaveAttribute("aria-valuetext", "150,000 years before collapse");
     fireEvent.keyDown(slider, { key: "ArrowDown" });
-    expect(store.ui.timelineIndex).toBe(2);
+    expect(store.activeTrial.timelineIndex).toBe(2);
     fireEvent.keyDown(slider, { key: "ArrowLeft" });
     fireEvent.keyDown(slider, { key: "ArrowUp" });
-    expect(store.ui.timelineIndex).toBe(0);
+    expect(store.activeTrial.timelineIndex).toBe(0);
   });
 
   it("jumps to the ends with Home and End", () => {
     const { store, slider } = setup();
     fireEvent.keyDown(slider, { key: "End" });
     expect(slider).toHaveAttribute("aria-valuenow", "0");
-    expect(store.ui.sampleYears).toBe(0);
+    expect(store.activeTrial.sampleYears).toBe(0);
     fireEvent.keyDown(slider, { key: "Home" });
     expect(slider).toHaveAttribute("aria-valuenow", "200000");
   });
@@ -274,34 +274,34 @@ describe("Timeline", () => {
     const { store, slider } = setup();
     const notPrevented = fireEvent.keyDown(slider, { key: "PageDown" });
     expect(notPrevented).toBe(true);
-    expect(store.ui.timelineIndex).toBe(0);
+    expect(store.activeTrial.timelineIndex).toBe(0);
   });
 
   it("snaps to the nearest value when the timeline outside the flag is pressed, and follows the drag", () => {
     const { store, band, slider } = setup();
     const x = LAYOUT.valuePx[4] + 3;
     pointer(band, "pointerdown", x);
-    expect(store.ui.timelineIndex).toBe(nearestValueIndexByPx(LAYOUT.valuePx, x));
-    expect(store.ui.timelineIndex).toBe(4);
+    expect(store.activeTrial.timelineIndex).toBe(nearestValueIndexByPx(LAYOUT.valuePx, x));
+    expect(store.activeTrial.timelineIndex).toBe(4);
     expect(slider).toHaveFocus();
     pointer(band, "pointermove", LAYOUT.valuePx[9]);
-    expect(store.ui.timelineIndex).toBe(9);
+    expect(store.activeTrial.timelineIndex).toBe(9);
     pointer(band, "pointerup", 0);
     pointer(band, "pointermove", LAYOUT.valuePx[12]);
-    expect(store.ui.timelineIndex).toBe(9);
+    expect(store.activeTrial.timelineIndex).toBe(9);
   });
 
   it("does not change the value when the flag is pressed off center", () => {
     const { store, slider } = setup();
-    act(() => store.ui.setTimelineIndex(8));
+    act(() => store.activeTrial.setTimelineIndex(8));
     const center = LAYOUT.valuePx[8];
     pointer(slider, "pointerdown", center + 70);
-    expect(store.ui.timelineIndex).toBe(8);
+    expect(store.activeTrial.timelineIndex).toBe(8);
 
     // Dragging keeps the grab offset: the handle (not the pointer) lands on the value under it.
     const target = LAYOUT.valuePx[10];
     pointer(slider, "pointermove", target + 70);
-    expect(store.ui.timelineIndex).toBe(10);
+    expect(store.activeTrial.timelineIndex).toBe(10);
     expect(nearestValueIndexByPx(LAYOUT.valuePx, target + 70)).not.toBe(10);
     pointer(slider, "pointerup", 0);
   });
@@ -314,12 +314,12 @@ describe("Timeline", () => {
       pointer(band, "pointerdown", x, mouse);
       pointer(slider, "pointerdown", x, mouse);
       pointer(band, "pointermove", LAYOUT.valuePx[9]);
-      expect(store.ui.timelineIndex).toBe(0);
+      expect(store.activeTrial.timelineIndex).toBe(0);
       expect(track).not.toHaveClass("dragging");
     }
     // A plain primary-button mouse press still works.
     pointer(band, "pointerdown", x, { button: 0 });
-    expect(store.ui.timelineIndex).toBe(6);
+    expect(store.activeTrial.timelineIndex).toBe(6);
   });
 
   it("ignores a second pointer while a drag is live", () => {
@@ -331,12 +331,12 @@ describe("Timeline", () => {
 
     pointer(band, "pointerdown", LAYOUT.valuePx[6], undefined, second);
     pointer(band, "pointermove", LAYOUT.valuePx[9], undefined, second);
-    expect(store.ui.timelineIndex).toBe(0);
+    expect(store.activeTrial.timelineIndex).toBe(0);
     pointer(band, "pointerup", 0, undefined, second);
     expect(track).toHaveClass("dragging");
 
     pointer(slider, "pointermove", LAYOUT.valuePx[3], undefined, first);
-    expect(store.ui.timelineIndex).toBe(3);
+    expect(store.activeTrial.timelineIndex).toBe(3);
     pointer(slider, "pointerup", 0, undefined, first);
     expect(track).not.toHaveClass("dragging");
   });
@@ -346,7 +346,7 @@ describe("Timeline", () => {
     pointer(band, "pointerdown", LAYOUT.valuePx[3], undefined, 1);
     // No `pointerup`: the old drag ended without an event.
     pointer(band, "pointerdown", LAYOUT.valuePx[7], undefined, 1);
-    expect(store.ui.timelineIndex).toBe(7);
+    expect(store.activeTrial.timelineIndex).toBe(7);
   });
 
   it("ends the drag when the pointer capture is lost", () => {
@@ -357,7 +357,26 @@ describe("Timeline", () => {
     pointer(band, "lostpointercapture", 0);
     expect(track).not.toHaveClass("dragging");
     pointer(band, "pointermove", LAYOUT.valuePx[9]);
-    expect(store.ui.timelineIndex).toBe(3);
+    expect(store.activeTrial.timelineIndex).toBe(3);
+  });
+
+  it("ends the drag, and logs its trial's change, when another trial is selected", () => {
+    const { view, store, band } = setup();
+    const track = view.container.querySelector(".collapse-tl") as HTMLElement;
+    pointer(band, "pointerdown", LAYOUT.valuePx[3]);
+    pointer(band, "pointermove", LAYOUT.valuePx[6]);
+    act(() => store.ui.selectTrial("B"));
+    pointer(band, "pointermove", LAYOUT.valuePx[9]);
+    expect(track).not.toHaveClass("dragging");
+    expect(store.trials.get("A")?.timelineIndex).toBe(6);
+    expect(store.trials.get("B")?.timelineIndex).toBe(0);
+    expect(logEvent).toHaveBeenCalledTimes(1);
+    expect(logEvent).toHaveBeenCalledWith("sample_years_set", {
+      value: TIMELINE_VALUES[6],
+      previous: 200000,
+      trial: "A",
+      source: "slider",
+    });
   });
 
   it("marks the track as dragging only while a drag is live", () => {
@@ -401,7 +420,7 @@ describe("Timeline", () => {
     expect(slider).toHaveFocus();
     expect(slider).toHaveClass("no-ring");
     fireEvent.keyDown(slider, { key: "ArrowRight" });
-    expect(store.ui.timelineIndex).toBe(1);
+    expect(store.activeTrial.timelineIndex).toBe(1);
   });
 
   it("shows the current calendar year on the end marker", () => {

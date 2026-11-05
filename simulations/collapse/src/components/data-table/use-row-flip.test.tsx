@@ -108,7 +108,7 @@ describe("useRowFlip in the table", () => {
     );
     const take = (years: number) =>
       act(() => {
-        store.ui.setTimelineIndex(TIMELINE_VALUES.indexOf(years));
+        store.activeTrial.setTimelineIndex(TIMELINE_VALUES.indexOf(years));
         store.takeSample();
       });
     const row = (key: string) =>

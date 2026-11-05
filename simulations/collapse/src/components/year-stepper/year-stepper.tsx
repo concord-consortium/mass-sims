@@ -14,13 +14,13 @@ import "./year-stepper.scss";
  * their names say what they do, not where they landed. The slider does not announce.
  */
 export const YearStepper = observer(function YearStepper() {
-  const { ui } = useStores();
+  const { activeTrial } = useStores();
   const { step } = useSetSampleYears();
   const announce = useAnnounce();
 
   const press = (dir: -1 | 1) => {
     step(dir, "stepper");
-    announce(`${formatYears(ui.sampleYears)} years before collapse.`);
+    announce(`${formatYears(activeTrial.sampleYears)} years before collapse.`);
   };
 
   return (
@@ -34,18 +34,18 @@ export const YearStepper = observer(function YearStepper() {
         <Button
           className="collapse-step-arrow"
           aria-label="Earlier, more years before collapse"
-          isDisabled={!ui.canStepEarlier}
+          isDisabled={!activeTrial.canStepEarlier}
           onPress={() => press(-1)}
         >
           <ArrowLeftIcon aria-hidden="true" />
         </Button>
         <div className="collapse-step-value" aria-hidden="true">
-          {formatYears(ui.sampleYears)}
+          {formatYears(activeTrial.sampleYears)}
         </div>
         <Button
           className="collapse-step-arrow later"
           aria-label="Later, fewer years before collapse"
-          isDisabled={!ui.canStepLater}
+          isDisabled={!activeTrial.canStepLater}
           onPress={() => press(1)}
         >
           <ArrowLeftIcon aria-hidden="true" />

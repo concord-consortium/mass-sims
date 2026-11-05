@@ -40,7 +40,7 @@ describe("RootStore.takeSample", () => {
   it("adds a sample to the selected trial only, at the timeline's year, and selects it", () => {
     const store = createRootStore({ rng: makeRng(11) });
     store.ui.selectTrial("B");
-    store.ui.setTimelineIndex(TIMELINE_VALUES.indexOf(0));
+    store.activeTrial.setTimelineIndex(TIMELINE_VALUES.indexOf(0));
     const sample = store.takeSample();
     expect(sample.years).toBe(0);
     expect(sample.roof).toBe(roofAt(TRIAL_CONDITIONS.B, 0));
@@ -50,6 +50,16 @@ describe("RootStore.takeSample", () => {
     }
     expect(store.ui.selectedSampleId("B")).toBe(sample.id);
     expect(store.selectedSample).toEqual(sample);
+  });
+
+  it("each trial keeps its own flag through a trial switch", () => {
+    const store = createRootStore();
+    store.activeTrial.setTimelineIndex(3);
+    store.ui.selectTrial("B");
+    expect(store.activeTrial.timelineIndex).toBe(0);
+    store.activeTrial.setTimelineIndex(7);
+    store.ui.selectTrial("A");
+    expect(store.activeTrial.timelineIndex).toBe(3);
   });
 
   it("gives two samples of the same year the same roof and different rates", () => {

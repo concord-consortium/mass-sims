@@ -44,7 +44,7 @@ function setup() {
 function sample(store: RootStoreInstance, years: number) {
   let taken: ReturnType<RootStoreInstance["takeSample"]> | undefined;
   act(() => {
-    store.ui.setTimelineIndex(TIMELINE_VALUES.indexOf(years));
+    store.activeTrial.setTimelineIndex(TIMELINE_VALUES.indexOf(years));
     taken = store.takeSample();
   });
   if (!taken) throw new Error("no sample");

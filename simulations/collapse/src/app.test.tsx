@@ -20,13 +20,16 @@ import { App } from "./app";
 function restoreTrialAWithSamples({
   selected = "A",
   extraTrials = {},
+  timelineIndex = 0,
 }: {
   selected?: string;
   extraTrials?: object;
+  timelineIndex?: number;
 } = {}) {
   const trialA = {
     samples: [{ id: 1, years: 200000, rate: 20.5, roof: 8800 }],
     nextSampleId: 2,
+    timelineIndex,
   };
   const initMsg = {
     mode: "runtime",
@@ -45,7 +48,10 @@ function trialOptions(view: ReturnType<typeof render>) {
   return view.getAllByRole("option").map((o) => o.getAttribute("aria-label")?.slice(0, 7));
 }
 
-/** Whether the selected trial has samples, read from whether its reset is enabled. */
+/**
+ * Whether the selected trial has samples, read from whether its reset is enabled. A moved flag also
+ * enables the reset, so this is correct only while the trial's flag is at the start.
+ */
 function selectedHasSamples(view: ReturnType<typeof render>, letter: string) {
   const reset = view.getByRole("button", { name: `Reset trial ${letter}` });
   return reset.getAttribute("aria-disabled") !== "true";
@@ -103,7 +109,7 @@ describe("Collapse App — AP saved state", () => {
   });
 
   it("restores trials + selectedTrialLetter from a runtime init message's interactiveState", () => {
-    const trialB = { samples: [], nextSampleId: 1 };
+    const trialB = { samples: [], nextSampleId: 1, timelineIndex: 0 };
     restoreTrialAWithSamples({ selected: "B", extraTrials: { B: trialB } });
     const view = render(<App />);
     expect(trialOptions(view)).toEqual(["Trial A", "Trial B", "Trial C", "Trial D"]);
@@ -172,8 +178,8 @@ describe("Collapse App — AP saved state", () => {
     expect(first.trials.A.samples).toEqual(trialA.samples);
   });
 
-  it("keeps the timeline value when saved state arrives after the student has moved it", () => {
-    const { initMsg } = restoreTrialAWithSamples();
+  it("restores the saved flag when saved state arrives after the student has moved it", () => {
+    const { initMsg } = restoreTrialAWithSamples({ timelineIndex: 3 });
     let deliver: (msg: unknown) => void = () => {};
     useInitMessageMock.mockImplementation(() => {
       const [msg, setMsg] = useState<unknown>(null);
@@ -184,10 +190,13 @@ describe("Collapse App — AP saved state", () => {
     const slider = view.getByRole("slider", { name: "Years before collapse" });
     fireEvent.keyDown(slider, { key: "ArrowRight" });
     act(() => deliver(initMsg));
-    expect(selectedHasSamples(view, "A")).toBe(true);
+    expect(view.getByRole("option", { name: /^Trial A/ })).toHaveAttribute(
+      "aria-label",
+      expect.stringMatching(/Sampled 1 time$/),
+    );
     expect(view.getByRole("slider", { name: "Years before collapse" })).toHaveAttribute(
       "aria-valuenow",
-      "150000",
+      "50000",
     );
   });
 
@@ -210,7 +219,7 @@ describe("Collapse App — AP saved state", () => {
     );
   });
 
-  it("does NOT call setInteractiveState when the timeline value changes", () => {
+  it("calls setInteractiveState when the timeline value changes", () => {
     // Embedded, because the app sends state to AP only after an init message.
     restoreTrialAWithSamples();
     const { getByRole } = render(<App />);
@@ -220,7 +229,11 @@ describe("Collapse App — AP saved state", () => {
     fireEvent.keyDown(slider, { key: "ArrowRight" });
     fireEvent.click(getByRole("button", { name: "Later, fewer years before collapse" }));
     expect(slider).toHaveAttribute("aria-valuenow", "100000");
-    expect(setInteractiveStateMock).not.toHaveBeenCalled();
+    expect(setInteractiveStateMock).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        trials: expect.objectContaining({ A: expect.objectContaining({ timelineIndex: 2 }) }),
+      }),
+    );
   });
 
   it("does NOT register a beforeunload listener when embedded (AP persists progress)", () => {

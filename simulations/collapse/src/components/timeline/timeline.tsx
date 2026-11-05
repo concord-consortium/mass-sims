@@ -1,3 +1,4 @@
+import type { TrialLetter } from "@concord-consortium/mass-sims-shared";
 import { observer } from "mobx-react-lite";
 import {
   Fragment,
@@ -55,16 +56,21 @@ const pct = (fraction: number) => `${fraction * 100}%`;
  * pointer's offset from the handle, so the value only moves once the handle is dragged to another one.
  */
 export const Timeline = observer(function Timeline() {
-  const { ui } = useStores();
+  const { activeTrial, ui } = useStores();
   const { set, step, setWithoutLog, logChange } = useSetSampleYears();
   const tlRef = useRef<HTMLDivElement>(null);
   const rowRef = useRef<HTMLOListElement>(null);
   const flagRef = useRef<HTMLDivElement>(null);
   const [measured, setMeasured] = useState<Measured | null>(null);
   const [dragging, setDragging] = useState(false);
-  // The live drag: the pointer that started it, that pointer's x offset from the handle, and the
-  // value when it started (the drag logs one change, from that value, when it ends).
-  const drag = useRef<{ pointerId: number; offset: number; startYears: number } | null>(null);
+  // The live drag: the pointer that started it, that pointer's x offset from the handle, the trial
+  // it moves, and the value when it started (the drag logs one change, from that value, when it ends).
+  const drag = useRef<{
+    pointerId: number;
+    offset: number;
+    trial: TrialLetter;
+    startYears: number;
+  } | null>(null);
   // Chrome shows the focus ring when a pointer press focuses the flag, but the ring is for keyboard
   // users. `noRing` hides it after a press; any other focus, a blur, or a key brings it back.
   // `pressFocus` marks the focus a press causes, which is the one focus that keeps it.
@@ -111,8 +117,8 @@ export const Timeline = observer(function Timeline() {
     };
   }, [relayout]);
 
-  const index = ui.timelineIndex;
-  const years = ui.sampleYears;
+  const index = activeTrial.timelineIndex;
+  const years = activeTrial.sampleYears;
 
   const pointerX = (e: PointerEvent) =>
     e.clientX - (tlRef.current?.getBoundingClientRect().left ?? 0);
@@ -129,8 +135,13 @@ export const Timeline = observer(function Timeline() {
     drag.current !== null && e.pointerId !== drag.current.pointerId;
 
   const beginDrag = (e: PointerEvent<HTMLDivElement>, offset: number) => {
-    if (drag.current) logChange(drag.current.startYears, "slider");
-    drag.current = { pointerId: e.pointerId, offset, startYears: ui.sampleYears };
+    if (drag.current) logChange(drag.current.startYears, "slider", drag.current.trial);
+    drag.current = {
+      pointerId: e.pointerId,
+      offset,
+      trial: ui.selectedTrialLetter,
+      startYears: activeTrial.sampleYears,
+    };
     setDragging(true);
     e.currentTarget.setPointerCapture?.(e.pointerId);
     e.preventDefault();
@@ -154,12 +165,18 @@ export const Timeline = observer(function Timeline() {
 
   const onFlagPointerDown = (e: PointerEvent<HTMLDivElement>) => {
     if (!measured || !isPrimaryPress(e) || isOtherPointer(e)) return;
-    beginDrag(e, pointerX(e) - measured.layout.valuePx[ui.timelineIndex]);
+    beginDrag(e, pointerX(e) - measured.layout.valuePx[activeTrial.timelineIndex]);
     focusFlagFromPress();
   };
 
+  // A second finger can select another trial during a drag. The drag then ends, so it does not move
+  // the new trial's flag.
   const onPointerMove = (e: PointerEvent<HTMLDivElement>) => {
     if (!drag.current || isOtherPointer(e) || !measured) return;
+    if (drag.current.trial !== ui.selectedTrialLetter) {
+      onPointerEnd(e);
+      return;
+    }
     setWithoutLog(
       nearestValueIndexByPx(measured.layout.valuePx, pointerX(e) - drag.current.offset),
     );
@@ -167,7 +184,7 @@ export const Timeline = observer(function Timeline() {
 
   const onPointerEnd = (e: PointerEvent<HTMLDivElement>) => {
     if (!drag.current || isOtherPointer(e)) return;
-    logChange(drag.current.startYears, "slider");
+    logChange(drag.current.startYears, "slider", drag.current.trial);
     drag.current = null;
     setDragging(false);
     if (e.currentTarget.hasPointerCapture?.(e.pointerId)) {

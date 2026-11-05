@@ -27,7 +27,7 @@ function setup() {
 /** Takes a sample in `letter` at `years` in the store directly, without logging or announcing. */
 function seed(store: ReturnType<typeof createRootStore>, letter: string, years: number) {
   store.ui.selectTrial(letter);
-  store.ui.setTimelineIndex(TIMELINE_VALUES.indexOf(years));
+  store.activeTrial.setTimelineIndex(TIMELINE_VALUES.indexOf(years));
   return store.takeSample();
 }
 

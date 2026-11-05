@@ -62,7 +62,9 @@ export const RootStore = types
       const letter = self.ui.selectedTrialLetter;
       const { rng } = getEnv<{ rng: () => number }>(self);
       const conditions = TRIAL_CONDITIONS[letter as CollapseTrialLetter];
-      const sample = self.activeTrial.addSample(sampleAt(conditions, self.ui.sampleYears, rng));
+      const sample = self.activeTrial.addSample(
+        sampleAt(conditions, self.activeTrial.sampleYears, rng),
+      );
       self.ui.selectSample(letter, sample.id);
       return sample;
     },

@@ -56,11 +56,11 @@ describe("YearStepper", () => {
   it("steps the store and announces the new value", () => {
     const { store, earlier, later, region } = setup();
     fireEvent.click(later);
-    expect(store.ui.sampleYears).toBe(150000);
+    expect(store.activeTrial.sampleYears).toBe(150000);
     expect(region).toHaveTextContent("150,000 years before collapse.");
     fireEvent.click(later);
     fireEvent.click(earlier);
-    expect(store.ui.sampleYears).toBe(150000);
+    expect(store.activeTrial.sampleYears).toBe(150000);
   });
 
   it("marks each arrow aria-disabled at its end, and keeps it focusable", () => {
@@ -69,9 +69,9 @@ describe("YearStepper", () => {
     expect(earlier).not.toBeDisabled();
     expect(later).not.toHaveAttribute("aria-disabled");
     fireEvent.click(earlier);
-    expect(store.ui.timelineIndex).toBe(0);
+    expect(store.activeTrial.timelineIndex).toBe(0);
 
-    act(() => store.ui.setTimelineIndex(TIMELINE_VALUES.length - 1));
+    act(() => store.activeTrial.setTimelineIndex(TIMELINE_VALUES.length - 1));
     expect(later).toHaveAttribute("aria-disabled", "true");
     expect(later).not.toBeDisabled();
     expect(earlier).not.toHaveAttribute("aria-disabled");
@@ -85,9 +85,9 @@ describe("YearStepper", () => {
     const { store, display } = setup();
     expect(display).toHaveTextContent("200,000");
     expect(display).toHaveAttribute("aria-hidden", "true");
-    act(() => store.ui.setTimelineIndex(1));
+    act(() => store.activeTrial.setTimelineIndex(1));
     expect(display).toHaveTextContent("150,000");
-    act(() => store.ui.setTimelineIndex(TIMELINE_VALUES.length - 1));
+    act(() => store.activeTrial.setTimelineIndex(TIMELINE_VALUES.length - 1));
     expect(display).toHaveTextContent("0");
   });
 });

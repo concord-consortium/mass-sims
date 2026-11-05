@@ -26,7 +26,7 @@ function setup(rng: () => number = () => 0.5) {
 
 /** Takes a sample in the store directly, without logging or announcing. */
 function seed(store: ReturnType<typeof createRootStore>, years: number) {
-  store.ui.setTimelineIndex(TIMELINE_VALUES.indexOf(years));
+  store.activeTrial.setTimelineIndex(TIMELINE_VALUES.indexOf(years));
   return store.takeSample();
 }
 
@@ -61,7 +61,7 @@ describe("useSampleActions.takeSample", () => {
   it("logs the rate unrounded, flags a collapse, and counts in the plural", () => {
     const { store, result } = setup(() => 1);
     store.ui.selectTrial("B");
-    store.ui.setTimelineIndex(TIMELINE_VALUES.indexOf(0));
+    store.activeTrial.setTimelineIndex(TIMELINE_VALUES.indexOf(0));
     act(() => result.current.takeSample());
     act(() => result.current.takeSample());
     const payload = logEvent.mock.calls[1][1];
