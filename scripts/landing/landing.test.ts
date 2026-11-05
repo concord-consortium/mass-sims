@@ -178,6 +178,37 @@ describe("the share row", () => {
     await vi.waitFor(() => expect(label("share-copy-url")).toBe("Copied"));
   });
 
+  it("uses the hidden textarea when there is no async clipboard", async () => {
+    Object.defineProperty(navigator, "clipboard", { value: undefined, configurable: true });
+    document.execCommand = vi.fn(() => true);
+    load("/index.html");
+
+    $<HTMLButtonElement>("#share-copy-url").click();
+
+    await vi.waitFor(() => expect(label("share-copy-url")).toBe("Copied"));
+  });
+
+  it.each([
+    ["the clipboard refuses", () => writeText.mockRejectedValue(new Error("denied"))],
+    [
+      "there is no async clipboard",
+      () => Object.defineProperty(navigator, "clipboard", { value: undefined, configurable: true }),
+    ],
+  ])("says nothing when %s and the textarea copy fails too", async (_, setUp) => {
+    setUp();
+    const execCommand = vi.fn(() => false);
+    document.execCommand = execCommand;
+    load("/index.html");
+
+    $<HTMLButtonElement>("#share-copy-url").click();
+
+    await vi.waitFor(() => expect(execCommand).toHaveBeenCalledWith("copy"));
+    for (let i = 0; i < 5; i++) await Promise.resolve();
+    await nextFrame();
+    expect(label("share-copy-url")).toBe("Copy URL");
+    expect($("[aria-live]").textContent).toBe("");
+  });
+
   it("puts the label back after 1.4 seconds", async () => {
     load("/index.html");
     vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });

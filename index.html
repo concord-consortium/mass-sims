@@ -440,7 +440,8 @@ body {
     });
   }
 
-  // For browsers without the async clipboard, or where it is refused (e.g. no permission).
+  // For browsers without the async clipboard, or where it is refused (e.g. no permission). Throws
+  // when this copy fails too, so the caller does not report a copy that did not happen.
   function copyWithTextarea(text) {
     const textarea = document.createElement("textarea");
     textarea.value = text;
@@ -448,20 +449,22 @@ body {
     textarea.style.cssText = "position:fixed;top:-1000px;opacity:0;";
     document.body.appendChild(textarea);
     textarea.select();
+    let ok = false;
     try {
-      document.execCommand("copy");
+      ok = document.execCommand("copy");
     } catch {
-      // Nothing more to try.
+      // Treated as a failure below.
     }
     textarea.remove();
+    if (!ok) throw new Error("copy failed");
   }
 
+  // Resolves once the text is on the clipboard; rejects if neither way of copying worked.
   function copyText(text) {
     if (navigator.clipboard?.writeText) {
       return navigator.clipboard.writeText(text).catch(() => copyWithTextarea(text));
     }
-    copyWithTextarea(text);
-    return Promise.resolve();
+    return Promise.resolve().then(() => copyWithTextarea(text));
   }
 
   // Swap the label to "Copied" for a moment. The button's width is frozen (below), so it does not
@@ -483,19 +486,24 @@ body {
 
   const actions = {
     open: () => window.open(simUrl(current), "_blank", "noopener"),
+    // A failed copy shows nothing: both ways of copying failing is very rare.
     "copy-url": (button) => {
       const sim = current;
-      copyText(simUrl(sim)).then(() => {
-        showCopied(button);
-        announce(`${sim.title} URL copied`);
-      });
+      copyText(simUrl(sim))
+        .then(() => {
+          showCopied(button);
+          announce(`${sim.title} URL copied`);
+        })
+        .catch(() => {});
     },
     "copy-embed": (button) => {
       const sim = current;
-      copyText(embedCode(sim)).then(() => {
-        showCopied(button);
-        announce(`${sim.title} embed code copied`);
-      });
+      copyText(embedCode(sim))
+        .then(() => {
+          showCopied(button);
+          announce(`${sim.title} embed code copied`);
+        })
+        .catch(() => {});
     },
   };
 
