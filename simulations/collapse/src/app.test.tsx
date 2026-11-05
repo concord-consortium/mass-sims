@@ -20,14 +20,16 @@ import { App } from "./app";
 function restoreTrialAWithSamples({
   selected = "A",
   extraTrials = {},
+  timelineIndex = 0,
 }: {
   selected?: string;
   extraTrials?: object;
+  timelineIndex?: number;
 } = {}) {
   const trialA = {
     samples: [{ id: 1, years: 200000, rate: 20.5, roof: 8800 }],
     nextSampleId: 2,
-    timelineIndex: 0,
+    timelineIndex,
   };
   const initMsg = {
     mode: "runtime",
@@ -46,7 +48,10 @@ function trialOptions(view: ReturnType<typeof render>) {
   return view.getAllByRole("option").map((o) => o.getAttribute("aria-label")?.slice(0, 7));
 }
 
-/** Whether the selected trial has samples, read from whether its reset is enabled. */
+/**
+ * Whether the selected trial has samples, read from whether its reset is enabled. A moved flag also
+ * enables the reset, so this is correct only while the trial's flag is at the start.
+ */
 function selectedHasSamples(view: ReturnType<typeof render>, letter: string) {
   const reset = view.getByRole("button", { name: `Reset trial ${letter}` });
   return reset.getAttribute("aria-disabled") !== "true";
@@ -174,7 +179,7 @@ describe("Collapse App — AP saved state", () => {
   });
 
   it("restores the saved flag when saved state arrives after the student has moved it", () => {
-    const { initMsg } = restoreTrialAWithSamples();
+    const { initMsg } = restoreTrialAWithSamples({ timelineIndex: 3 });
     let deliver: (msg: unknown) => void = () => {};
     useInitMessageMock.mockImplementation(() => {
       const [msg, setMsg] = useState<unknown>(null);
@@ -185,11 +190,13 @@ describe("Collapse App — AP saved state", () => {
     const slider = view.getByRole("slider", { name: "Years before collapse" });
     fireEvent.keyDown(slider, { key: "ArrowRight" });
     act(() => deliver(initMsg));
-    expect(selectedHasSamples(view, "A")).toBe(true);
-    // The saved trial's flag is at the start.
+    expect(view.getByRole("option", { name: /^Trial A/ })).toHaveAttribute(
+      "aria-label",
+      expect.stringMatching(/Sampled 1 time$/),
+    );
     expect(view.getByRole("slider", { name: "Years before collapse" })).toHaveAttribute(
       "aria-valuenow",
-      "200000",
+      "50000",
     );
   });
 

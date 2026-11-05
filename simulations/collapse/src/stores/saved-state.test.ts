@@ -93,7 +93,7 @@ describe("migrateSavedState — normalizes to exactly A–D", () => {
   });
 
   it("one malformed C entry → C empty, A/B/D intact", () => {
-    const trials = { A: TRIAL, B: TRIAL, C: { samples: "nope" }, D: TRIAL };
+    const trials = { A: TRIAL, B: TRIAL, C: { samples: "nope", timelineIndex: 0 }, D: TRIAL };
     const state = migrate({ version: 2, trials, selectedTrialLetter: "A" });
     expect(isEmpty(state.trials.C)).toBe(true);
     expect(state.trials.A).toEqual(TRIAL);
@@ -120,28 +120,34 @@ describe("migrateSavedState — replaces trials that can't hydrate cleanly", () 
   });
 
   it("replaces a trial missing its samples or its counter", () => {
-    expect(replaced({ nextSampleId: 1 })).toBe(true);
-    expect(replaced({ samples: [] })).toBe(true);
-    expect(replaced({ samples: [], nextSampleId: "1" })).toBe(true);
+    expect(replaced({ nextSampleId: 1, timelineIndex: 0 })).toBe(true);
+    expect(replaced({ samples: [], timelineIndex: 0 })).toBe(true);
+    expect(replaced({ samples: [], nextSampleId: "1", timelineIndex: 0 })).toBe(true);
   });
 
   it("replaces a trial with a bad sample", () => {
-    const bad = (patch: object) => ({ samples: [{ ...sample, ...patch }], nextSampleId: 9 });
+    const bad = (patch: object) => ({
+      samples: [{ ...sample, ...patch }],
+      nextSampleId: 9,
+      timelineIndex: 0,
+    });
     expect(replaced(bad({ rate: "29" }))).toBe(true);
     expect(replaced(bad({ roof: Number.NaN }))).toBe(true);
     expect(replaced(bad({ id: undefined }))).toBe(true);
     // A year the timeline can't land on.
     expect(replaced(bad({ years: 12345 }))).toBe(true);
-    expect(replaced({ samples: [null], nextSampleId: 9 })).toBe(true);
+    expect(replaced({ samples: [null], nextSampleId: 9, timelineIndex: 0 })).toBe(true);
   });
 
   it("replaces a trial with duplicate ids", () => {
-    expect(replaced({ samples: [sample, { ...sample, years: 0 }], nextSampleId: 9 })).toBe(true);
+    const samples = [sample, { ...sample, years: 0 }];
+    expect(replaced({ samples, nextSampleId: 9, timelineIndex: 0 })).toBe(true);
   });
 
   it("replaces a trial whose counter is not above every id", () => {
-    expect(replaced({ samples: [{ ...sample, id: 3 }], nextSampleId: 3 })).toBe(true);
-    expect(replaced({ samples: [{ ...sample, id: 3 }], nextSampleId: 2 })).toBe(true);
+    const samples = [{ ...sample, id: 3 }];
+    expect(replaced({ samples, nextSampleId: 3, timelineIndex: 0 })).toBe(true);
+    expect(replaced({ samples, nextSampleId: 2, timelineIndex: 0 })).toBe(true);
   });
 
   it("keeps a trial with a valid flag, and replaces one with a missing or bad flag", () => {
@@ -242,6 +248,7 @@ describe("toSavedState + hydrate round-trip", () => {
     store.ui.selectTrial("B");
     store.takeSample();
     store.takeSample();
+    store.activeTrial.setTimelineIndex(5);
     const saved = toSavedState(getSnapshot(store));
     const migrated = migrate(saved);
 

@@ -153,6 +153,20 @@ describe("TrialsPanel — trial-list logging", () => {
     fireEvent.click(getByRole("button", { name: "Reset trial A" }));
     expect(logEvent).toHaveBeenCalledWith("trial_reset", { trial: "A" });
   });
+
+  it("enables the reset for a moved flag with no samples, and the reset moves the flag back", () => {
+    const store = createRootStore();
+    const { getByRole } = renderPanel(store);
+    logEvent.mockReset();
+    const reset = getByRole("button", { name: "Reset trial A" });
+    expect(reset).toHaveAttribute("aria-disabled", "true");
+    act(() => store.activeTrial.setTimelineIndex(3));
+    expect(reset).not.toHaveAttribute("aria-disabled");
+    fireEvent.click(reset);
+    expect(store.activeTrial.timelineIndex).toBe(0);
+    expect(logEvent).toHaveBeenCalledWith("trial_reset", { trial: "A" });
+    expect(reset).toHaveAttribute("aria-disabled", "true");
+  });
 });
 
 describe("TrialsPanel — scroll selected into view", () => {
