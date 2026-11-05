@@ -4,7 +4,7 @@ import type { SortKey, SortState } from "../model/types";
 
 /**
  * Per-session UI state: the shared `UiStore` base plus each trial's selected row, the table's sort,
- * and the Compare Trials view. The timeline flag is per trial, in `TrialModel`.
+ * and the Compare Trials view.
  *
  * `selectedSampleByTrial` maps a trial letter to the id of its selected sample. `sort` is one state
  * for all four trials, so switching trials keeps the columns comparable.

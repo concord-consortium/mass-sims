@@ -52,6 +52,9 @@ transports silently no-op when unavailable. Event names are snake_case; payloads
   when the target is already the active trial — re-clicking or keyboard-navigating back onto the
   selected card logs nothing.
 - Collapse has four fixed trials (A–D), so there is no `trial_added` event.
+- `trial_reset`: Reset clears the trial's samples and moves its timeline value back to 200000, with
+  no `sample_years_set` event. So the trial's next `previous` can differ from its last logged
+  `value`. It can fire on a trial with no samples, when only the timeline value has moved.
 - `sample_years_set`: `value` and `previous` are in years before collapse (one of the sixteen timeline
   values, 200000 down to 0). `source` is `"slider"` (keyboard or pointer on the timeline) or
   `"stepper"` (the Earlier / Later arrows). Each key press or arrow press is one event. A pointer

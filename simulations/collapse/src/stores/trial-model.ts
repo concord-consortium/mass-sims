@@ -17,7 +17,8 @@ function mean(values: readonly number[]): number | null {
  * snapshot, so restored rows and new rows never share an id. Ids are unique only within a trial.
  *
  * `timelineIndex` is the trial's timeline flag position, an index into `TIMELINE_VALUES`. Each trial
- * has its own flag, and it is saved. Change it through `useSetSampleYears`, which also logs the change.
+ * has its own flag, and it is saved. Student moves go through `useSetSampleYears`, which also logs
+ * the change. `reset` moves it back to the start with no log event.
  */
 export const TrialModel = types
   .model("Trial", {

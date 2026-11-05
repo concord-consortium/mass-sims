@@ -4,8 +4,9 @@ import { useStores } from "../stores/root-store";
 export type SampleYearsSource = "slider" | "stepper";
 
 /**
- * The one write path for the active trial's timeline value, used by both the slider and the stepper, so the store
- * write and its log event can't drift apart. Logs `sample_years_set` only when the value changes.
+ * The write path for student changes to the active trial's timeline value, used by both the slider
+ * and the stepper, so the store write and its log event can't drift apart. Logs `sample_years_set`
+ * only when the value changes. A trial's reset also moves the value, with no log event.
  *
  * A drag is one change, as for the shared `Slider`: it moves the value with `setWithoutLog`, then
  * calls `logChange` once when it ends. `logChange` takes the trial the drag started on, because the
