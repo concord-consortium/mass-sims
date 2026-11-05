@@ -44,11 +44,11 @@ describe("CompareTrials", () => {
     );
   });
 
-  it("makes everything in the frame but the dialog inert, and not the live region", () => {
+  it("makes the panels inert, and not the title bar or the live region", () => {
     const view = render(<App />);
     const dialog = openCompare(view);
     const { liveRegion, titleBar, trials, simulation } = parts(view);
-    expect(titleBar).toHaveAttribute("inert");
+    expect(titleBar).not.toHaveAttribute("inert");
     expect(trials).toHaveAttribute("inert");
     expect(simulation).toHaveAttribute("inert");
     expect(dialog).not.toHaveAttribute("inert");
@@ -78,14 +78,24 @@ describe("CompareTrials", () => {
     expect(document.activeElement).toBe(opener);
   });
 
-  it("makes an open About panel inert, and restores it on close", () => {
+  it("leaves an open About panel open and live", () => {
     const view = render(<App />);
     fireEvent.click(view.getByRole("button", { name: "About" }));
     const about = view.getByRole("complementary");
     openCompare(view);
-    expect(about).toHaveAttribute("inert");
-    fireEvent.keyDown(view.getByRole("dialog"), { key: "Escape" });
-    expect(view.getByRole("complementary")).toBe(about);
     expect(about).not.toHaveAttribute("inert");
+  });
+
+  it("opens and closes About over the dialog, leaving the dialog open", () => {
+    const view = render(<App />);
+    openCompare(view);
+    const aboutButton = view.getByRole("button", { name: "About" });
+    fireEvent.click(aboutButton);
+    const about = view.getByRole("complementary");
+    expect(about).not.toHaveAttribute("inert");
+    fireEvent.keyDown(about, { key: "Escape" });
+    expect(view.queryByRole("complementary")).toBeNull();
+    expect(view.getByRole("dialog")).toBeInTheDocument();
+    expect(document.activeElement).toBe(aboutButton);
   });
 });

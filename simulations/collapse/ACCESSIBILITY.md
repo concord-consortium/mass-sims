@@ -97,9 +97,9 @@ react-aria `Modal`.
 
 - **Not `aria-modal`.** `aria-modal` tells assistive tech to ignore everything outside the dialog,
   and the one live region is outside it, so every announcement would go silent. The view makes the
-  rest of the frame **`inert`** instead: both panels, the title bar (so About cannot open over the
-  view), and an About panel that was already open, which is also hidden until the view closes and
-  then comes back where it was. The live region is outside the frame, so it is never inert. A second
+  two panels it covers **`inert`** instead. The title bar and the About panel stay live, so About
+  can be opened, used, and closed over the view. The live region is outside the frame, so it is
+  never inert. A second
   live region inside the view, so that `aria-modal` could be used, was considered and not used: it
   breaks the one-`<Announcer>` rule, a region added with its text already in it is often not read
   (so "Comparing all four trials." would be lost), and `aria-modal` does not stop the mouse from
@@ -110,9 +110,12 @@ react-aria `Modal`.
 - **Focus.** Opening moves focus to the close button. Closing returns it to the Compare Trials
   button. The order matters: `focus()` on an element inside an inert subtree does nothing, so
   `inert` is removed first and focus moves after. The view itself has `tabindex="-1"`, so a click on
-  its text focuses the view, not the page, and Escape still closes it. Tab and Shift+Tab are trapped inside the view; the
-  trap is needed even with the frame inert, because when the sim is embedded the page around the
-  frame is not.
+  its text focuses the view, not the page, and Escape still closes it. Tab and Shift+Tab are trapped
+  inside the frame, and cycle through the parts that are not inert: the About button, the view, and
+  the About panel when it is open. The trap is needed even with the panels inert, because when the
+  sim is embedded the page around the frame is not.
+- **About over the view.** Opening About moves focus to its close button, and closing it returns
+  focus to the About button, as at any other time. Escape closes only the one that has focus.
 - **Four tables, one per trial.** Each column is a native table, as the data table is, with a
   visually hidden caption naming the trial and its conditions: "Trial A, Limestone, Dry, under 10
   rainy days a year: 3 samples" (or "no samples yet"). The badge, conditions, and note above each

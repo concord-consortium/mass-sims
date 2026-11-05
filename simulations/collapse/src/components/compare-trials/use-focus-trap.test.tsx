@@ -23,6 +23,25 @@ function Trap() {
   );
 }
 
+/** The trap in a frame: a title-bar button, an inert panel, and the dialog, all around a `main`. */
+function FramedTrap() {
+  const rootRef = useRef<HTMLDivElement>(null);
+  useFocusTrap(rootRef);
+  return (
+    <div>
+      <button type="button">About</button>
+      <main>
+        <section inert>
+          <button type="button">Inert</button>
+        </section>
+        <div ref={rootRef}>
+          <button type="button">Close</button>
+        </div>
+      </main>
+    </div>
+  );
+}
+
 // jsdom does no layout, so every element reports no boxes; give them one so they count as showing.
 beforeEach(() => {
   vi.spyOn(HTMLElement.prototype, "getClientRects").mockReturnValue([
@@ -72,5 +91,16 @@ describe("useFocusTrap", () => {
     first.focus();
     expect(fireEvent.keyDown(first, { key: "Tab" })).toBe(true);
     expect(document.activeElement).toBe(first);
+  });
+
+  it("in a frame, wraps between the title bar and the dialog and skips what is inert", () => {
+    const view = render(<FramedTrap />);
+    const about = view.getByRole("button", { name: "About" });
+    const close = view.getByRole("button", { name: "Close" });
+    close.focus();
+    fireEvent.keyDown(close, { key: "Tab" });
+    expect(document.activeElement).toBe(about);
+    fireEvent.keyDown(about, { key: "Tab", shiftKey: true });
+    expect(document.activeElement).toBe(close);
   });
 });

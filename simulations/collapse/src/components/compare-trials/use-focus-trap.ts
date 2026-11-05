@@ -7,18 +7,22 @@ function isAfter(node: Node, reference: Node) {
 }
 
 /**
- * Keeps Tab and Shift+Tab inside `rootRef` by wrapping at the ends. Needed even with the rest of
- * the frame inert, because when the sim is embedded the page around the frame is not.
+ * Keeps Tab and Shift+Tab inside the frame around `rootRef` (the parent of its `main`) by wrapping
+ * at the ends. Only the parts that are not inert count: the dialog, the About button, and an open
+ * About panel. Needed even with the rest of the frame inert, because when the sim is embedded the
+ * page around the frame is not. Outside a `main`, it traps inside `rootRef`.
  */
 export function useFocusTrap(rootRef: RefObject<HTMLElement | null>) {
   useEffect(() => {
     const root = rootRef.current;
     if (!root) return;
+    const main = root.parentElement;
+    const scope = main?.tagName === "MAIN" && main.parentElement ? main.parentElement : root;
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.key !== "Tab") return;
       // Only elements that are showing: one with no layout boxes cannot take focus.
-      const focusables = [...root.querySelectorAll<HTMLElement>(FOCUSABLE)].filter(
-        (el) => el.getClientRects().length > 0,
+      const focusables = [...scope.querySelectorAll<HTMLElement>(FOCUSABLE)].filter(
+        (el) => el.getClientRects().length > 0 && !el.closest("[inert]"),
       );
       if (focusables.length === 0) return;
       const first = focusables[0];
@@ -26,17 +30,17 @@ export function useFocusTrap(rootRef: RefObject<HTMLElement | null>) {
       const active = document.activeElement;
       if (!active) return;
       // An element past the last one is focused with the arrow keys (a row with tabindex="-1"), and
-      // the root takes focus on a click on its text. From either, the browser's next stop could be
+      // the scope takes focus on a click on its text. From either, the browser's next stop could be
       // outside, so they wrap too.
-      if (!e.shiftKey && (active === last || active === root || isAfter(active, last))) {
+      if (!e.shiftKey && (active === last || active === scope || isAfter(active, last))) {
         e.preventDefault();
         first.focus();
-      } else if (e.shiftKey && (active === first || active === root || isAfter(first, active))) {
+      } else if (e.shiftKey && (active === first || active === scope || isAfter(first, active))) {
         e.preventDefault();
         last.focus();
       }
     };
-    root.addEventListener("keydown", onKeyDown);
-    return () => root.removeEventListener("keydown", onKeyDown);
+    scope.addEventListener("keydown", onKeyDown);
+    return () => scope.removeEventListener("keydown", onKeyDown);
   }, [rootRef]);
 }
