@@ -14,12 +14,14 @@ const TRIAL = {
     { id: 3, years: 0, rate: 31.2, roof: 2800 },
   ],
   nextSampleId: 4,
+  timelineIndex: 0,
 };
 
 /** A trial told apart by its rate, so a test can tell which saved trial landed under which letter. */
 const trialWithRate = (rate: number) => ({
   samples: [{ id: 1, years: 100000, rate, roof: 5800 }],
   nextSampleId: 2,
+  timelineIndex: 0,
 });
 
 function migrate(raw: unknown): SavedState {
@@ -114,7 +116,7 @@ describe("migrateSavedState — replaces trials that can't hydrate cleanly", () 
   it("keeps a valid trial, including one with no samples", () => {
     expect(replaced(TRIAL)).toBe(false);
     expect(migrate({ version: 2, trials: { A: TRIAL } }).trials.A).toEqual(TRIAL);
-    expect(replaced({ samples: [], nextSampleId: 7 })).toBe(false);
+    expect(replaced({ samples: [], nextSampleId: 7, timelineIndex: 0 })).toBe(false);
   });
 
   it("replaces a trial missing its samples or its counter", () => {
@@ -140,6 +142,16 @@ describe("migrateSavedState — replaces trials that can't hydrate cleanly", () 
   it("replaces a trial whose counter is not above every id", () => {
     expect(replaced({ samples: [{ ...sample, id: 3 }], nextSampleId: 3 })).toBe(true);
     expect(replaced({ samples: [{ ...sample, id: 3 }], nextSampleId: 2 })).toBe(true);
+  });
+
+  it("keeps a trial with a valid flag, and replaces one with a missing or bad flag", () => {
+    expect(replaced({ ...TRIAL, timelineIndex: 4 })).toBe(false);
+    expect(replaced({ ...TRIAL, timelineIndex: 15 })).toBe(false);
+    expect(replaced({ ...TRIAL, timelineIndex: undefined })).toBe(true);
+    expect(replaced({ ...TRIAL, timelineIndex: -1 })).toBe(true);
+    expect(replaced({ ...TRIAL, timelineIndex: 16 })).toBe(true);
+    expect(replaced({ ...TRIAL, timelineIndex: 1.5 })).toBe(true);
+    expect(replaced({ ...TRIAL, timelineIndex: "4" })).toBe(true);
   });
 });
 
@@ -179,7 +191,7 @@ describe("toSavedState + hydrate round-trip", () => {
     expect(state.version).toBe(SAVED_STATE_VERSION);
     expect(SAVED_STATE_VERSION).toBe(2);
     expect(state.selectedTrialLetter).toBe("A");
-    expect(state.trials.A).toEqual({ samples: [sample], nextSampleId: 2 });
+    expect(state.trials.A).toEqual({ samples: [sample], nextSampleId: 2, timelineIndex: 0 });
   });
 
   it("changes the saved state when a sample is taken or deleted", () => {
@@ -192,14 +204,20 @@ describe("toSavedState + hydrate round-trip", () => {
     expect(JSON.stringify(toSavedState(getSnapshot(store)))).not.toBe(afterTake);
   });
 
-  it("leaves the saved state unchanged when the timeline value, selection, or sort changes", () => {
+  it("saves each trial's timeline flag", () => {
+    const store = createRootStore();
+    store.activeTrial.setTimelineIndex(5);
+    const saved = toSavedState(getSnapshot(store));
+    expect(saved.trials.A.timelineIndex).toBe(5);
+    expect(saved.trials.B.timelineIndex).toBe(0);
+  });
+
+  it("leaves the saved state unchanged when the selection or sort changes", () => {
     // The app skips a save whose serialized payload matches the last one, so an unchanged
     // projection means these changes send nothing.
     const store = createRootStore();
     store.takeSample();
     const before = JSON.stringify(toSavedState(getSnapshot(store)));
-    store.ui.setTimelineIndex(5);
-    expect(store.ui.timelineIndex).toBe(5);
     store.ui.selectSample("A", null);
     store.ui.cycleSort("rate");
     expect(JSON.stringify(toSavedState(getSnapshot(store)))).toBe(before);

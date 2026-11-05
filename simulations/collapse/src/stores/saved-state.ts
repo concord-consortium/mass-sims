@@ -29,13 +29,16 @@ function isSample(value: unknown): value is Sample {
 /**
  * Whether a saved trial can hydrate into a `TrialModel`. Samples are `types.frozen`, so MST doesn't
  * check their shape. The ids must be unique, and `nextSampleId` must be above every id, or a new
- * sample could take an id a restored one already has.
+ * sample could take an id a restored one already has. `timelineIndex` must be a position in
+ * `TIMELINE_VALUES`.
  */
 function isHydratableTrial(value: unknown): boolean {
   if (!isObject(value)) return false;
-  const { samples, nextSampleId } = value;
+  const { samples, nextSampleId, timelineIndex } = value;
   if (!Array.isArray(samples) || !samples.every(isSample)) return false;
   if (!isFiniteNumber(nextSampleId)) return false;
+  if (!isFiniteNumber(timelineIndex) || !Number.isInteger(timelineIndex)) return false;
+  if (timelineIndex < 0 || timelineIndex >= TIMELINE_VALUES.length) return false;
   const ids = samples.map((s) => s.id);
   if (new Set(ids).size !== ids.length) return false;
   return ids.every((id) => id < nextSampleId);

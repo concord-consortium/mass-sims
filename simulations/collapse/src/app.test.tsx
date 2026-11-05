@@ -27,6 +27,7 @@ function restoreTrialAWithSamples({
   const trialA = {
     samples: [{ id: 1, years: 200000, rate: 20.5, roof: 8800 }],
     nextSampleId: 2,
+    timelineIndex: 0,
   };
   const initMsg = {
     mode: "runtime",
@@ -103,7 +104,7 @@ describe("Collapse App — AP saved state", () => {
   });
 
   it("restores trials + selectedTrialLetter from a runtime init message's interactiveState", () => {
-    const trialB = { samples: [], nextSampleId: 1 };
+    const trialB = { samples: [], nextSampleId: 1, timelineIndex: 0 };
     restoreTrialAWithSamples({ selected: "B", extraTrials: { B: trialB } });
     const view = render(<App />);
     expect(trialOptions(view)).toEqual(["Trial A", "Trial B", "Trial C", "Trial D"]);
@@ -172,7 +173,7 @@ describe("Collapse App — AP saved state", () => {
     expect(first.trials.A.samples).toEqual(trialA.samples);
   });
 
-  it("keeps the timeline value when saved state arrives after the student has moved it", () => {
+  it("restores the saved flag when saved state arrives after the student has moved it", () => {
     const { initMsg } = restoreTrialAWithSamples();
     let deliver: (msg: unknown) => void = () => {};
     useInitMessageMock.mockImplementation(() => {
@@ -185,9 +186,10 @@ describe("Collapse App — AP saved state", () => {
     fireEvent.keyDown(slider, { key: "ArrowRight" });
     act(() => deliver(initMsg));
     expect(selectedHasSamples(view, "A")).toBe(true);
+    // The saved trial's flag is at the start.
     expect(view.getByRole("slider", { name: "Years before collapse" })).toHaveAttribute(
       "aria-valuenow",
-      "150000",
+      "200000",
     );
   });
 
@@ -210,7 +212,7 @@ describe("Collapse App — AP saved state", () => {
     );
   });
 
-  it("does NOT call setInteractiveState when the timeline value changes", () => {
+  it("calls setInteractiveState when the timeline value changes", () => {
     // Embedded, because the app sends state to AP only after an init message.
     restoreTrialAWithSamples();
     const { getByRole } = render(<App />);
@@ -220,7 +222,11 @@ describe("Collapse App — AP saved state", () => {
     fireEvent.keyDown(slider, { key: "ArrowRight" });
     fireEvent.click(getByRole("button", { name: "Later, fewer years before collapse" }));
     expect(slider).toHaveAttribute("aria-valuenow", "100000");
-    expect(setInteractiveStateMock).not.toHaveBeenCalled();
+    expect(setInteractiveStateMock).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        trials: expect.objectContaining({ A: expect.objectContaining({ timelineIndex: 2 }) }),
+      }),
+    );
   });
 
   it("does NOT register a beforeunload listener when embedded (AP persists progress)", () => {

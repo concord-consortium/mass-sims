@@ -90,7 +90,7 @@ export const TrialsPanel = observer(function TrialsPanel() {
       {/* Positioned over the selected card by `--selected-index` (see trials-panel.scss). */}
       <TrialResetButton
         letter={selectedOptionLetter}
-        disabled={!activeTrial.hasSamples}
+        disabled={!activeTrial.canReset}
         onReset={handleReset}
         tabIndex={nav.resetTabIndex}
         style={{ "--selected-index": selectedIndex } as CSSProperties}

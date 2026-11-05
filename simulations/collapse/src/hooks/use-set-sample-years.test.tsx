@@ -34,7 +34,7 @@ describe("useSetSampleYears", () => {
     const { store, result } = setup();
     store.ui.selectTrial("C");
     act(() => result.current.set(3, "slider"));
-    expect(store.ui.timelineIndex).toBe(3);
+    expect(store.activeTrial.timelineIndex).toBe(3);
     expect(logEvent).toHaveBeenCalledTimes(1);
     expect(logEvent).toHaveBeenCalledWith("sample_years_set", {
       value: 50000,
@@ -47,9 +47,9 @@ describe("useSetSampleYears", () => {
   it("step moves one value and logs its source", () => {
     const { store, result } = setup();
     act(() => result.current.step(1, "stepper"));
-    expect(store.ui.timelineIndex).toBe(1);
+    expect(store.activeTrial.timelineIndex).toBe(1);
     act(() => result.current.step(-1, "stepper"));
-    expect(store.ui.timelineIndex).toBe(0);
+    expect(store.activeTrial.timelineIndex).toBe(0);
     expect(logEvent).toHaveBeenCalledTimes(2);
     expect(logEvent).toHaveBeenLastCalledWith("sample_years_set", {
       value: 200000,
@@ -66,7 +66,7 @@ describe("useSetSampleYears", () => {
     act(() => result.current.set(7, "slider"));
     logEvent.mockClear();
     act(() => result.current.set(7, "slider"));
-    expect(store.ui.timelineIndex).toBe(7);
+    expect(store.activeTrial.timelineIndex).toBe(7);
     expect(logEvent).not.toHaveBeenCalled();
   });
 
@@ -74,7 +74,7 @@ describe("useSetSampleYears", () => {
     const { store, result } = setup();
     act(() => result.current.setWithoutLog(2));
     act(() => result.current.setWithoutLog(4));
-    expect(store.ui.timelineIndex).toBe(4);
+    expect(store.activeTrial.timelineIndex).toBe(4);
     expect(logEvent).not.toHaveBeenCalled();
     act(() => result.current.logChange(200000, "slider"));
     expect(logEvent).toHaveBeenCalledTimes(1);
@@ -91,11 +91,11 @@ describe("useSetSampleYears", () => {
   it("step at either end is a no-op", () => {
     const { store, result } = setup();
     act(() => result.current.step(-1, "stepper"));
-    expect(store.ui.timelineIndex).toBe(0);
+    expect(store.activeTrial.timelineIndex).toBe(0);
     act(() => result.current.set(LAST, "slider"));
     logEvent.mockClear();
     act(() => result.current.step(1, "stepper"));
-    expect(store.ui.timelineIndex).toBe(LAST);
+    expect(store.activeTrial.timelineIndex).toBe(LAST);
     expect(logEvent).not.toHaveBeenCalled();
   });
 });

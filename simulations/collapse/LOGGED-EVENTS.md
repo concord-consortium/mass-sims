@@ -57,8 +57,8 @@ transports silently no-op when unavailable. Event names are snake_case; payloads
   `"stepper"` (the Earlier / Later arrows). Each key press or arrow press is one event. A pointer
   press and drag on the timeline is also one event, sent when the pointer is released, with
   `previous` the value before the press. It fires only when the value changes, so a press at
-  either end, or a drag that ends on its starting value, logs nothing. The value is shared by all
-  trials; `trial` is the one selected when it changed.
+  either end, or a drag that ends on its starting value, logs nothing. Each trial has its own
+  value; `trial` is the trial whose value changed.
 - `id` identifies the sample within its trial: `trial` + `id` is unique, and the same pair appears
   on the sample's `sample_taken`, `sample_selected`, and `sample_deleted` events. Ids count up from
   1 in each trial and are never reused, even after a delete or a reset, so they can have gaps. The

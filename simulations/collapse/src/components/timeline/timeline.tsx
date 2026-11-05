@@ -55,7 +55,7 @@ const pct = (fraction: number) => `${fraction * 100}%`;
  * pointer's offset from the handle, so the value only moves once the handle is dragged to another one.
  */
 export const Timeline = observer(function Timeline() {
-  const { ui } = useStores();
+  const { activeTrial } = useStores();
   const { set, step, setWithoutLog, logChange } = useSetSampleYears();
   const tlRef = useRef<HTMLDivElement>(null);
   const rowRef = useRef<HTMLOListElement>(null);
@@ -111,8 +111,8 @@ export const Timeline = observer(function Timeline() {
     };
   }, [relayout]);
 
-  const index = ui.timelineIndex;
-  const years = ui.sampleYears;
+  const index = activeTrial.timelineIndex;
+  const years = activeTrial.sampleYears;
 
   const pointerX = (e: PointerEvent) =>
     e.clientX - (tlRef.current?.getBoundingClientRect().left ?? 0);
@@ -130,7 +130,7 @@ export const Timeline = observer(function Timeline() {
 
   const beginDrag = (e: PointerEvent<HTMLDivElement>, offset: number) => {
     if (drag.current) logChange(drag.current.startYears, "slider");
-    drag.current = { pointerId: e.pointerId, offset, startYears: ui.sampleYears };
+    drag.current = { pointerId: e.pointerId, offset, startYears: activeTrial.sampleYears };
     setDragging(true);
     e.currentTarget.setPointerCapture?.(e.pointerId);
     e.preventDefault();
@@ -154,7 +154,7 @@ export const Timeline = observer(function Timeline() {
 
   const onFlagPointerDown = (e: PointerEvent<HTMLDivElement>) => {
     if (!measured || !isPrimaryPress(e) || isOtherPointer(e)) return;
-    beginDrag(e, pointerX(e) - measured.layout.valuePx[ui.timelineIndex]);
+    beginDrag(e, pointerX(e) - measured.layout.valuePx[activeTrial.timelineIndex]);
     focusFlagFromPress();
   };
 

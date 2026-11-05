@@ -23,7 +23,7 @@ import { CompareTrials } from "./compare-trials";
 function sample(store: RootStoreInstance, letter: string, ...years: number[]) {
   store.ui.selectTrial(letter);
   for (const y of years) {
-    store.ui.setTimelineIndex(TIMELINE_VALUES.indexOf(y));
+    store.activeTrial.setTimelineIndex(TIMELINE_VALUES.indexOf(y));
     store.takeSample();
   }
 }

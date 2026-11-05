@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
+import { TIMELINE_VALUES } from "../model/timeline";
 import { emptyTrialSnapshot, TrialModel } from "./trial-model";
+
+const LAST = TIMELINE_VALUES.length - 1;
 
 const row = (years: number, rate: number, roof: number) => ({ years, rate, roof });
 
@@ -35,6 +38,52 @@ describe("TrialModel", () => {
     expect(trial.sampleById(1)).toBeUndefined();
   });
 
+  it("starts the flag at the first timeline value", () => {
+    const trial = TrialModel.create(emptyTrialSnapshot());
+    expect(trial.timelineIndex).toBe(0);
+    expect(trial.sampleYears).toBe(200000);
+    expect(trial.canStepEarlier).toBe(false);
+    expect(trial.canStepLater).toBe(true);
+  });
+
+  it("clamps setTimelineIndex at both ends", () => {
+    const trial = TrialModel.create(emptyTrialSnapshot());
+    trial.setTimelineIndex(-3);
+    expect(trial.timelineIndex).toBe(0);
+    trial.setTimelineIndex(LAST + 5);
+    expect(trial.timelineIndex).toBe(LAST);
+  });
+
+  it("tracks sampleYears, canStepEarlier, and canStepLater with the index", () => {
+    const trial = TrialModel.create(emptyTrialSnapshot());
+    trial.setTimelineIndex(1);
+    expect(trial.sampleYears).toBe(150000);
+    expect(trial.canStepEarlier).toBe(true);
+    expect(trial.canStepLater).toBe(true);
+    trial.setTimelineIndex(LAST);
+    expect(trial.sampleYears).toBe(0);
+    expect(trial.canStepEarlier).toBe(true);
+    expect(trial.canStepLater).toBe(false);
+  });
+
+  it("canReset is true with samples or a moved flag", () => {
+    const trial = TrialModel.create(emptyTrialSnapshot());
+    expect(trial.canReset).toBe(false);
+    trial.setTimelineIndex(3);
+    expect(trial.canReset).toBe(true);
+    trial.setTimelineIndex(0);
+    trial.addSample(row(200000, 30, 8800));
+    expect(trial.canReset).toBe(true);
+  });
+
+  it("reset moves the flag back to the first timeline value", () => {
+    const trial = TrialModel.create(emptyTrialSnapshot());
+    trial.setTimelineIndex(5);
+    trial.reset();
+    expect(trial.timelineIndex).toBe(0);
+    expect(trial.canReset).toBe(false);
+  });
+
   it("reset empties the rows and does not reset the id counter", () => {
     const trial = TrialModel.create(emptyTrialSnapshot());
     trial.addSample(row(200000, 30, 8800));
@@ -57,6 +106,6 @@ describe("TrialModel", () => {
 
   it("emptyTrialSnapshot returns a new object each call", () => {
     expect(emptyTrialSnapshot()).not.toBe(emptyTrialSnapshot());
-    expect(emptyTrialSnapshot()).toEqual({ samples: [], nextSampleId: 1 });
+    expect(emptyTrialSnapshot()).toEqual({ samples: [], nextSampleId: 1, timelineIndex: 0 });
   });
 });
