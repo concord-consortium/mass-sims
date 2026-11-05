@@ -99,11 +99,10 @@ react-aria `Modal`.
   and the one live region is outside it, so every announcement would go silent. The view makes the
   two panels it covers **`inert`** instead. The title bar and the About panel stay live, so About
   can be opened, used, and closed over the view. The live region is outside the frame, so it is
-  never inert. A second
-  live region inside the view, so that `aria-modal` could be used, was considered and not used: it
-  breaks the one-`<Announcer>` rule, a region added with its text already in it is often not read
-  (so "Comparing all four trials." would be lost), and `aria-modal` does not stop the mouse from
-  reaching the title bar, so part of the `inert` work would stay.
+  never inert. A second live region inside the view, so that `aria-modal` could be used, was
+  considered and not used: it breaks the one-`<Announcer>` rule, a region added with its text
+  already in it is often not read (so "Comparing all four trials." would be lost), and `aria-modal`
+  does not take the panels out of the tab order, so the `inert` work would stay.
 - **The opener only opens.** The Compare Trials button is in the Simulation panel, which is inert
   while the view is open, so it cannot close it, and it has no `aria-expanded`: while the view is
   open, no one can reach the button to hear it. The view closes with its close button ("Close the trial comparison") or Escape.
@@ -115,7 +114,8 @@ react-aria `Modal`.
   the About panel when it is open. The trap is needed even with the panels inert, because when the
   sim is embedded the page around the frame is not.
 - **About over the view.** Opening About moves focus to its close button, and closing it returns
-  focus to the About button, as at any other time. Escape closes only the one that has focus.
+  focus to the About button, as at any other time. Escape closes only the one that has focus. The
+  About button is in neither, so Escape there does nothing; Tab into the view first.
 - **Four tables, one per trial.** Each column is a native table, as the data table is, with a
   visually hidden caption naming the trial and its conditions: "Trial A, Limestone, Dry, under 10
   rainy days a year: 3 samples" (or "no samples yet"). The badge, conditions, and note above each

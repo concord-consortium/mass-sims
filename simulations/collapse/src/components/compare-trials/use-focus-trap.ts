@@ -1,6 +1,6 @@
 import { type RefObject, useEffect } from "react";
 
-const FOCUSABLE = 'button:not([tabindex="-1"]), [tabindex="0"]';
+const FOCUSABLE = 'a[href]:not([tabindex="-1"]), button:not([tabindex="-1"]), [tabindex="0"]';
 
 function isAfter(node: Node, reference: Node) {
   return (reference.compareDocumentPosition(node) & Node.DOCUMENT_POSITION_FOLLOWING) !== 0;
@@ -9,19 +9,18 @@ function isAfter(node: Node, reference: Node) {
 /**
  * Keeps Tab and Shift+Tab inside the frame around `rootRef` (the parent of its `main`) by wrapping
  * at the ends. Only the parts that are not inert count: the dialog, the About button, and an open
- * About panel. Needed even with the rest of the frame inert, because when the sim is embedded the
- * page around the frame is not. Outside a `main`, it traps inside `rootRef`.
+ * About panel. Needed even with the panels inert, because when the sim is embedded the page around
+ * the frame is not.
  */
 export function useFocusTrap(rootRef: RefObject<HTMLElement | null>) {
   useEffect(() => {
-    const root = rootRef.current;
-    if (!root) return;
-    const main = root.parentElement;
-    const scope = main?.tagName === "MAIN" && main.parentElement ? main.parentElement : root;
+    const main = rootRef.current?.parentElement;
+    const frame = main?.parentElement;
+    if (main?.tagName !== "MAIN" || !frame) return;
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.key !== "Tab") return;
       // Only elements that are showing: one with no layout boxes cannot take focus.
-      const focusables = [...scope.querySelectorAll<HTMLElement>(FOCUSABLE)].filter(
+      const focusables = [...frame.querySelectorAll<HTMLElement>(FOCUSABLE)].filter(
         (el) => el.getClientRects().length > 0 && !el.closest("[inert]"),
       );
       if (focusables.length === 0) return;
@@ -29,18 +28,17 @@ export function useFocusTrap(rootRef: RefObject<HTMLElement | null>) {
       const last = focusables[focusables.length - 1];
       const active = document.activeElement;
       if (!active) return;
-      // An element past the last one is focused with the arrow keys (a row with tabindex="-1"), and
-      // the scope takes focus on a click on its text. From either, the browser's next stop could be
-      // outside, so they wrap too.
-      if (!e.shiftKey && (active === last || active === scope || isAfter(active, last))) {
+      // An element past the last one is focused with the arrow keys (a row with tabindex="-1"). From
+      // there, the browser's next stop could be outside, so it wraps too.
+      if (!e.shiftKey && (active === last || isAfter(active, last))) {
         e.preventDefault();
         first.focus();
-      } else if (e.shiftKey && (active === first || active === scope || isAfter(first, active))) {
+      } else if (e.shiftKey && active === first) {
         e.preventDefault();
         last.focus();
       }
     };
-    scope.addEventListener("keydown", onKeyDown);
-    return () => scope.removeEventListener("keydown", onKeyDown);
+    frame.addEventListener("keydown", onKeyDown);
+    return () => frame.removeEventListener("keydown", onKeyDown);
   }, [rootRef]);
 }

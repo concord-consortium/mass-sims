@@ -185,6 +185,11 @@ test("Compare Trials: About opens and closes over the view, by pointer and by ke
   await expect(collapse.aboutButton).toBeFocused();
   await page.keyboard.press("Enter");
   await expect(collapse.closeAboutButton).toBeFocused();
+  // The panel is in the Tab cycle: its last stop wraps to the About button.
+  await page.keyboard.press("Tab");
+  await expect(collapse.aboutButton).toBeFocused();
+  await page.keyboard.press("Shift+Tab");
+  await expect(collapse.closeAboutButton).toBeFocused();
   await collapse.closeAboutViaEscape();
   await expect(collapse.aboutButton).toBeFocused();
   await expect(collapse.compareDialog).toBeVisible();

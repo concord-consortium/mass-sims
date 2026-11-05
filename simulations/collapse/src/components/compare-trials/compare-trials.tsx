@@ -19,7 +19,7 @@ const LEGEND = COLUMNS.map(({ key, label }) => [label, COLUMN_NAMES[key]] as con
  * open.
  *
  * A dialog, but not `aria-modal`: that would hide the live region, which is outside the dialog, and
- * silence every announcement. Making the rest of the frame inert does the isolating instead.
+ * silence every announcement. Making the panels it covers inert does the isolating instead.
  */
 export const CompareTrials = observer(function CompareTrials() {
   const rootRef = useRef<HTMLDivElement>(null);
