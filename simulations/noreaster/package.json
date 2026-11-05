@@ -3,6 +3,23 @@
   "version": "0.1.1",
   "private": true,
   "description": "Nor'easter — which air masses create a nor'easter?",
+  "massSims": {
+    "title": "Nor’easter",
+    "gradeBand": "Grades 6-8",
+    "order": 3,
+    "titleFont": {
+      "family": "Vampiro One",
+      "letterSpacing": "-0.5px"
+    },
+    "colors": {
+      "surface": "#f0f6fe",
+      "text": "#1e3f6e",
+      "border": "#4680b8",
+      "hover": "#d3e8fd",
+      "active": "#9cc9f7",
+      "selectedText": "#d3e8fd"
+    }
+  },
   "license": "MIT",
   "type": "module",
   "scripts": {

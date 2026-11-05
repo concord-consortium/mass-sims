@@ -242,6 +242,10 @@ function main() {
   console.log(`  4. Edit simulations/${name}/src/app.tsx — fill in simTitle and tagline`);
   console.log(`  5. Update the "<NEW SIM TITLE>" assertion in the new smoke spec to match`);
   console.log(`  6. yarn test:playwright:build playwright/tests/smoke/${name}.test.ts`);
+  console.log(
+    `  7. When it is ready for the landing page: add a "massSims" block to its package.json, ` +
+      "then yarn gen-index (see docs/adding-a-new-sim.md)",
+  );
 }
 
 function walk(dir: string, visit: (filePath: string) => void) {

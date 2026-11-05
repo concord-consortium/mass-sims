@@ -3,6 +3,23 @@
   "version": "0.1.1",
   "private": true,
   "description": "An interactive genetics simulation.",
+  "massSims": {
+    "title": "Bananas",
+    "gradeBand": "Grades 6-8",
+    "order": 1,
+    "titleFont": {
+      "family": "Slackey",
+      "letterSpacing": "0.32px"
+    },
+    "colors": {
+      "surface": "#fffdf2",
+      "text": "#5c4813",
+      "border": "#9e8540",
+      "hover": "#fff3c4",
+      "active": "#ffe680",
+      "selectedText": "#fff3c4"
+    }
+  },
   "license": "MIT",
   "type": "module",
   "scripts": {

@@ -30,7 +30,9 @@ template `yarn new-sim` copies), and `simulations/*` (the sims; **bananas** is t
   `--check` modes CI runs on every push — a stale root `index.html`, a missing
   `.github/workflows/sim-<name>.yml`, or a `_widths.generated.scss` that drifted from
   `target-widths.ts` **fails CI**. Run the first two and commit their output when adding a sim; run
-  `gen-widths` when changing a target width.
+  `gen-widths` when changing a target width. `gen-index` also reads each sim's `massSims` block in
+  its `package.json` (a sim with no block is left off the page), so rerun it after changing one.
+- **`yarn test` does not run the `scripts/` tests.** Run `yarn test:scripts` too (or `test:full`).
 - **Playwright testdata imports the pure `constants` module, not the barrel.** The package barrel pulls
   in component scss/svg side-effects the Playwright tsconfig can't resolve. Import trial-list constants
   from `packages/shared/src/trials/constants` directly.

@@ -72,6 +72,39 @@ In `simulations/<name>/src/app.tsx`, set the `<SimulationFrame>` props:
 >
 ```
 
+The landing page (the root `index.html`) lists only the sims that have a `massSims` block in
+`simulations/<name>/package.json`. `yarn new-sim` does not add one, so a new sim stays off the page
+until you add it:
+
+```json
+"massSims": {
+  "title": "Collapse!",
+  "gradeBand": "Grades 6-8",
+  "order": 2,
+  "titleFont": { "family": "Fontdiner Swanky", "letterSpacing": "2px", "offsetY": "2px" },
+  "colors": {
+    "surface": "#f0faf4",
+    "text": "#124929",
+    "border": "#358d5a",
+    "hover": "#dbf5e6",
+    "active": "#70eba3",
+    "selectedText": "#dbf5e6"
+  }
+}
+```
+
+- `title`: the name on the landing page button, the same as `simTitle`.
+- `gradeBand`: the heading the button is grouped under. Bands appear in the order of their first sim.
+- `order`: the button's position (lowest first; ties sort by folder name).
+- `titleFont`: the same settings as the sim's `.sim-title` — a Google Fonts family, and the optional
+  `letterSpacing`, `offsetY` and `size` (default 24px).
+- `colors`: from the sim's `theme.scss`. `text` is the title text color, and is also the selected
+  button's fill; `selectedText` is the text on it. A test (`yarn test:scripts`) checks that each
+  value appears in `theme.scss`.
+
+Run `yarn gen-index` after adding or changing the block. For each sim with no block, `gen-index`
+prints a warning and leaves it off the page.
+
 ## 4. Replace the model and stores
 
 **Model** (`src/model/`):
@@ -305,6 +338,7 @@ behavior.
 - [ ] `yarn new-sim <name>` then `yarn install`
 - [ ] `yarn gen-index && yarn gen-workflows`, commit the regenerated output
 - [ ] Set `simTitle` / `tagline` / About content in `app.tsx`
+- [ ] When it is ready for the landing page: add a `massSims` block to `package.json`, then `yarn gen-index`
 - [ ] Replace `src/model/` + `src/stores/trial-model.ts` (your `TrialModel`) and the panel components
 - [ ] Define the versioned `SavedState` and wire the hydrate (`applySnapshot`) / persist (`onSnapshot`) effects + standalone-gated reload warning (`hasAnyProgress`)
 - [ ] Give interactive controls snake_case `action` names

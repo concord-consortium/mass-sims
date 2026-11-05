@@ -4,7 +4,9 @@
 //
 // Reads the `workspaces` array from the root package.json, discovers every directory
 // inside `simulations/*` that has its own package.json, and writes a static HTML page
-// linking to each.
+// linking to each. Each sim's `massSims` block in its package.json gives its display
+// title, grade band, order, title font and colors. A sim without one is left off the
+// page, and the script prints a warning.
 //
 // Modes:
 //   yarn gen-index            → regenerate index.html (overwrites)
@@ -25,9 +27,42 @@ import { fileURLToPath } from "node:url";
 const SCRIPT_DIR = dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = resolve(SCRIPT_DIR, "..");
 
-interface SimInfo {
+/** The wordmark font: the same settings as the sim's own `.sim-title`. */
+export interface TitleFont {
+  family: string;
+  letterSpacing?: string;
+  offsetY?: string;
+  size?: string;
+}
+
+/** The sim's palette, as the landing page uses it. Each value also appears in its `theme.scss`. */
+export interface SimColors {
+  surface: string;
+  text: string;
+  border: string;
+  hover: string;
+  active: string;
+  selectedText: string;
+}
+
+/** The `massSims` block in a sim's package.json. */
+export interface MassSimsMeta {
+  title: string;
+  gradeBand: string;
+  order: number;
+  titleFont: TitleFont;
+  colors: SimColors;
+}
+
+export interface SimInfo {
   name: string;
   description: string;
+  meta: MassSimsMeta;
+}
+
+export interface GradeBand {
+  band: string;
+  sims: SimInfo[];
 }
 
 function readJsonOrNull(path: string): Record<string, unknown> | null {
@@ -35,7 +70,31 @@ function readJsonOrNull(path: string): Record<string, unknown> | null {
   return JSON.parse(readFileSync(path, "utf8")) as Record<string, unknown>;
 }
 
-function discoverSims(): SimInfo[] {
+/** Build a sim's entry from its folder name and package.json; null when it has no block. */
+export function toSimInfo(name: string, pkg: Record<string, unknown>): SimInfo | null {
+  const meta = pkg.massSims as MassSimsMeta | undefined;
+  if (!meta) return null;
+  return { name, description: (pkg.description as string | undefined) ?? "", meta };
+}
+
+/** Sort by `order`, then by folder name. */
+export function sortSims(sims: SimInfo[]): SimInfo[] {
+  return [...sims].sort((a, b) => a.meta.order - b.meta.order || a.name.localeCompare(b.name));
+}
+
+/** Group sorted sims by grade band, with the bands in the order they first appear. */
+export function groupByBand(sims: SimInfo[]): GradeBand[] {
+  const bands: GradeBand[] = [];
+  for (const sim of sims) {
+    const band = bands.find((b) => b.band === sim.meta.gradeBand);
+    if (band) band.sims.push(sim);
+    else bands.push({ band: sim.meta.gradeBand, sims: [sim] });
+  }
+  return bands;
+}
+
+/** The sims to list, sorted. Prints a warning for each sim left off for having no block. */
+export function discoverSims(): SimInfo[] {
   const rootPkg = readJsonOrNull(join(REPO_ROOT, "package.json"));
   if (!rootPkg) throw new Error("Could not read root package.json");
   const workspaces = (rootPkg.workspaces as string[] | undefined) ?? [];
@@ -51,13 +110,18 @@ function discoverSims(): SimInfo[] {
       if (!entry.isDirectory()) continue;
       const pkg = readJsonOrNull(join(dirPath, entry.name, "package.json"));
       if (!pkg?.name) continue;
-      sims.push({
-        name: entry.name,
-        description: (pkg.description as string | undefined) ?? "",
-      });
+      const sim = toSimInfo(entry.name, pkg);
+      if (sim) {
+        sims.push(sim);
+      } else {
+        console.warn(
+          `gen-index: simulations/${entry.name}/package.json has no "massSims" block; ` +
+            "leaving it off the page.",
+        );
+      }
     }
   }
-  return sims.sort((a, b) => a.name.localeCompare(b.name));
+  return sortSims(sims);
 }
 
 function escapeHtml(s: string): string {
@@ -71,7 +135,7 @@ function escapeHtml(s: string): string {
   return s.replace(/[&<>"']/g, (c) => map[c] ?? c);
 }
 
-function renderHtml(sims: SimInfo[]): string {
+export function renderHtml(sims: SimInfo[]): string {
   const items =
     sims.length === 0
       ? "      <p><em>No simulations yet.</em></p>"
@@ -111,22 +175,26 @@ ${items}
 `;
 }
 
-// --- main ---
+function main() {
+  const checkMode = process.argv.includes("--check");
+  const indexPath = join(REPO_ROOT, "index.html");
+  const sims = discoverSims();
+  const expected = renderHtml(sims);
 
-const checkMode = process.argv.includes("--check");
-const indexPath = join(REPO_ROOT, "index.html");
-const sims = discoverSims();
-const expected = renderHtml(sims);
-
-if (checkMode) {
-  const actual = existsSync(indexPath) ? readFileSync(indexPath, "utf8") : "";
-  if (actual !== expected) {
-    console.error("gen-index: index.html is out of date with the workspace list.");
-    console.error("           Run `yarn gen-index` to regenerate, then commit the result.");
-    process.exit(1);
+  if (checkMode) {
+    const actual = existsSync(indexPath) ? readFileSync(indexPath, "utf8") : "";
+    if (actual !== expected) {
+      console.error("gen-index: index.html is out of date with the workspace list.");
+      console.error("           Run `yarn gen-index` to regenerate, then commit the result.");
+      process.exit(1);
+    }
+    console.log("gen-index: index.html is up to date.");
+  } else {
+    writeFileSync(indexPath, expected);
+    console.log(`gen-index: wrote index.html with ${sims.length} simulation(s).`);
   }
-  console.log("gen-index: index.html is up to date.");
-} else {
-  writeFileSync(indexPath, expected);
-  console.log(`gen-index: wrote index.html with ${sims.length} simulation(s).`);
 }
+
+// Run main() only when executed directly (not when imported by tests).
+const isDirect = process.argv[1] && fileURLToPath(import.meta.url) === resolve(process.argv[1]);
+if (isDirect) main();
