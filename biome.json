@@ -14,6 +14,7 @@
       "!**/coverage",
       "!**/.vite",
       "!**/top-test",
+      "!scripts/landing/index.template.html",
       "!**/playwright/test-results",
       "!**/playwright/playwright-report"
     ]

@@ -1,12 +1,17 @@
 #!/usr/bin/env tsx
 //
-// scripts/gen-index.ts — generates the root index.html that lists all simulations.
+// scripts/gen-index.ts — generates the root index.html, the Mass Sims landing page.
 //
 // Reads the `workspaces` array from the root package.json, discovers every directory
-// inside `simulations/*` that has its own package.json, and writes a static HTML page
-// linking to each. Each sim's `massSims` block in its package.json gives its display
-// title, grade band, order, title font and colors. A sim without one is left off the
-// page, and the script prints a warning.
+// inside `simulations/*` that has its own package.json, and writes one self-contained
+// HTML page: a button per sim, grouped by grade band, and the selected sim running in
+// an iframe. Each sim's `massSims` block in its package.json gives its display title,
+// grade band, order, title font and colors. A sim without one is left off the page,
+// and the script prints a warning.
+//
+// The page is built from scripts/landing/: the markup template, the SCSS (compiled
+// here), and the share icons. The stylesheet and every SVG are inlined, so the deploy
+// still copies a single file.
 //
 // Modes:
 //   yarn gen-index            → regenerate index.html (overwrites)
@@ -15,7 +20,7 @@
 //
 // CI runs --check on every push so the committed index.html never drifts from the
 // workspace list. Developers run `yarn gen-index` (no flag) after adding/removing a
-// sim, then commit the regenerated index.html alongside their sim change.
+// sim, or changing scripts/landing/, then commit the regenerated index.html.
 //
 // Note: this script ignores `packages/*` workspaces (shared library, starter template);
 // only `simulations/*` are user-facing and listed in the index.
@@ -23,9 +28,12 @@
 import { existsSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import * as sass from "sass";
 
 const SCRIPT_DIR = dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = resolve(SCRIPT_DIR, "..");
+const LANDING_DIR = join(SCRIPT_DIR, "landing");
+const BRANDING_DIR = join(REPO_ROOT, "packages", "shared", "src", "assets", "branding");
 
 /** The wordmark font: the same settings as the sim's own `.sim-title`. */
 export interface TitleFont {
@@ -65,15 +73,53 @@ export interface GradeBand {
   sims: SimInfo[];
 }
 
+const COLOR_KEYS = ["surface", "text", "border", "hover", "active", "selectedText"] as const;
+
+// Values that end up in CSS are checked, not escaped: anything outside these shapes is refused.
+const COLOR_PATTERN = /^#[0-9a-f]{3}([0-9a-f]{3})?$/i;
+const FONT_FAMILY_PATTERN = /^[A-Za-z0-9 ]+$/;
+const LENGTH_PATTERN = /^-?\d+(\.\d+)?px$/;
+
 function readJsonOrNull(path: string): Record<string, unknown> | null {
   if (!existsSync(path)) return null;
   return JSON.parse(readFileSync(path, "utf8")) as Record<string, unknown>;
+}
+
+/** Throw a clear error naming the sim and the field unless the block has the expected shape. */
+function validateMeta(name: string, meta: MassSimsMeta): void {
+  const fail = (field: string, problem: string) => {
+    throw new Error(`gen-index: simulations/${name}/package.json massSims.${field} ${problem}`);
+  };
+  if (typeof meta.title !== "string" || !meta.title) fail("title", "must be a non-empty string");
+  if (typeof meta.gradeBand !== "string" || !meta.gradeBand) {
+    fail("gradeBand", "must be a non-empty string");
+  }
+  if (typeof meta.order !== "number") fail("order", "must be a number");
+
+  const font = meta.titleFont;
+  if (!font || typeof font.family !== "string" || !FONT_FAMILY_PATTERN.test(font.family)) {
+    fail("titleFont.family", "must be a font name of letters, digits and spaces");
+  }
+  for (const key of ["letterSpacing", "offsetY", "size"] as const) {
+    const value = font[key];
+    if (value !== undefined && !LENGTH_PATTERN.test(value)) {
+      fail(`titleFont.${key}`, `must be a px length like "2px" (got ${JSON.stringify(value)})`);
+    }
+  }
+
+  for (const key of COLOR_KEYS) {
+    const value = meta.colors?.[key];
+    if (typeof value !== "string" || !COLOR_PATTERN.test(value)) {
+      fail(`colors.${key}`, `must be a hex color like "#f0faf4" (got ${JSON.stringify(value)})`);
+    }
+  }
 }
 
 /** Build a sim's entry from its folder name and package.json; null when it has no block. */
 export function toSimInfo(name: string, pkg: Record<string, unknown>): SimInfo | null {
   const meta = pkg.massSims as MassSimsMeta | undefined;
   if (!meta) return null;
+  validateMeta(name, meta);
   return { name, description: (pkg.description as string | undefined) ?? "", meta };
 }
 
@@ -124,7 +170,8 @@ export function discoverSims(): SimInfo[] {
   return sortSims(sims);
 }
 
-function escapeHtml(s: string): string {
+/** For HTML text and attribute values. */
+export function escapeHtml(s: string): string {
   const map: Record<string, string> = {
     "&": "&amp;",
     "<": "&lt;",
@@ -135,44 +182,115 @@ function escapeHtml(s: string): string {
   return s.replace(/[&<>"']/g, (c) => map[c] ?? c);
 }
 
-export function renderHtml(sims: SimInfo[]): string {
-  const items =
-    sims.length === 0
-      ? "      <p><em>No simulations yet.</em></p>"
-      : `      <ul>\n${sims
-          .map(
-            (s) =>
-              `        <li>\n          <a href="./${s.name}/index.html">${escapeHtml(s.name)}</a>${
-                s.description ? `\n          <p>${escapeHtml(s.description)}</p>` : ""
-              }\n        </li>`,
-          )
-          .join("\n")}\n      </ul>`;
+/**
+ * For JSON inside a <script> element, where the browser does not decode HTML entities. The JSON
+ * escapes keep a value from closing the element early, and JSON.parse() turns them back.
+ */
+export function escapeJsonForScript(value: unknown): string {
+  return JSON.stringify(value)
+    .replaceAll("<", "\\u003c")
+    .replaceAll(">", "\\u003e")
+    .replaceAll("&", "\\u0026")
+    .replaceAll(" ", "\\u2028")
+    .replaceAll(" ", "\\u2029");
+}
 
-  return `<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <title>Mass Sims</title>
-    <style>
-      body { font-family: system-ui, -apple-system, sans-serif; max-width: 720px; margin: 2rem auto; padding: 0 1rem; color: #222; }
-      h1 { font-size: 1.75rem; margin-bottom: 0.5rem; }
-      .lede { color: #555; margin-top: 0; }
-      ul { list-style: none; padding: 0; }
-      li { margin: 1rem 0; padding: 1rem; border: 1px solid #ddd; border-radius: 8px; }
-      a { font-weight: 600; text-decoration: none; color: #005f99; }
-      a:hover { text-decoration: underline; }
-      li p { margin: 0.25rem 0 0; color: #555; font-size: 0.9rem; }
-      footer { margin-top: 2rem; color: #888; font-size: 0.85rem; }
-    </style>
-  </head>
-  <body>
-    <h1>Mass Sims</h1>
-    <p class="lede">Educational science simulations. <a href="https://github.com/concord-consortium/mass-sims">Source on GitHub</a>.</p>
-${items}
-    <footer>Auto-generated from the workspace list in <code>package.json</code>. Run <code>yarn gen-index</code> to regenerate.</footer>
-  </body>
-</html>
-`;
+/** The --sim-* color properties, for a `style` attribute. Values are validated hex colors. */
+function colorVars(colors: SimColors): string {
+  return [
+    `--sim-surface:${colors.surface}`,
+    `--sim-text:${colors.text}`,
+    `--sim-border:${colors.border}`,
+    `--sim-hover:${colors.hover}`,
+    `--sim-active:${colors.active}`,
+    `--sim-selected-text:${colors.selectedText}`,
+  ].join(";");
+}
+
+/** The wordmark's --sim-* font properties. Values are validated names and px lengths. */
+function fontVars(font: TitleFont): string {
+  return [
+    `--sim-font:'${font.family}'`,
+    font.size && `--sim-font-size:${font.size}`,
+    font.letterSpacing && `--sim-letter-spacing:${font.letterSpacing}`,
+    font.offsetY && `--sim-offset-y:${font.offsetY}`,
+  ]
+    .filter(Boolean)
+    .join(";");
+}
+
+/** One stylesheet link for Lato (the page-text fallback) and every sim's title font. */
+export function googleFontsUrl(sims: SimInfo[]): string {
+  const families = [...new Set(sims.map((s) => s.meta.titleFont.family))];
+  const params = ["family=Lato:wght@100;300;700;900"]
+    .concat(families.map((f) => `family=${f.replaceAll(" ", "+")}`))
+    .concat("display=swap");
+  return `https://fonts.googleapis.com/css2?${params.join("&")}`;
+}
+
+function simButton(sim: SimInfo, selected: boolean): string {
+  const style = `${colorVars(sim.meta.colors)};${fontVars(sim.meta.titleFont)}`;
+  return (
+    `<button type="button" class="sim-button" data-sim="${escapeHtml(sim.name)}" ` +
+    `aria-pressed="${selected}" style="${style}">` +
+    `<span class="sim-button-label">${escapeHtml(sim.meta.title)}</span></button>`
+  );
+}
+
+function simButtons(sims: SimInfo[]): string {
+  const selected = sims[0];
+  return groupByBand(sims)
+    .map((band, i) =>
+      [
+        `          <div class="sim-band" role="group" aria-labelledby="band-${i}">`,
+        `            <div class="band-label" id="band-${i}">${escapeHtml(band.band)}</div>`,
+        ...band.sims.map((s) => `            ${simButton(s, s === selected)}`),
+        "          </div>",
+      ].join("\n"),
+    )
+    .join("\n");
+}
+
+function svgDataUri(path: string): string {
+  return `data:image/svg+xml;base64,${readFileSync(path).toString("base64")}`;
+}
+
+function readIcon(name: string): string {
+  return readFileSync(join(LANDING_DIR, "icons", `${name}.svg`), "utf8").trim();
+}
+
+/** Fill each {{placeholder}}; throw if the template names one that has no value. */
+function fillTemplate(template: string, values: Record<string, string>): string {
+  return template.replace(/\{\{(\w+)\}\}/g, (_, key: string) => {
+    const value = values[key];
+    if (value === undefined) throw new Error(`gen-index: no value for {{${key}}} in the template`);
+    return value;
+  });
+}
+
+export function renderHtml(sims: SimInfo[]): string {
+  if (sims.length === 0) {
+    throw new Error('gen-index: no sim has a "massSims" block, so there is nothing to list.');
+  }
+  const first = sims[0];
+  const css = sass.compile(join(LANDING_DIR, "landing.scss"), { style: "expanded" }).css;
+  const simsData = sims.map((s) => ({ name: s.name, title: s.meta.title, colors: s.meta.colors }));
+
+  return fillTemplate(readFileSync(join(LANDING_DIR, "index.template.html"), "utf8"), {
+    googleFontsUrl: escapeHtml(googleFontsUrl(sims)),
+    css,
+    ccLogo: svgDataUri(join(BRANDING_DIR, "cc-logo.svg")),
+    deseLogo: svgDataUri(join(BRANDING_DIR, "dese-mass-logo.svg")),
+    simButtons: simButtons(sims),
+    panelStyle: colorVars(first.meta.colors),
+    iframeSrc: `./${escapeHtml(first.name)}/index.html?standalone=true`,
+    iframeTitle: `${escapeHtml(first.meta.title)} simulation`,
+    simTitle: escapeHtml(first.meta.title),
+    openIcon: readIcon("open-in-new-tab"),
+    copyUrlIcon: readIcon("copy-url"),
+    copyEmbedIcon: readIcon("copy-embed-code"),
+    simsJson: escapeJsonForScript(simsData),
+  });
 }
 
 function main() {
@@ -184,7 +302,7 @@ function main() {
   if (checkMode) {
     const actual = existsSync(indexPath) ? readFileSync(indexPath, "utf8") : "";
     if (actual !== expected) {
-      console.error("gen-index: index.html is out of date with the workspace list.");
+      console.error("gen-index: index.html is out of date with the sims or scripts/landing/.");
       console.error("           Run `yarn gen-index` to regenerate, then commit the result.");
       process.exit(1);
     }
