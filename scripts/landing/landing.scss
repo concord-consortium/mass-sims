@@ -19,9 +19,15 @@ $button-column-width: 248px;
 $sim-row-gap: 24px;
 $page-gutter: 20px;
 $frame-border: tokens.$border-strong-width * 2;
+// The sim stretches between its own standalone limits (768–1024 of content, plus its border).
 $sim-frame-min-width: tokens.$frame-width-standalone-min + $frame-border; // 772
+$sim-frame-max-width: tokens.$frame-width-standalone + $frame-border; // 1028
 $sim-frame-height: tokens.$frame-height + $frame-border; // 566
+// The page column (header, sim row, footer text) is the button column, the gap and the sim.
 $content-min-width: $button-column-width + $sim-row-gap + $sim-frame-min-width; // 1044
+$content-max-width: $button-column-width + $sim-row-gap + $sim-frame-max-width; // 1300
+// The narrowest window with no sideways scroll. Below it the page scrolls; it never stacks.
+$viewport-min-width: $content-min-width + $page-gutter * 2; // 1084
 
 * {
   box-sizing: border-box;
@@ -34,6 +40,7 @@ body {
   font-family: $font-family-page;
   margin: 0;
   min-height: 100vh;
+  min-width: $viewport-min-width;
 }
 
 .sr-only {
@@ -48,11 +55,12 @@ body {
   width: 1px;
 }
 
-// The page column: header and sim row, with the side gutters as padding around it.
+// The page column: header and sim row, centered, with the side gutters as padding around it.
 .page-content {
   margin: 0 auto;
+  max-width: $content-max-width + $page-gutter * 2;
   padding: tokens.$space-4 $page-gutter 0;
-  width: $content-min-width + $page-gutter * 2;
+  width: 100%;
 }
 
 // ---- Header ----------------------------------------------------------------------------------
@@ -138,19 +146,19 @@ body {
 
 // ---- Sim buttons -----------------------------------------------------------------------------
 
+// The buttons always sit left of the sim, which takes the rest of the column.
 .sim-row {
-  align-items: flex-start;
-  display: flex;
-  gap: $sim-row-gap;
+  align-items: start;
+  column-gap: $sim-row-gap;
+  display: grid;
+  grid-template-columns: $button-column-width minmax($sim-frame-min-width, $sim-frame-max-width);
 }
 
 // 26 between bands, 10 under a band label, 16 between buttons in a band.
 .sim-buttons {
   display: flex;
-  flex: 0 0 auto;
   flex-direction: column;
   gap: 26px;
-  width: $button-column-width;
 }
 
 .sim-band {
@@ -237,7 +245,6 @@ body {
   align-items: center;
   display: flex;
   flex-direction: column;
-  width: $sim-frame-min-width;
 }
 
 // The sim draws its own 2px border in standalone mode, so the iframe has none.
@@ -344,7 +351,7 @@ body {
   gap: 10px;
   justify-content: center;
   margin: 0 auto;
-  width: $content-min-width;
+  max-width: $content-max-width;
 
   a {
     color: $color-footer-link;

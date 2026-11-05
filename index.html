@@ -21,6 +21,7 @@ body {
   font-family: "museo-sans", "Lato", system-ui, -apple-system, sans-serif;
   margin: 0;
   min-height: 100vh;
+  min-width: 1084px;
 }
 
 .sr-only {
@@ -37,8 +38,9 @@ body {
 
 .page-content {
   margin: 0 auto;
+  max-width: 1340px;
   padding: 16px 20px 0;
-  width: 1084px;
+  width: 100%;
 }
 
 .page-header {
@@ -115,17 +117,16 @@ body {
 }
 
 .sim-row {
-  align-items: flex-start;
-  display: flex;
-  gap: 24px;
+  align-items: start;
+  column-gap: 24px;
+  display: grid;
+  grid-template-columns: 248px minmax(772px, 1028px);
 }
 
 .sim-buttons {
   display: flex;
-  flex: 0 0 auto;
   flex-direction: column;
   gap: 26px;
-  width: 248px;
 }
 
 .sim-band {
@@ -198,7 +199,6 @@ body {
   align-items: center;
   display: flex;
   flex-direction: column;
-  width: 772px;
 }
 
 .sim-frame {
@@ -291,7 +291,7 @@ body {
   gap: 10px;
   justify-content: center;
   margin: 0 auto;
-  width: 1044px;
+  max-width: 1300px;
 }
 .footer-row a {
   color: #b25324;

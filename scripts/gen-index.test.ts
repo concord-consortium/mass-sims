@@ -156,6 +156,14 @@ describe("renderHtml", () => {
     expect(html).not.toContain("{{");
   });
 
+  // The sim stretches between its standalone limits (768–1024 + its 2px border each side) beside
+  // the 248px button column; below 248 + 24 + 772 + 2 × 20 the page scrolls sideways.
+  it("sizes the layout from the sim's standalone limits", () => {
+    expect(html).toContain("grid-template-columns: 248px minmax(772px, 1028px);");
+    expect(html).toContain("min-width: 1084px;");
+    expect(html).toContain("max-width: 1340px;");
+  });
+
   it("carries the sims as JSON for the page script", () => {
     expect(simsJson(html).map((s) => s.name)).toEqual(["lumps", "bananas", "collapse"]);
   });
