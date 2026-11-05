@@ -232,6 +232,9 @@ describe("the footer", () => {
     ["/version/v0.0.0-test/index.html", "MassSims v0.0.0-test"],
     ["/version/v0.0.0-test/", "MassSims v0.0.0-test"],
     ["/branch/test-branch/index.html", "MassSims (branch test-branch)"],
+    ["/branch/feature/demo/", "MassSims (branch feature/demo)"],
+    ["/branch/feature/demo/index.html", "MassSims (branch feature/demo)"],
+    ["/branch/fix/version/", "MassSims (branch fix/version)"],
   ])("at %s shows version %s", (path, expected) => {
     load(path);
 

@@ -171,9 +171,10 @@
 
   // ---- Footer ----
 
-  // The deploy path says which build this is: /version/<tag>/ or /branch/<name>/. The top level
-  // shows no version.
-  const deploy = window.location.pathname.match(/\/(version|branch)\/([^/]+)\/(index\.html)?$/);
+  // The deploy path says which build this is: /version/<tag>/ or /branch/<name>/. A branch name
+  // can contain "/" (feature/demo is deployed at /branch/feature/demo/), so the name runs to the
+  // end of the path. The top level shows no version.
+  const deploy = window.location.pathname.match(/\/(version|branch)\/(.+?)\/(index\.html)?$/);
   if (deploy) {
     const name = decodeURIComponent(deploy[2]);
     const version = document.querySelector(".footer-version");
