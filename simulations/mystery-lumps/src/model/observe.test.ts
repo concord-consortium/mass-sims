@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { examine, massAfter, observe } from "./observe";
+import { bathMeltStep, examine, massAfter, observe } from "./observe";
 
 describe("observe", () => {
   it("names the salt by handling, and leaves two look-alike pairs", () => {
@@ -36,24 +36,29 @@ describe("observe", () => {
     }
   });
 
-  it("splits the waxes on either side of their softening points", () => {
-    expect(observe("palm-oil", "bath", "20").visual).toBe("none");
-    expect(observe("palm-oil", "bath", "40").visual).toBe("melting");
-    expect(observe("paraffin", "bath", "40").visual).toBe("none");
-    expect(observe("paraffin", "bath", "60").visual).toBe("softening");
+  it("steps the bath through 30, 45 and 80 °C, splitting the waxes between the steps", () => {
+    expect(observe("palm-oil", "bath", null)).toEqual({
+      caption:
+        "In a dry dish inside the bath. At 30 °C, nothing changes. At 45 °C, the lump softens " +
+        "and slumps, then runs into a pool at the bottom of the dish. At 80 °C, the pool stays liquid.",
+      visual: "melting",
+    });
+    expect(observe("paraffin", "bath", null)).toEqual({
+      caption:
+        "In a dry dish inside the bath. At 30 °C, nothing changes. At 45 °C, nothing changes. " +
+        "At 80 °C, the lump turns glossy and soft, sags, then melts into a clear pool in the dish.",
+      visual: "melting",
+    });
+    expect(bathMeltStep("palm-oil")).toBe(1);
+    expect(bathMeltStep("paraffin")).toBe(2);
+    expect(bathMeltStep("sea-salt")).toBeNull();
   });
 
-  it("never changes the shell or the glass in the bath, at any temperature", () => {
-    for (const temp of ["20", "40", "60", "80"] as const) {
-      expect(observe("seashell", "bath", temp).visual).toBe("none");
-      expect(observe("sea-glass", "bath", temp).visual).toBe("none");
+  it("leaves the salt, shell and glass alone in the bath, since the dish keeps them dry", () => {
+    for (const s of ["sea-salt", "seashell", "sea-glass"] as const) {
+      expect(observe(s, "bath", null).visual).toBe("none");
+      expect(observe(s, "bath", null).caption).toMatch(/At 80 °C, nothing changes\.$/);
     }
-  });
-
-  it("dissolves the salt at every bath temperature, faster when warm", () => {
-    expect(observe("sea-salt", "bath", "20").visual).toBe("dissolving");
-    expect(observe("sea-salt", "bath", "20").caption).toMatch(/slowly/);
-    expect(observe("sea-salt", "bath", "80").caption).toMatch(/quickly/);
   });
 
   it("glows the glass and the palm oil at any exposure, and nothing else ever", () => {
@@ -83,7 +88,7 @@ describe("observe", () => {
 
   it("describes what the lump is like now, not what it was before its test", () => {
     const fresh = observe("palm-oil", "handle", null).caption;
-    const melted = observe("palm-oil", "handle", null, { test: "bath", setting: "60" }).caption;
+    const melted = observe("palm-oil", "handle", null, { test: "bath", setting: null }).caption;
     expect(melted).not.toBe(fresh);
     expect(melted).toMatch(/pool/i);
 
@@ -111,11 +116,8 @@ describe("observe", () => {
   it("never interprets a result", () => {
     const banned = /carbonate|calcium|wax is|salt is|glass is|it is .*(oil|wax|shell|glass|salt)/i;
     for (const s of ["seashell", "sea-salt", "sea-glass", "palm-oil", "paraffin"] as const) {
-      for (const t of ["handle", "waft", "water", "vinegar"] as const) {
+      for (const t of ["handle", "waft", "water", "vinegar", "bath"] as const) {
         expect(observe(s, t, null).caption).not.toMatch(banned);
-      }
-      for (const temp of ["20", "40", "60", "80"] as const) {
-        expect(observe(s, "bath", temp).caption).not.toMatch(banned);
       }
       for (const e of ["seconds", "hour", "day", "fortnight"] as const) {
         expect(observe(s, "lamp", e).caption).not.toMatch(banned);
@@ -126,7 +128,7 @@ describe("observe", () => {
 
 describe("massAfter", () => {
   it("drops to nothing when the lump dissolves", () => {
-    expect(massAfter("sea-salt", "bath", "20", 67.3)).toBe(0);
+    expect(massAfter("sea-salt", "water", null, 67.3)).toBe(0);
   });
 
   it("loses a little when the shell fizzes, but not in plain water", () => {
@@ -135,8 +137,8 @@ describe("massAfter", () => {
   });
 
   it("keeps all its mass when it only melts or softens", () => {
-    expect(massAfter("palm-oil", "bath", "80", 35.6)).toBe(35.6);
-    expect(massAfter("paraffin", "bath", "80", 34.2)).toBe(34.2);
+    expect(massAfter("palm-oil", "bath", null, 35.6)).toBe(35.6);
+    expect(massAfter("paraffin", "bath", null, 34.2)).toBe(34.2);
   });
 
   it("loses the crumbled corner after two weeks under the lamp", () => {

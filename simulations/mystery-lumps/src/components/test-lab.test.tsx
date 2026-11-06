@@ -26,8 +26,26 @@ describe("TestLab", () => {
   it("names the apparatus for the chosen test", () => {
     const { getByText, rerender } = render(<TestLab {...base} selectedLump="A" />);
     expect(getByText(/tube of vinegar/i)).toBeInTheDocument();
+    rerender(<TestLab {...base} selectedLump="A" test="bath" setting={null} />);
+    expect(getByText(/dry dish in a warm bath/i)).toBeInTheDocument();
     rerender(<TestLab {...base} selectedLump="A" test="lamp" setting="fortnight" />);
     expect(getByText(/uv lamp, two weeks/i)).toBeInTheDocument();
+  });
+
+  it("writes the bath's temperatures on it and lights each in turn as the run goes", () => {
+    const { container, getByText } = render(
+      <TestLab {...base} selectedLump="D" test="bath" running={true} />,
+    );
+    const current = () => container.querySelector(".bath-dial .current")?.textContent ?? null;
+    expect(getByText("45 °C")).toBeInTheDocument();
+    paint(0);
+    expect(current()).toBeNull();
+    paint(RUN_MS * 0.1);
+    expect(current()).toBe("30 °C");
+    paint(RUN_MS * 0.5);
+    expect(current()).toBe("45 °C");
+    paint(RUN_MS);
+    expect(current()).toBe("80 °C");
   });
 
   it("keeps a spent lump on the bench", () => {

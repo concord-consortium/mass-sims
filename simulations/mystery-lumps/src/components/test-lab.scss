@@ -84,10 +84,25 @@ $counter-height: 34px;
   }
 
   &.tool-bath::before {
-    width: 62px;
-    height: 38px;
+    width: 72px;
+    height: 44px;
     border-radius: 3px;
     background: linear-gradient(rgba(230, 244, 255, 0.5) 0 30%, rgba(169, 212, 245, 0.6) 31%);
+  }
+
+  // The dry inner dish the lump sits in, standing in the water and rising clear of it.
+  &.tool-bath::after {
+    content: "";
+    position: absolute;
+    bottom: 4px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 44px;
+    height: 36px;
+    border: 2px solid #7fa8cf;
+    border-top: none;
+    border-radius: 0 0 6px 6px;
+    background: rgba(255, 255, 255, 0.55);
   }
 
   // The lamp shines down from above rather than standing on the counter.
@@ -108,6 +123,23 @@ $counter-height: 34px;
 .tool-label {
   font-size: 10px;
   opacity: 0.75;
+}
+
+// The bath's temperatures, written on the instrument; the one it is at now lights up.
+.bath-dial {
+  display: flex;
+  gap: 6px;
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
+
+  span {
+    opacity: 0.45;
+  }
+
+  .current {
+    opacity: 1;
+    font-weight: 700;
+  }
 }
 
 // Rests at the left of the counter and travels to the apparatus when a test is run.
@@ -141,8 +173,9 @@ $counter-height: 34px;
   border-style: solid;
 }
 
-// The outcome plays once the lump has arrived, so the delay is the travel time. Anything that
-// neither dissolves nor softens simply sits there, which is itself a result worth seeing.
+// The outcome plays once the lump has arrived, so the delay is the travel time (the bench adds
+// more for a bath melt, to land on its step). Anything that neither dissolves nor melts simply
+// sits there, which is itself a result worth seeing.
 .bench-lump.staged .bench-blob {
   &.visual-dissolving {
     animation: lump-dissolve 1700ms 800ms ease-in forwards;
@@ -150,10 +183,6 @@ $counter-height: 34px;
 
   &.visual-melting {
     animation: lump-melt 1500ms 800ms ease-in forwards;
-  }
-
-  &.visual-softening {
-    animation: lump-soften 1500ms 800ms ease-in-out forwards;
   }
 }
 
@@ -168,13 +197,6 @@ $counter-height: 34px;
 @keyframes lump-melt {
   to {
     transform: scaleY(0.16) scaleX(1.6);
-  }
-}
-
-// Sags without losing its shape, which is the whole difference from melting.
-@keyframes lump-soften {
-  to {
-    transform: scaleY(0.78) scaleX(1.1);
   }
 }
 

@@ -7,7 +7,7 @@ import type { Trial } from "../model/trial";
 
 import "./evidence-panel.scss";
 
-/** How a test and its dial read in the record: "Warm bath, 80 °C". */
+/** How a test and its dial read in the record: "UV lamp, A day". */
 function describeTest(test: TestId, setting: SettingId | null): string {
   const meta = TESTS[test];
   const option = meta.settings.find((s) => String(s.id) === String(setting));

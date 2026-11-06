@@ -19,16 +19,16 @@ describe("EvidencePanel", () => {
   });
 
   it("names the test and its setting alongside the observation", () => {
-    const trial = applyTest(makeEmptyTrial(), "A", "bath", "80");
+    const trial = applyTest(makeEmptyTrial(), "A", "lamp", "day");
     const { getByText } = render(<EvidencePanel trial={trial} />);
-    expect(getByText(/warm bath, 80 °C/i)).toBeInTheDocument();
+    expect(getByText(/uv lamp, a day/i)).toBeInTheDocument();
   });
 
   it("records the mass before and after the test", () => {
     // Lump B is the sea salt, which dissolves to nothing; lump D is palm oil, which melts but
     // keeps all its mass.
     let trial = applyTest(makeEmptyTrial(), "B", "water", null);
-    trial = applyTest(trial, "D", "bath", "60");
+    trial = applyTest(trial, "D", "bath", null);
     const { getByText } = render(<EvidencePanel trial={trial} />);
     expect(getByText(/67\.3 g before the test, 0\.0 g after/)).toBeInTheDocument();
     expect(getByText(/35\.6 g before the test, 35\.6 g after/)).toBeInTheDocument();

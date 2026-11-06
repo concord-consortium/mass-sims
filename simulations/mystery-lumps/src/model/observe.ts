@@ -11,7 +11,6 @@ export type VisualKey =
   | "fizzing"
   | "glowing"
   | "melting"
-  | "softening"
   | "degrading"
   | "rancid"
   | "no-smell";
@@ -89,30 +88,45 @@ function inWater(substance: SubstanceId, vinegar: boolean): Observation {
   return { caption: NOTHING, visual: "none" };
 }
 
-function inBath(substance: SubstanceId, setting: SettingId | null): Observation {
-  const temp = Number(setting ?? "20");
-  if (substance === "sea-salt") {
-    return {
-      caption:
-        temp >= 40
-          ? "The lump shrinks away quickly. The water stays clear."
-          : "The lump shrinks away slowly. The water stays clear.",
-      visual: "dissolving",
-    };
-  }
-  if (substance === "palm-oil" && temp >= 40) {
-    return {
-      caption: "The lump slumps, then runs into a pool at the bottom.",
-      visual: "melting",
-    };
-  }
-  if (substance === "paraffin" && temp >= 60) {
-    return {
-      caption: "The lump turns glossy and sags at the edges, but keeps its shape.",
-      visual: "softening",
-    };
-  }
-  return { caption: NOTHING, visual: "none" };
+/** °C. One bath run warms the same lump through each in turn and reports every step. */
+export const BATH_STEPS = [30, 45, 80] as const;
+
+/** °C. Only the two waxes melt in the bath's range, and palm oil goes well before paraffin. */
+const MELTING_POINT: Partial<Record<SubstanceId, number>> = { "palm-oil": 40, paraffin: 60 };
+
+/** How each wax goes, softening first, at the step where it reaches its melting point. */
+const MELTS: Partial<Record<SubstanceId, string>> = {
+  "palm-oil": "the lump softens and slumps, then runs into a pool at the bottom of the dish.",
+  paraffin: "the lump turns glossy and soft, sags, then melts into a clear pool in the dish.",
+};
+
+/** Which of the bath's steps the lump melts at, or null if it never does. */
+export function bathMeltStep(substance: SubstanceId): number | null {
+  const point = MELTING_POINT[substance];
+  if (point === undefined) return null;
+  const step = BATH_STEPS.findIndex((temp) => temp >= point);
+  return step < 0 ? null : step;
+}
+
+/**
+ * The lump sits in a dry dish inside the bath, so only heat reaches it — which is why salt,
+ * dissolving in every other liquid test, does nothing here.
+ */
+function inBath(substance: SubstanceId): Observation {
+  const melt = bathMeltStep(substance);
+  const steps = BATH_STEPS.map((temp, i) => {
+    const change =
+      melt === null || i < melt
+        ? "nothing changes."
+        : i === melt
+          ? MELTS[substance]
+          : "the pool stays liquid.";
+    return `At ${temp} °C, ${change}`;
+  });
+  return {
+    caption: `In a dry dish inside the bath. ${steps.join(" ")}`,
+    visual: melt === null ? "none" : "melting",
+  };
 }
 
 function underLamp(substance: SubstanceId, setting: SettingId | null): Observation {
@@ -154,8 +168,6 @@ function handled(substance: SubstanceId, prior: PriorResult | null): Observation
       return { caption: "There is nothing left to pick up.", visual: "dissolving" };
     case "melting":
       return { caption: "A shallow, greasy pool. It smears under a finger.", visual: "melting" };
-    case "softening":
-      return { caption: "Softer than it was, and tacky to the touch.", visual: "softening" };
     case "degrading":
       return {
         caption: "Dry and brittle. It leaves a chalky powder on your fingers.",
@@ -215,7 +227,7 @@ export function observe(
     case "vinegar":
       return inVinegar(substance);
     case "bath":
-      return inBath(substance, setting);
+      return inBath(substance);
     case "lamp":
       return underLamp(substance, setting);
   }

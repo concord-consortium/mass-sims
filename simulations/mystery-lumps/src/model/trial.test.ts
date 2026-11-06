@@ -41,14 +41,14 @@ describe("trial", () => {
   it("keeps a before and an after observation apart", () => {
     // The pair is the argument: waxy and pale beforehand, a greasy pool after the bath.
     let trial = markExamined(makeEmptyTrial(), "D");
-    trial = applyTest(trial, "D", "bath", "60");
+    trial = applyTest(trial, "D", "bath", null);
     trial = markExamined(trial, "D");
     expect(trial.lumps.D.examined).toEqual({ before: true, after: true });
   });
 
   it("drops the post-test observations when the test is reset, and keeps the earlier ones", () => {
     let trial = markExamined(makeEmptyTrial(), "D");
-    trial = applyTest(trial, "D", "bath", "60");
+    trial = applyTest(trial, "D", "bath", null);
     trial = markExamined(trial, "D");
 
     const back = resetLumpTest(trial, "D");

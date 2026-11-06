@@ -26,10 +26,12 @@ describe("LabControls", () => {
     expect(getByRole("button", { name: /look, feel, smell/i })).not.toHaveClass("test-button");
   });
 
-  it("disables the dial for a test that has none, and enables it for the bath", () => {
+  it("enables the dial only for the lamp; the bath steps through its own temperatures", () => {
     const { container, rerender } = render(<LabControls {...base} />);
     expect(container.querySelector(".setting-select")).toHaveAttribute("data-disabled");
-    rerender(<LabControls {...base} test="bath" setting="60" />);
+    rerender(<LabControls {...base} test="bath" setting={null} />);
+    expect(container.querySelector(".setting-select")).toHaveAttribute("data-disabled");
+    rerender(<LabControls {...base} test="lamp" setting="day" />);
     expect(container.querySelector(".setting-select")).not.toHaveAttribute("data-disabled");
   });
 

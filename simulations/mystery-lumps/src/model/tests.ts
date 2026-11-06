@@ -1,9 +1,8 @@
 export type TestId = "handle" | "waft" | "water" | "vinegar" | "bath" | "lamp";
 
-/** Bath temperatures in °C, and lamp exposures, as the dropdowns offer them. */
-export type BathTemp = "20" | "40" | "60" | "80";
+/** Lamp exposures, as the dropdown offers them. The bath has no dial: it steps through its own. */
 export type Exposure = "seconds" | "hour" | "day" | "fortnight";
-export type SettingId = BathTemp | Exposure;
+export type SettingId = Exposure;
 
 export interface SettingOption {
   id: SettingId;
@@ -18,13 +17,6 @@ export interface TestMeta {
   settings: readonly SettingOption[];
 }
 
-const BATH_TEMPS: readonly SettingOption[] = [
-  { id: "20", label: "20 °C" },
-  { id: "40", label: "40 °C" },
-  { id: "60", label: "60 °C" },
-  { id: "80", label: "80 °C" },
-];
-
 const EXPOSURES: readonly SettingOption[] = [
   { id: "seconds", label: "A few seconds" },
   { id: "hour", label: "An hour" },
@@ -37,7 +29,7 @@ export const TESTS: Record<TestId, TestMeta> = {
   waft: { label: "Waft", consumes: false, settings: [] },
   water: { label: "Water", consumes: true, settings: [] },
   vinegar: { label: "Vinegar", consumes: true, settings: [] },
-  bath: { label: "Warm bath", consumes: true, settings: BATH_TEMPS },
+  bath: { label: "Warm bath", consumes: true, settings: [] },
   lamp: { label: "UV lamp", consumes: true, settings: EXPOSURES },
 };
 

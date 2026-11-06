@@ -8,6 +8,21 @@ import "./test-timer.scss";
 /** Wall-clock time a test takes to run, whatever span of sim time it stands for. */
 export const RUN_MS = 7000;
 
+/**
+ * How far through its run a test is, 0 to 1. Starts from zero on mount, so anything that reads
+ * it shares the timer's `key` and is replaced with it.
+ */
+export function useRunProgress(running: boolean): number {
+  const [elapsedMs, setElapsedMs] = useState(0);
+  useFrameLoop(
+    (deltaMs) => {
+      setElapsedMs((ms) => Math.min(RUN_MS, ms + deltaMs));
+    },
+    running && elapsedMs < RUN_MS,
+  );
+  return elapsedMs / RUN_MS;
+}
+
 export interface TestTimerProps {
   test: TestId;
   setting: SettingId | null;
@@ -30,16 +45,7 @@ export interface TestTimerProps {
  */
 export function TestTimer({ test, setting, running }: TestTimerProps) {
   const total = simDurationSeconds(test, setting);
-  const [elapsedMs, setElapsedMs] = useState(0);
-
-  useFrameLoop(
-    (deltaMs) => {
-      setElapsedMs((ms) => Math.min(RUN_MS, ms + deltaMs));
-    },
-    running && elapsedMs < RUN_MS,
-  );
-
-  const progress = elapsedMs / RUN_MS;
+  const progress = useRunProgress(running);
 
   return (
     <div className="test-timer">

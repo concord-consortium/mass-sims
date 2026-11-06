@@ -1,9 +1,9 @@
 import clsx from "clsx";
-import { examine, observe } from "../model/observe";
-import { LUMP_ASSIGNMENT, type LumpId } from "../model/substances";
+import { BATH_STEPS, bathMeltStep, examine, observe } from "../model/observe";
+import { LUMP_ASSIGNMENT, type LumpId, type SubstanceId } from "../model/substances";
 import { type SettingId, TESTS, type TestId } from "../model/tests";
 import type { Trial } from "../model/trial";
-import { TestTimer } from "./test-timer";
+import { RUN_MS, TestTimer, useRunProgress } from "./test-timer";
 
 import "./test-lab.scss";
 
@@ -47,6 +47,8 @@ export function TestLab({
         ? examine(substance).visual
         : "unknown";
 
+  const timerKey = `${timerEpoch}:${test}:${setting}`;
+
   return (
     <div className="test-lab">
       <div className="lab-title">Test Lab</div>
@@ -56,19 +58,24 @@ export function TestLab({
         ) : (
           <>
             <div className={clsx("apparatus", `tool-${test}`)} aria-hidden="true">
+              {test === "bath" ? <BathDial key={timerKey} running={running} /> : null}
               <span className="tool-label">{toolLabel(test, setting)}</span>
             </div>
             {/* Staged means "at the apparatus": the lump travels there on Run and stays once
                 its test is spent, so the bench still reads as a record afterwards. */}
             <div className={clsx("bench-lump", { staged: running || record?.result != null })}>
-              <span className={clsx("bench-blob", `visual-${resting}`)} aria-hidden="true" />
+              <span
+                className={clsx("bench-blob", `visual-${resting}`)}
+                style={meltDelay(substance, record?.result?.test)}
+                aria-hidden="true"
+              />
               <span className="bench-letter">Lump {selectedLump}</span>
             </div>
           </>
         )}
         <TestTimer
           // Replaced rather than rewound: a new run, or a change of test, gets a fresh bar.
-          key={`${timerEpoch}:${test}:${setting}`}
+          key={timerKey}
           test={test}
           setting={setting}
           running={running}
@@ -83,7 +90,7 @@ export function TestLab({
 const TOOL_LABELS: Record<TestId, string> = {
   water: "beaker of water",
   vinegar: "tube of vinegar",
-  bath: "warm water bath",
+  bath: "dry dish in a warm bath",
   lamp: "UV lamp",
   handle: "",
   waft: "",
@@ -95,4 +102,39 @@ function toolLabel(test: TestId, setting: SettingId | null): string {
   if (setting === null) return base;
   const option = TESTS[test].settings.find((s) => String(s.id) === String(setting));
   return option ? `${base}, ${option.label.toLowerCase()}` : base;
+}
+
+/**
+ * The bath's temperatures as written on the instrument, the current one lit as the run steps
+ * through them. Keyed with the timer, so a new run or a reset starts it from cold.
+ */
+function BathDial({ running }: { running: boolean }) {
+  const progress = useRunProgress(running);
+  const current =
+    progress === 0
+      ? null
+      : Math.min(BATH_STEPS.length - 1, Math.floor(progress * BATH_STEPS.length));
+  return (
+    <span className="bath-dial">
+      {BATH_STEPS.map((temp, i) => (
+        <span key={temp} className={clsx({ current: i === current })}>
+          {temp} °C
+        </span>
+      ))}
+    </span>
+  );
+}
+
+/** The lump travels for this long before its outcome starts to play. */
+const TRAVEL_MS = 800;
+
+/** A bath melt waits for the step it happens at, so the lump runs as that temperature lights. */
+function meltDelay(
+  substance: SubstanceId | null,
+  test: TestId | undefined,
+): { animationDelay: string } | undefined {
+  if (!substance || test !== "bath") return undefined;
+  const step = bathMeltStep(substance);
+  if (step === null) return undefined;
+  return { animationDelay: `${TRAVEL_MS + (step * RUN_MS) / BATH_STEPS.length}ms` };
 }

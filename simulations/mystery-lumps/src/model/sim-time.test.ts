@@ -2,12 +2,11 @@ import { describe, expect, it } from "vitest";
 import { formatSimTime, simDurationSeconds } from "./sim-time";
 
 describe("simDurationSeconds", () => {
-  it("gives the three bench tests two minutes each", () => {
-    for (const test of ["water", "vinegar", "bath"] as const) {
+  it("gives water and vinegar two minutes, and the bath two at each of its three steps", () => {
+    for (const test of ["water", "vinegar"] as const) {
       expect(simDurationSeconds(test, null)).toBe(120);
     }
-    // The bath's dial changes the temperature, not how long it sits there.
-    expect(simDurationSeconds("bath", "80")).toBe(120);
+    expect(simDurationSeconds("bath", null)).toBe(360);
   });
 
   it("runs the lamp for exactly the exposure that was dialled in", () => {

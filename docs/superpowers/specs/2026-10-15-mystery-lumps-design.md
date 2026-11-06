@@ -33,21 +33,24 @@ substance or a class of substance ("a steady stream of small bubbles", never "a 
 
 | | Handle | Water | Vinegar | Warm bath | UV lamp |
 |---|---|---|---|---|---|
-| **Sea salt** | a crust of small cube-shaped crystals | dissolves away, water stays clear | dissolves away, no bubbles | dissolves — faster the warmer it is | nothing |
+| **Sea salt** | a crust of small cube-shaped crystals | dissolves away, water stays clear | dissolves away, no bubbles | nothing (it stays dry) | nothing |
 | **Seashell** | hard and smooth, cool to the touch | nothing | **a steady stream of small bubbles** | nothing, at any temperature | nothing |
 | **Sea glass** | hard and smooth, cool to the touch | nothing | nothing | nothing, at any temperature | **glows, immediately** |
-| **Palm oil** | waxy and pale, gives under a fingernail | nothing | nothing | **slumps and runs from ~40 °C** | **glows**; long exposure also turns it rancid |
-| **Paraffin** | waxy and pale, gives under a fingernail | nothing | nothing | **softens from ~60 °C but holds its shape** | long exposure yellows it, chalks the surface, makes it brittle |
+| **Palm oil** | waxy and pale, gives under a fingernail | nothing | nothing | **slumps and runs by 45 °C** | **glows**; long exposure also turns it rancid |
+| **Paraffin** | waxy and pale, gives under a fingernail | nothing | nothing | **softens, then melts, by 80 °C** | long exposure yellows it, chalks the surface, makes it brittle |
 
 Refined paraffin, seashell and salt **do not fluoresce**. Only sea glass and palm oil glow,
 which is what gives the lamp a job nothing else can do.
 
 ### Settings
 
-The two tests with a dial use dropdowns, matching Nor'easter:
+The lamp has a dial, a dropdown matching Nor'easter's. The bath has none:
 
-- **Warm bath** — 20 °C, 40 °C, 60 °C, 80 °C. Salt dissolves at all four and visibly faster
-  at the top. Palm oil runs from 40. Paraffin softens from 60. Shell and glass never change.
+- **Warm bath** — the lump sits in a dry dish inside the bath, so only heat reaches it, and one
+  run steps it through 30 °C, 45 °C and 80 °C (two simulated minutes at each), reporting every
+  step, phase changes included (each wax softens before it melts). The three temperatures are
+  written on the instrument and light in turn as the run goes. Palm oil melts by 45, paraffin by
+  80. Salt, shell and glass never change.
 - **UV lamp** — a few seconds, an hour, a day, two weeks. Fluorescence is immediate at every
   exposure. Degradation needs the long end: palm oil goes rancid from *a day*, paraffin
   yellows and chalks only at *two weeks*.
@@ -100,7 +103,7 @@ the bottom holds:
 
 - **Test** — water, vinegar, warm bath, UV lamp. Choosing one brings that test's apparatus onto
   the bench: a tube of vinegar, the lamp, and so on.
-- **Setting** — appears only for the bath and the lamp, greyed out otherwise so the row does not
+- **Setting** — applies only to the lamp, greyed out otherwise so the row does not
   jump as the test changes.
 - **Look, feel, smell** — one button reporting the feel and the smell together. Available
   whenever a lump is on the bench, before its test and after but not while it runs (that would
@@ -184,7 +187,7 @@ work a student saved earlier.
 
 - **`observe()`** — every substance against every test and every setting, asserted against the
   table above. The bath and lamp thresholds get their own cases on both sides of each boundary
-  (palm oil at 20 and 40, paraffin at 40 and 60, palm oil rancid at an hour and a day).
+  (the bath's full 30/45/80 sequence for each wax, palm oil rancid at an hour and a day).
 - **The one-shot rule** — a lump with a result is absent from the Lump dropdown; `New` restores
   every budget; `Reset Trial` restores the current trial's.
 - **Free action** — examining never consumes a lump, and finds no smell until the lamp has

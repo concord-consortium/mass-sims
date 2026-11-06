@@ -1,17 +1,20 @@
+import { BATH_STEPS } from "./observe";
 import type { SettingId, TestId } from "./tests";
 
 /**
  * How long a test is meant to take *in the simulation*, in seconds.
  *
- * The three bench tests all run for two minutes, which is long enough for a lump to dissolve or
- * melt and short enough that a student would plausibly stand and watch. The lamp runs for
- * exactly the exposure that was dialled in, which is the whole point of its dial.
+ * Water and vinegar run for two minutes, which is long enough for a lump to dissolve and short
+ * enough that a student would plausibly stand and watch. The bath spends two minutes at each of
+ * its temperatures. The lamp runs for exactly the exposure that was dialled in, which is the
+ * whole point of its dial.
  *
  * This is the one place a duration is written down. The meter counts it out and the caption
  * quotes it, so they cannot disagree.
  */
 export function simDurationSeconds(test: TestId, setting: SettingId | null): number {
   if (test === "lamp") return EXPOSURE_SECONDS[String(setting)] ?? EXPOSURE_SECONDS.seconds;
+  if (test === "bath") return TWO_MINUTES * BATH_STEPS.length;
   return TWO_MINUTES;
 }
 
