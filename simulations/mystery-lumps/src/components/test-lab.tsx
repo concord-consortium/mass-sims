@@ -1,5 +1,5 @@
 import clsx from "clsx";
-import { BATH_STEPS, bathMeltStep, examine, observe } from "../model/observe";
+import { BATH_STEPS, bathMeltStep, lastSeen } from "../model/observe";
 import { LUMP_ASSIGNMENT, type LumpId, type SubstanceId } from "../model/substances";
 import { type SettingId, TESTS, type TestId } from "../model/tests";
 import type { Trial } from "../model/trial";
@@ -38,14 +38,7 @@ export function TestLab({
 }: TestLabProps) {
   const record = selectedLump ? trial.lumps[selectedLump] : null;
   const substance = selectedLump ? LUMP_ASSIGNMENT[selectedLump] : null;
-  // Once spent, the lump wears the state its test left it in. Before that it is a plain blob,
-  // or whatever examining revealed.
-  const resting =
-    substance && record?.result
-      ? observe(substance, record.result.test, record.result.setting).visual
-      : substance && (record?.examined.before || record?.examined.after)
-        ? examine(substance).visual
-        : "unknown";
+  const resting = substance && record ? lastSeen(substance, record) : "unknown";
 
   const timerKey = `${timerEpoch}:${test}:${setting}`;
 
@@ -54,7 +47,7 @@ export function TestLab({
       <div className="lab-title">Test Lab</div>
       <div className={clsx("bench", { running })}>
         {selectedLump === null ? (
-          <p className="bench-prompt">Pick a lump from the tray to put it on the bench.</p>
+          <p className="bench-prompt">Pick a sample from the tray to put it on the bench.</p>
         ) : (
           <>
             <div className={clsx("apparatus", `tool-${test}`)} aria-hidden="true">
@@ -69,7 +62,7 @@ export function TestLab({
                 style={meltDelay(substance, record?.result?.test)}
                 aria-hidden="true"
               />
-              <span className="bench-letter">Lump {selectedLump}</span>
+              <span className="bench-letter">Sample {selectedLump}</span>
             </div>
           </>
         )}

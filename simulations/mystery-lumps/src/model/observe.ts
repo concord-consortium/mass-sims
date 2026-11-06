@@ -1,5 +1,6 @@
 import type { SubstanceId } from "./substances";
 import type { SettingId, TestId } from "./tests";
+import type { LumpRecord } from "./trial";
 
 /** What a station draws. One per distinct thing a student can see or smell. */
 export type VisualKey =
@@ -264,4 +265,13 @@ export function massAfter(
 export function examine(substance: SubstanceId, prior: PriorResult | null = null): Observation {
   const feel = handled(substance, prior);
   return { caption: `${feel.caption} ${waft(substance, prior).caption}`, visual: feel.visual };
+}
+
+/**
+ * The lump as it was last seen: its test's end state if it has one, otherwise what examining
+ * it revealed, otherwise the anonymous blob every unexamined lump shares.
+ */
+export function lastSeen(substance: SubstanceId, record: LumpRecord): VisualKey | "unknown" {
+  if (record.result) return observe(substance, record.result.test, record.result.setting).visual;
+  return record.examined.before ? examine(substance).visual : "unknown";
 }

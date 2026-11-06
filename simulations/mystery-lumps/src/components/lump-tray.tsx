@@ -13,7 +13,7 @@ export interface LumpTrayProps {
 }
 
 /**
- * The five sample slots, across the full width of the Simulation column. Clicking a slot that
+ * The five sample slots, across the full width of the Simulation column, below the bench. Clicking a slot that
  * still holds a lump puts it on the bench.
  *
  * Running a test uses the lump up, and the lump is then gone from its slot — but the slot stays,
@@ -26,7 +26,7 @@ export function LumpTray({ trial, selectedLump, onSelect }: LumpTrayProps) {
 
   return (
     <div className="lump-tray">
-      <div className="tray-title">Sample tray</div>
+      <div className="tray-title">Choose a sample</div>
       <ul className="tray-slots">
         {LUMP_IDS.map((lump) => {
           const record = trial.lumps[lump];
@@ -43,7 +43,7 @@ export function LumpTray({ trial, selectedLump, onSelect }: LumpTrayProps) {
                   "used-up": usedUp,
                 })}
                 aria-pressed={lump === selectedLump}
-                aria-label={usedUp ? `Lump ${lump}, used up` : `Lump ${lump}`}
+                aria-label={usedUp ? `Sample ${lump}, used up` : `Sample ${lump}`}
                 disabled={usedUp}
                 onClick={() => onSelect(lump)}
               >
@@ -60,7 +60,7 @@ export function LumpTray({ trial, selectedLump, onSelect }: LumpTrayProps) {
       </ul>
       {anyLeft ? null : (
         <p className="tray-note">
-          Every lump has been used. Start a new trial to test these samples again.
+          Every sample has been used. Start a new trial to test them again.
         </p>
       )}
     </div>

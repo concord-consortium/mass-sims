@@ -1,6 +1,6 @@
 import { DataSubsection } from "@concord-consortium/mass-sims-shared";
 import clsx from "clsx";
-import { examine, massAfter, observe } from "../model/observe";
+import { examine, lastSeen, massAfter, observe } from "../model/observe";
 import { LUMP_ASSIGNMENT, LUMP_IDS, type LumpId, startingMass } from "../model/substances";
 import { type SettingId, TESTS, type TestId } from "../model/tests";
 import type { Trial } from "../model/trial";
@@ -64,15 +64,7 @@ export function EvidencePanel({
       lines.push({ key: "examined-after", text: examine(substance, result).caption });
     }
 
-    // The picture shows the lump as it was last seen: its test's end state if it has one,
-    // otherwise whatever examining revealed, otherwise the anonymous blob.
-    const visual = result
-      ? observe(substance, result.test, result.setting).visual
-      : record.examined.before
-        ? examine(substance).visual
-        : "unknown";
-
-    return { lump, visual, lines };
+    return { lump, visual: lastSeen(substance, record), lines };
   }).filter((r) => r.lines.length > 0);
 
   return (
@@ -90,7 +82,7 @@ export function EvidencePanel({
                   className={clsx("evidence-blob", `visual-${row.visual}`)}
                   aria-hidden="true"
                 />
-                <span className="evidence-lump">Lump {row.lump}</span>
+                <span className="evidence-lump">Sample {row.lump}</span>
               </div>
               {row.lines.map((line) => (
                 <p className="evidence-note" key={line.key}>

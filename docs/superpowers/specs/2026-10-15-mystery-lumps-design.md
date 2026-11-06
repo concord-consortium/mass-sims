@@ -16,10 +16,10 @@ claim has to rest on a reaction.
 
 ## The science model
 
-Fixed assignment, the same for every student, so a class can talk about "lump C" and mean
+Fixed assignment, the same for every student, so a class can talk about "sample 3" and mean
 the same thing:
 
-| Lump | A | B | C | D | E |
+| Lump | 1 | 2 | 3 | 4 | 5 |
 |---|---|---|---|---|---|
 | | paraffin wax | sea salt crust | white sea glass | palm oil | seashell |
 
@@ -70,11 +70,11 @@ and hand out an answer for free. Only a change in mass counts as evidence.
 
 | Lump | Density (g/cm³) | Volume (cm³) | Mass (g) |
 |---|---|---|---|
-| A paraffin | 0.90 | 38 | 34.2 |
-| B sea salt | 2.17 | 31 | 67.3 |
-| C sea glass | 2.50 | 34 | 85.0 |
-| D palm oil | 0.89 | 40 | 35.6 |
-| E seashell | 2.50 | 36 | 90.0 |
+| 1 paraffin | 0.90 | 38 | 34.2 |
+| 2 sea salt | 2.17 | 31 | 67.3 |
+| 3 sea glass | 2.50 | 34 | 85.0 |
+| 4 palm oil | 0.89 | 40 | 35.6 |
+| 5 seashell | 2.50 | 36 | 90.0 |
 
 Dissolving takes the mass to 0. Shell in vinegar loses 0.4 g as gas; every vinegar note says the container is open, so the loss has an explanation. Paraffin after two weeks
 under the lamp loses 4% (the crumbled corner). Melting and softening change nothing, because
@@ -93,7 +93,7 @@ paper assignment can ask about; the sim takes no position on it.
 The Simulation column is a **sample tray** across its full width and a **Test Lab** filling the
 rest below it.
 
-The tray holds the lumps that still have material, each a picture and a letter. **Clicking one
+The tray holds the lumps that still have material, each a picture and a number (numbers, because the trials are lettered). **Clicking one
 puts it on the bench** — click to select rather than drag, so the tray is reachable by keyboard
 and screen reader like every other control in the repo. Drag-and-drop can be added later as a
 second way in, never as the only one.
@@ -133,10 +133,10 @@ Shared three-region frame, built to Nor'easter's shipped look — pale blue surf
 blue borders, navy text, pill chips. (`docs/ui-design-plan.md` describes grey panels with notched
 chips; it is stale, and this sim does not follow it.)
 
-- **Trials** — one tall card per trial, accumulating a row per lump: lump letter, the test it was
-  given, and its setting. `New` at the foot; reset on the selected card.
-- **Simulation** — the sample tray across the full width at the top, the Test Lab below it with
-  its bench and its control row.
+- **Trials** — one tall card per trial, accumulating a row per lump: a small icon of the lump as
+  its test left it, "Sample N", the test it was given, and its setting. `New` at the foot; reset on the selected card.
+- **Simulation** — the Test Lab on top with its bench and its control row ("Run a Test"), and the
+  sample tray ("Choose a sample") across the full width below it.
 - **Data** — the record, and the only place results persist once a lump has left the bench. Each
   lump that has been observed or tested at all gets a picture of itself alongside its notes in
   full prose. Since the sim asks for no identification, this panel is the deliverable.

@@ -20,21 +20,21 @@ const base = {
 describe("TestLab", () => {
   it("asks for a lump when the bench is empty", () => {
     const { getByText } = render(<TestLab {...base} selectedLump={null} />);
-    expect(getByText(/pick a lump from the tray/i)).toBeInTheDocument();
+    expect(getByText(/pick a sample from the tray/i)).toBeInTheDocument();
   });
 
   it("names the apparatus for the chosen test", () => {
-    const { getByText, rerender } = render(<TestLab {...base} selectedLump="A" />);
+    const { getByText, rerender } = render(<TestLab {...base} selectedLump="1" />);
     expect(getByText(/tube of vinegar/i)).toBeInTheDocument();
-    rerender(<TestLab {...base} selectedLump="A" test="bath" setting={null} />);
+    rerender(<TestLab {...base} selectedLump="1" test="bath" setting={null} />);
     expect(getByText(/dry dish in a warm bath/i)).toBeInTheDocument();
-    rerender(<TestLab {...base} selectedLump="A" test="lamp" setting="fortnight" />);
+    rerender(<TestLab {...base} selectedLump="1" test="lamp" setting="fortnight" />);
     expect(getByText(/uv lamp, two weeks/i)).toBeInTheDocument();
   });
 
   it("writes the bath's temperatures on it and lights each in turn as the run goes", () => {
     const { container, getByText } = render(
-      <TestLab {...base} selectedLump="D" test="bath" running={true} />,
+      <TestLab {...base} selectedLump="4" test="bath" running={true} />,
     );
     const current = () => container.querySelector(".bath-dial .current")?.textContent ?? null;
     expect(getByText("45 °C")).toBeInTheDocument();
@@ -49,14 +49,14 @@ describe("TestLab", () => {
   });
 
   it("keeps a spent lump on the bench", () => {
-    const trial = applyTest(makeEmptyTrial(), "D", "lamp", "day");
-    const { getByText } = render(<TestLab {...base} trial={trial} selectedLump="D" />);
-    expect(getByText("Lump D")).toBeInTheDocument();
+    const trial = applyTest(makeEmptyTrial(), "4", "lamp", "day");
+    const { getByText } = render(<TestLab {...base} trial={trial} selectedLump="4" />);
+    expect(getByText("Sample 4")).toBeInTheDocument();
   });
 
   it("shows the span a test will take before anything is run", () => {
     // The meter is always on the bench, so a student can see what they are committing a lump to.
-    const { getByRole } = render(<TestLab {...base} selectedLump="A" />);
+    const { getByRole } = render(<TestLab {...base} selectedLump="1" />);
     const bar = getByRole("progressbar");
     // Two minutes in the vinegar, whatever the seven real seconds the bar takes to fill.
     expect(bar).toHaveAttribute("aria-valuemax", "120");
@@ -72,22 +72,22 @@ describe("TestLab", () => {
   // zero without painting first would pass even if nothing reset it, since jsdom never paints.
   it("restarts the bar when the chosen test changes", () => {
     const { getByRole, rerender } = render(
-      <TestLab {...base} selectedLump="A" test="lamp" setting="day" running={true} />,
+      <TestLab {...base} selectedLump="1" test="lamp" setting="day" running={true} />,
     );
     paint(0);
     paint(RUN_MS);
     expect(getByRole("progressbar")).toHaveAttribute("aria-valuenow", "86400");
 
-    rerender(<TestLab {...base} selectedLump="A" test="water" setting={null} running={true} />);
+    rerender(<TestLab {...base} selectedLump="1" test="water" setting={null} running={true} />);
     const bar = getByRole("progressbar");
     expect(bar).toHaveAttribute("aria-valuemax", "120");
     expect(bar).toHaveAttribute("aria-valuenow", "0");
   });
 
   it("empties the bar when the lump's test is reset", () => {
-    const trial = applyTest(makeEmptyTrial(), "A", "vinegar", null);
+    const trial = applyTest(makeEmptyTrial(), "1", "vinegar", null);
     const { getByRole, rerender } = render(
-      <TestLab {...base} trial={trial} selectedLump="A" running={true} />,
+      <TestLab {...base} trial={trial} selectedLump="1" running={true} />,
     );
     paint(0);
     paint(RUN_MS);
@@ -95,44 +95,44 @@ describe("TestLab", () => {
 
     // What Reset Test does: the lump gets its material back and the epoch moves on.
     rerender(
-      <TestLab {...base} selectedLump="A" running={false} timerEpoch={base.timerEpoch + 1} />,
+      <TestLab {...base} selectedLump="1" running={false} timerEpoch={base.timerEpoch + 1} />,
     );
     expect(getByRole("progressbar")).toHaveAttribute("aria-valuenow", "0");
   });
 
   it("counts the lamp out over the exposure that was dialled in", () => {
     const { getByRole } = render(
-      <TestLab {...base} selectedLump="A" test="lamp" setting="fortnight" running={true} />,
+      <TestLab {...base} selectedLump="1" test="lamp" setting="fortnight" running={true} />,
     );
     expect(getByRole("progressbar")).toHaveAttribute("aria-valuemax", "1209600");
   });
 
   it("sends the lump to the apparatus for a run, and leaves it there once spent", () => {
-    const { container, rerender } = render(<TestLab {...base} selectedLump="A" />);
+    const { container, rerender } = render(<TestLab {...base} selectedLump="1" />);
     const lump = () => container.querySelector(".bench-lump");
     // At rest on the counter before anything is run.
     expect(lump()).not.toHaveClass("staged");
 
-    rerender(<TestLab {...base} selectedLump="A" running={true} />);
+    rerender(<TestLab {...base} selectedLump="1" running={true} />);
     expect(lump()).toHaveClass("staged");
 
     // The run is over but the lump stays in the apparatus, so the bench still reads as a record.
-    const trial = applyTest(makeEmptyTrial(), "A", "vinegar", null);
-    rerender(<TestLab {...base} trial={trial} selectedLump="A" running={false} />);
+    const trial = applyTest(makeEmptyTrial(), "1", "vinegar", null);
+    rerender(<TestLab {...base} trial={trial} selectedLump="1" running={false} />);
     expect(lump()).toHaveClass("staged");
   });
 
   it("brings the lump back to rest when its test is reset", () => {
-    const trial = applyTest(makeEmptyTrial(), "A", "vinegar", null);
-    const { container, rerender } = render(<TestLab {...base} trial={trial} selectedLump="A" />);
+    const trial = applyTest(makeEmptyTrial(), "1", "vinegar", null);
+    const { container, rerender } = render(<TestLab {...base} trial={trial} selectedLump="1" />);
     expect(container.querySelector(".bench-lump")).toHaveClass("staged");
-    rerender(<TestLab {...base} selectedLump="A" />);
+    rerender(<TestLab {...base} selectedLump="1" />);
     expect(container.querySelector(".bench-lump")).not.toHaveClass("staged");
   });
 
   it("shows the latest observation", () => {
     const { getByText } = render(
-      <TestLab {...base} selectedLump="A" message="A sharp, rancid smell." />,
+      <TestLab {...base} selectedLump="1" message="A sharp, rancid smell." />,
     );
     expect(getByText("A sharp, rancid smell.")).toBeInTheDocument();
   });

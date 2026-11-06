@@ -11,64 +11,64 @@ import {
 describe("trial", () => {
   it("starts with five lumps, none touched", () => {
     const trial = makeEmptyTrial();
-    expect(untestedLumps(trial)).toEqual(["A", "B", "C", "D", "E"]);
-    expect(trial.lumps.A).toEqual({
+    expect(untestedLumps(trial)).toEqual(["1", "2", "3", "4", "5"]);
+    expect(trial.lumps["1"]).toEqual({
       examined: { before: false, after: false },
       result: null,
     });
   });
 
   it("spends a lump's one shot, and offers it no more", () => {
-    const trial = applyTest(makeEmptyTrial(), "C", "lamp", "fortnight");
-    expect(trial.lumps.C.result).toEqual({ test: "lamp", setting: "fortnight" });
-    expect(untestedLumps(trial)).toEqual(["A", "B", "D", "E"]);
+    const trial = applyTest(makeEmptyTrial(), "3", "lamp", "fortnight");
+    expect(trial.lumps["3"].result).toEqual({ test: "lamp", setting: "fortnight" });
+    expect(untestedLumps(trial)).toEqual(["1", "2", "4", "5"]);
   });
 
   it("refuses a second destructive test on the same lump", () => {
-    const once = applyTest(makeEmptyTrial(), "C", "lamp", "fortnight");
-    const twice = applyTest(once, "C", "vinegar", null);
-    expect(twice.lumps.C.result).toEqual({ test: "lamp", setting: "fortnight" });
+    const once = applyTest(makeEmptyTrial(), "3", "lamp", "fortnight");
+    const twice = applyTest(once, "3", "vinegar", null);
+    expect(twice.lumps["3"].result).toEqual({ test: "lamp", setting: "fortnight" });
     expect(twice).toBe(once); // unchanged, same reference
   });
 
   it("lets a lump be examined even after its test is spent", () => {
-    let trial = applyTest(makeEmptyTrial(), "D", "lamp", "day");
-    trial = markExamined(trial, "D");
-    expect(trial.lumps.D.examined).toEqual({ before: false, after: true });
-    expect(trial.lumps.D.result).toEqual({ test: "lamp", setting: "day" });
+    let trial = applyTest(makeEmptyTrial(), "4", "lamp", "day");
+    trial = markExamined(trial, "4");
+    expect(trial.lumps["4"].examined).toEqual({ before: false, after: true });
+    expect(trial.lumps["4"].result).toEqual({ test: "lamp", setting: "day" });
   });
 
   it("keeps a before and an after observation apart", () => {
     // The pair is the argument: waxy and pale beforehand, a greasy pool after the bath.
-    let trial = markExamined(makeEmptyTrial(), "D");
-    trial = applyTest(trial, "D", "bath", null);
-    trial = markExamined(trial, "D");
-    expect(trial.lumps.D.examined).toEqual({ before: true, after: true });
+    let trial = markExamined(makeEmptyTrial(), "4");
+    trial = applyTest(trial, "4", "bath", null);
+    trial = markExamined(trial, "4");
+    expect(trial.lumps["4"].examined).toEqual({ before: true, after: true });
   });
 
   it("drops the post-test observations when the test is reset, and keeps the earlier ones", () => {
-    let trial = markExamined(makeEmptyTrial(), "D");
-    trial = applyTest(trial, "D", "bath", null);
-    trial = markExamined(trial, "D");
+    let trial = markExamined(makeEmptyTrial(), "4");
+    trial = applyTest(trial, "4", "bath", null);
+    trial = markExamined(trial, "4");
 
-    const back = resetLumpTest(trial, "D");
+    const back = resetLumpTest(trial, "4");
     // What was seen before the test still happened; what was seen after describes a lump that
     // no longer exists.
-    expect(back.lumps.D.examined).toEqual({ before: true, after: false });
-    expect(back.lumps.D.result).toBeNull();
+    expect(back.lumps["4"].examined).toEqual({ before: true, after: false });
+    expect(back.lumps["4"].result).toBeNull();
   });
 
   it("clears a trial in place, keeping its id", () => {
-    const trial = markExamined(applyTest(makeEmptyTrial(), "A", "water", null), "B");
+    const trial = markExamined(applyTest(makeEmptyTrial(), "1", "water", null), "2");
     const cleared = clearTrial(trial);
     expect(cleared.id).toBe(trial.id);
     expect(untestedLumps(cleared)).toHaveLength(5);
-    expect(cleared.lumps.B.examined).toEqual({ before: false, after: false });
+    expect(cleared.lumps["2"].examined).toEqual({ before: false, after: false });
   });
 
   it("does not mutate the trial it was given", () => {
     const before = makeEmptyTrial();
-    applyTest(before, "A", "water", null);
-    expect(before.lumps.A.result).toBeNull();
+    applyTest(before, "1", "water", null);
+    expect(before.lumps["1"].result).toBeNull();
   });
 });

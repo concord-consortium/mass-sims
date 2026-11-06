@@ -1,19 +1,19 @@
 export type SubstanceId = "seashell" | "sea-salt" | "sea-glass" | "palm-oil" | "paraffin";
-export type LumpId = "A" | "B" | "C" | "D" | "E";
+export type LumpId = "1" | "2" | "3" | "4" | "5";
 
-export const LUMP_IDS = ["A", "B", "C", "D", "E"] as const satisfies readonly LumpId[];
+export const LUMP_IDS = ["1", "2", "3", "4", "5"] as const satisfies readonly LumpId[];
 
 /**
- * The same five lumps for every student, so a class can say "lump C" and mean one thing.
+ * The same five lumps for every student, so a class can say "lump 3" and mean one thing.
  * Scrambled relative to how the substances are listed anywhere else, so the order itself
  * gives nothing away.
  */
 export const LUMP_ASSIGNMENT: Record<LumpId, SubstanceId> = {
-  A: "paraffin",
-  B: "sea-salt",
-  C: "sea-glass",
-  D: "palm-oil",
-  E: "seashell",
+  "1": "paraffin",
+  "2": "sea-salt",
+  "3": "sea-glass",
+  "4": "palm-oil",
+  "5": "seashell",
 };
 
 /** g/cm³. Sea glass is soda-lime glass, which is why it matches the shell. */
@@ -30,7 +30,7 @@ const DENSITY: Record<SubstanceId, number> = {
  * starting mass alone would rank the densities and split the salt from the hard pair for free.
  * Mass only becomes evidence when it changes.
  */
-const VOLUME: Record<LumpId, number> = { A: 38, B: 31, C: 34, D: 40, E: 36 };
+const VOLUME: Record<LumpId, number> = { "1": 38, "2": 31, "3": 34, "4": 40, "5": 36 };
 
 /** Grams, to the scale's 0.1 g. */
 export function startingMass(lump: LumpId): number {

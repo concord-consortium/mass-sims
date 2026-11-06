@@ -50,7 +50,7 @@ export function LabControls({
     <div className="lab-controls">
       <div className="control-row tests">
         <fieldset className="test-buttons">
-          <legend className="control-label">Test</legend>
+          <legend className="control-label">Run a Test</legend>
           {CONSUMING_TESTS.map((id) => (
             <Button
               key={id}

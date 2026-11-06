@@ -1,0 +1,16 @@
+@use "./lump-tray.scss" as tray;
+
+.card-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+// A thumbnail of the bench and notebook pictures, so a row reads as the same sample.
+.card-blob {
+  width: 12px;
+  height: 10px;
+  border-radius: 2px;
+  flex: none;
+  @include tray.lump-visual;
+}

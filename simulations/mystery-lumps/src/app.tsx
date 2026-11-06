@@ -204,7 +204,6 @@ export function App() {
       </SimulationFrame.Trials>
 
       <SimulationFrame.Simulation instruction="Each lump has enough for one test — looking is free">
-        <LumpTray trial={selected} selectedLump={selectedLump} onSelect={pickLump} />
         <TestLab
           trial={selected}
           selectedLump={selectedLump}
@@ -226,6 +225,7 @@ export function App() {
           onRun={runTest}
           onResetTest={resetTest}
         />
+        <LumpTray trial={selected} selectedLump={selectedLump} onSelect={pickLump} />
       </SimulationFrame.Simulation>
 
       <SimulationFrame.Data>
