@@ -52,7 +52,7 @@ add a placeholder to reserve the name. For a fuller worked example of the layout
 
 ```bash
 yarn install            # link the new workspace (the root `simulations/*` glob picks it up)
-yarn gen-index          # refresh the root index.html that lists every sim
+yarn gen-index          # refresh the root index.html (skips the sim until it has a massSims block)
 yarn gen-workflows      # generate .github/workflows/sim-<name>.yml (per-sim build + deploy)
 ```
 

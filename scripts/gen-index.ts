@@ -18,9 +18,11 @@
 //   yarn gen-index --check    → verify index.html matches what would be generated;
 //                               exits non-zero with a hint if it's stale
 //
-// CI runs --check on every push so the committed index.html never drifts from the
-// workspace list. Developers run `yarn gen-index` (no flag) after adding/removing a
-// sim, or changing scripts/landing/, then commit the regenerated index.html.
+// CI runs --check on every push so the committed index.html never drifts from its
+// inputs: each sim's `massSims` block, scripts/landing/, the shared tokens.scss and
+// generated widths, target-widths.ts, and the branding SVGs. Developers run
+// `yarn gen-index` (no flag) after changing any of them, then commit the regenerated
+// index.html.
 //
 // Note: this script ignores `packages/*` workspaces (shared library, starter template);
 // only `simulations/*` are user-facing and listed in the index.
@@ -319,7 +321,10 @@ function main() {
   if (checkMode) {
     const actual = existsSync(indexPath) ? readFileSync(indexPath, "utf8") : "";
     if (actual !== expected) {
-      console.error("gen-index: index.html is out of date with the sims or scripts/landing/.");
+      console.error(
+        "gen-index: index.html is out of date with its inputs (the sims' massSims blocks, " +
+          "scripts/landing/, the shared tokens, target widths or branding SVGs).",
+      );
       console.error("           Run `yarn gen-index` to regenerate, then commit the result.");
       process.exit(1);
     }

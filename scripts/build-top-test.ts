@@ -21,7 +21,7 @@
 //   - top-level HTML at /sim-one/ loading JS from /version/release/sim-one/
 //   - JS's runtime-resolved asset URLs (the Vite renderBuiltUrl path)
 //   - the landing page at all three deploy paths (/, /version/<tag>/, /branch/<name>/), each
-//     loading its sims from beside it. The Playwright `landing` project tests these.
+//     loading its sims from beside it. The Playwright `landing-*` projects test these.
 //
 // This is the local equivalent of starter-projects' build:top-test / serve:top-test pair.
 

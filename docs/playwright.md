@@ -15,7 +15,7 @@ behavior — against the same static artifacts users get.
 | Command | What it does |
 | --- | --- |
 | `yarn test:playwright:build` | **Full cycle** — builds every sim and the `top-test/` fixture (`yarn build:top-test`), then runs the suite. Use this most of the time. |
-| `yarn test:playwright` | Runs the suite **assuming `dist/` already exists** (it does NOT build). Fast iteration after a build. |
+| `yarn test:playwright` | Runs the suite **assuming `dist/` and `top-test/` already exist** (it does NOT build). Fast iteration after a build. |
 | `yarn test:playwright:open` | Playwright UI mode (watch + time-travel debugging). |
 | `yarn test:playwright --project=chromium-1044` | One viewport only (fastest iteration). |
 | `yarn test:playwright playwright/tests/landing` | The landing page only (its three `landing-*` projects). |

@@ -66,7 +66,7 @@ yarn test:playwright:build
 ```sh
 yarn new-sim <name>     # scaffold simulations/<name>/ from packages/starter
 yarn install            # link the new workspace
-yarn gen-index          # refresh the root index.html that lists every sim
+yarn gen-index          # refresh the root index.html (lists sims with a massSims block)
 yarn gen-workflows      # generate .github/workflows/sim-<name>.yml
 ```
 
