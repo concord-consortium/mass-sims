@@ -366,7 +366,7 @@ body {
   const sims = JSON.parse(document.getElementById("sims").textContent);
   const buttons = document.querySelectorAll(".sim-button");
   const panel = document.querySelector(".sim-panel");
-  const frame = document.querySelector(".sim-frame");
+  let frame = document.querySelector(".sim-frame");
   const shareName = document.getElementById("share-name");
   const liveRegion = document.querySelector(".share [aria-live]");
   const shareButtons = document.querySelectorAll(".share-button");
@@ -407,8 +407,13 @@ body {
     for (const button of buttons) {
       button.setAttribute("aria-pressed", String(button.dataset.sim === sim.name));
     }
-    frame.src = `./${sim.name}/index.html?standalone=true`;
-    frame.title = `${sim.title} simulation`;
+    // A new iframe, not a new src: navigating the old one would add a browser history entry, and
+    // Back would then change the sim without changing the rest of the page.
+    const next = frame.cloneNode(false);
+    next.src = `./${sim.name}/index.html?standalone=true`;
+    next.title = `${sim.title} simulation`;
+    frame.replaceWith(next);
+    frame = next;
     setPanelColors(sim.colors);
     shareName.textContent = sim.title;
   }

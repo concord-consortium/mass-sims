@@ -50,6 +50,23 @@ test("each button runs its sim in the iframe, in standalone mode", async ({ page
   }
 });
 
+test("switching sims adds no browser history, so one Back leaves the page", async ({ page }) => {
+  await page.goto("about:blank");
+  await landing.goto("/");
+  await expect(landing.sim.locator(".sim-title")).toHaveText("Bananas");
+  const before = await page.evaluate(() => history.length);
+
+  for (const sim of SIMS.slice(1)) {
+    await landing.simButton(sim.name).click();
+    // The history entry would be added when the iframe's navigation commits, so wait for the sim.
+    await expect(landing.sim.locator(".sim-title")).toHaveText(sim.title);
+  }
+
+  expect(await page.evaluate(() => history.length)).toBe(before);
+  await page.goBack();
+  expect(page.url()).toBe("about:blank");
+});
+
 test("buttons sit left of the sim, which stretches between its limits", async ({ page }) => {
   await landing.goto("/");
   const viewport = page.viewportSize();
