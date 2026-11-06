@@ -28,8 +28,8 @@ export interface TestLabProps {
 
 /**
  * The Test Lab: the bench, with the test picker down its right side. One lump at a time stands
- * on the bench with the apparatus for the chosen test, and a caption below it for whatever was
- * last observed.
+ * on the bench with the apparatus for the chosen test, and a caption laid over it for whatever
+ * was last observed.
  *
  * Look, feel, smell sits on the counter where the lump rests, and stays there when the lump
  * goes to the apparatus; it is free, so it is never part of the test area. Run and Reset Test share the bench's bottom-right corner: once a lump's test
@@ -61,60 +61,56 @@ export function TestLab({
     <div className="test-lab">
       <div className="lab-title">Test Lab</div>
       <div className="lab-body">
-        <div className="bench-column">
-          <div className={clsx("bench", { running })}>
-            {selectedLump === null ? (
-              <p className="bench-prompt">Pick a sample from the tray to put it on the bench.</p>
-            ) : (
-              <>
-                <div className={clsx("apparatus", `tool-${test}`)} aria-hidden="true">
-                  {test === "bath" ? <BathDial key={timerKey} running={running} /> : null}
-                  <span className="tool-label">{TOOL_LABELS[test]}</span>
-                </div>
-                {/* Staged means "at the apparatus": the lump travels there on Run and stays once
+        <div className={clsx("bench", { running })}>
+          {selectedLump === null ? (
+            <p className="bench-prompt">Pick a sample from the tray to put it on the bench.</p>
+          ) : (
+            <>
+              <div className={clsx("apparatus", `tool-${test}`)} aria-hidden="true">
+                {test === "bath" ? <BathDial key={timerKey} running={running} /> : null}
+                <span className="tool-label">{TOOL_LABELS[test]}</span>
+              </div>
+              {/* Staged means "at the apparatus": the lump travels there on Run and stays once
                   its test is spent, so the bench still reads as a record afterwards. */}
-                <div className={clsx("bench-lump", { staged: running || spent })}>
-                  <span
-                    className={clsx("bench-blob", `visual-${resting}`)}
-                    style={meltDelay(substance, record?.result?.test)}
-                    aria-hidden="true"
-                  />
-                  <span className="bench-letter">Sample {selectedLump}</span>
-                </div>
-                <Button
-                  className="examine-button"
-                  onPress={onExamine}
-                  // Examining mid-run would describe the result before the test had finished.
-                  isDisabled={running}
-                  action="lump_examined"
-                >
-                  <span aria-hidden="true">🔍</span> Look, feel, smell
-                </Button>
-              </>
-            )}
-            <TestTimer
-              // Replaced rather than rewound: a new run, or a change of test, gets a fresh bar.
-              key={timerKey}
-              test={test}
-              running={running}
-            />
-            {spent ? (
-              <Button className="bench-action" onPress={onResetTest} isDisabled={running}>
-                Reset Test
-              </Button>
-            ) : (
+              <div className={clsx("bench-lump", { staged: running || spent })}>
+                <span className="bench-letter">Sample {selectedLump}</span>
+                <span
+                  className={clsx("bench-blob", `visual-${resting}`)}
+                  style={meltDelay(substance, record?.result?.test)}
+                  aria-hidden="true"
+                />
+              </div>
               <Button
-                className="bench-action run-button"
-                onPress={onRun}
-                isDisabled={selectedLump === null || running}
+                className="examine-button"
+                onPress={onExamine}
+                // Examining mid-run would describe the result before the test had finished.
+                isDisabled={running}
+                action="lump_examined"
               >
-                Run test
+                <span aria-hidden="true">🔍</span> Look, feel, smell
               </Button>
-            )}
-          </div>
-          {/* Under the bench rather than on it: a three-step bath result would cover the
-            equipment. */}
-          <p className="bench-message">{message}</p>
+            </>
+          )}
+          <TestTimer
+            // Replaced rather than rewound: a new run, or a change of test, gets a fresh bar.
+            key={timerKey}
+            test={test}
+            running={running}
+          />
+          {spent ? (
+            <Button className="bench-action" onPress={onResetTest} isDisabled={running}>
+              Reset Test
+            </Button>
+          ) : (
+            <Button
+              className="bench-action run-button"
+              onPress={onRun}
+              isDisabled={selectedLump === null || running}
+            >
+              Run test
+            </Button>
+          )}
+          {message ? <p className="bench-message">{message}</p> : null}
         </div>
         <TestPicker test={test} running={running} onTestChange={onTestChange} />
       </div>

@@ -50,3 +50,16 @@
 .new-trial-card {
   width: var(--trial-card-width, 120px);
 }
+
+// The section label is one pill holding both the title and the instruction, and the shared
+// styles let both shrink, so a long instruction cut "Simulation" off. Only the instruction
+// gives way here, in a size smaller.
+.simulation-area .chip {
+  .title {
+    flex-shrink: 0;
+  }
+
+  .instruction {
+    font-size: tokens.$font-size-sm;
+  }
+}

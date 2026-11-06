@@ -112,7 +112,7 @@ The Test Lab is a drawing of a lab bench with the chosen lump on it:
 - **Run** — in the bench's bottom-right corner. Once the lump's test has run, **Reset Test**
   takes its place and gives that one lump its material back.
 
-The latest observation's caption sits in a line under the bench.
+The latest observation's caption is laid over the bench's wall, below the timer, so the bench keeps its full height.
 
 Running a test spends the lump. **It then leaves the tray**, because there is no material left
 to test — but it **stays on the bench until the student picks a different lump**. That window is

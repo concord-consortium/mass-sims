@@ -172,7 +172,7 @@ $counter-button-inset: 6px;
   width: 32px;
   height: 27px;
   border-radius: 4px;
-  margin: 0 auto 2px;
+  margin: 0 auto;
   transform-origin: bottom center;
   @include tray.lump-visual;
 }
@@ -222,7 +222,10 @@ $counter-button-inset: 6px;
   }
 }
 
+// Above the lump, so the lump itself stands on the counter.
 .bench-letter {
+  display: block;
+  margin-bottom: 2px;
   font-size: 11px;
   font-weight: 700;
 }
@@ -245,19 +248,20 @@ $counter-button-inset: 6px;
   z-index: 3;
 }
 
-.bench-column {
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
-  flex: 1 1 auto;
-  min-width: 0;
-}
-
-// Room held for the longest caption (the bath's three steps), so the bench above stays put
-// whether there is a caption or not.
+// Laid over the wall, below the timer, rather than taking a line of its own: the bench keeps
+// its full height whether or not there is a caption. The lamp is the only thing it can cover,
+// and the lump's result plays out below it on the counter.
 .bench-message {
+  position: absolute;
+  top: 48px;
+  left: 8px;
+  right: 8px;
+  z-index: 4;
   margin: 0;
+  padding: 4px 7px;
   font-size: 11px;
   line-height: 1.35;
-  min-height: calc(4 * 1.35em);
+  background: rgba(255, 255, 255, 0.94);
+  border: 1px solid #c3d2e3;
+  border-radius: 5px;
 }

@@ -158,7 +158,7 @@ export function App() {
   return (
     <SimulationFrame
       simTitle="Mystery Lumps"
-      tagline="Five white lumps washed up on a beach. What are they?"
+      tagline="Choose one test to distinguish lumps"
       infoModalContent={
         <p>
           Five lumps were collected from a beach. Each one has enough material for a single test, so
@@ -194,7 +194,7 @@ export function App() {
         ) : null}
       </SimulationFrame.Trials>
 
-      <SimulationFrame.Simulation instruction="Each lump has enough for one test — looking is free">
+      <SimulationFrame.Simulation instruction="Each sample has enough for one test — observation is free">
         <TestLab
           trial={selected}
           selectedLump={selectedLump}
