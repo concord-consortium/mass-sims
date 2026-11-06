@@ -141,7 +141,7 @@ the `landing-1084`, `landing-1200` and `landing-1920` projects (the sim projects
 `tests/landing/`, and the landing projects run nothing else). 1084 is the narrowest window with no
 sideways scroll; at 1200 the sim is stretched; at 1920 it is at its full 1028 px.
 
-It runs against the `top-test/` fixture, served by `yarn serve:top-test` on port 8000 (the
+It runs against the `top-test/` fixture, which the e2e run serves itself on port 8000 (the
 `TOP_TEST_PORT` in [`sims.ts`](../playwright/sims.ts); the
 [`LandingPage`](../playwright/pages/landing-page.ts) page object builds its URLs from it, with no
 `baseURL`). `build:top-test` lays the page out at three deploy paths, each with every sim's

@@ -25,9 +25,12 @@
       .replaceAll(">", "&gt;");
   }
 
+  // The embed size comes from the shared layout constants, through the button's data attributes.
+  const { embedWidth, embedHeight } = document.getElementById("share-copy-embed").dataset;
+
   function embedCode(sim) {
     return (
-      `<iframe src="${escapeAttr(simUrl(sim))}" width="1024" height="562" ` +
+      `<iframe src="${escapeAttr(simUrl(sim))}" width="${embedWidth}" height="${embedHeight}" ` +
       `frameborder="0" allowfullscreen title="${escapeAttr(sim.title)}"></iframe>`
     );
   }
@@ -38,7 +41,6 @@
     panel.style.setProperty("--sim-border", colors.border);
     panel.style.setProperty("--sim-hover", colors.hover);
     panel.style.setProperty("--sim-active", colors.active);
-    panel.style.setProperty("--sim-selected-text", colors.selectedText);
   }
 
   function select(sim) {

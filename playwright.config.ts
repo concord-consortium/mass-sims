@@ -72,9 +72,9 @@ export default defineConfig({
       reuseExistingServer: false,
       timeout: 120_000,
     })),
-    // The landing page, from the top-test fixture. `serve:top-test` listens on TOP_TEST_PORT.
+    // The landing page, from the top-test fixture.
     {
-      command: "yarn serve:top-test",
+      command: `yarn serve -p ${TOP_TEST_PORT} top-test`,
       port: TOP_TEST_PORT,
       reuseExistingServer: false,
       timeout: 120_000,

@@ -29,11 +29,16 @@ import { existsSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import * as sass from "sass";
+import { FRAME_HEIGHT, TARGET_WIDTHS } from "../packages/shared/src/layout/target-widths";
 
 const SCRIPT_DIR = dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = resolve(SCRIPT_DIR, "..");
 const LANDING_DIR = join(SCRIPT_DIR, "landing");
 const BRANDING_DIR = join(REPO_ROOT, "packages", "shared", "src", "assets", "branding");
+
+// The embed code's iframe size: the standalone width and the frame height.
+const EMBED_WIDTH = TARGET_WIDTHS.find((w) => w.token === "standalone")?.px;
+if (EMBED_WIDTH === undefined) throw new Error('gen-index: no "standalone" entry in TARGET_WIDTHS');
 
 /** The wordmark font: the same settings as the sim's own `.sim-title`. */
 export interface TitleFont {
@@ -64,7 +69,6 @@ export interface MassSimsMeta {
 
 export interface SimInfo {
   name: string;
-  description: string;
   meta: MassSimsMeta;
 }
 
@@ -120,7 +124,7 @@ export function toSimInfo(name: string, pkg: Record<string, unknown>): SimInfo |
   const meta = pkg.massSims as MassSimsMeta | undefined;
   if (!meta) return null;
   validateMeta(name, meta);
-  return { name, description: (pkg.description as string | undefined) ?? "", meta };
+  return { name, meta };
 }
 
 /** Sort by `order`, then by folder name. */
@@ -171,7 +175,7 @@ export function discoverSims(): SimInfo[] {
 }
 
 /** For HTML text and attribute values. */
-export function escapeHtml(s: string): string {
+function escapeHtml(s: string): string {
   const map: Record<string, string> = {
     "&": "&amp;",
     "<": "&lt;",
@@ -186,25 +190,28 @@ export function escapeHtml(s: string): string {
  * For JSON inside a <script> element, where the browser does not decode HTML entities. The JSON
  * escapes keep a value from closing the element early, and JSON.parse() turns them back.
  */
-export function escapeJsonForScript(value: unknown): string {
+function escapeJsonForScript(value: unknown): string {
   return JSON.stringify(value)
     .replaceAll("<", "\\u003c")
     .replaceAll(">", "\\u003e")
-    .replaceAll("&", "\\u0026")
-    .replaceAll(" ", "\\u2028")
-    .replaceAll(" ", "\\u2029");
+    .replaceAll("&", "\\u0026");
 }
 
-/** The --sim-* color properties, for a `style` attribute. Values are validated hex colors. */
-function colorVars(colors: SimColors): string {
+/**
+ * The --sim-* color properties, for a `style` attribute. Values are validated hex colors. The
+ * panel's share buttons have no selected state, so the panel leaves out --sim-selected-text.
+ */
+function colorVars(colors: SimColors, withSelectedText = true): string {
   return [
     `--sim-surface:${colors.surface}`,
     `--sim-text:${colors.text}`,
     `--sim-border:${colors.border}`,
     `--sim-hover:${colors.hover}`,
     `--sim-active:${colors.active}`,
-    `--sim-selected-text:${colors.selectedText}`,
-  ].join(";");
+    withSelectedText && `--sim-selected-text:${colors.selectedText}`,
+  ]
+    .filter(Boolean)
+    .join(";");
 }
 
 /** The wordmark's --sim-* font properties. Values are validated names and px lengths. */
@@ -220,7 +227,7 @@ function fontVars(font: TitleFont): string {
 }
 
 /** One stylesheet link for Lato (the page-text fallback) and every sim's title font. */
-export function googleFontsUrl(sims: SimInfo[]): string {
+function googleFontsUrl(sims: SimInfo[]): string {
   const families = [...new Set(sims.map((s) => s.meta.titleFont.family))];
   const params = ["family=Lato:wght@100;300;700;900"]
     .concat(families.map((f) => `family=${f.replaceAll(" ", "+")}`))
@@ -289,10 +296,12 @@ export function renderHtml(sims: SimInfo[]): string {
     ccLogo: svgDataUri(join(BRANDING_DIR, "cc-logo.svg")),
     deseLogo: svgDataUri(join(BRANDING_DIR, "dese-mass-logo.svg")),
     simButtons: simButtons(sims),
-    panelStyle: colorVars(first.meta.colors),
+    panelStyle: colorVars(first.meta.colors, false),
     iframeSrc: `./${escapeHtml(first.name)}/index.html?standalone=true`,
     iframeTitle: `${escapeHtml(first.meta.title)} simulation`,
     simTitle: escapeHtml(first.meta.title),
+    embedWidth: String(EMBED_WIDTH),
+    embedHeight: String(FRAME_HEIGHT),
     openIcon: readIcon("open-in-new-tab"),
     copyUrlIcon: readIcon("copy-url"),
     copyEmbedIcon: readIcon("copy-embed-code"),

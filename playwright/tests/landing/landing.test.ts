@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { FRAME_HEIGHT, TARGET_WIDTHS } from "../../../packages/shared/src/layout/target-widths";
 import { LandingPage } from "../../pages/landing-page";
 import { getTopTestUrl } from "../../sims";
 
@@ -16,6 +17,7 @@ const SIMS = [
 const SIM_MIN = 772;
 const SIM_MAX = 1028;
 const BESIDE_SIM = 248 + 24 + 2 * 20;
+const EMBED_WIDTH = TARGET_WIDTHS.find((w) => w.token === "standalone")?.px;
 
 test.use({ permissions: ["clipboard-read", "clipboard-write"] });
 
@@ -159,7 +161,7 @@ for (const deploy of [
 
       await expect(landing.liveRegion).toHaveText("Collapse! embed code copied");
       expect(await landing.clipboardText()).toBe(
-        `<iframe src="${collapseUrl}" width="1024" height="562" frameborder="0" ` +
+        `<iframe src="${collapseUrl}" width="${EMBED_WIDTH}" height="${FRAME_HEIGHT}" frameborder="0" ` +
           'allowfullscreen title="Collapse!"></iframe>',
       );
     });

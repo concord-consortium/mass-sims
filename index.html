@@ -26,10 +26,11 @@ body {
 
 .sr-only {
   border: 0;
-  clip: rect(0, 0, 0, 0);
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
   height: 1px;
   margin: -1px;
-  overflow: hidden;
+  overflow: clip;
   padding: 0;
   position: absolute;
   white-space: nowrap;
@@ -340,14 +341,14 @@ body {
             <button type="button" class="sim-button" data-sim="noreaster" aria-pressed="false" style="--sim-surface:#f0f6fe;--sim-text:#1e3f6e;--sim-border:#4680b8;--sim-hover:#d3e8fd;--sim-active:#9cc9f7;--sim-selected-text:#d3e8fd;--sim-font:'Vampiro One';--sim-letter-spacing:-0.5px"><span class="sim-button-label">Nor’easter</span></button>
           </div>
         </div>
-        <div class="sim-panel" style="--sim-surface:#fffdf2;--sim-text:#5c4813;--sim-border:#9e8540;--sim-hover:#fff3c4;--sim-active:#ffe680;--sim-selected-text:#fff3c4">
+        <div class="sim-panel" style="--sim-surface:#fffdf2;--sim-text:#5c4813;--sim-border:#9e8540;--sim-hover:#fff3c4;--sim-active:#ffe680">
           <iframe class="sim-frame" src="./bananas/index.html?standalone=true" title="Bananas simulation"></iframe>
           <div class="share">
             <span class="share-name" id="share-name">Bananas</span>
             <div class="sr-only" aria-live="polite" aria-atomic="true"></div>
             <button type="button" class="share-button" id="share-open" data-action="open" aria-labelledby="share-name share-open"><span class="share-icon"><svg aria-hidden="true" focusable="false" width="24" height="24" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M5,21 C4.45,21 3.97916667,20.8041667 3.5875,20.4125 C3.19583333,20.0208333 3,19.55 3,19 L3,5 C3,4.45 3.19583333,3.97916667 3.5875,3.5875 C3.97916667,3.19583333 4.45,3 5,3 L11,3 L11,5 L5,5 L5,19 L19,19 L19,13 L21,13 L21,19 C21,19.55 20.8041667,20.0208333 20.4125,20.4125 C20.0208333,20.8041667 19.55,21 19,21 L5,21 Z M9.7,15.7 L8.3,14.3 L17.6,5 L14,5 L14,3 L21,3 L21,10 L19,10 L19,6.4 L9.7,15.7 Z" fill="currentColor" fill-rule="nonzero"/></svg></span><span class="share-label">Open in a new tab</span></button>
             <button type="button" class="share-button" id="share-copy-url" data-action="copy-url" aria-labelledby="share-name share-copy-url"><span class="share-icon"><svg aria-hidden="true" focusable="false" width="24" height="24" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M7.95,21 C6.58333333,21 5.41666667,20.5166667 4.45,19.55 C3.48333333,18.5833333 3,17.4166667 3,16.05 C3,15.3833333 3.125,14.75 3.375,14.15 C3.625,13.55 3.98333333,13.0166667 4.45,12.55 L7.8,9.225 L9.2,10.625 L5.85,13.975 C5.56666667,14.2583333 5.35416667,14.5791667 5.2125,14.9375 C5.07083333,15.2958333 5,15.6666667 5,16.05 C5,16.8666667 5.2875,17.5625 5.8625,18.1375 C6.4375,18.7125 7.13333333,19 7.95,19 C8.33333333,19 8.70833333,18.9291667 9.075,18.7875 C9.44166667,18.6458333 9.76666667,18.4333333 10.05,18.15 L13.375,14.8 L14.8,16.225 L11.45,19.55 C10.9833333,20.0166667 10.45,20.375 9.85,20.625 C9.25,20.875 8.61666667,21 7.95,21 Z M9.925,15.5 L8.5,14.075 L14.075,8.5 L15.5,9.925 L9.925,15.5 Z M16.2,14.8 L14.8,13.375 L18.15,10.05 C18.4333333,9.76666667 18.6416667,9.45 18.775,9.1 C18.9083333,8.75 18.975,8.38333333 18.975,8 C18.975,7.16666667 18.6916667,6.45833333 18.125,5.875 C17.5583333,5.29166667 16.8583333,5 16.025,5 C15.6416667,5 15.2708333,5.07083333 14.9125,5.2125 C14.5541667,5.35416667 14.2333333,5.56666667 13.95,5.85 L10.625,9.2 L9.2,7.8 L12.55,4.45 C13.0166667,3.98333333 13.55,3.625 14.15,3.375 C14.75,3.125 15.3833333,3 16.05,3 C17.4166667,3 18.5791667,3.48333333 19.5375,4.45 C20.4958333,5.41666667 20.975,6.59166667 20.975,7.975 C20.975,8.625 20.8541667,9.25 20.6125,9.85 C20.3708333,10.45 20.0166667,10.9833333 19.55,11.45 L16.2,14.8 Z" fill="currentColor" fill-rule="nonzero"/></svg></span><span class="share-label">Copy URL</span></button>
-            <button type="button" class="share-button" id="share-copy-embed" data-action="copy-embed" aria-labelledby="share-name share-copy-embed"><span class="share-icon"><svg aria-hidden="true" focusable="false" width="24" height="24" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M6,17 L1,12 L6,7 L7.4,8.4 L3.825,12 L7.4,15.6 L6,17 Z M10.45,20.3 L8.55,19.7 L13.55,3.7 L15.45,4.3 L10.45,20.3 Z M18,17 L16.6,15.6 L20.175,12 L16.6,8.4 L18,7 L23,12 L18,17 Z" fill="currentColor" fill-rule="nonzero"/></svg></span><span class="share-label">Copy embed code</span></button>
+            <button type="button" class="share-button" id="share-copy-embed" data-action="copy-embed" data-embed-width="1024" data-embed-height="562" aria-labelledby="share-name share-copy-embed"><span class="share-icon"><svg aria-hidden="true" focusable="false" width="24" height="24" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M6,17 L1,12 L6,7 L7.4,8.4 L3.825,12 L7.4,15.6 L6,17 Z M10.45,20.3 L8.55,19.7 L13.55,3.7 L15.45,4.3 L10.45,20.3 Z M18,17 L16.6,15.6 L20.175,12 L16.6,8.4 L18,7 L23,12 L18,17 Z" fill="currentColor" fill-rule="nonzero"/></svg></span><span class="share-label">Copy embed code</span></button>
           </div>
         </div>
       </main>
@@ -393,9 +394,12 @@ body {
       .replaceAll(">", "&gt;");
   }
 
+  // The embed size comes from the shared layout constants, through the button's data attributes.
+  const { embedWidth, embedHeight } = document.getElementById("share-copy-embed").dataset;
+
   function embedCode(sim) {
     return (
-      `<iframe src="${escapeAttr(simUrl(sim))}" width="1024" height="562" ` +
+      `<iframe src="${escapeAttr(simUrl(sim))}" width="${embedWidth}" height="${embedHeight}" ` +
       `frameborder="0" allowfullscreen title="${escapeAttr(sim.title)}"></iframe>`
     );
   }
@@ -406,7 +410,6 @@ body {
     panel.style.setProperty("--sim-border", colors.border);
     panel.style.setProperty("--sim-hover", colors.hover);
     panel.style.setProperty("--sim-active", colors.active);
-    panel.style.setProperty("--sim-selected-text", colors.selectedText);
   }
 
   function select(sim) {

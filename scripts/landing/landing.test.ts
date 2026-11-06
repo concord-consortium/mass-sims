@@ -3,24 +3,39 @@ import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { type MassSimsMeta, renderHtml, type SimInfo, sortSims, toSimInfo } from "../gen-index";
+import { FRAME_HEIGHT, TARGET_WIDTHS } from "../../packages/shared/src/layout/target-widths";
+import {
+  type MassSimsMeta,
+  renderHtml,
+  type SimColors,
+  type SimInfo,
+  sortSims,
+  toSimInfo,
+} from "../gen-index";
 
 const SCRIPT = readFileSync(join(dirname(fileURLToPath(import.meta.url)), "landing.js"), "utf8");
 
-function sim(name: string, title: string, order: number, surface: string): SimInfo {
+const EMBED_WIDTH = TARGET_WIDTHS.find((w) => w.token === "standalone")?.px;
+
+/** Every color different, so a color set from the wrong field shows. */
+function palette(n: number): SimColors {
+  return {
+    surface: `#${n}01`,
+    text: `#${n}02`,
+    border: `#${n}03`,
+    hover: `#${n}04`,
+    active: `#${n}05`,
+    selectedText: `#${n}06`,
+  };
+}
+
+function sim(name: string, title: string, order: number, colors: SimColors): SimInfo {
   const meta: MassSimsMeta = {
     title,
     gradeBand: "Grades 6-8",
     order,
     titleFont: { family: "Slackey" },
-    colors: {
-      surface,
-      text: "#333",
-      border: "#555",
-      hover: "#f0f0f0",
-      active: "#d0d0d0",
-      selectedText: "#fff",
-    },
+    colors,
   };
   const info = toSimInfo(name, { name, massSims: meta });
   if (!info) throw new Error("expected a SimInfo");
@@ -28,9 +43,9 @@ function sim(name: string, title: string, order: number, surface: string): SimIn
 }
 
 const SIMS = sortSims([
-  sim("bananas", "Bananas", 1, "#fffdf2"),
-  sim("collapse", "Collapse!", 2, "#f0faf4"),
-  sim("noreaster", "Nor’easter", 3, "#f0f6fe"),
+  sim("bananas", "Bananas", 1, palette(1)),
+  sim("collapse", "Collapse!", 2, palette(2)),
+  sim("noreaster", "Nor’easter", 3, palette(3)),
 ]);
 
 const writeText = vi.fn<(text: string) => Promise<void>>();
@@ -57,6 +72,11 @@ const pressed = () =>
   );
 const frame = () => $<HTMLIFrameElement>(".sim-frame");
 const label = (id: string) => $(`#${id} .share-label`).textContent;
+const PANEL_PROPS = ["surface", "text", "border", "hover", "active", "selected-text"];
+const panelColors = () =>
+  PANEL_PROPS.map((p) => $(".sim-panel").style.getPropertyValue(`--sim-${p}`));
+/** The panel's colors for a sim: all but the selected text, which only the sim buttons use. */
+const panelColorsOf = (c: SimColors) => [c.surface, c.text, c.border, c.hover, c.active, ""];
 const nextFrame = () => new Promise((resolve) => requestAnimationFrame(resolve));
 
 beforeEach(() => {
@@ -76,6 +96,7 @@ describe("selecting a sim", () => {
 
     expect(pressed()).toEqual(["bananas"]);
     expect(frame().getAttribute("src")).toBe("./bananas/index.html?standalone=true");
+    expect(panelColors()).toEqual(panelColorsOf(palette(1)));
   });
 
   it("starts on the sim named by ?sim=", () => {
@@ -85,7 +106,7 @@ describe("selecting a sim", () => {
     expect(frame().getAttribute("src")).toBe("./collapse/index.html?standalone=true");
     expect(frame().title).toBe("Collapse! simulation");
     expect($("#share-name").textContent).toBe("Collapse!");
-    expect($(".sim-panel").style.getPropertyValue("--sim-surface")).toBe("#f0faf4");
+    expect(panelColors()).toEqual(panelColorsOf(palette(2)));
   });
 
   it("ignores an unknown ?sim=", () => {
@@ -103,7 +124,7 @@ describe("selecting a sim", () => {
     expect(frame().getAttribute("src")).toBe("./noreaster/index.html?standalone=true");
     expect(frame().title).toBe("Nor’easter simulation");
     expect($("#share-name").textContent).toBe("Nor’easter");
-    expect($(".sim-panel").style.getPropertyValue("--sim-surface")).toBe("#f0f6fe");
+    expect(panelColors()).toEqual(panelColorsOf(palette(3)));
     expect(window.location.search).toBe("?sim=noreaster");
   });
 
@@ -148,7 +169,8 @@ describe("the share row", () => {
     $<HTMLButtonElement>("#share-copy-embed").click();
 
     expect(writeText).toHaveBeenCalledWith(
-      `<iframe src="${window.location.origin}/collapse/index.html" width="1024" height="562" ` +
+      `<iframe src="${window.location.origin}/collapse/index.html" width="${EMBED_WIDTH}" ` +
+        `height="${FRAME_HEIGHT}" ` +
         'frameborder="0" allowfullscreen title="Collapse!"></iframe>',
     );
     await vi.waitFor(() => expect(label("share-copy-embed")).toBe("Copied"));
@@ -157,7 +179,7 @@ describe("the share row", () => {
   });
 
   it("escapes the title in the embed code", () => {
-    load("/index.html", [sim("rock", 'Rock "n" <Roll> & more', 1, "#fff")]);
+    load("/index.html", [sim("rock", 'Rock "n" <Roll> & more', 1, palette(1))]);
 
     $<HTMLButtonElement>("#share-copy-embed").click();
 
