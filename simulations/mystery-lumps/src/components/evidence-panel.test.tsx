@@ -1,6 +1,6 @@
 import { render } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
-import { applyTest, makeEmptyTrial, markHandled } from "../model/trial";
+import { applyTest, makeEmptyTrial, markExamined } from "../model/trial";
 import { EvidencePanel } from "./evidence-panel";
 
 describe("EvidencePanel", () => {
@@ -9,8 +9,8 @@ describe("EvidencePanel", () => {
     expect(getByText(/nothing observed yet/i)).toBeInTheDocument();
   });
 
-  it("lists a handling note and a test result in full", () => {
-    let trial = markHandled(makeEmptyTrial(), "B");
+  it("lists an examination and a test result in full", () => {
+    let trial = markExamined(makeEmptyTrial(), "B");
     trial = applyTest(trial, "B", "water", null);
     const { getByText } = render(<EvidencePanel trial={trial} />);
     // Lump B is the sea salt.

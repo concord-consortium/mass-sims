@@ -1,6 +1,6 @@
 import { DataSubsection } from "@concord-consortium/mass-sims-shared";
 import clsx from "clsx";
-import { massAfter, observe } from "../model/observe";
+import { examine, massAfter, observe } from "../model/observe";
 import { LUMP_ASSIGNMENT, LUMP_IDS, type LumpId, startingMass } from "../model/substances";
 import { type SettingId, TESTS, type TestId } from "../model/tests";
 import type { Trial } from "../model/trial";
@@ -37,11 +37,8 @@ export function EvidencePanel({
     // afterwards. The before-and-after pair is the argument a student writes up, so both sides
     // are kept rather than the later one overwriting the earlier.
     const lines: { key: string; label?: string; text: string }[] = [];
-    if (record.handled.before) {
-      lines.push({ key: "handled-before", text: observe(substance, "handle", null).caption });
-    }
-    if (record.wafted.before) {
-      lines.push({ key: "wafted-before", text: observe(substance, "waft", null).caption });
+    if (record.examined.before) {
+      lines.push({ key: "examined-before", text: examine(substance).caption });
     }
     if (result) {
       lines.push({
@@ -63,22 +60,16 @@ export function EvidencePanel({
             : `${before.toFixed(1)} g before the test, ${after.toFixed(1)} g after.`,
       });
     }
-    if (record.handled.after) {
-      lines.push({
-        key: "handled-after",
-        text: observe(substance, "handle", null, result).caption,
-      });
-    }
-    if (record.wafted.after) {
-      lines.push({ key: "wafted-after", text: observe(substance, "waft", null, result).caption });
+    if (record.examined.after) {
+      lines.push({ key: "examined-after", text: examine(substance, result).caption });
     }
 
     // The picture shows the lump as it was last seen: its test's end state if it has one,
-    // otherwise whatever handling revealed, otherwise the anonymous blob.
+    // otherwise whatever examining revealed, otherwise the anonymous blob.
     const visual = result
       ? observe(substance, result.test, result.setting).visual
-      : record.handled.before
-        ? observe(substance, "handle", null).visual
+      : record.examined.before
+        ? examine(substance).visual
         : "unknown";
 
     return { lump, visual, lines };

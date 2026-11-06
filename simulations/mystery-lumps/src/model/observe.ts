@@ -62,6 +62,15 @@ const HANDLE: Record<SubstanceId, Observation> = {
 const RANCID_EXPOSURES = new Set(["day", "fortnight"]);
 const PARAFFIN_DECAY_EXPOSURE = "fortnight";
 
+/**
+ * Vinegar notes say the container is open: it is why the fizzing shell weighs less afterwards,
+ * since the gas escapes rather than staying on the scale.
+ */
+function inVinegar(substance: SubstanceId): Observation {
+  const outcome = inWater(substance, true);
+  return { ...outcome, caption: `In an open container. ${outcome.caption}` };
+}
+
 function inWater(substance: SubstanceId, vinegar: boolean): Observation {
   if (substance === "sea-salt") {
     return {
@@ -204,7 +213,7 @@ export function observe(
     case "water":
       return inWater(substance, false);
     case "vinegar":
-      return inWater(substance, true);
+      return inVinegar(substance);
     case "bath":
       return inBath(substance, setting);
     case "lamp":
@@ -234,4 +243,13 @@ export function massAfter(
     default:
       return before;
   }
+}
+
+/**
+ * Look, feel, smell: one free action, so the caption is the feel and the smell together. The
+ * picture is what looking and feeling reveal; a smell has nothing to draw.
+ */
+export function examine(substance: SubstanceId, prior: PriorResult | null = null): Observation {
+  const feel = handled(substance, prior);
+  return { caption: `${feel.caption} ${waft(substance, prior).caption}`, visual: feel.visual };
 }

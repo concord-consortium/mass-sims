@@ -12,7 +12,7 @@ import { LumpTray } from "./components/lump-tray";
 import { TestLab } from "./components/test-lab";
 import { RUN_MS } from "./components/test-timer";
 import { TrialCardBody } from "./components/trial-card-body";
-import { observe } from "./model/observe";
+import { examine, observe } from "./model/observe";
 import type { SavedState } from "./model/saved-state";
 import { formatSimTime, simDurationSeconds } from "./model/sim-time";
 import type { LumpId } from "./model/substances";
@@ -22,8 +22,7 @@ import {
   applyTest,
   clearTrial,
   makeEmptyTrial,
-  markHandled,
-  markWafted,
+  markExamined,
   resetLumpTest,
   type Trial,
 } from "./model/trial";
@@ -39,7 +38,7 @@ export function App() {
     return { trials: [first] as Trial[], selectedId: first.id };
   });
   // The lump on the bench. It stays there after its test is spent — that window is the only
-  // time Observe and Waft can still reach it, which is how the rancid smell is found.
+  // time it can still be examined, which is how the rancid smell is found.
   const [selectedLump, setSelectedLump] = useState<LumpId | null>(null);
   const [test, setTest] = useState<TestId>(CONSUMING_TESTS[0]);
   const [setting, setSetting] = useState<SettingId | null>(null);
@@ -81,14 +80,7 @@ export function App() {
 
   const selected = trials.find((t) => t.id === selectedId) ?? trials[0];
   const anythingObserved = trials.some((t) =>
-    Object.values(t.lumps).some(
-      (l) =>
-        l.result !== null ||
-        l.handled.before ||
-        l.handled.after ||
-        l.wafted.before ||
-        l.wafted.after,
-    ),
+    Object.values(t.lumps).some((l) => l.result !== null || l.examined.before || l.examined.after),
   );
   useReloadWarning(!isEmbedded && anythingObserved);
 
@@ -135,21 +127,12 @@ export function App() {
     setMessage(null);
   }, []);
 
-  const observeLump = useCallback(() => {
+  const examineLump = useCallback(() => {
     if (!selectedLump) return;
-    logEvent("lump_handled", { lump: selectedLump });
-    updateTrial(selected.id, (t) => markHandled(t, selectedLump));
+    logEvent("lump_examined", { lump: selectedLump });
+    updateTrial(selected.id, (t) => markExamined(t, selectedLump));
     const prior = selected.lumps[selectedLump].result;
-    setMessage(observe(LUMP_ASSIGNMENT[selectedLump], "handle", null, prior).caption);
-  }, [logEvent, selected, selectedLump, updateTrial]);
-
-  const waftLump = useCallback(() => {
-    if (!selectedLump) return;
-    logEvent("lump_wafted", { lump: selectedLump });
-    updateTrial(selected.id, (t) => markWafted(t, selectedLump));
-    // Wafting reads the lump's spent test, since only UV-degraded palm oil smells of anything.
-    const prior = selected.lumps[selectedLump].result;
-    setMessage(observe(LUMP_ASSIGNMENT[selectedLump], "waft", null, prior).caption);
+    setMessage(examine(LUMP_ASSIGNMENT[selectedLump], prior).caption);
   }, [logEvent, selected, selectedLump, updateTrial]);
 
   // Undoes just this lump's test, leaving it on the bench with its material back. Resetting a
@@ -239,8 +222,7 @@ export function App() {
           running={running}
           onTestChange={setTest}
           onSettingChange={setSetting}
-          onObserve={observeLump}
-          onWaft={waftLump}
+          onExamine={examineLump}
           onRun={runTest}
           onResetTest={resetTest}
         />

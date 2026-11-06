@@ -10,8 +10,7 @@ const base = {
   running: false,
   onTestChange: () => undefined,
   onSettingChange: () => undefined,
-  onObserve: () => undefined,
-  onWaft: () => undefined,
+  onExamine: () => undefined,
   onRun: () => undefined,
   onResetTest: () => undefined,
 };
@@ -22,8 +21,9 @@ describe("LabControls", () => {
     for (const label of ["Water", "Vinegar", "Warm bath", "UV lamp"]) {
       expect(getByRole("button", { name: label })).toBeInTheDocument();
     }
-    // Handling has its own button; it must never look like a test you could spend a lump on.
+    // Examining has its own button; it must never look like a test you could spend a lump on.
     expect(queryByRole("button", { name: "Handle" })).toBeNull();
+    expect(getByRole("button", { name: /look, feel, smell/i })).not.toHaveClass("test-button");
   });
 
   it("disables the dial for a test that has none, and enables it for the bath", () => {
@@ -40,30 +40,29 @@ describe("LabControls", () => {
 
   it("disables everything that needs a lump when the bench is empty", () => {
     const { getByRole } = render(<LabControls {...base} hasLump={false} />);
-    expect(getByRole("button", { name: /observe/i })).toBeDisabled();
-    expect(getByRole("button", { name: /waft/i })).toBeDisabled();
+    expect(getByRole("button", { name: /look, feel, smell/i })).toBeDisabled();
     expect(getByRole("button", { name: /run test/i })).toBeDisabled();
   });
 
   it("builds the test picker from the shared Button, so it matches the other controls", () => {
     // Height, font size and padding come from the library; asserting the class is what keeps
-    // them matching Observe, Waft and Run without measuring anything in jsdom.
+    // them matching Look, feel, smell and Run without measuring anything in jsdom.
     const { getByRole } = render(<LabControls {...base} />);
     for (const label of ["Water", "UV lamp"]) {
       expect(getByRole("button", { name: label })).toHaveClass("button");
     }
-    expect(getByRole("button", { name: /observe/i })).toHaveClass("button");
+    expect(getByRole("button", { name: /look, feel, smell/i })).toHaveClass("button");
   });
 
-  it("never shuts Observe or Waft out while a lump is on the bench", () => {
-    // Before a test, during one, and after it: looking costs nothing, and what you see changes
-    // as the lump does.
-    for (const state of [{}, { running: true }, { spent: true }]) {
+  it("lets a lump be examined before and after its test, but not during it", () => {
+    // Examining mid-run would describe the result before the test had finished.
+    for (const state of [{}, { spent: true }]) {
       const { getByRole, unmount } = render(<LabControls {...base} {...state} />);
-      expect(getByRole("button", { name: /observe/i })).toBeEnabled();
-      expect(getByRole("button", { name: /waft/i })).toBeEnabled();
+      expect(getByRole("button", { name: /look, feel, smell/i })).toBeEnabled();
       unmount();
     }
+    const { getByRole } = render(<LabControls {...base} running={true} />);
+    expect(getByRole("button", { name: /look, feel, smell/i })).toBeDisabled();
   });
 
   it("offers Reset Test only once the lump's test is spent", () => {

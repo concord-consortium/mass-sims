@@ -1,5 +1,5 @@
 import clsx from "clsx";
-import { observe } from "../model/observe";
+import { examine } from "../model/observe";
 import { LUMP_ASSIGNMENT, LUMP_IDS, type LumpId } from "../model/substances";
 import { type Trial, untestedLumps } from "../model/trial";
 
@@ -31,11 +31,9 @@ export function LumpTray({ trial, selectedLump, onSelect }: LumpTrayProps) {
         {LUMP_IDS.map((lump) => {
           const record = trial.lumps[lump];
           const usedUp = record.result !== null;
-          // Unhandled lumps all look alike on purpose; the picture is the same placeholder
+          // Unexamined lumps all look alike on purpose; the picture is the same placeholder
           // until the student has actually looked at one.
-          const visual = record.handled.before
-            ? observe(LUMP_ASSIGNMENT[lump], "handle", null).visual
-            : "unknown";
+          const visual = record.examined.before ? examine(LUMP_ASSIGNMENT[lump]).visual : "unknown";
           return (
             <li key={lump}>
               <button

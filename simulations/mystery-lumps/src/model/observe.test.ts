@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { massAfter, observe } from "./observe";
+import { examine, massAfter, observe } from "./observe";
 
 describe("observe", () => {
   it("names the salt by handling, and leaves two look-alike pairs", () => {
@@ -20,6 +20,13 @@ describe("observe", () => {
     }
     // Salt dissolves in vinegar too — it is mostly water — but without bubbles.
     expect(observe("sea-salt", "vinegar", null).visual).toBe("dissolving");
+  });
+
+  it("notes that the vinegar is in an open container, whatever happens", () => {
+    for (const s of ["seashell", "sea-salt", "paraffin"] as const) {
+      expect(observe(s, "vinegar", null).caption).toMatch(/^In an open container\. /);
+    }
+    expect(observe("seashell", "water", null).caption).not.toMatch(/open container/);
   });
 
   it("dissolves the salt in water and leaves everything else alone", () => {
@@ -134,5 +141,16 @@ describe("massAfter", () => {
 
   it("loses the crumbled corner after two weeks under the lamp", () => {
     expect(massAfter("paraffin", "lamp", "fortnight", 34.2)).toBe(32.8);
+  });
+});
+
+describe("examine", () => {
+  it("describes the feel and the smell together, and draws what was felt", () => {
+    const fresh = examine("palm-oil");
+    expect(fresh.caption).toBe(
+      "Waxy and pale. It gives a little under a fingernail. No smell to speak of.",
+    );
+    expect(fresh.visual).toBe("waxy");
+    expect(examine("palm-oil", { test: "lamp", setting: "day" }).caption).toMatch(/rancid/);
   });
 });

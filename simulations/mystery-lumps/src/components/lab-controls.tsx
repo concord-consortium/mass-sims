@@ -14,8 +14,7 @@ export interface LabControlsProps {
   running: boolean;
   onTestChange: (test: TestId) => void;
   onSettingChange: (setting: SettingId) => void;
-  onObserve: () => void;
-  onWaft: () => void;
+  onExamine: () => void;
   onRun: () => void;
   /** Undoes the test on the lump that is on the bench, returning it to its slot. */
   onResetTest: () => void;
@@ -26,10 +25,9 @@ export interface LabControlsProps {
  * appears only for the two tests that have one, and is disabled rather than removed so the row
  * keeps its shape.
  *
- * Observe and Waft sit beside Run deliberately: all three act on the lump on the bench, but only
- * Run uses it up. They are available whenever there is a lump there at all — before a test,
- * during one, and after — because looking at something costs nothing and what you see changes
- * as the lump does.
+ * Look, feel, smell sits beside Run deliberately: both act on the lump on the bench, but only Run
+ * uses it up. It works before a test and after one, because examining costs nothing and what you
+ * find changes as the lump does — but not during one, which would give the result away early.
  *
  * Reset Test is the narrow undo — it gives this one lump its material back. Clearing a whole
  * trial is the trial card's job, which is the only place that reaches the other four lumps.
@@ -42,8 +40,7 @@ export function LabControls({
   running,
   onTestChange,
   onSettingChange,
-  onObserve,
-  onWaft,
+  onExamine,
   onRun,
   onResetTest,
 }: LabControlsProps) {
@@ -80,15 +77,12 @@ export function LabControls({
 
       <div className="control-row actions">
         <Button
-          className="observe-button"
-          onPress={onObserve}
-          isDisabled={!hasLump}
-          action="lump_observed"
+          className="examine-button"
+          onPress={onExamine}
+          isDisabled={!hasLump || running}
+          action="lump_examined"
         >
-          <span aria-hidden="true">🔍</span> Observe
-        </Button>
-        <Button className="waft-button" onPress={onWaft} isDisabled={!hasLump} action="lump_wafted">
-          <span aria-hidden="true">〜</span> Waft
+          <span aria-hidden="true">🔍</span> Look, feel, smell
         </Button>
         <Button
           className="run-button"

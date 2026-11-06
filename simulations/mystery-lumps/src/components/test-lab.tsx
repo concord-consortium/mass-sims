@@ -1,5 +1,5 @@
 import clsx from "clsx";
-import { observe } from "../model/observe";
+import { examine, observe } from "../model/observe";
 import { LUMP_ASSIGNMENT, type LumpId } from "../model/substances";
 import { type SettingId, TESTS, type TestId } from "../model/tests";
 import type { Trial } from "../model/trial";
@@ -24,8 +24,8 @@ export interface TestLabProps {
  * The bench. One lump at a time, with the apparatus for the currently chosen test standing on
  * it, and a caption for whatever was last observed.
  *
- * A spent lump stays here until a different one is picked, which is the window in which Observe
- * and Waft can still reach it — the only route to the rancid smell after the lamp.
+ * A spent lump stays here until a different one is picked, which is the window in which it can
+ * still be examined — the only route to the rancid smell after the lamp.
  */
 export function TestLab({
   trial,
@@ -39,12 +39,12 @@ export function TestLab({
   const record = selectedLump ? trial.lumps[selectedLump] : null;
   const substance = selectedLump ? LUMP_ASSIGNMENT[selectedLump] : null;
   // Once spent, the lump wears the state its test left it in. Before that it is a plain blob,
-  // or whatever handling revealed.
+  // or whatever examining revealed.
   const resting =
     substance && record?.result
       ? observe(substance, record.result.test, record.result.setting).visual
-      : substance && (record?.handled.before || record?.handled.after)
-        ? observe(substance, "handle", null).visual
+      : substance && (record?.examined.before || record?.examined.after)
+        ? examine(substance).visual
         : "unknown";
 
   return (

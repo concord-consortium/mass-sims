@@ -2,9 +2,9 @@ import { LUMP_IDS, type LumpId } from "./substances";
 import type { SettingId, TestId } from "./tests";
 
 /**
- * When a free action was taken, relative to the lump's one destructive test. Both are kept
- * because both are real evidence and they can differ: a lump is waxy and pale before the bath
- * and a greasy pool after it, and the pair of observations is the argument.
+ * When the lump was examined, relative to its one destructive test. Both are kept because both
+ * are real evidence and they can differ: a lump is waxy and pale before the bath and a greasy
+ * pool after it, and the pair of observations is the argument.
  */
 export interface Touches {
   before: boolean;
@@ -12,8 +12,7 @@ export interface Touches {
 }
 
 export interface LumpRecord {
-  handled: Touches;
-  wafted: Touches;
+  examined: Touches;
   /** The one destructive test this lump has been given, or null while it still has material. */
   result: { test: TestId; setting: SettingId | null } | null;
 }
@@ -33,7 +32,7 @@ function makeTrialId(): string {
 export function makeEmptyTrial(): Trial {
   const lumps = {} as Record<LumpId, LumpRecord>;
   for (const id of LUMP_IDS) {
-    lumps[id] = { handled: { ...UNTOUCHED }, wafted: { ...UNTOUCHED }, result: null };
+    lumps[id] = { examined: { ...UNTOUCHED }, result: null };
   }
   return { id: makeTrialId(), lumps };
 }
@@ -67,14 +66,9 @@ function phase(record: LumpRecord): keyof Touches {
   return record.result === null ? "before" : "after";
 }
 
-export function markHandled(trial: Trial, lump: LumpId): Trial {
+export function markExamined(trial: Trial, lump: LumpId): Trial {
   const record = trial.lumps[lump];
-  return withLump(trial, lump, { handled: { ...record.handled, [phase(record)]: true } });
-}
-
-export function markWafted(trial: Trial, lump: LumpId): Trial {
-  const record = trial.lumps[lump];
-  return withLump(trial, lump, { wafted: { ...record.wafted, [phase(record)]: true } });
+  return withLump(trial, lump, { examined: { ...record.examined, [phase(record)]: true } });
 }
 
 /**
@@ -91,8 +85,7 @@ export function resetLumpTest(trial: Trial, lump: LumpId): Trial {
   // What was seen beforehand still happened and stays.
   return withLump(trial, lump, {
     result: null,
-    handled: { ...record.handled, after: false },
-    wafted: { ...record.wafted, after: false },
+    examined: { ...record.examined, after: false },
   });
 }
 

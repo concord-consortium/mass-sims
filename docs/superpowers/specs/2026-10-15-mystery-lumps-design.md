@@ -23,7 +23,7 @@ the same thing:
 |---|---|---|---|---|---|
 | | paraffin wax | sea salt crust | white sea glass | palm oil | seashell |
 
-Two actions are **free, repeatable and non-destructive**: *handle* and *waft*. Four are
+One action is **free, repeatable and non-destructive**: *look, feel, smell*. Four are
 **destructive — each lump has material for exactly one**: water, vinegar, warm bath, UV lamp.
 
 ### Observations
@@ -54,9 +54,9 @@ The two tests with a dial use dropdowns, matching Nor'easter:
 
 ### Smell
 
-**Waft yields nothing until the lamp has done its work.** Fresh, all five lumps are small and
-odorless; only UV-degraded palm oil smells. This is deliberate: waft is free, so if it
-discriminated on its own it would solve the puzzle for nothing. It stays available afterwards,
+**Smelling yields nothing until the lamp has done its work.** Fresh, all five lumps are small
+and odorless; only UV-degraded palm oil smells. This is deliberate: examining is free, so if the
+smell discriminated on its own it would solve the puzzle for nothing. It stays available afterwards,
 on any lump, so a student can go back and find the smell late.
 
 ### Mass
@@ -73,7 +73,7 @@ and hand out an answer for free. Only a change in mass counts as evidence.
 | D palm oil | 0.89 | 40 | 35.6 |
 | E seashell | 2.50 | 36 | 90.0 |
 
-Dissolving takes the mass to 0. Shell in vinegar loses 0.4 g as gas. Paraffin after two weeks
+Dissolving takes the mass to 0. Shell in vinegar loses 0.4 g as gas; every vinegar note says the container is open, so the loss has an explanation. Paraffin after two weeks
 under the lamp loses 4% (the crumbled corner). Melting and softening change nothing, because
 the material is all still there.
 
@@ -102,8 +102,9 @@ the bottom holds:
   the bench: a tube of vinegar, the lamp, and so on.
 - **Setting** — appears only for the bath and the lamp, greyed out otherwise so the row does not
   jump as the test changes.
-- **Observe** and **Waft** — available whenever a lump is on the bench, before its test,
-  during it and after, and never consuming it. What they report changes as the lump does: palm
+- **Look, feel, smell** — one button reporting the feel and the smell together. Available
+  whenever a lump is on the bench, before its test and after but not while it runs (that would
+  give the result away early), and never consuming it. What it reports changes as the lump does: palm
   oil is waxy and pale beforehand and a greasy pool after the bath, dissolved salt cannot be
   picked up at all. Both the before and the after observation are kept, because the pair is the
   argument a student writes up.
@@ -111,8 +112,8 @@ the bottom holds:
 
 Running a test spends the lump. **It then leaves the tray**, because there is no material left
 to test — but it **stays on the bench until the student picks a different lump**. That window is
-the only time Observe and Waft can still reach it, and it is how the rancid smell is found: put
-palm oil under the lamp, then waft it before moving on. Clear the bench first and the smell is
+the only time it can still be examined, and it is how the rancid smell is found: put palm oil
+under the lamp, then examine it before moving on. Clear the bench first and the smell is
 gone for that trial. Everything already observed stays in the Data column regardless.
 
 **New** starts a fresh trial: five new lumps of the same five substances, every budget restored,
@@ -148,7 +149,7 @@ src/model/
   tests.ts        the six actions, which consume material, their settings
   observe.ts      observe(substance, test, setting) -> { caption, visual }
 src/components/
-  lump-row.tsx        the five lumps; click to handle or waft; holds end states
+  lump-row.tsx        the five lumps; click to put on the bench; holds end states
   test-stage.tsx      the apparatus a lump animates into, in place
   test-settings.tsx   the Lump / Test / Setting grid and Run
   trial-card-body.tsx what fills a shared <TrialCard>
@@ -164,8 +165,7 @@ selection; animation progress is never persisted.
 ```ts
 interface Touches { before: boolean; after: boolean }
 interface LumpRecord {
-  handled: Touches;
-  wafted: Touches;
+  examined: Touches;
   result: { test: TestId; setting: SettingId | null } | null;
 }
 interface Trial { id: string; lumps: Record<LumpId, LumpRecord> }
@@ -177,7 +177,7 @@ work a student saved earlier.
 
 ### Logging
 
-`lump_handled`, `lump_wafted`, `test_run` (params: lump, test, setting), `trial_started`,
+`lump_examined`, `test_run` (params: lump, test, setting), `trial_started`,
 `trial_reset`. All snake_case, within GA4's limits.
 
 ## Testing
@@ -187,8 +187,8 @@ work a student saved earlier.
   (palm oil at 20 and 40, paraffin at 40 and 60, palm oil rancid at an hour and a day).
 - **The one-shot rule** — a lump with a result is absent from the Lump dropdown; `New` restores
   every budget; `Reset Trial` restores the current trial's.
-- **Free actions** — handling and wafting never consume a lump, and waft returns nothing until
-  the lamp has degraded the palm oil.
+- **Free action** — examining never consumes a lump, and finds no smell until the lamp has
+  degraded the palm oil.
 - **Saved state** — a round trip through `SavedState` reproduces the trials and the selection.
 
 ## Deliberately out of scope
