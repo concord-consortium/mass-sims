@@ -220,6 +220,14 @@ body {
     background: var(--sim-text);
     border-color: var(--sim-text);
     color: var(--sim-selected-text);
+
+    // High contrast themes replace all three colors above, so mark the selected sim with the
+    // theme's own selection colors.
+    @media (forced-colors: active) {
+      background: Highlight;
+      border-color: Highlight;
+      color: HighlightText;
+    }
   }
 
   &:focus {

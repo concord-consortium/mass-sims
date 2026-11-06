@@ -123,7 +123,7 @@ test("Tab goes logos, sim buttons, the sim, the share row, the footer", async ({
   // After the share row come the footer links.
   await landing.shareButton("copy-embed").focus();
   await page.keyboard.press("Tab");
-  await expect(page.locator(":focus")).toHaveText("Terms of Use");
+  await expect(page.locator(":focus")).toHaveAccessibleName("Terms of Use (opens in a new tab)");
 });
 
 // The version deploy is opened at its index.html: `serve` lists a folder whose name has dots in it

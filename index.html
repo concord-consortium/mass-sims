@@ -181,6 +181,13 @@ body {
   border-color: var(--sim-text);
   color: var(--sim-selected-text);
 }
+@media (forced-colors: active) {
+  .sim-button[aria-pressed=true] {
+    background: Highlight;
+    border-color: Highlight;
+    color: HighlightText;
+  }
+}
 .sim-button:focus {
   outline: none;
 }
@@ -351,13 +358,13 @@ body {
         <span class="footer-sep footer-version-sep" aria-hidden="true" hidden>|</span>
         <span>© <span class="footer-year"></span> The Concord Consortium</span>
         <span class="footer-sep" aria-hidden="true">|</span>
-        <a href="https://concord.org/terms-of-use/" target="_blank" rel="noopener">Terms of Use</a>
+        <a href="https://concord.org/terms-of-use/" target="_blank" rel="noopener noreferrer">Terms of Use<span class="sr-only"> (opens in a new tab)</span></a>
         <span class="footer-sep" aria-hidden="true">|</span>
-        <a href="https://concord.org/licensing/" target="_blank" rel="noopener">Licensing</a>
+        <a href="https://concord.org/licensing/" target="_blank" rel="noopener noreferrer">Licensing<span class="sr-only"> (opens in a new tab)</span></a>
         <span class="footer-sep" aria-hidden="true">|</span>
-        <a href="https://concord.org/privacy-policy/" target="_blank" rel="noopener">Privacy Policy</a>
+        <a href="https://concord.org/privacy-policy/" target="_blank" rel="noopener noreferrer">Privacy Policy<span class="sr-only"> (opens in a new tab)</span></a>
         <span class="footer-sep" aria-hidden="true">|</span>
-        <a href="https://concord.org/contact/" target="_blank" rel="noopener">Contact Us</a>
+        <a href="https://concord.org/contact/" target="_blank" rel="noopener noreferrer">Contact Us<span class="sr-only"> (opens in a new tab)</span></a>
       </div>
     </footer>
     <script type="application/json" id="sims">[{"name":"bananas","title":"Bananas","colors":{"surface":"#fffdf2","text":"#5c4813","border":"#9e8540","hover":"#fff3c4","active":"#ffe680","selectedText":"#fff3c4"}},{"name":"collapse","title":"Collapse!","colors":{"surface":"#f0faf4","text":"#124929","border":"#358d5a","hover":"#dbf5e6","active":"#70eba3","selectedText":"#dbf5e6"}},{"name":"noreaster","title":"Nor’easter","colors":{"surface":"#f0f6fe","text":"#1e3f6e","border":"#4680b8","hover":"#d3e8fd","active":"#9cc9f7","selectedText":"#d3e8fd"}}]</script>
