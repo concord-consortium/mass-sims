@@ -16,13 +16,13 @@ export const LUMP_ASSIGNMENT: Record<LumpId, SubstanceId> = {
   "5": "seashell",
 };
 
-/** g/cm³. Sea glass is soda-lime glass, which is why it matches the shell. */
+/** g/cm³. Shell is mostly calcium carbonate, a little denser than the soda-lime sea glass. */
 const DENSITY: Record<SubstanceId, number> = {
   paraffin: 0.9,
   "sea-salt": 2.17,
   "sea-glass": 2.5,
   "palm-oil": 0.89,
-  seashell: 2.5,
+  seashell: 2.7,
 };
 
 /**

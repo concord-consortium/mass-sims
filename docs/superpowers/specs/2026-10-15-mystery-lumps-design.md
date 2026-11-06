@@ -73,7 +73,7 @@ and hand out an answer for free. Only a change in mass counts as evidence.
 | 2 sea salt | 2.17 | 31 | 67.3 |
 | 3 sea glass | 2.50 | 34 | 85.0 |
 | 4 palm oil | 0.89 | 40 | 35.6 |
-| 5 seashell | 2.50 | 36 | 90.0 |
+| 5 seashell | 2.70 | 36 | 97.2 |
 
 Dissolving takes the mass to 0. Shell in vinegar loses 0.4 g as gas; every vinegar note says the container is open, so the loss has an explanation. Paraffin after two weeks
 under the lamp loses 4% (the crumbled corner). Melting and softening change nothing, because

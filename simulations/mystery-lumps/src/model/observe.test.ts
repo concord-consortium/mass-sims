@@ -113,8 +113,8 @@ describe("massAfter", () => {
   });
 
   it("loses a little when the shell fizzes, but not in plain water", () => {
-    expect(massAfter("seashell", "vinegar", 90)).toBe(89.6);
-    expect(massAfter("seashell", "water", 90)).toBe(90);
+    expect(massAfter("seashell", "vinegar", 97.2)).toBe(96.8);
+    expect(massAfter("seashell", "water", 97.2)).toBe(97.2);
   });
 
   it("keeps all its mass when it only melts or softens", () => {
