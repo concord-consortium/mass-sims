@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { observe } from "./observe";
+import { massAfter, observe } from "./observe";
 
 describe("observe", () => {
   it("names the salt by handling, and leaves two look-alike pairs", () => {
@@ -114,5 +114,25 @@ describe("observe", () => {
         expect(observe(s, "lamp", e).caption).not.toMatch(banned);
       }
     }
+  });
+});
+
+describe("massAfter", () => {
+  it("drops to nothing when the lump dissolves", () => {
+    expect(massAfter("sea-salt", "bath", "20", 67.3)).toBe(0);
+  });
+
+  it("loses a little when the shell fizzes, but not in plain water", () => {
+    expect(massAfter("seashell", "vinegar", null, 90)).toBe(89.6);
+    expect(massAfter("seashell", "water", null, 90)).toBe(90);
+  });
+
+  it("keeps all its mass when it only melts or softens", () => {
+    expect(massAfter("palm-oil", "bath", "80", 35.6)).toBe(35.6);
+    expect(massAfter("paraffin", "bath", "80", 34.2)).toBe(34.2);
+  });
+
+  it("loses the crumbled corner after two weeks under the lamp", () => {
+    expect(massAfter("paraffin", "lamp", "fortnight", 34.2)).toBe(32.8);
   });
 });

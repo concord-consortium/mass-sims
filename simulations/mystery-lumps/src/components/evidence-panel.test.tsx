@@ -23,4 +23,23 @@ describe("EvidencePanel", () => {
     const { getByText } = render(<EvidencePanel trial={trial} />);
     expect(getByText(/warm bath, 80 °C/i)).toBeInTheDocument();
   });
+
+  it("records the mass before and after the test", () => {
+    // Lump B is the sea salt, which dissolves to nothing; lump D is palm oil, which melts but
+    // keeps all its mass.
+    let trial = applyTest(makeEmptyTrial(), "B", "water", null);
+    trial = applyTest(trial, "D", "bath", "60");
+    const { getByText } = render(<EvidencePanel trial={trial} />);
+    expect(getByText(/67\.3 g before the test, 0\.0 g after/)).toBeInTheDocument();
+    expect(getByText(/35\.6 g before the test, 35\.6 g after/)).toBeInTheDocument();
+  });
+
+  it("holds back the outcome and the mass after until the test has finished running", () => {
+    const trial = applyTest(makeEmptyTrial(), "B", "water", null);
+    const { getByText, queryByText } = render(<EvidencePanel trial={trial} runningLump="B" />);
+    expect(getByText(/67\.3 g before the test\.$/)).toBeInTheDocument();
+    expect(queryByText(/g after/)).not.toBeInTheDocument();
+    expect(getByText(/running…/i)).toBeInTheDocument();
+    expect(queryByText(/shrinks away/i)).not.toBeInTheDocument();
+  });
 });

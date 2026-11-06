@@ -59,6 +59,24 @@ odorless; only UV-degraded palm oil smells. This is deliberate: waft is free, so
 discriminated on its own it would solve the puzzle for nothing. It stays available afterwards,
 on any lump, so a student can go back and find the smell late.
 
+### Mass
+
+Each destructive test records the lump's mass before and after, to 0.1 g. Lumps are roughly
+5–7 × 3 × 2 cm and deliberately differ in size, so the starting mass doesn't rank densities
+and hand out an answer for free. Only a change in mass counts as evidence.
+
+| Lump | Density (g/cm³) | Volume (cm³) | Mass (g) |
+|---|---|---|---|
+| A paraffin | 0.90 | 38 | 34.2 |
+| B sea salt | 2.17 | 31 | 67.3 |
+| C sea glass | 2.50 | 34 | 85.0 |
+| D palm oil | 0.89 | 40 | 35.6 |
+| E seashell | 2.50 | 36 | 90.0 |
+
+Dissolving takes the mass to 0. Shell in vinegar loses 0.4 g as gas. Paraffin after two weeks
+under the lamp loses 4% (the crumbled corner). Melting and softening change nothing, because
+the material is all still there.
+
 ### What the puzzle costs
 
 Handling names the salt and leaves two look-alike pairs. One test on *one member* of a pair

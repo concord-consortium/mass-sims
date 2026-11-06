@@ -31,6 +31,7 @@ import {
 import "./app.scss";
 
 const TRIAL_LIMIT = 10; // Matches TrialCard's A–J letter cap.
+const RUNNING_MESSAGE = "Running…";
 
 export function App() {
   const [{ trials, selectedId }, setState] = useState(() => {
@@ -168,11 +169,16 @@ export function App() {
     logEvent("test_run", { lump: selectedLump, test, setting: String(setting) });
     updateTrial(selected.id, (t) => applyTest(t, selectedLump, test, setting));
     const result = observe(LUMP_ASSIGNMENT[selectedLump], test, setting);
-    setMessage(`${result.caption} (${formatSimTime(simDurationSeconds(test, setting))})`);
+    const outcome = `${result.caption} (${formatSimTime(simDurationSeconds(test, setting))})`;
+    setMessage(RUNNING_MESSAGE);
     setRunning(true);
     setTimerEpoch((n) => n + 1);
     if (runTimer.current) clearTimeout(runTimer.current);
-    runTimer.current = setTimeout(() => setRunning(false), RUN_MS);
+    runTimer.current = setTimeout(() => {
+      setRunning(false);
+      // Only if the bench still shows this run: picking another lump mid-run cleared it.
+      setMessage((prev) => (prev === RUNNING_MESSAGE ? outcome : prev));
+    }, RUN_MS);
   }, [logEvent, selected.id, selectedLump, setting, test, updateTrial]);
 
   return (
@@ -241,7 +247,7 @@ export function App() {
       </SimulationFrame.Simulation>
 
       <SimulationFrame.Data>
-        <EvidencePanel trial={selected} />
+        <EvidencePanel trial={selected} runningLump={running ? selectedLump : null} />
       </SimulationFrame.Data>
     </SimulationFrame>
   );

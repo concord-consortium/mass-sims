@@ -211,3 +211,27 @@ export function observe(
       return underLamp(substance, setting);
   }
 }
+
+/**
+ * What the scale reads once a lump's test is over. A melted or softened lump weighs what it did:
+ * the material is all still there, just in another shape.
+ */
+export function massAfter(
+  substance: SubstanceId,
+  test: TestId,
+  setting: SettingId | null,
+  before: number,
+): number {
+  switch (observe(substance, test, setting).visual) {
+    case "dissolving":
+      return 0;
+    // Two minutes of fizzing carries off a little of the shell as gas.
+    case "fizzing":
+      return Math.round((before - 0.4) * 10) / 10;
+    // The corner that crumbled away.
+    case "degrading":
+      return Math.round(before * 0.96 * 10) / 10;
+    default:
+      return before;
+  }
+}

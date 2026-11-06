@@ -1,7 +1,7 @@
 import { DataSubsection } from "@concord-consortium/mass-sims-shared";
 import clsx from "clsx";
-import { observe } from "../model/observe";
-import { LUMP_ASSIGNMENT, LUMP_IDS } from "../model/substances";
+import { massAfter, observe } from "../model/observe";
+import { LUMP_ASSIGNMENT, LUMP_IDS, type LumpId, startingMass } from "../model/substances";
 import { type SettingId, TESTS, type TestId } from "../model/tests";
 import type { Trial } from "../model/trial";
 
@@ -20,7 +20,14 @@ function describeTest(test: TestId, setting: SettingId | null): string {
  * is both the running record and — since the sim asks for no identification — the deliverable
  * a student copies onto the paper assignment.
  */
-export function EvidencePanel({ trial }: { trial: Trial }) {
+export function EvidencePanel({
+  trial,
+  runningLump = null,
+}: {
+  trial: Trial;
+  /** The lump whose test is still under way, so its outcome isn't known yet. */
+  runningLump?: LumpId | null;
+}) {
   const rows = LUMP_IDS.map((lump) => {
     const record = trial.lumps[lump];
     const substance = LUMP_ASSIGNMENT[lump];
@@ -40,7 +47,20 @@ export function EvidencePanel({ trial }: { trial: Trial }) {
       lines.push({
         key: "result",
         label: describeTest(result.test, result.setting),
-        text: observe(substance, result.test, result.setting).caption,
+        text:
+          lump === runningLump
+            ? "Running…"
+            : observe(substance, result.test, result.setting).caption,
+      });
+      const before = startingMass(lump);
+      const after = massAfter(substance, result.test, result.setting, before);
+      lines.push({
+        key: "mass",
+        label: "Mass",
+        text:
+          lump === runningLump
+            ? `${before.toFixed(1)} g before the test.`
+            : `${before.toFixed(1)} g before the test, ${after.toFixed(1)} g after.`,
       });
     }
     if (record.handled.after) {
