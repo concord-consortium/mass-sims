@@ -1,8 +1,10 @@
 @use "./lump-tray.scss" as tray;
 
 // How deep the worktop is. Everything that stands on the counter is anchored to this, so the
-// equipment and the lump share one floor rather than each guessing at it.
-$counter-height: 34px;
+// equipment and the lump share one floor rather than each guessing at it. Deep enough to hold
+// a full-height button, since Look, feel, smell and Run both sit on it.
+$counter-height: 56px;
+$counter-button-inset: 6px;
 
 .test-lab {
   background: #fff;
@@ -20,11 +22,20 @@ $counter-height: 34px;
   margin-bottom: 5px;
 }
 
+// The bench, with the test picker down its right side.
+.lab-body {
+  display: flex;
+  gap: 7px;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
 // The bench: a pale wall above, a wooden worktop along the bottom, everything standing on it.
 .bench {
   position: relative;
   flex: 1 1 auto;
-  min-height: 178px;
+  min-width: 0;
+  min-height: 230px;
   border: 1px solid #c3d2e3;
   border-radius: 5px;
   background: linear-gradient(
@@ -58,7 +69,7 @@ $counter-height: 34px;
   flex-direction: column-reverse; // label above the equipment, which is bottom-anchored
   align-items: center;
   gap: 3px;
-  width: 104px;
+  width: 136px;
   // Above the lump, with translucent vessels, so a staged lump reads as being inside.
   z-index: 2;
   pointer-events: none;
@@ -70,22 +81,22 @@ $counter-height: 34px;
   }
 
   &.tool-water::before {
-    width: 38px;
-    height: 44px;
+    width: 50px;
+    height: 58px;
     border-radius: 0 0 5px 5px;
     background: linear-gradient(rgba(234, 246, 255, 0.55) 0 35%, rgba(191, 224, 255, 0.55) 36%);
   }
 
   &.tool-vinegar::before {
-    width: 28px;
-    height: 50px;
+    width: 38px;
+    height: 66px;
     border-radius: 0 0 12px 12px;
     background: linear-gradient(rgba(253, 246, 227, 0.55) 0 30%, rgba(236, 223, 174, 0.6) 31%);
   }
 
   &.tool-bath::before {
-    width: 72px;
-    height: 44px;
+    width: 94px;
+    height: 58px;
     border-radius: 3px;
     background: linear-gradient(rgba(230, 244, 255, 0.5) 0 30%, rgba(169, 212, 245, 0.6) 31%);
   }
@@ -97,8 +108,8 @@ $counter-height: 34px;
     bottom: 4px;
     left: 50%;
     transform: translateX(-50%);
-    width: 44px;
-    height: 36px;
+    width: 58px;
+    height: 48px;
     border: 2px solid #7fa8cf;
     border-top: none;
     border-radius: 0 0 6px 6px;
@@ -111,8 +122,8 @@ $counter-height: 34px;
     top: 52px;
 
     &::before {
-      width: 54px;
-      height: 18px;
+      width: 70px;
+      height: 22px;
       border-radius: 4px;
       background: #6b4e9e;
       box-shadow: 0 14px 20px -4px rgba(170, 120, 255, 0.75);
@@ -216,16 +227,37 @@ $counter-height: 34px;
   font-weight: 700;
 }
 
-.bench-message {
+// On the counter below where the lump rests, left-aligned with it. It stays put when the lump
+// travels to the apparatus: examining is not one of the tests.
+.examine-button {
+  position: absolute;
+  left: 14px;
+  bottom: $counter-button-inset;
+  z-index: 3;
+  white-space: nowrap;
+}
+
+// Run, and Reset Test in its place once the lump's test has run.
+.bench-action {
   position: absolute;
   right: 8px;
-  bottom: 6px;
-  max-width: 52%;
-  margin: 0;
-  text-align: right;
-  font-size: 11px;
-  background: rgba(255, 255, 255, 0.92);
-  border-radius: 4px;
-  padding: 3px 5px;
+  bottom: $counter-button-inset;
   z-index: 3;
+}
+
+.bench-column {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+// Room held for the longest caption (the bath's three steps), so the bench above stays put
+// whether there is a caption or not.
+.bench-message {
+  margin: 0;
+  font-size: 11px;
+  line-height: 1.35;
+  min-height: calc(4 * 1.35em);
 }

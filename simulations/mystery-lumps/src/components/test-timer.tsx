@@ -1,7 +1,7 @@
 import { useFrameLoop } from "@concord-consortium/mass-sims-shared";
 import { useState } from "react";
 import { formatSimTime, simDurationSeconds } from "../model/sim-time";
-import type { SettingId, TestId } from "../model/tests";
+import type { TestId } from "../model/tests";
 
 import "./test-timer.scss";
 
@@ -25,7 +25,6 @@ export function useRunProgress(running: boolean): number {
 
 export interface TestTimerProps {
   test: TestId;
-  setting: SettingId | null;
   /** The bar only advances while a test is actually running; otherwise it sits where it is. */
   running: boolean;
 }
@@ -43,8 +42,8 @@ export interface TestTimerProps {
  * It starts from zero on mount and has no reset of its own; the bench gives it a `key` that
  * changes whenever the run or the chosen test does, so it is replaced rather than rewound.
  */
-export function TestTimer({ test, setting, running }: TestTimerProps) {
-  const total = simDurationSeconds(test, setting);
+export function TestTimer({ test, running }: TestTimerProps) {
+  const total = simDurationSeconds(test);
   const progress = useRunProgress(running);
 
   return (

@@ -9,14 +9,14 @@ afterEach(() => vi.unstubAllGlobals());
 
 describe("TestTimer", () => {
   it("does not advance while no test is running", () => {
-    const { getByRole } = render(<TestTimer test="vinegar" setting={null} running={false} />);
+    const { getByRole } = render(<TestTimer test="vinegar" running={false} />);
     paint(0);
     paint(3000);
     expect(getByRole("progressbar")).toHaveAttribute("aria-valuenow", "0");
   });
 
   it("counts sim time out as the frames go by", () => {
-    const { getByRole } = render(<TestTimer test="vinegar" setting={null} running={true} />);
+    const { getByRole } = render(<TestTimer test="vinegar" running={true} />);
     // First frame establishes the clock; its delta is zero by design.
     paint(0);
     expect(getByRole("progressbar")).toHaveAttribute("aria-valuenow", "0");
@@ -26,14 +26,14 @@ describe("TestTimer", () => {
   });
 
   it("stops at the full span rather than running past it", () => {
-    const { getByRole } = render(<TestTimer test="vinegar" setting={null} running={true} />);
+    const { getByRole } = render(<TestTimer test="vinegar" running={true} />);
     paint(0);
     paint(RUN_MS * 3);
     expect(getByRole("progressbar")).toHaveAttribute("aria-valuenow", "120");
   });
 
   it("scales the same seven seconds to the lamp's much longer span", () => {
-    const { getByRole } = render(<TestTimer test="lamp" setting="fortnight" running={true} />);
+    const { getByRole } = render(<TestTimer test="lamp" running={true} />);
     paint(0);
     paint(RUN_MS / 2);
     // Seven real seconds either way; a fortnight is just counted in bigger numbers.

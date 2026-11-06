@@ -7,7 +7,6 @@ import {
 } from "@concord-consortium/mass-sims-shared";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { EvidencePanel } from "./components/evidence-panel";
-import { LabControls } from "./components/lab-controls";
 import { LumpTray } from "./components/lump-tray";
 import { TestLab } from "./components/test-lab";
 import { RUN_MS } from "./components/test-timer";
@@ -17,7 +16,7 @@ import type { SavedState } from "./model/saved-state";
 import { formatSimTime, simDurationSeconds } from "./model/sim-time";
 import type { LumpId } from "./model/substances";
 import { LUMP_ASSIGNMENT } from "./model/substances";
-import { CONSUMING_TESTS, type SettingId, TESTS, type TestId } from "./model/tests";
+import { CONSUMING_TESTS, type TestId } from "./model/tests";
 import {
   applyTest,
   clearTrial,
@@ -41,7 +40,6 @@ export function App() {
   // time it can still be examined, which is how the rancid smell is found.
   const [selectedLump, setSelectedLump] = useState<LumpId | null>(null);
   const [test, setTest] = useState<TestId>(CONSUMING_TESTS[0]);
-  const [setting, setSetting] = useState<SettingId | null>(null);
   // The bench caption. Transient and never persisted, so a reload shows the Data column's
   // record rather than a stale one-off line.
   const [message, setMessage] = useState<string | null>(null);
@@ -70,13 +68,6 @@ export function App() {
     },
     [],
   );
-
-  // The dial belongs to the test, so changing test resets it to that test's first value (or to
-  // null for the two tests without one). Run then never meets a test whose setting is missing.
-  useEffect(() => {
-    const settings = TESTS[test].settings;
-    setSetting(settings.length > 0 ? settings[0].id : null);
-  }, [test]);
 
   const selected = trials.find((t) => t.id === selectedId) ?? trials[0];
   const anythingObserved = trials.some((t) =>
@@ -149,10 +140,10 @@ export function App() {
   // act again, so a reload mid-run loses nothing.
   const runTest = useCallback(() => {
     if (!selectedLump) return;
-    logEvent("test_run", { lump: selectedLump, test, setting: String(setting) });
-    updateTrial(selected.id, (t) => applyTest(t, selectedLump, test, setting));
-    const result = observe(LUMP_ASSIGNMENT[selectedLump], test, setting);
-    const outcome = `${result.caption} (${formatSimTime(simDurationSeconds(test, setting))})`;
+    logEvent("test_run", { lump: selectedLump, test });
+    updateTrial(selected.id, (t) => applyTest(t, selectedLump, test));
+    const result = observe(LUMP_ASSIGNMENT[selectedLump], test);
+    const outcome = `${result.caption} (${formatSimTime(simDurationSeconds(test))})`;
     setMessage(RUNNING_MESSAGE);
     setRunning(true);
     setTimerEpoch((n) => n + 1);
@@ -162,7 +153,7 @@ export function App() {
       // Only if the bench still shows this run: picking another lump mid-run cleared it.
       setMessage((prev) => (prev === RUNNING_MESSAGE ? outcome : prev));
     }, RUN_MS);
-  }, [logEvent, selected.id, selectedLump, setting, test, updateTrial]);
+  }, [logEvent, selected.id, selectedLump, test, updateTrial]);
 
   return (
     <SimulationFrame
@@ -208,19 +199,10 @@ export function App() {
           trial={selected}
           selectedLump={selectedLump}
           test={test}
-          setting={setting}
           running={running}
           timerEpoch={timerEpoch}
           message={message}
-        />
-        <LabControls
-          test={test}
-          setting={setting}
-          hasLump={selectedLump !== null}
-          spent={selectedLump !== null && selected.lumps[selectedLump].result !== null}
-          running={running}
           onTestChange={setTest}
-          onSettingChange={setSetting}
           onExamine={examineLump}
           onRun={runTest}
           onResetTest={resetTest}

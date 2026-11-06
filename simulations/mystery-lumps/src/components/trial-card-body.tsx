@@ -7,10 +7,9 @@ import type { Trial } from "../model/trial";
 import "./trial-card-body.scss";
 
 /**
- * The rows inside a shared <TrialCard>: one per sample that has been given a test, listing the
- * test and its dial behind a small picture of the sample as it was left. Nor'easter's cards
- * list the settings that were chosen, and these do the same — the observations themselves are
- * in the Data panel.
+ * The rows inside a shared <TrialCard>: one per sample that has been given a test, naming the
+ * test behind a small picture of the sample as it was left. The observations themselves are in
+ * the Data panel.
  */
 export function TrialCardBody({ trial }: { trial: Trial }) {
   const spent = LUMP_IDS.filter((lump) => trial.lumps[lump].result !== null);
@@ -20,16 +19,13 @@ export function TrialCardBody({ trial }: { trial: Trial }) {
       {spent.map((lump) => {
         const record = trial.lumps[lump];
         if (!record.result) return null;
-        const meta = TESTS[record.result.test];
-        const option = meta.settings.find((s) => String(s.id) === String(record.result?.setting));
         return (
           <span className="card-row" key={lump}>
             <span
               className={clsx("card-blob", `visual-${lastSeen(LUMP_ASSIGNMENT[lump], record)}`)}
               aria-hidden="true"
             />
-            Sample {lump} · {meta.label}
-            {option ? ` ${option.label}` : ""}
+            Sample {lump} · {TESTS[record.result.test].label}
           </span>
         );
       })}

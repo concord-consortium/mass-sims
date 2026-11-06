@@ -21,7 +21,7 @@ describe("LumpTray", () => {
   });
 
   it("keeps the slot once its lump is used up, but empties it", () => {
-    const trial = applyTest(makeEmptyTrial(), "3", "water", null);
+    const trial = applyTest(makeEmptyTrial(), "3", "water");
     const { container, getAllByRole, getByRole } = render(
       <LumpTray trial={trial} selectedLump="3" onSelect={() => undefined} />,
     );
@@ -37,7 +37,7 @@ describe("LumpTray", () => {
 
   it("will not put a used-up lump back on the bench", () => {
     const onSelect = vi.fn();
-    const trial = applyTest(makeEmptyTrial(), "3", "water", null);
+    const trial = applyTest(makeEmptyTrial(), "3", "water");
     const { getByRole } = render(
       <LumpTray trial={trial} selectedLump={null} onSelect={onSelect} />,
     );
@@ -56,7 +56,7 @@ describe("LumpTray", () => {
   it("says so when the tray is empty", () => {
     let trial = makeEmptyTrial();
     for (const lump of ["1", "2", "3", "4", "5"] as const) {
-      trial = applyTest(trial, lump, "water", null);
+      trial = applyTest(trial, lump, "water");
     }
     const { container, getByText, getAllByRole } = render(
       <LumpTray trial={trial} selectedLump={null} onSelect={() => undefined} />,

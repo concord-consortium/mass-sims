@@ -1,5 +1,5 @@
 import { LUMP_IDS, type LumpId } from "./substances";
-import type { SettingId, TestId } from "./tests";
+import type { TestId } from "./tests";
 
 /**
  * When the lump was examined, relative to its one destructive test. Both are kept because both
@@ -14,7 +14,7 @@ export interface Touches {
 export interface LumpRecord {
   examined: Touches;
   /** The one destructive test this lump has been given, or null while it still has material. */
-  result: { test: TestId; setting: SettingId | null } | null;
+  result: { test: TestId } | null;
 }
 
 const UNTOUCHED: Touches = { before: false, after: false };
@@ -51,14 +51,9 @@ function withLump(trial: Trial, lump: LumpId, patch: Partial<LumpRecord>): Trial
  * render — if that lump has already been tested, which is the one-shot rule enforced in the
  * one place rather than in every caller.
  */
-export function applyTest(
-  trial: Trial,
-  lump: LumpId,
-  test: TestId,
-  setting: SettingId | null,
-): Trial {
+export function applyTest(trial: Trial, lump: LumpId, test: TestId): Trial {
   if (trial.lumps[lump].result !== null) return trial;
-  return withLump(trial, lump, { result: { test, setting } });
+  return withLump(trial, lump, { result: { test } });
 }
 
 /** Whichever side of the lump's test we are on now. */

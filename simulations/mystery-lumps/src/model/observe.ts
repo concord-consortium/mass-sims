@@ -1,5 +1,5 @@
 import type { SubstanceId } from "./substances";
-import type { SettingId, TestId } from "./tests";
+import type { TestId } from "./tests";
 import type { LumpRecord } from "./trial";
 
 /** What a station draws. One per distinct thing a student can see or smell. */
@@ -24,7 +24,6 @@ export interface Observation {
 
 export interface PriorResult {
   test: TestId;
-  setting: SettingId | null;
 }
 
 const NOTHING = "The lump sits where it was put. Nothing changes.";
@@ -53,14 +52,6 @@ const HANDLE: Record<SubstanceId, Observation> = {
     visual: "waxy",
   },
 };
-
-/**
- * The two substances that break down under UV do so on different clocks: palm oil, already
- * part-oxidized, turns rancid within a day, while refined paraffin needs the full fortnight
- * before it yellows. One shared threshold would hand the student paraffin a day early.
- */
-const RANCID_EXPOSURES = new Set(["day", "fortnight"]);
-const PARAFFIN_DECAY_EXPOSURE = "fortnight";
 
 /**
  * Vinegar notes say the container is open: it is why the fizzing shell weighs less afterwards,
@@ -130,20 +121,21 @@ function inBath(substance: SubstanceId): Observation {
   };
 }
 
-function underLamp(substance: SubstanceId, setting: SettingId | null): Observation {
-  const exposure = String(setting ?? "seconds");
+/**
+ * Always two weeks under the lamp, long enough for both substances that break down under UV to
+ * do so: palm oil, already part-oxidized, goes rancid, and refined paraffin yellows.
+ */
+function underLamp(substance: SubstanceId): Observation {
   if (substance === "sea-glass") {
     return { caption: "The lump shines with a pale blue-white glow.", visual: "glowing" };
   }
   if (substance === "palm-oil") {
     return {
-      caption: RANCID_EXPOSURES.has(exposure)
-        ? "The lump glows a dull yellow-green. Its surface looks damp and darkened."
-        : "The lump glows a dull yellow-green.",
+      caption: "The lump glows a dull yellow-green. Its surface looks damp and darkened.",
       visual: "glowing",
     };
   }
-  if (substance === "paraffin" && exposure === PARAFFIN_DECAY_EXPOSURE) {
+  if (substance === "paraffin") {
     return {
       caption:
         "The lump has turned yellow, its surface is powdery, and a corner has crumbled away.",
@@ -163,7 +155,7 @@ function handled(substance: SubstanceId, prior: PriorResult | null): Observation
   // changes nothing, so there would be nothing new to describe.
   if (!prior || prior.test === "handle" || prior.test === "waft") return HANDLE[substance];
 
-  const outcome = observe(substance, prior.test, prior.setting);
+  const outcome = observe(substance, prior.test);
   switch (outcome.visual) {
     case "dissolving":
       return { caption: "There is nothing left to pick up.", visual: "dissolving" };
@@ -180,8 +172,8 @@ function handled(substance: SubstanceId, prior: PriorResult | null): Observation
         visual: "fizzing",
       };
     case "glowing":
-      // Glowing alone changes nothing you can feel; a long exposure does.
-      return substance === "palm-oil" && RANCID_EXPOSURES.has(String(prior.setting))
+      // Glowing alone changes nothing you can feel; what the fortnight did to palm oil does.
+      return substance === "palm-oil"
         ? {
             caption: "Greasier than it was, and tacky where the surface has darkened.",
             visual: "glowing",
@@ -193,10 +185,7 @@ function handled(substance: SubstanceId, prior: PriorResult | null): Observation
 }
 
 function waft(substance: SubstanceId, prior: PriorResult | null): Observation {
-  const degraded =
-    substance === "palm-oil" &&
-    prior?.test === "lamp" &&
-    RANCID_EXPOSURES.has(String(prior.setting));
+  const degraded = substance === "palm-oil" && prior?.test === "lamp";
   return degraded
     ? { caption: "A sharp, rancid smell.", visual: "rancid" }
     : { caption: "No smell to speak of.", visual: "no-smell" };
@@ -209,13 +198,12 @@ function waft(substance: SubstanceId, prior: PriorResult | null): Observation {
  *
  * `prior` is the lump's already-spent test. Handling and wafting both depend on it: a lump that
  * has melted feels like a pool rather than a block, and palm oil smells rancid once the lamp has
- * had long enough to break it down. The four destructive tests ignore it, since a lump only ever
+ * broken it down. The four destructive tests ignore it, since a lump only ever
  * gets one of them.
  */
 export function observe(
   substance: SubstanceId,
   test: TestId,
-  setting: SettingId | null,
   prior: PriorResult | null = null,
 ): Observation {
   switch (test) {
@@ -230,7 +218,7 @@ export function observe(
     case "bath":
       return inBath(substance);
     case "lamp":
-      return underLamp(substance, setting);
+      return underLamp(substance);
   }
 }
 
@@ -238,13 +226,8 @@ export function observe(
  * What the scale reads once a lump's test is over. A melted or softened lump weighs what it did:
  * the material is all still there, just in another shape.
  */
-export function massAfter(
-  substance: SubstanceId,
-  test: TestId,
-  setting: SettingId | null,
-  before: number,
-): number {
-  switch (observe(substance, test, setting).visual) {
+export function massAfter(substance: SubstanceId, test: TestId, before: number): number {
+  switch (observe(substance, test).visual) {
     case "dissolving":
       return 0;
     // Two minutes of fizzing carries off a little of the shell as gas.
@@ -272,6 +255,6 @@ export function examine(substance: SubstanceId, prior: PriorResult | null = null
  * it revealed, otherwise the anonymous blob every unexamined lump shares.
  */
 export function lastSeen(substance: SubstanceId, record: LumpRecord): VisualKey | "unknown" {
-  if (record.result) return observe(substance, record.result.test, record.result.setting).visual;
+  if (record.result) return observe(substance, record.result.test).visual;
   return record.examined.before ? examine(substance).visual : "unknown";
 }

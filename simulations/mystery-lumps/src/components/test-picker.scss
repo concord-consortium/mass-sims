@@ -1,0 +1,35 @@
+// A bubble down the right side of the Test Lab: a real fieldset for the radio-like group, with
+// the legend as its visible label.
+.test-picker {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex: none;
+  width: 116px;
+  margin: 0;
+  padding: 8px;
+  border: 2px solid #c3d2e3;
+  border-radius: 10px;
+  background: #f6f9fc;
+  min-inline-size: 0;
+}
+
+.picker-label {
+  float: left;
+  width: 100%;
+  padding: 0 0 2px;
+  font-weight: 700;
+  font-size: 12px;
+}
+
+// Height, font size and padding come from the shared Button. Only the chosen state is ours.
+.test-button.chosen {
+  background: #1b3f7a;
+  border-color: #1b3f7a;
+  color: #fff;
+}
+
+.test-button.chosen:hover,
+.test-button.chosen:focus-visible {
+  background: #24508f;
+}

@@ -36,24 +36,23 @@ substance or a class of substance ("a steady stream of small bubbles", never "a 
 | **Sea salt** | a crust of small cube-shaped crystals | dissolves away, water stays clear | dissolves away, no bubbles | nothing (it stays dry) | nothing |
 | **Seashell** | hard and smooth, cool to the touch | nothing | **a steady stream of small bubbles** | nothing, at any temperature | nothing |
 | **Sea glass** | hard and smooth, cool to the touch | nothing | nothing | nothing, at any temperature | **glows, immediately** |
-| **Palm oil** | waxy and pale, gives under a fingernail | nothing | nothing | **slumps and runs by 45 °C** | **glows**; long exposure also turns it rancid |
-| **Paraffin** | waxy and pale, gives under a fingernail | nothing | nothing | **softens, then melts, by 80 °C** | long exposure yellows it, chalks the surface, makes it brittle |
+| **Palm oil** | waxy and pale, gives under a fingernail | nothing | nothing | **slumps and runs by 45 °C** | **glows**; two weeks also turns it rancid |
+| **Paraffin** | waxy and pale, gives under a fingernail | nothing | nothing | **softens, then melts, by 80 °C** | two weeks yellows it, chalks the surface, makes it brittle |
 
 Refined paraffin, seashell and salt **do not fluoresce**. Only sea glass and palm oil glow,
 which is what gives the lamp a job nothing else can do.
 
 ### Settings
 
-The lamp has a dial, a dropdown matching Nor'easter's. The bath has none:
+Neither test with a range has a student-facing dial; each runs its whole range every time:
 
 - **Warm bath** — the lump sits in a dry dish inside the bath, so only heat reaches it, and one
   run steps it through 30 °C, 45 °C and 80 °C (two simulated minutes at each), reporting every
   step, phase changes included (each wax softens before it melts). The three temperatures are
   written on the instrument and light in turn as the run goes. Palm oil melts by 45, paraffin by
   80. Salt, shell and glass never change.
-- **UV lamp** — a few seconds, an hour, a day, two weeks. Fluorescence is immediate at every
-  exposure. Degradation needs the long end: palm oil goes rancid from *a day*, paraffin
-  yellows and chalks only at *two weeks*.
+- **UV lamp** — always two weeks. Fluorescence shows at once; over the fortnight palm oil goes
+  rancid and paraffin yellows and chalks.
 
 ### Smell
 
@@ -98,20 +97,22 @@ puts it on the bench** — click to select rather than drag, so the tray is reac
 and screen reader like every other control in the repo. Drag-and-drop can be added later as a
 second way in, never as the only one.
 
-The Test Lab is a drawing of a lab bench with the chosen lump on it. A row of controls along
-the bottom holds:
+The Test Lab is a drawing of a lab bench with the chosen lump on it:
 
-- **Test** — water, vinegar, warm bath, UV lamp. Choosing one brings that test's apparatus onto
-  the bench: a tube of vinegar, the lamp, and so on.
-- **Setting** — applies only to the lamp, greyed out otherwise so the row does not
-  jump as the test changes.
-- **Look, feel, smell** — one button reporting the feel and the smell together. Available
+- **Choose a Test** — a bubble down the right side of the Test Lab: water, vinegar, warm bath,
+  UV lamp. Choosing one brings that test's apparatus onto the bench: a tube of vinegar, the
+  lamp, and so on.
+- **Look, feel, smell** — on the counter below where the lump rests, staying put when the lump goes to the apparatus; not in the test
+  bubble, because it is free. One button reporting the feel and the smell together. Available
   whenever a lump is on the bench, before its test and after but not while it runs (that would
   give the result away early), and never consuming it. What it reports changes as the lump does: palm
   oil is waxy and pale beforehand and a greasy pool after the bath, dissolved salt cannot be
   picked up at all. Both the before and the after observation are kept, because the pair is the
   argument a student writes up.
-- **Run** and **Reset Trial**.
+- **Run** — in the bench's bottom-right corner. Once the lump's test has run, **Reset Test**
+  takes its place and gives that one lump its material back.
+
+The latest observation's caption sits in a line under the bench.
 
 Running a test spends the lump. **It then leaves the tray**, because there is no material left
 to test — but it **stays on the bench until the student picks a different lump**. That window is
@@ -134,8 +135,8 @@ blue borders, navy text, pill chips. (`docs/ui-design-plan.md` describes grey pa
 chips; it is stale, and this sim does not follow it.)
 
 - **Trials** — one tall card per trial, accumulating a row per lump: a small icon of the lump as
-  its test left it, "Sample N", the test it was given, and its setting. `New` at the foot; reset on the selected card.
-- **Simulation** — the Test Lab on top with its bench and its control row ("Run a Test"), and the
+  its test left it, "Sample N", and the test it was given. `New` at the foot; reset on the selected card.
+- **Simulation** — the Test Lab on top with its bench and test bubble ("Choose a Test"), and the
   sample tray ("Choose a sample") across the full width below it.
 - **Data** — the record, and the only place results persist once a lump has left the bench. Each
   lump that has been observed or tested at all gets a picture of itself alongside its notes in
@@ -149,12 +150,13 @@ Scaffolded with `yarn new-sim mystery-lumps`; shared frame, controls and charts 
 ```
 src/model/
   substances.ts   the five substances and the fixed lump assignment
-  tests.ts        the six actions, which consume material, their settings
-  observe.ts      observe(substance, test, setting) -> { caption, visual }
+  tests.ts        the six actions, and which consume material
+  observe.ts      observe(substance, test, prior?) -> { caption, visual }
 src/components/
   lump-row.tsx        the five lumps; click to put on the bench; holds end states
   test-stage.tsx      the apparatus a lump animates into, in place
-  test-settings.tsx   the Lump / Test / Setting grid and Run
+  test-lab.tsx        the bench: apparatus, lump, Look/feel/smell, Run / Reset Test
+  test-picker.tsx     the Choose a Test bubble
   trial-card-body.tsx what fills a shared <TrialCard>
   evidence-panel.tsx  the Data region
 ```
@@ -169,7 +171,7 @@ selection; animation progress is never persisted.
 interface Touches { before: boolean; after: boolean }
 interface LumpRecord {
   examined: Touches;
-  result: { test: TestId; setting: SettingId | null } | null;
+  result: { test: TestId } | null;
 }
 interface Trial { id: string; lumps: Record<LumpId, LumpRecord> }
 interface SavedState { trials: Trial[]; selectedTrialId: string }
@@ -180,14 +182,14 @@ work a student saved earlier.
 
 ### Logging
 
-`lump_examined`, `test_run` (params: lump, test, setting), `trial_started`,
+`lump_examined`, `test_run` (params: lump, test), `trial_started`,
 `trial_reset`. All snake_case, within GA4's limits.
 
 ## Testing
 
-- **`observe()`** — every substance against every test and every setting, asserted against the
+- **`observe()`** — every substance against every test, asserted against the
   table above. The bath and lamp thresholds get their own cases on both sides of each boundary
-  (the bath's full 30/45/80 sequence for each wax, palm oil rancid at an hour and a day).
+  (the bath's full 30/45/80 sequence for each wax, the rancid smell only after the lamp).
 - **The one-shot rule** — a lump with a result is absent from the Lump dropdown; `New` restores
   every budget; `Reset Trial` restores the current trial's.
 - **Free action** — examining never consumes a lump, and finds no smell until the lamp has

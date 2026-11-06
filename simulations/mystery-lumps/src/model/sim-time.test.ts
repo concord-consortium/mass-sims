@@ -4,20 +4,13 @@ import { formatSimTime, simDurationSeconds } from "./sim-time";
 describe("simDurationSeconds", () => {
   it("gives water and vinegar two minutes, and the bath two at each of its three steps", () => {
     for (const test of ["water", "vinegar"] as const) {
-      expect(simDurationSeconds(test, null)).toBe(120);
+      expect(simDurationSeconds(test)).toBe(120);
     }
-    expect(simDurationSeconds("bath", null)).toBe(360);
+    expect(simDurationSeconds("bath")).toBe(360);
   });
 
-  it("runs the lamp for exactly the exposure that was dialled in", () => {
-    expect(simDurationSeconds("lamp", "hour")).toBe(3600);
-    expect(simDurationSeconds("lamp", "day")).toBe(86400);
-    expect(simDurationSeconds("lamp", "fortnight")).toBe(1209600);
-    // Each step up the dial is a longer span than the one below it.
-    const spans = (["seconds", "hour", "day", "fortnight"] as const).map((e) =>
-      simDurationSeconds("lamp", e),
-    );
-    expect(spans).toEqual([...spans].sort((a, b) => a - b));
+  it("always runs the lamp for two weeks", () => {
+    expect(simDurationSeconds("lamp")).toBe(1209600);
   });
 });
 

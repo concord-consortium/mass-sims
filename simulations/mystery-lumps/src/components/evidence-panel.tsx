@@ -2,17 +2,10 @@ import { DataSubsection } from "@concord-consortium/mass-sims-shared";
 import clsx from "clsx";
 import { examine, lastSeen, massAfter, observe } from "../model/observe";
 import { LUMP_ASSIGNMENT, LUMP_IDS, type LumpId, startingMass } from "../model/substances";
-import { type SettingId, TESTS, type TestId } from "../model/tests";
+import { TESTS } from "../model/tests";
 import type { Trial } from "../model/trial";
 
 import "./evidence-panel.scss";
-
-/** How a test and its dial read in the record: "UV lamp, A day". */
-function describeTest(test: TestId, setting: SettingId | null): string {
-  const meta = TESTS[test];
-  const option = meta.settings.find((s) => String(s.id) === String(setting));
-  return option ? `${meta.label}, ${option.label}` : meta.label;
-}
 
 /**
  * Everything observed in this trial, in full prose, each lump beside a picture of how it was
@@ -43,14 +36,11 @@ export function EvidencePanel({
     if (result) {
       lines.push({
         key: "result",
-        label: describeTest(result.test, result.setting),
-        text:
-          lump === runningLump
-            ? "Running…"
-            : observe(substance, result.test, result.setting).caption,
+        label: TESTS[result.test].label,
+        text: lump === runningLump ? "Running…" : observe(substance, result.test).caption,
       });
       const before = startingMass(lump);
-      const after = massAfter(substance, result.test, result.setting, before);
+      const after = massAfter(substance, result.test, before);
       lines.push({
         key: "mass",
         label: "Mass",
