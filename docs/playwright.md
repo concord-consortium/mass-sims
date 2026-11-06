@@ -14,10 +14,11 @@ behavior — against the same static artifacts users get.
 
 | Command | What it does |
 | --- | --- |
-| `yarn test:playwright:build` | **Full cycle** — builds every sim, then runs the suite. Use this most of the time. |
-| `yarn test:playwright` | Runs the suite **assuming `dist/` already exists** (it does NOT build). Fast iteration after a build. |
+| `yarn test:playwright:build` | **Full cycle** — builds every sim and the `top-test/` fixture (`yarn build:top-test`), then runs the suite. Use this most of the time. |
+| `yarn test:playwright` | Runs the suite **assuming `dist/` and `top-test/` already exist** (it does NOT build). Fast iteration after a build. |
 | `yarn test:playwright:open` | Playwright UI mode (watch + time-travel debugging). |
 | `yarn test:playwright --project=chromium-1044` | One viewport only (fastest iteration). |
+| `yarn test:playwright playwright/tests/landing` | The landing page only (its three `landing-*` projects). |
 | `yarn test:playwright playwright/tests/smoke` | One tier (smoke / functional). |
 | `yarn playwright:install` | Install the Chromium binary (once per machine / after a Playwright bump). |
 | `yarn typecheck:playwright` | Type-check the suite (`tsc -p playwright/tsconfig.json`). |
@@ -27,18 +28,24 @@ First-time setup: `yarn playwright:install`.
 ## The build contract
 
 `yarn test:playwright` **never builds.** The `webServer` config only runs `vite preview` against
-each sim's pre-built `dist/`. So either:
+each sim's pre-built `dist/`, and `serve` against the pre-built `top-test/` fixture (for the
+landing page). So either:
 
 - run `yarn test:playwright:build` (builds then runs), or
-- run `yarn build && yarn test:playwright`, or
-- in CI, the `playwright` job runs `yarn build` as an explicit step before `yarn test:playwright`.
+- run `yarn build:top-test && yarn test:playwright` (`build:top-test` runs `yarn build` itself, so
+  it fills each sim's `dist/` too), or
+- in CI, the `playwright` job runs `yarn build:top-test` as an explicit step before
+  `yarn test:playwright`.
+
+`yarn build` alone is enough for the sim specs, but the landing specs then fail: they need
+`top-test/`.
 
 Testing the **built artifacts** (not the dev server) is deliberate: `vite dev` and `vite preview`
 are different code paths, and the e2e suite is where preview-only bugs surface.
 
 `reuseExistingServer: false` everywhere — Playwright always launches its own preview servers and
 never reuses one already on the port. This means **you must stop any `vite dev`/`preview` server
-on ports 8080–8081 before running e2e** (a stray server makes Playwright fail loudly with
+on ports 8080–8083, and any `yarn serve:top-test` on port 8000, before running e2e** (a stray server makes Playwright fail loudly with
 "port already in use" rather than silently testing the wrong app).
 
 ## Architecture
@@ -126,6 +133,37 @@ sim content area is a few pixels narrower than the raw viewport. This is fine fo
 coverage (a few pixels doesn't change which controls fit), but these tests are **not** AP-pixel-
 perfect — visual/pixel-precise coverage is deferred (see below).
 
+## The landing page projects
+
+The landing page (the root `index.html`, see the README) has its own spec,
+[`tests/landing/landing.test.ts`](../playwright/tests/landing/landing.test.ts), which runs only in
+the `landing-1084`, `landing-1200` and `landing-1920` projects (the sim projects skip
+`tests/landing/`, and the landing projects run nothing else). 1084 is the narrowest window with no
+sideways scroll; at 1200 the sim is stretched; at 1920 it is at its full 1028 px.
+
+It runs against the `top-test/` fixture, which the e2e run serves itself on port 8000 (the
+`TOP_TEST_PORT` in [`sims.ts`](../playwright/sims.ts); the
+[`LandingPage`](../playwright/pages/landing-page.ts) page object builds its URLs from it, with no
+`baseURL`). `build:top-test` lays the page out at three deploy paths, each with every sim's
+`dist/` beside it, as CI uploads them:
+
+| Path | Stands in for | Footer shows |
+| --- | --- | --- |
+| `/` | the released top level | no version |
+| `/version/v0.0.0-test/` | a release tag | `MassSims v0.0.0-test` |
+| `/branch/test-branch/` | a branch deploy | `MassSims (branch test-branch)` |
+
+At each path the spec checks that the iframe loads the sim from that same path, and that "Copy URL"
+and "Copy embed code" put that path's absolute URL on the clipboard.
+
+Two `serve` quirks the fixture works around (production S3 has neither):
+
+- `serve` redirects `…/index.html` to a "clean" URL and drops the query string, so the iframe would
+  lose `?standalone=true`. `build:top-test` writes `top-test/serve.json` with
+  `{ "cleanUrls": ["!**/index.html"] }` to stop that.
+- `serve` lists a folder whose name has dots in it (`v0.0.0-test`) instead of serving its
+  `index.html`, so the spec opens the version deploy at `/version/v0.0.0-test/index.html`.
+
 ## Firefox and Safari: checked by hand
 
 The suite and CI run Chromium only. Some layout code works around ways Firefox and Safari differ,
@@ -212,7 +250,7 @@ in the smoke spec to your real title, then `yarn test:playwright:build playwrigh
 ## CI
 
 The `playwright` job in [`.github/workflows/ci.yml`](../.github/workflows/ci.yml) runs after
-`checks`: it type-checks the suite, builds every sim, installs Chromium, runs `yarn test:playwright`,
+`checks`: it type-checks the suite, builds every sim and `top-test/` (`yarn build:top-test`), installs Chromium, runs `yarn test:playwright`,
 and publishes the HTML report to S3 (`…/mass-sims/playwright-report/<branch-or-tag>/`) with a run
 summary on every push (pass or fail). A failing e2e run does **not** block branch deploys — those
 are separate jobs gated only on `checks`.
@@ -222,6 +260,9 @@ are separate jobs gated only on `checks`.
 - **"port 8080/8081 already in use"** — a `vite dev`/`preview` server (or an interrupted prior e2e
   run) is holding the port. Stop it: `lsof -ti:8080 -ti:8081 | xargs kill`. This is `reuseExistingServer:
   false` working as intended — it refuses to silently test against the wrong server.
+- **"http://localhost:8000 is already used"** — a `yarn serve:top-test` is still running. Stop it.
+- **Every landing test fails, or the sim in the landing iframe has no rounded border** — `top-test/`
+  is missing or stale. Run `yarn build:top-test` (or `yarn test:playwright:build`).
 - **Reload-warning test flaky** — it shouldn't be (the synthetic-dispatch detection is
   deterministic). If it ever is, the unit-level `useReloadWarning` coverage is the source of truth;
   mark the e2e test `test.fixme()` and rely on that.

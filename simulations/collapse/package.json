@@ -3,6 +3,24 @@
   "version": "0.1.1",
   "private": true,
   "description": "Collapse! — which conditions form caves?",
+  "massSims": {
+    "title": "Collapse!",
+    "gradeBand": "Grades 6-8",
+    "order": 2,
+    "titleFont": {
+      "family": "Fontdiner Swanky",
+      "letterSpacing": "2px",
+      "offsetY": "2px"
+    },
+    "colors": {
+      "surface": "#f0faf4",
+      "text": "#124929",
+      "border": "#358d5a",
+      "hover": "#dbf5e6",
+      "active": "#70eba3",
+      "selectedText": "#dbf5e6"
+    }
+  },
   "license": "MIT",
   "type": "module",
   "scripts": {

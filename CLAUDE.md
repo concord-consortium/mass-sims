@@ -15,8 +15,9 @@ template `yarn new-sim` copies), and `simulations/*` (the sims; **bananas** is t
 - **`/__preview` on any sim's dev server** — that sim at all four target widths at once (real
   interactive iframes), flagging content that overflows its allocation, clipped text, and elements
   escaping the frame. Dev-only, zero per-sim setup; the URL is printed in the Vite banner.
-- `yarn test:playwright:build` — build every sim **then** run e2e. Use this most of the time.
-- `yarn test:playwright` — runs e2e assuming `dist/` already exists (does **not** build).
+- `yarn test:playwright:build` — build every sim and the `top-test/` fixture (`build:top-test`),
+  **then** run e2e. Use this most of the time.
+- `yarn test:playwright` — runs e2e assuming `dist/` and `top-test/` already exist (does **not** build).
 - `yarn new-sim <name>` — scaffold a sim from `packages/starter`. Then `yarn install`.
 - `yarn gen-index` / `yarn gen-workflows` / `yarn gen-widths` — regenerate the root `index.html`,
   the per-sim CI workflows, and the SCSS width tokens (from `layout/target-widths.ts`).
@@ -25,12 +26,17 @@ template `yarn new-sim` copies), and `simulations/*` (the sims; **bananas** is t
 
 - **Ports collide.** A sim's dev server (`yarn workspace <sim> dev`) and Playwright's preview servers
   both want ports 8080+. Stop the dev server before running e2e, or run it on another port
-  (`--port 8100`).
+  (`--port 8100`). The landing-page e2e serves `top-test/` on port 8000, so stop any
+  `yarn serve:top-test` too.
 - **Regenerated files must be committed.** `gen-index`, `gen-workflows`, and `gen-widths` all have
   `--check` modes CI runs on every push — a stale root `index.html`, a missing
   `.github/workflows/sim-<name>.yml`, or a `_widths.generated.scss` that drifted from
   `target-widths.ts` **fails CI**. Run the first two and commit their output when adding a sim; run
-  `gen-widths` when changing a target width.
+  `gen-widths` when changing a target width. `gen-index` also reads each sim's `massSims` block in
+  its `package.json` (a sim with no block is left off the page), everything in `scripts/landing/`,
+  the shared `tokens.scss` and generated widths, `target-widths.ts` and the branding SVGs, so rerun
+  it after changing any of them (including after `gen-widths`).
+- **`yarn test` does not run the `scripts/` tests.** Run `yarn test:scripts` too (or `test:full`).
 - **Playwright testdata imports the pure `constants` module, not the barrel.** The package barrel pulls
   in component scss/svg side-effects the Playwright tsconfig can't resolve. Import trial-list constants
   from `packages/shared/src/trials/constants` directly.

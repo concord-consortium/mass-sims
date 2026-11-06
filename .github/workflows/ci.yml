@@ -29,9 +29,10 @@ jobs:
       - run: yarn gen-workflows --check
 
   # End-to-end tests (Playwright). Runs after `checks`, in parallel with the deploy jobs. Builds
-  # every sim, then runs the suite against the built artifacts via `vite preview` (the webServer
-  # config never builds — see the build contract in docs/playwright.md). A failure here does NOT
-  # block branch deploys.
+  # every sim and the top-test fixture (the landing page at its three deploy paths), then runs the
+  # suite against the built artifacts via `vite preview` and `serve` (the webServer config never
+  # builds — see the build contract in docs/playwright.md). A failure here does NOT block branch
+  # deploys.
   playwright:
     name: Run Playwright Tests
     needs: checks
@@ -52,7 +53,8 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           cache: "yarn"
       - run: yarn install --frozen-lockfile
-      - run: yarn build
+      # Builds every sim (filling each dist/) and lays them out in top-test/.
+      - run: yarn build:top-test
       - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium
       - run: yarn test:playwright

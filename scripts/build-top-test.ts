@@ -6,23 +6,35 @@
 // dynamic-publicPath pattern can be exercised end-to-end without an actual deploy:
 //
 //   top-test/
+//   ├── serve.json              ← keeps `serve` from redirecting …/index.html?query (see below)
 //   ├── index.html              ← root landing page (copied from repo's index.html)
 //   ├── sim-one/index.html      ← promoted (the index-top.html for sim-one)
 //   ├── sim-two/index.html      ← promoted
-//   └── version/release/
-//       ├── sim-one/...         ← the actual bundle
-//       └── sim-two/...
+//   ├── version/release/
+//   │   ├── sim-one/...         ← the actual bundle
+//   │   └── sim-two/...
+//   ├── version/v0.0.0-test/    ← a release-tag deploy: landing page + every sim's dist/
+//   └── branch/test-branch/     ← a branch deploy: landing page + every sim's dist/
 //
 // After running this, `yarn serve:top-test` serves the directory on http://localhost:8000
 // and clicking through the sim links exercises:
 //   - top-level HTML at /sim-one/ loading JS from /version/release/sim-one/
 //   - JS's runtime-resolved asset URLs (the Vite renderBuiltUrl path)
-//   - root index.html navigation
+//   - the landing page at all three deploy paths (/, /version/<tag>/, /branch/<name>/), each
+//     loading its sims from beside it. The Playwright `landing-*` projects test these.
 //
 // This is the local equivalent of starter-projects' build:top-test / serve:top-test pair.
 
 import { execSync } from "node:child_process";
-import { copyFileSync, cpSync, existsSync, mkdirSync, readdirSync, rmSync } from "node:fs";
+import {
+  copyFileSync,
+  cpSync,
+  existsSync,
+  mkdirSync,
+  readdirSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -31,6 +43,9 @@ const REPO_ROOT = resolve(SCRIPT_DIR, "..");
 const TOP_TEST = join(REPO_ROOT, "top-test");
 const SIMS_DIR = join(REPO_ROOT, "simulations");
 const VERSION_NAME = "release";
+// Stand-ins for a release tag and a branch. They have the same file layout; both are kept because
+// the landing page's footer shows something different for each.
+const NESTED_DEPLOYS = ["version/v0.0.0-test", "branch/test-branch"];
 
 // Clean any previous top-test/ output.
 if (existsSync(TOP_TEST)) {
@@ -89,6 +104,29 @@ if (existsSync(rootIndex)) {
   copyFileSync(rootIndex, join(TOP_TEST, "index.html"));
   console.log("Copied root index.html → top-test/index.html");
 }
+
+// The nested deploys, laid out as CI uploads a branch or tag: the root index.html, and each sim's
+// whole dist/ beside it.
+for (const deploy of NESTED_DEPLOYS) {
+  const deployDir = join(TOP_TEST, deploy);
+  mkdirSync(deployDir, { recursive: true });
+  copyFileSync(rootIndex, join(deployDir, "index.html"));
+  for (const sim of sims) {
+    const simDistDir = join(SIMS_DIR, sim, "dist");
+    if (existsSync(simDistDir)) cpSync(simDistDir, join(deployDir, sim), { recursive: true });
+  }
+  console.log(`Copied index.html + every sim's dist/ → top-test/${deploy}/`);
+}
+
+// `serve` normally redirects …/index.html to a "clean" URL and drops the query string, so the
+// landing page's iframe would lose ?standalone=true. Production does not redirect. Turning
+// cleanUrls off entirely would also stop folders serving their index.html, so only exclude
+// index.html from it.
+writeFileSync(
+  join(TOP_TEST, "serve.json"),
+  `${JSON.stringify({ cleanUrls: ["!**/index.html"] }, null, 2)}\n`,
+);
+console.log("Wrote top-test/serve.json");
 
 console.log("");
 console.log("=== Done ===");
